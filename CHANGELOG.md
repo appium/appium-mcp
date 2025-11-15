@@ -1,3 +1,10 @@
+## [1.1.7](https://github.com/appium/appium-mcp/compare/v1.1.6...v1.1.7) (2025-11-15)
+
+### Miscellaneous Chores
+
+* minimize devDeps related to semantic-release ([5249dd9](https://github.com/appium/appium-mcp/commit/5249dd9564b87270bf7a0469e16a1ed393d01780))
+* publish via trusted publisher ([#29](https://github.com/appium/appium-mcp/issues/29)) ([fb5de3e](https://github.com/appium/appium-mcp/commit/fb5de3ebd19cbaadcb4c5dc021f666296cae5a7a))
+
 ## [1.1.6](https://github.com/appium/appium-mcp/compare/v1.1.5...v1.1.6) (2025-11-14)
 
 ### Bug Fixes
