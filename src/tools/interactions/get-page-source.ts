@@ -1,6 +1,6 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver } from '../session-store.js';
+import { getDriver } from '../../session-store.js';
 
 export default function getPageSource(server: FastMCP): void {
   server.addTool({
