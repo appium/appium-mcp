@@ -17,6 +17,11 @@ This directory contains all MCP tools available in MCP Appium.
 - `setup-wda.ts` - Setup WebDriverAgent
 - `install-wda.ts` - Install WebDriverAgent
 
+### Navigation (`navigations/`)
+
+- `scroll.ts` - Scroll screens
+- `scroll-to-element.ts` - Scroll until element found
+
 ### Element Interactions (`interactions/`)
 
 - `find.ts` - Find elements
@@ -26,8 +31,6 @@ This directory contains all MCP tools available in MCP Appium.
 - `get-text.ts` - Get element text
 - `get-page-source.ts` - Get page source (XML) from current screen
 - `screenshot.ts` - Capture screenshots
-- `scroll.ts` - Scroll screens
-- `scroll-to-element.ts` - Scroll until element found
 
 ### App Management (`app-management/`)
 
