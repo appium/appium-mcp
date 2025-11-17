@@ -1,5 +1,5 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
-import { getDriver } from '../session-store.js';
+import { getDriver } from '../../session-store.js';
 import { z } from 'zod';
 
 export default function activateApp(server: FastMCP): void {

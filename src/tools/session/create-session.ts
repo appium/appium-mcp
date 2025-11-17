@@ -10,15 +10,15 @@ import {
   setSession,
   hasActiveSession,
   safeDeleteSession,
-} from './session-store.js';
+} from '../../session-store.js';
 import {
   getSelectedDevice,
   getSelectedDeviceType,
   getSelectedDeviceInfo,
   clearSelectedDevice,
 } from './select-device.js';
-import { IOSManager } from '../devicemanager/ios-manager.js';
-import log from '../locators/logger.js';
+import { IOSManager } from '../../devicemanager/ios-manager.js';
+import log from '../../logger.js';
 
 // Define capabilities type
 interface Capabilities {

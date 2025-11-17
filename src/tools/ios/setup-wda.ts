@@ -11,7 +11,7 @@ import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import os from 'os';
 import axios from 'axios';
-import log from '../locators/logger.js';
+import log from '../../logger.js';
 
 const execAsync = promisify(exec);
 

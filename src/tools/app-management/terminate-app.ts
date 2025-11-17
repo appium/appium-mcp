@@ -1,6 +1,6 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../session-store.js';
+import { getDriver, getPlatformName } from '../../session-store.js';
 
 export default function terminateApp(server: FastMCP): void {
   const schema = z.object({

@@ -1,18 +1,20 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../session-store.js';
+import { getDriver, getPlatformName } from '../../session-store.js';
 
-export default function installApp(server: FastMCP): void {
+export default function uninstallApp(server: FastMCP): void {
   const schema = z.object({
-    path: z.string().describe('Path to the app file to install'),
+    id: z
+      .string()
+      .describe('App identifier (package name for Android, bundle ID for iOS)'),
   });
 
   server.addTool({
-    name: 'appium_installApp',
-    description: 'Install an app on the device from a file path.',
+    name: 'appium_uninstallApp',
+    description: 'Uninstall an app from the device.',
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
-      const { path } = args;
+      const { id } = args;
       const driver = await getDriver();
       if (!driver) {
         throw new Error('No driver found');
@@ -20,13 +22,13 @@ export default function installApp(server: FastMCP): void {
       try {
         const platform = getPlatformName(driver);
         const params =
-          platform === 'Android' ? { appPath: path } : { app: path };
-        await (driver as any).execute('mobile: installApp', params);
+          platform === 'Android' ? { appId: id } : { bundleId: id };
+        await (driver as any).execute('mobile: removeApp', params);
         return {
           content: [
             {
               type: 'text',
-              text: 'App installed successfully',
+              text: 'App uninstalled successfully',
             },
           ],
         };
@@ -35,7 +37,7 @@ export default function installApp(server: FastMCP): void {
           content: [
             {
               type: 'text',
-              text: `Failed to install app. err: ${err.toString()}`,
+              text: `Failed to uninstall app. err: ${err.toString()}`,
             },
           ],
         };

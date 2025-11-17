@@ -4,45 +4,47 @@ This directory contains all MCP tools available in MCP Appium.
 
 ## Tool Categories
 
-### Session Management
+### Session Management (`session/`)
 
 - `create-session.ts` - Create mobile automation sessions
 - `delete-session.ts` - Clean up sessions
 - `select-platform.ts` - Choose Android or iOS
 - `select-device.ts` - Choose specific device
 
-### iOS Setup
+### iOS Setup (`ios/`)
 
 - `boot-simulator.ts` - Boot iOS simulators
 - `setup-wda.ts` - Setup WebDriverAgent
 - `install-wda.ts` - Install WebDriverAgent
 
-### Element Interaction
+### Element Interactions (`interactions/`)
 
-- `interactions/` - Direct appium interactions
-  - `find.ts` - Find elements
-  - `click.ts` - Click elements
-  - `double-tap.ts` - Double tap elements
-  - `set-value.ts` - Enter text
-  - `get-text.ts` - Get element text
-  - `get-page-source.ts` - Get page source (XML) from current screen
-  - `screenshot.ts` - Capture screenshots
-  - `activate-app.ts` - Activate apps
-  - `terminate-app.ts` - Terminate apps
-  - `install-app.ts` - Install apps
-  - `uninstall-app.ts` - Uninstall apps
-  - `list-apps.ts` - List installed apps
-
-### Navigation
-
+- `find.ts` - Find elements
+- `click.ts` - Click elements
+- `double-tap.ts` - Double tap elements
+- `set-value.ts` - Enter text
+- `get-text.ts` - Get element text
+- `get-page-source.ts` - Get page source (XML) from current screen
+- `screenshot.ts` - Capture screenshots
 - `scroll.ts` - Scroll screens
 - `scroll-to-element.ts` - Scroll until element found
 
-### AI & Test Generation
+### App Management (`app-management/`)
 
-- `generate_locators.ts` - Generate page locators
+- `activate-app.ts` - Activate apps
+- `terminate-app.ts` - Terminate apps
+- `install-app.ts` - Install apps
+- `uninstall-app.ts` - Uninstall apps
+- `list-apps.ts` - List installed apps
+
+### Test Generation (`test-generation/`)
+
+- `locators.ts` - Generate page locators
 - `generate-tests.ts` - Generate test code from scenarios
-- `answer-appium.ts` - Answer Appium questions
+
+### Documentation (`documentation/`)
+
+- `answer-appium.ts` - Answer Appium questions using RAG
 
 ## Adding a New Tool
 
@@ -50,9 +52,9 @@ See [docs/CONTRIBUTING.md](../../docs/CONTRIBUTING.md) for detailed instructions
 
 Quick steps:
 
-1. Create a new file in this directory (e.g., `my-tool.ts`)
+1. Create a new file in the appropriate subdirectory (e.g., `interactions/my-tool.ts`)
 2. Define the tool following the template
-3. Register it in `index.ts`
+3. Import and register it in `index.ts`
 4. Test with `npm run build && npm start`
 
 ### Tool Template
@@ -60,7 +62,7 @@ Quick steps:
 ```typescript
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver } from './session-store.js';
+import { getDriver } from '../../session-store.js';
 
 export default function myTool(server: FastMCP): void {
   server.addTool({
@@ -99,7 +101,7 @@ export default function myTool(server: FastMCP): void {
 Add to `src/tools/index.ts`:
 
 ```typescript
-import myTool from './my-tool.js';
+import myTool from './interactions/my-tool.js';
 
 export default function registerTools(server: FastMCP): void {
   // ... existing tools ...
@@ -113,7 +115,7 @@ export default function registerTools(server: FastMCP): void {
 1. **Always check for active session**: Use `getDriver()` and check for null
 2. **Provide helpful errors**: Give clear error messages
 3. **Use proper types**: Leverage TypeScript and Zod for type safety
-4. **Add logging**: Use the logger from `../locators/logger.js` for debugging. Import with: `import log from '../locators/logger.js'`. Use `log.info()`, `log.error()`, `log.warn()` instead of `console.log/error/warn` to maintain JSON-RPC compatibility
+4. **Add logging**: Use the logger from `../../logger.js` for debugging. Import with: `import log from '../../logger.js'`. Use `log.info()`, `log.error()`, `log.warn()` instead of `console.log/error/warn` to maintain JSON-RPC compatibility
 5. **Handle errors**: Always wrap risky operations in try-catch
 6. **Return proper format**: Always return content in expected MCP format
 
@@ -126,7 +128,7 @@ import {
   getDriver,
   hasActiveSession,
   safeDeleteSession,
-} from './session-store.js';
+} from '../../session-store.js';
 
 // Check if session exists
 if (!hasActiveSession()) {
@@ -145,7 +147,7 @@ await driver.someMethod();
 ### Platform-Specific Logic
 
 ```typescript
-import { getPlatformName } from './session-store.js';
+import { getPlatformName } from '../../session-store.js';
 
 if (getPlatformName(driver) === 'Android') {
   // Android implementation

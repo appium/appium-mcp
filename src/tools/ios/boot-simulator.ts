@@ -3,8 +3,8 @@
  */
 import { z } from 'zod';
 import { Simctl } from 'node-simctl';
-import { IOSManager } from '../devicemanager/ios-manager.js';
-import log from '../locators/logger.js';
+import { IOSManager } from '../../devicemanager/ios-manager.js';
+import log from '../../logger.js';
 
 export default function bootSimulator(server: any): void {
   server.addTool({

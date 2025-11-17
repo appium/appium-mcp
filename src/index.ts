@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import server from './server.js';
-import log from './locators/logger.js';
+import log from './logger.js';
 
 // Parse command line arguments
 const args = process.argv.slice(2);

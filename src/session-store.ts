@@ -1,6 +1,6 @@
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
-import log from '../locators/logger.js';
+import log from './logger.js';
 
 let driver: any = null;
 let sessionId: string | null = null;

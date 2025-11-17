@@ -5,7 +5,7 @@
  * This is perfect for self-hosted MCP servers and eliminates external dependencies.
  */
 
-import log from '../../locators/logger.js';
+import log from '../../logger.js';
 
 /**
  * LangChain-compatible embeddings class using sentence-transformers

@@ -1,10 +1,10 @@
 /**
  * Tool to select mobile platform before creating a session
  */
-import { ADBManager } from '../devicemanager/adb-manager.js';
-import { IOSManager } from '../devicemanager/ios-manager.js';
+import { ADBManager } from '../../devicemanager/adb-manager.js';
+import { IOSManager } from '../../devicemanager/ios-manager.js';
 import { z } from 'zod';
-import log from '../locators/logger.js';
+import log from '../../logger.js';
 
 /**
  * Get and validate Android devices

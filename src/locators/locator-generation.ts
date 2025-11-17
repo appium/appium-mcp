@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as XPath from 'xpath';
 const xpathSelect = XPath.select;
 
-import log from './logger.js';
+import log from '../logger.js';
 import {
   childNodesOf,
   domToXML,

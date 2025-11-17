@@ -1,6 +1,6 @@
 import { Simctl } from 'node-simctl';
 import { utilities } from 'appium-ios-device';
-import log from '../locators/logger.js';
+import log from '../logger.js';
 
 export interface IOSDevice {
   name: string;

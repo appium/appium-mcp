@@ -1,10 +1,10 @@
 /**
  * Tool to select a specific device when multiple devices are available
  */
-import { ADBManager } from '../devicemanager/adb-manager.js';
-import { IOSManager } from '../devicemanager/ios-manager.js';
+import { ADBManager } from '../../devicemanager/adb-manager.js';
+import { IOSManager } from '../../devicemanager/ios-manager.js';
 import { z } from 'zod';
-import log from '../locators/logger.js';
+import log from '../../logger.js';
 
 // Store selected device globally
 let selectedDeviceUdid: string | null = null;

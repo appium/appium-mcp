@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url';
 
 // Initialize embeddings using sentence-transformers (no API key required)
 import { SentenceTransformersEmbeddings } from './sentence-transformers-embeddings.js';
-import log from '../../locators/logger.js';
+import log from '../../logger.js';
 
 let embeddings: SentenceTransformersEmbeddings | null = null;
 

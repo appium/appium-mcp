@@ -13,19 +13,19 @@
  * See src/tools/metadata/README.md for YAML metadata approach.
  */
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
-import log from '../locators/logger.js';
-import answerAppium from './answer-appium.js';
-import createSession from './create-session.js';
-import deleteSession from './delete-session.js';
-import generateLocators from './locators.js';
-import selectPlatform from './select-platform.js';
-import selectDevice from './select-device.js';
-import bootSimulator from './boot-simulator.js';
-import setupWDA from './setup-wda.js';
-import installWDA from './install-wda.js';
-import generateTest from './generate-tests.js';
-import scroll from './scroll.js';
-import scrollToElement from './scroll-to-element.js';
+import log from '../logger.js';
+import answerAppium from './documentation/answer-appium.js';
+import createSession from './session/create-session.js';
+import deleteSession from './session/delete-session.js';
+import generateLocators from './test-generation/locators.js';
+import selectPlatform from './session/select-platform.js';
+import selectDevice from './session/select-device.js';
+import bootSimulator from './ios/boot-simulator.js';
+import setupWDA from './ios/setup-wda.js';
+import installWDA from './ios/install-wda.js';
+import generateTest from './test-generation/generate-tests.js';
+import scroll from './navigations/scroll.js';
+import scrollToElement from './navigations/scroll-to-element.js';
 import findElement from './interactions/find.js';
 import clickElement from './interactions/click.js';
 import doubleTap from './interactions/double-tap.js';
@@ -33,11 +33,11 @@ import setValue from './interactions/set-value.js';
 import getText from './interactions/get-text.js';
 import getPageSource from './interactions/get-page-source.js';
 import screenshot from './interactions/screenshot.js';
-import activateApp from './interactions/activate-app.js';
-import installApp from './interactions/install-app.js';
-import uninstallApp from './interactions/uninstall-app.js';
-import terminateApp from './interactions/terminate-app.js';
-import listApps from './interactions/list-apps.js';
+import activateApp from './app-management/activate-app.js';
+import installApp from './app-management/install-app.js';
+import uninstallApp from './app-management/uninstall-app.js';
+import terminateApp from './app-management/terminate-app.js';
+import listApps from './app-management/list-apps.js';
 
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
@@ -106,23 +106,22 @@ export default function registerTools(server: FastMCP): void {
     });
   };
 
+  // Session Management
   selectPlatform(server);
   selectDevice(server);
+  createSession(server);
+  deleteSession(server);
+
+  // iOS Setup
   bootSimulator(server);
   setupWDA(server);
   installWDA(server);
-  createSession(server);
-  deleteSession(server);
-  generateLocators(server);
-  answerAppium(server);
+
+  // Navigation
   scroll(server);
   scrollToElement(server);
 
-  activateApp(server);
-  installApp(server);
-  uninstallApp(server);
-  terminateApp(server);
-  listApps(server);
+  // Element Interactions
   findElement(server);
   clickElement(server);
   doubleTap(server);
@@ -130,6 +129,19 @@ export default function registerTools(server: FastMCP): void {
   getText(server);
   getPageSource(server);
   screenshot(server);
+
+  // App Management
+  activateApp(server);
+  installApp(server);
+  uninstallApp(server);
+  terminateApp(server);
+  listApps(server);
+
+  // Test Generation
+  generateLocators(server);
   generateTest(server);
+
+  // Documentation
+  answerAppium(server);
   log.info('All tools registered');
 }

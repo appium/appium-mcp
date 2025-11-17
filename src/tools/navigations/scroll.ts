@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { getDriver, getPlatformName } from './session-store.js';
-import log from '../locators/logger.js';
+import { getDriver, getPlatformName } from '../../session-store.js';
+import log from '../../logger.js';
 
 export default function scroll(server: any): void {
   server.addTool({

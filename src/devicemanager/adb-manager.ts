@@ -1,5 +1,5 @@
 import { ADB } from 'appium-adb';
-import log from '../locators/logger.js';
+import log from '../logger.js';
 /**
  * Singleton ADB Manager to prevent multiple ADB instances
  * This ensures only one ADB instance per host machine

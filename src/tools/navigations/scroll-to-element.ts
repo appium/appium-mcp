@@ -1,4 +1,4 @@
-import { getDriver, getPlatformName } from './session-store.js';
+import { getDriver, getPlatformName } from '../../session-store.js';
 import { z } from 'zod';
 
 const scrollToElementSchema = z.object({

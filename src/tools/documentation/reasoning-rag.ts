@@ -8,7 +8,7 @@
 
 import { Document } from 'langchain/document';
 import { queryVectorStore } from './simple-pdf-indexer.js';
-import log from '../../locators/logger.js';
+import log from '../../logger.js';
 
 /**
  * Reasoning task types supported by the system

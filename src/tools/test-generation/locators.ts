@@ -10,9 +10,9 @@
  * For detailed documentation on adding tools, see docs/CONTRIBUTING.md
  */
 import { z } from 'zod';
-import { getDriver } from './session-store.js';
-import { generateAllElementLocators } from '../locators/generate-all-locators.js';
-import log from '../locators/logger.js';
+import { getDriver } from '../../session-store.js';
+import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
+import log from '../../logger.js';
 
 export default function generateLocators(server: any): void {
   server.addTool({

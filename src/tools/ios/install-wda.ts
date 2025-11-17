@@ -7,9 +7,8 @@ import { promisify } from 'util';
 import path from 'path';
 import { access, readdir, stat } from 'fs/promises';
 import { constants } from 'fs';
-import fs from 'fs'; // Keep for createWriteStream if used
 import os from 'os';
-import log from '../locators/logger.js';
+import log from '../../logger.js';
 
 const execAsync = promisify(exec);
 

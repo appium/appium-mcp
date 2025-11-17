@@ -5,7 +5,7 @@ import { getSuggestedLocators } from './locator-generation.js';
 import { xmlToJSON, JSONElement } from './source-parsing.js';
 import { shouldIncludeElement, FilterOptions } from './element-filter.js';
 import * as fs from 'fs';
-import log from './logger.js';
+import log from '../logger.js';
 
 export interface ElementWithLocators {
   tagName: string;

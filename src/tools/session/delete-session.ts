@@ -2,8 +2,8 @@
  * Tool to delete the current mobile session and clean up resources
  */
 import { z } from 'zod';
-import { safeDeleteSession } from './session-store.js';
-import log from '../locators/logger.js';
+import { safeDeleteSession } from '../../session-store.js';
+import log from '../../logger.js';
 
 export default function deleteSession(server: any): void {
   server.addTool({

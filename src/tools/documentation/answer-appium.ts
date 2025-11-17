@@ -2,11 +2,8 @@
  * Tool to select mobile platform before creating a session
  */
 import { z } from 'zod';
-import {
-  answerAppiumQuery,
-  initializeAppiumDocumentation,
-} from './documentation/index.js';
-import log from '../locators/logger.js';
+import { answerAppiumQuery, initializeAppiumDocumentation } from './index.js';
+import log from '../../logger.js';
 
 export default function answerAppium(server: any): void {
   server.addTool({
