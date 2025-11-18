@@ -1,3 +1,13 @@
+## [1.1.9](https://github.com/appium/appium-mcp/compare/v1.1.8...v1.1.9) (2025-11-18)
+
+### Bug Fixes
+
+* update readme with all tools and update license badge ([#36](https://github.com/appium/appium-mcp/issues/36)) ([82cf69c](https://github.com/appium/appium-mcp/commit/82cf69c7d0e2e52b71653c6c5208a7729a1b7ab9))
+
+### Code Refactoring
+
+* migrate from SSE to httpStream transport according to FastMCP 3.x changes ([#34](https://github.com/appium/appium-mcp/issues/34)) ([4399186](https://github.com/appium/appium-mcp/commit/4399186e575958265cc075e6b8b141dddd673f14))
+
 ## [1.1.8](https://github.com/appium/appium-mcp/compare/v1.1.7...v1.1.8) (2025-11-15)
 
 ### Miscellaneous Chores
