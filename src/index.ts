@@ -5,27 +5,25 @@ import log from './locators/logger.js';
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-const useSSE = args.includes('--sse');
+const useHttpStream = args.includes('--httpStream');
 const port =
   args.find(arg => arg.startsWith('--port='))?.split('=')[1] || '8080';
 
-// Start the server with the appropriate transport
 async function startServer(): Promise<void> {
   log.info('Starting MCP Appium MCP Server...');
 
   try {
-    if (useSSE) {
-      // Start with SSE transport
+    if (useHttpStream) {
       server.start({
-        transportType: 'sse',
-        sse: {
+        transportType: 'httpStream',
+        httpStream: {
           endpoint: '/sse',
           port: parseInt(port, 10),
         },
       });
 
       log.info(
-        `Server started with SSE transport on http://localhost:${port}/sse`
+        `Server started with httpStream transport on http://localhost:${port}/sse`
       );
       log.info('Waiting for client connections...');
     } else {
