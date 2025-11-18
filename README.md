@@ -1,5 +1,7 @@
 # MCP Appium - MCP server for Mobile Development and Automation | iOS, Android, Simulator, Emulator, and Real Devices
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 MCP Appium is an intelligent MCP (Model Context Protocol) server designed to empower AI assistants with a robust suite of tools for mobile automation. It streamlines mobile app testing by enabling natural language interactions, intelligent locator generation, and automated test creation for both Android and iOS platforms.
 
 ## Table of Contents
@@ -106,27 +108,61 @@ Set the `CAPABILITIES_CONFIG` environment variable to point to your configuratio
 
 ## 🎯 Available Tools
 
+MCP Appium provides a comprehensive set of tools organized into the following categories:
+
+### Platform & Device Setup
+
+| Tool | Description |
+|------|-------------|
+| `select_platform` | **REQUIRED FIRST**: Ask user to choose between Android or iOS platform |
+| `select_device` | Select a specific device when multiple devices are available |
+| `boot_simulator` | Boot an iOS simulator and wait for it to be ready (iOS only) |
+| `setup_wda` | Download and setup prebuilt WebDriverAgent for iOS simulators (iOS only) |
+| `install_wda` | Install and launch WebDriverAgent on a booted iOS simulator (iOS only) |
+
 ### Session Management
 
-- `select_platform`: Choose between "android" or "ios".
-- `create_session`: Create a new mobile automation session.
-- `appium_activate_app`: Activate a specified app.
-- `appium_terminate_app`: Terminate a specified app.
+| Tool | Description |
+|------|-------------|
+| `create_session` | Create a new mobile automation session for Android or iOS |
+| `delete_session` | Delete the current mobile session and clean up resources |
 
-### Element Interaction
+### Element Discovery & Interaction
 
-- `generate_locators`: Generate intelligent locators for all interactive elements on the current screen.
-- `appium_find_element`: Find a specific element using various locator strategies.
-- `appium_click`: Click on an element.
-- `appium_set_value`: Enter text into an input field.
-- `appium_get_text`: Retrieve the text content of an element.
-- `appium_screenshot`: Capture a screenshot of the current screen.
-- `appium_scroll`: Scroll the screen vertically.
-- `appium_scroll_to_element`: Scroll until a specific element is found.
+| Tool | Description |
+|------|-------------|
+| `generate_locators` | Generate intelligent locators for all interactive elements on the current screen |
+| `appium_find_element` | Find a specific element using various locator strategies (xpath, id, accessibility id, etc.) |
+| `appium_click` | Click on an element |
+| `appium_double_tap` | Perform double tap on an element |
+| `appium_set_value` | Enter text into an input field |
+| `appium_get_text` | Get text content from an element |
 
-### Test Generation
+### Screen & Navigation
 
-- `appium_generate_tests`: Generate automated test code from natural language scenarios.
+| Tool | Description |
+|------|-------------|
+| `appium_screenshot` | Take a screenshot of the current screen and save as PNG |
+| `appium_scroll` | Scroll the screen vertically (up or down) |
+| `appium_scroll_to_element` | Scroll until a specific element becomes visible |
+| `appium_get_page_source` | Get the page source (XML) from the current screen |
+
+### App Management
+
+| Tool | Description |
+|------|-------------|
+| `appium_activate_app` | Activate (launch/bring to foreground) a specified app by bundle ID |
+| `appium_installApp` | Install an app on the device from a file path |
+| `appium_uninstallApp` | Uninstall an app from the device by bundle ID |
+| `appium_terminateApp` | Terminate (close) a specified app |
+| `appium_list_apps` | List all installed apps on the device (Android only) |
+
+### Test Generation & Documentation
+
+| Tool | Description |
+|------|-------------|
+| `appium_generate_tests` | Generate automated test code from natural language scenarios |
+| `appium_documentation_query` | Query Appium documentation using RAG for help and guidance |
 
 ## 🤖 Client Support
 
