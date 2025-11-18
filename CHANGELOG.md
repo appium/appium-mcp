@@ -1,3 +1,9 @@
+## [1.1.10](https://github.com/appium/appium-mcp/compare/v1.1.9...v1.1.10) (2025-11-18)
+
+### Miscellaneous Chores
+
+* update license in package.json as well by following [#32](https://github.com/appium/appium-mcp/issues/32) ([#37](https://github.com/appium/appium-mcp/issues/37)) ([82e0c7d](https://github.com/appium/appium-mcp/commit/82e0c7dc8d626d2c7ce85943e4aca3db4342aa70))
+
 ## [1.1.9](https://github.com/appium/appium-mcp/compare/v1.1.8...v1.1.9) (2025-11-18)
 
 ### Bug Fixes
