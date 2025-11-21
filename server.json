@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "name": "io.github.appium/appium-mcp",
   "title": "MCP Appium - Mobile Development and Automation Server",
-  "description": "Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation. Supports iOS, Android, Simulator, Emulator, and Real Devices with intelligent locator generation, automated test creation, and comprehensive mobile testing capabilities.",
+  "description": "MCP server for Appium mobile automation on iOS and Android devices with test creation tools.",
   "version": "1.1.11",
   "packages": [
     {
