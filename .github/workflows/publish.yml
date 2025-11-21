@@ -42,9 +42,28 @@ jobs:
           jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > tmp && mv tmp server.json
           echo "Updated server.json version to $VERSION"
 
-      - name: Download MCP Publisher
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build MCP Publisher from source
         run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/latest/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+          # Always build from source (most reliable, matches Playwright approach)
+          # Get latest release tag
+          LATEST_TAG=$(curl -s https://api.github.com/repos/modelcontextprotocol/registry/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ -z "$LATEST_TAG" ]; then
+            echo "Warning: Could not get latest tag, using main branch"
+            LATEST_TAG="main"
+          fi
+          echo "Building mcp-publisher from ${LATEST_TAG}"
+          cd ${{ runner.temp }}
+          git clone --depth 1 --branch "${LATEST_TAG}" https://github.com/modelcontextprotocol/registry.git
+          cd registry
+          go build -o mcp-publisher ./cmd/publisher
+          mv mcp-publisher ${{ github.workspace }}/mcp-publisher
+          cd ${{ github.workspace }}
+          chmod +x mcp-publisher
 
       - name: Publish to MCP Registry
         run: |
