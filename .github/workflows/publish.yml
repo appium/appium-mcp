@@ -15,9 +15,10 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
+          fetch-depth: 0 # Fetch all tags for version detection
       - name: Setup submodules sparse-checkout
         run: |
           chmod +x scripts/setup-submodules-sparse.sh
@@ -34,3 +35,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         name: Release
+      # MCP publishing
+      - name: Update server.json version to match package.json
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > tmp && mv tmp server.json
+          echo "Updated server.json version to $VERSION"
+
+      - name: Download MCP Publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/latest/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Publish to MCP Registry
+        run: |
+          chmod +x mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
