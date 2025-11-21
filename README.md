@@ -57,9 +57,7 @@ Before you begin, ensure you have the following installed:
 
 ## 🛠️ Installation
 
-### As an MCP Server
-
-To integrate MCP Appium with your MCP client, add the following to your configuration:
+Standard config works in most of the tools::
 
 ```json
 {
@@ -78,6 +76,57 @@ To integrate MCP Appium with your MCP client, add the following to your configur
   }
 }
 ```
+
+### In Cursor IDE
+
+The easiest way to install MCP Appium in Cursor IDE is using the one-click install button:
+
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=appium-mcp&config=eyJkaXNhYmxlZCI6ZmFsc2UsInRpbWVvdXQiOjEwMCwidHlwZSI6InN0ZGlvIiwiZW52Ijp7IkFORFJPSURfSE9NRSI6Ii9Vc2Vycy94eXovTGlicmFyeS9BbmRyb2lkL3NkayJ9LCJjb21tYW5kIjoibnB4IGFwcGl1bS1tY3BAbGF0ZXN0In0%3D)
+
+This will automatically configure the MCP server in your Cursor IDE settings. Make sure to update the `ANDROID_HOME` environment variable in the configuration to match your Android SDK path.
+
+#### Or install manually:
+
+Go to **Cursor Settings → MCP → Add new MCP Server**. Name it to your liking, use command type with the command `npx -y appium-mcp@latest`. You can also verify config or add command arguments via clicking **Edit**.
+
+Here is the recommended configuration:
+
+```json
+{
+  "appium-mcp": {
+    "disabled": false,
+    "timeout": 100,
+    "type": "stdio",
+    "command": "npx",
+    "args": ["appium-mcp@latest"],
+    "env": {
+      "ANDROID_HOME": "/Users/xyz/Library/Android/sdk"
+    }
+  }
+}
+```
+
+**Note:** Make sure to update the `ANDROID_HOME` path to match your Android SDK installation path.
+
+### With Gemini CLI
+
+Use the Gemini CLI to add the MCP Appium server:
+
+```bash
+gemini mcp add appium-mcp npx -y appium-mcp@latest
+```
+
+This will automatically configure the MCP server for use with Gemini. Make sure to update the `ANDROID_HOME` environment variable in the configuration to match your Android SDK path.
+
+### With Claude Code CLI
+
+Use the Claude Code CLI to add the MCP Appium server:
+
+```bash
+claude mcp add appium-mcp -- npx -y appium-mcp@latest
+```
+
+This will automatically configure the MCP server for use with Claude Code. Make sure to update the `ANDROID_HOME` environment variable in the configuration to match your Android SDK path.
 
 ## ⚙️ Configuration
 
@@ -112,57 +161,57 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 ### Platform & Device Setup
 
-| Tool | Description |
-|------|-------------|
-| `select_platform` | **REQUIRED FIRST**: Ask user to choose between Android or iOS platform |
-| `select_device` | Select a specific device when multiple devices are available |
-| `boot_simulator` | Boot an iOS simulator and wait for it to be ready (iOS only) |
-| `setup_wda` | Download and setup prebuilt WebDriverAgent for iOS simulators (iOS only) |
-| `install_wda` | Install and launch WebDriverAgent on a booted iOS simulator (iOS only) |
+| Tool              | Description                                                              |
+| ----------------- | ------------------------------------------------------------------------ |
+| `select_platform` | **REQUIRED FIRST**: Ask user to choose between Android or iOS platform   |
+| `select_device`   | Select a specific device when multiple devices are available             |
+| `boot_simulator`  | Boot an iOS simulator and wait for it to be ready (iOS only)             |
+| `setup_wda`       | Download and setup prebuilt WebDriverAgent for iOS simulators (iOS only) |
+| `install_wda`     | Install and launch WebDriverAgent on a booted iOS simulator (iOS only)   |
 
 ### Session Management
 
-| Tool | Description |
-|------|-------------|
+| Tool             | Description                                               |
+| ---------------- | --------------------------------------------------------- |
 | `create_session` | Create a new mobile automation session for Android or iOS |
-| `delete_session` | Delete the current mobile session and clean up resources |
+| `delete_session` | Delete the current mobile session and clean up resources  |
 
 ### Element Discovery & Interaction
 
-| Tool | Description |
-|------|-------------|
+| Tool                  | Description                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------- |
 | `appium_find_element` | Find a specific element using various locator strategies (xpath, id, accessibility id, etc.) |
-| `appium_click` | Click on an element |
-| `appium_double_tap` | Perform double tap on an element |
-| `appium_set_value` | Enter text into an input field |
-| `appium_get_text` | Get text content from an element |
+| `appium_click`        | Click on an element                                                                          |
+| `appium_double_tap`   | Perform double tap on an element                                                             |
+| `appium_set_value`    | Enter text into an input field                                                               |
+| `appium_get_text`     | Get text content from an element                                                             |
 
 ### Screen & Navigation
 
-| Tool | Description |
-|------|-------------|
-| `appium_screenshot` | Take a screenshot of the current screen and save as PNG |
-| `appium_scroll` | Scroll the screen vertically (up or down) |
-| `appium_scroll_to_element` | Scroll until a specific element becomes visible |
-| `appium_get_page_source` | Get the page source (XML) from the current screen |
+| Tool                       | Description                                             |
+| -------------------------- | ------------------------------------------------------- |
+| `appium_screenshot`        | Take a screenshot of the current screen and save as PNG |
+| `appium_scroll`            | Scroll the screen vertically (up or down)               |
+| `appium_scroll_to_element` | Scroll until a specific element becomes visible         |
+| `appium_get_page_source`   | Get the page source (XML) from the current screen       |
 
 ### App Management
 
-| Tool | Description |
-|------|-------------|
+| Tool                  | Description                                                        |
+| --------------------- | ------------------------------------------------------------------ |
 | `appium_activate_app` | Activate (launch/bring to foreground) a specified app by bundle ID |
-| `appium_installApp` | Install an app on the device from a file path |
-| `appium_uninstallApp` | Uninstall an app from the device by bundle ID |
-| `appium_terminateApp` | Terminate (close) a specified app |
-| `appium_list_apps` | List all installed apps on the device (Android only) |
+| `appium_installApp`   | Install an app on the device from a file path                      |
+| `appium_uninstallApp` | Uninstall an app from the device by bundle ID                      |
+| `appium_terminateApp` | Terminate (close) a specified app                                  |
+| `appium_list_apps`    | List all installed apps on the device (Android only)               |
 
 ### Test Generation & Documentation
 
-| Tool | Description |
-|------|-------------|
-| `generate_locators` | Generate intelligent locators for all interactive elements on the current screen |
-| `appium_generate_tests` | Generate automated test code from natural language scenarios |
-| `appium_documentation_query` | Query Appium documentation using RAG for help and guidance |
+| Tool                         | Description                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| `generate_locators`          | Generate intelligent locators for all interactive elements on the current screen |
+| `appium_generate_tests`      | Generate automated test code from natural language scenarios                     |
+| `appium_documentation_query` | Query Appium documentation using RAG for help and guidance                       |
 
 ## 🤖 Client Support
 
