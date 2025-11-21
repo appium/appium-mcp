@@ -16,11 +16,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup submodules sparse-checkout
-        run: |
-          chmod +x scripts/setup-submodules-sparse.sh
-          ./scripts/setup-submodules-sparse.sh
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
