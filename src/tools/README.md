@@ -21,6 +21,7 @@ This directory contains all MCP tools available in MCP Appium.
 
 - `scroll.ts` - Scroll screens
 - `scroll-to-element.ts` - Scroll until element found
+- `swipe.ts` - Swipe screens in any direction or between custom coordinates
 
 ### Element Interactions (`interactions/`)
 
