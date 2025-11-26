@@ -26,6 +26,7 @@ import installWDA from './ios/install-wda.js';
 import generateTest from './test-generation/generate-tests.js';
 import scroll from './navigations/scroll.js';
 import scrollToElement from './navigations/scroll-to-element.js';
+import swipe from './navigations/swipe.js';
 import findElement from './interactions/find.js';
 import clickElement from './interactions/click.js';
 import doubleTap from './interactions/double-tap.js';
@@ -120,6 +121,7 @@ export default function registerTools(server: FastMCP): void {
   // Navigation
   scroll(server);
   scrollToElement(server);
+  swipe(server);
 
   // Element Interactions
   findElement(server);
