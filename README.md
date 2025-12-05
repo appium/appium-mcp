@@ -178,6 +178,13 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `create_session` | Create a new mobile automation session for Android or iOS |
 | `delete_session` | Delete the current mobile session and clean up resources  |
 
+### Context Management
+
+| Tool                  | Description                                                                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `appium_get_contexts` | Get all available contexts in the current Appium session. Returns a list of context names including NATIVE_APP and any webview contexts (e.g., WEBVIEW_<id> or WEBVIEW_<package>). |
+| `appium_switch_context` | Switch to a specific context in the Appium session. Use this to switch between native app context (NATIVE_APP) and webview contexts (WEBVIEW_<id> or WEBVIEW_<package>). Use appium_get_contexts to see available contexts first. |
+
 ### Element Discovery & Interaction
 
 | Tool                  | Description                                                                                  |
