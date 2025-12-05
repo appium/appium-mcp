@@ -27,7 +27,11 @@ export default function switchContext(server: FastMCP): void {
       }
 
       try {
-        const currentContext = await driver.getCurrentContext();
+        const [currentContext, availableContexts] = await Promise.all([
+          driver.getCurrentContext().catch(() => null),
+          driver.getContexts().catch(() => []),
+        ]);
+
         if (currentContext === args.context) {
           return {
             content: [
@@ -38,7 +42,6 @@ export default function switchContext(server: FastMCP): void {
             ],
           };
         }
-        const availableContexts = await driver.getContexts();
 
         if (!availableContexts || availableContexts.length === 0) {
           return {
