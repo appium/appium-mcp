@@ -6,6 +6,11 @@ let driver: any = null;
 let sessionId: string | null = null;
 let isDeletingSession = false; // Lock to prevent concurrent deletion
 
+export const PLATFORM = {
+  android: 'Android',
+  ios: 'iOS',
+};
+
 export function setSession(d: any, id: string | null) {
   driver = d;
   sessionId = id;
@@ -67,7 +72,7 @@ export async function safeDeleteSession(): Promise<boolean> {
 }
 
 export const getPlatformName = (driver: any): string => {
-  if (driver instanceof AndroidUiautomator2Driver) return 'Android';
-  if (driver instanceof XCUITestDriver) return 'iOS';
+  if (driver instanceof AndroidUiautomator2Driver) return PLATFORM.android;
+  if (driver instanceof XCUITestDriver) return PLATFORM.ios;
   throw new Error('Unknown driver type');
 };

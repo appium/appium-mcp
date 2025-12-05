@@ -39,6 +39,8 @@ import installApp from './app-management/install-app.js';
 import uninstallApp from './app-management/uninstall-app.js';
 import terminateApp from './app-management/terminate-app.js';
 import listApps from './app-management/list-apps.js';
+import getContexts from './context/get-contexts.js';
+import switchContext from './context/switch-context.js';
 
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
@@ -138,6 +140,10 @@ export default function registerTools(server: FastMCP): void {
   uninstallApp(server);
   terminateApp(server);
   listApps(server);
+
+  // Context Management
+  getContexts(server);
+  switchContext(server);
 
   // Test Generation
   generateLocators(server);
