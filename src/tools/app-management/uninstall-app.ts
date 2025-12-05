@@ -10,7 +10,7 @@ export default function uninstallApp(server: FastMCP): void {
   });
 
   server.addTool({
-    name: 'appium_uninstallApp',
+    name: 'appium_uninstall_app',
     description: 'Uninstall an app from the device.',
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {

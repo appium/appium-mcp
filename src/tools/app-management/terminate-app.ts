@@ -10,7 +10,7 @@ export default function terminateApp(server: FastMCP): void {
   });
 
   server.addTool({
-    name: 'appium_terminateApp',
+    name: 'appium_terminate_app',
     description: 'Terminate an app on the device.',
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {

@@ -8,7 +8,7 @@ export default function installApp(server: FastMCP): void {
   });
 
   server.addTool({
-    name: 'appium_installApp',
+    name: 'appium_install_app',
     description: 'Install an app on the device from a file path.',
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
