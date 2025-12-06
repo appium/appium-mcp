@@ -30,6 +30,7 @@ import swipe from './navigations/swipe.js';
 import findElement from './interactions/find.js';
 import clickElement from './interactions/click.js';
 import doubleTap from './interactions/double-tap.js';
+import longPress from './interactions/long-press.js';
 import setValue from './interactions/set-value.js';
 import getText from './interactions/get-text.js';
 import getPageSource from './interactions/get-page-source.js';
@@ -129,6 +130,7 @@ export default function registerTools(server: FastMCP): void {
   findElement(server);
   clickElement(server);
   doubleTap(server);
+  longPress(server);
   setValue(server);
   getText(server);
   getPageSource(server);
