@@ -28,6 +28,7 @@ This directory contains all MCP tools available in MCP Appium.
 - `find.ts` - Find elements
 - `click.ts` - Click elements
 - `double-tap.ts` - Double tap elements
+- `long-press.ts` - Long press (press and hold) elements
 - `set-value.ts` - Enter text
 - `get-text.ts` - Get element text
 - `get-page-source.ts` - Get page source (XML) from current screen
