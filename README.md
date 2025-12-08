@@ -157,6 +157,10 @@ Create a `capabilities.json` file to define your device capabilities:
 
 Set the `CAPABILITIES_CONFIG` environment variable to point to your configuration file.
 
+### Screenshots
+
+Set the `SCREENSHOTS_DIR` environment variable to specify where screenshots are saved. If not set, screenshots are saved to the current working directory. Supports both absolute and relative paths (relative paths are resolved from the current working directory). The directory is created automatically if it doesn't exist.
+
 ## 🎯 Available Tools
 
 MCP Appium provides a comprehensive set of tools organized into the following categories:
