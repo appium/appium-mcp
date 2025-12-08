@@ -1,8 +1,90 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
-import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { writeFile, mkdir } from 'fs/promises';
+import { join, isAbsolute } from 'path';
+
+/**
+ * Resolves the screenshot directory path.
+ * - If SCREENSHOTS_DIR is not set, returns process.cwd()
+ * - If SCREENSHOTS_DIR is absolute, returns it as-is
+ * - If SCREENSHOTS_DIR is relative, joins it with process.cwd()
+ */
+export function resolveScreenshotDir(): string {
+  const screenshotDir = process.env.SCREENSHOTS_DIR;
+
+  if (!screenshotDir) {
+    return process.cwd();
+  }
+
+  if (isAbsolute(screenshotDir)) {
+    return screenshotDir;
+  }
+
+  return join(process.cwd(), screenshotDir);
+}
+
+export interface ScreenshotDeps {
+  getDriver: () => { getScreenshot: () => Promise<string> } | null;
+  writeFile: typeof writeFile;
+  mkdir: typeof mkdir;
+  resolveScreenshotDir: typeof resolveScreenshotDir;
+  dateNow: () => number;
+}
+
+const defaultDeps: ScreenshotDeps = {
+  getDriver,
+  writeFile,
+  mkdir,
+  resolveScreenshotDir,
+  dateNow: () => Date.now(),
+};
+
+export async function executeScreenshot(
+  deps: ScreenshotDeps = defaultDeps
+): Promise<any> {
+  const driver = deps.getDriver();
+  if (!driver) {
+    throw new Error('No driver found');
+  }
+
+  try {
+    const screenshotBase64 = await driver.getScreenshot();
+
+    // Convert base64 to buffer
+    const screenshotBuffer = Buffer.from(screenshotBase64, 'base64');
+
+    // Generate filename with timestamp
+    const timestamp = deps.dateNow();
+    const filename = `screenshot_${timestamp}.png`;
+    const screenshotDir = deps.resolveScreenshotDir();
+
+    // Create a directory if it doesn't exist
+    await deps.mkdir(screenshotDir, { recursive: true });
+
+    const filepath = join(screenshotDir, filename);
+
+    // Save screenshot to disk
+    await deps.writeFile(filepath, screenshotBuffer);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Screenshot saved successfully to: ${filepath}`,
+        },
+      ],
+    };
+  } catch (err: any) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Failed to take screenshot. err: ${err.toString()}`,
+        },
+      ],
+    };
+  }
+}
 
 export default function screenshot(server: FastMCP): void {
   server.addTool({
@@ -13,44 +95,6 @@ export default function screenshot(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
-      const driver = getDriver();
-      if (!driver) {
-        throw new Error('No driver found');
-      }
-
-      try {
-        const screenshotBase64 = await driver.getScreenshot();
-
-        // Convert base64 to buffer
-        const screenshotBuffer = Buffer.from(screenshotBase64, 'base64');
-
-        // Generate filename with timestamp
-        const timestamp = Date.now();
-        const filename = `screenshot_${timestamp}.png`;
-        const filepath = join(process.cwd(), filename);
-
-        // Save screenshot to disk
-        await writeFile(filepath, screenshotBuffer);
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Screenshot saved successfully to: ${filename}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to take screenshot. err: ${err.toString()}`,
-            },
-          ],
-        };
-      }
-    },
+    execute: async (): Promise<any> => executeScreenshot(),
   });
 }
