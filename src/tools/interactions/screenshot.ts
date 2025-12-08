@@ -70,7 +70,7 @@ export async function executeScreenshot(
       content: [
         {
           type: 'text',
-          text: `Screenshot saved successfully to: ${filename}`,
+          text: `Screenshot saved successfully to: ${filepath}`,
         },
       ],
     };
