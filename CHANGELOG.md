@@ -1,3 +1,9 @@
+## [1.5.0](https://github.com/appium/appium-mcp/compare/v1.4.0...v1.5.0) (2025-12-19)
+
+### Features
+
+* **interactions:** add drag and drop tool for element and coordinate-based drag operations ([#55](https://github.com/appium/appium-mcp/issues/55)) ([571942e](https://github.com/appium/appium-mcp/commit/571942ecbd2d7ef395cc8e6a8aaf158dcf0f54fb))
+
 ## [1.4.0](https://github.com/appium/appium-mcp/compare/v1.3.0...v1.4.0) (2025-12-07)
 
 ### Features
