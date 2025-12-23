@@ -34,6 +34,7 @@ This directory contains all MCP tools available in MCP Appium.
 - `get-text.ts` - Get element text
 - `get-page-source.ts` - Get page source (XML) from current screen
 - `screenshot.ts` - Capture screenshots
+- `handle-alert.ts` - Handle system alerts or dialogs
 
 ### App Management (`app-management/`)
 
