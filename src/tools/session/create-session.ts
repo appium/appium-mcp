@@ -19,6 +19,11 @@ import {
 } from './select-device.js';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
+import {
+  createUIResource,
+  createSessionDashboardUI,
+  addUIResourceToResponse,
+} from '../../ui/mcp-ui-utils.js';
 
 // Define capabilities type
 interface Capabilities {
@@ -250,18 +255,37 @@ export default function createSession(server: any): void {
         const sessionId = await createDriverSession(driver, finalCapabilities);
         setSession(driver, sessionId);
 
+        // Safely convert sessionId to string for display
+        const sessionIdStr =
+          typeof sessionId === 'string' ? sessionId : String(sessionId || 'Unknown');
+
         log.info(
-          `${platform.toUpperCase()} session created successfully with ID: ${sessionId}`
+          `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}`
         );
 
-        return {
+        const textResponse = {
           content: [
             {
               type: 'text',
-              text: `${platform.toUpperCase()} session created successfully with ID: ${sessionId}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}`,
+              text: `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}`,
             },
           ],
         };
+
+        // Add interactive session dashboard UI
+        const uiResource = createUIResource(
+          `ui://appium-mcp/session-dashboard/${sessionIdStr}`,
+          createSessionDashboardUI({
+            sessionId: sessionIdStr,
+            platform: finalCapabilities.platformName,
+            automationName: finalCapabilities['appium:automationName'],
+            deviceName: finalCapabilities['appium:deviceName'],
+            platformVersion: finalCapabilities['appium:platformVersion'],
+            udid: finalCapabilities['appium:udid'],
+          })
+        );
+
+        return addUIResourceToResponse(textResponse, uiResource);
       } catch (error: any) {
         log.error('Error creating session:', error);
         throw new Error(`Failed to create session: ${error.message}`);

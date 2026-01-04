@@ -5,6 +5,11 @@ import { ADBManager } from '../../devicemanager/adb-manager.js';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import { z } from 'zod';
 import log from '../../logger.js';
+import {
+  createUIResource,
+  createDevicePickerUI,
+  addUIResourceToResponse,
+} from '../../ui/mcp-ui-utils.js';
 
 // Store selected device globally
 let selectedDeviceUdid: string | null = null;
@@ -92,7 +97,7 @@ function formatAndroidListResponse(devices: any[]): any {
     .map((device, index) => `  ${index + 1}. ${device.udid}`)
     .join('\n');
 
-  return {
+  const textResponse = {
     content: [
       {
         type: 'text',
@@ -100,6 +105,14 @@ function formatAndroidListResponse(devices: any[]): any {
       },
     ],
   };
+
+  // Add interactive UI picker
+  const uiResource = createUIResource(
+    `ui://appium-mcp/device-picker/android-${Date.now()}`,
+    createDevicePickerUI(devices, 'android')
+  );
+
+  return addUIResourceToResponse(textResponse, uiResource);
 }
 
 /**
@@ -202,7 +215,7 @@ function formatIOSListResponse(
     )
     .join('\n');
 
-  return {
+  const textResponse = {
     content: [
       {
         type: 'text',
@@ -210,6 +223,14 @@ function formatIOSListResponse(
       },
     ],
   };
+
+  // Add interactive UI picker
+  const uiResource = createUIResource(
+    `ui://appium-mcp/device-picker/ios-${iosDeviceType}-${Date.now()}`,
+    createDevicePickerUI(devices, 'ios', iosDeviceType)
+  );
+
+  return addUIResourceToResponse(textResponse, uiResource);
 }
 
 /**

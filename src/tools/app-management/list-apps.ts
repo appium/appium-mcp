@@ -1,6 +1,11 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
 import { getDriver, getPlatformName } from '../../session-store.js';
+import {
+  createUIResource,
+  createAppListUI,
+  addUIResourceToResponse,
+} from '../../ui/mcp-ui-utils.js';
 
 async function listAppsFromDevice(): Promise<any[]> {
   const driver = await getDriver();
@@ -42,7 +47,7 @@ export default function listApps(server: FastMCP): void {
     execute: async () => {
       try {
         const apps = await listAppsFromDevice();
-        return {
+        const textResponse = {
           content: [
             {
               type: 'text',
@@ -50,6 +55,14 @@ export default function listApps(server: FastMCP): void {
             },
           ],
         };
+
+        // Add interactive app list UI
+        const uiResource = createUIResource(
+          `ui://appium-mcp/app-list/${Date.now()}`,
+          createAppListUI(apps)
+        );
+
+        return addUIResourceToResponse(textResponse, uiResource);
       } catch (err: any) {
         return {
           content: [

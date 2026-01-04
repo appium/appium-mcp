@@ -13,6 +13,11 @@ import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
 import log from '../../logger.js';
+import {
+  createUIResource,
+  createLocatorGeneratorUI,
+  addUIResourceToResponse,
+} from '../../ui/mcp-ui-utils.js';
 
 export default function generateLocators(server: any): void {
   server.addTool({
@@ -56,7 +61,8 @@ export default function generateLocators(server: any): void {
               fetchableOnly: true,
             }
           );
-          return {
+
+          const textResponse = {
             content: [
               {
                 type: 'text',
@@ -69,6 +75,14 @@ export default function generateLocators(server: any): void {
               },
             ],
           };
+
+          // Add interactive locator generator UI
+          const uiResource = createUIResource(
+            `ui://appium-mcp/locator-generator/${Date.now()}`,
+            createLocatorGeneratorUI(interactableElements)
+          );
+
+          return addUIResourceToResponse(textResponse, uiResource);
         } catch (parseError: any) {
           log.error('Error parsing XML:', parseError);
           throw new Error(`Failed to parse XML: ${parseError.message}`);
