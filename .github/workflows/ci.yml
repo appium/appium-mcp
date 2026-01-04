@@ -21,8 +21,12 @@ jobs:
           node-version: 'lts/*'
           cache: 'npm'
 
+      - uses: SocketDev/action@v1
+        with:
+          mode: firewall-free
+
       - name: Install dependencies
-        run: npm install --no-package-lock --force
+        run: sfw npm install --no-package-lock --force
 
       - name: List installed packages
         run: npm list --depth=0
