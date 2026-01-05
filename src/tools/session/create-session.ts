@@ -257,7 +257,9 @@ export default function createSession(server: any): void {
 
         // Safely convert sessionId to string for display
         const sessionIdStr =
-          typeof sessionId === 'string' ? sessionId : String(sessionId || 'Unknown');
+          typeof sessionId === 'string'
+            ? sessionId
+            : String(sessionId || 'Unknown');
 
         log.info(
           `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}`
