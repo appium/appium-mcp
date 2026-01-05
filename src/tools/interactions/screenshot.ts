@@ -2,6 +2,11 @@ import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { getDriver } from '../../session-store.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, isAbsolute } from 'path';
+import {
+  createUIResource,
+  createScreenshotViewerUI,
+  addUIResourceToResponse,
+} from '../../ui/mcp-ui-utils.js';
 
 /**
  * Resolves the screenshot directory path.
@@ -66,7 +71,7 @@ export async function executeScreenshot(
     // Save screenshot to disk
     await deps.writeFile(filepath, screenshotBuffer);
 
-    return {
+    const textResponse = {
       content: [
         {
           type: 'text',
@@ -74,6 +79,14 @@ export async function executeScreenshot(
         },
       ],
     };
+
+    // Add interactive screenshot viewer UI
+    const uiResource = createUIResource(
+      `ui://appium-mcp/screenshot-viewer/${Date.now()}`,
+      createScreenshotViewerUI(screenshotBase64, filepath)
+    );
+
+    return addUIResourceToResponse(textResponse, uiResource);
   } catch (err: any) {
     return {
       content: [

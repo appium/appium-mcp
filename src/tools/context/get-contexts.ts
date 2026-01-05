@@ -1,6 +1,11 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
+import {
+  createUIResource,
+  createContextSwitcherUI,
+  addUIResourceToResponse,
+} from '../../ui/mcp-ui-utils.js';
 
 export default function getContexts(server: FastMCP): void {
   server.addTool({
@@ -35,7 +40,7 @@ export default function getContexts(server: FastMCP): void {
           };
         }
 
-        return {
+        const textResponse = {
           content: [
             {
               type: 'text',
@@ -43,6 +48,14 @@ export default function getContexts(server: FastMCP): void {
             },
           ],
         };
+
+        // Add interactive context switcher UI
+        const uiResource = createUIResource(
+          `ui://appium-mcp/context-switcher/${Date.now()}`,
+          createContextSwitcherUI(contexts, currentContext)
+        );
+
+        return addUIResourceToResponse(textResponse, uiResource);
       } catch (err: any) {
         return {
           content: [

@@ -1,6 +1,11 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
+import {
+  createUIResource,
+  createPageSourceInspectorUI,
+  addUIResourceToResponse,
+} from '../../ui/mcp-ui-utils.js';
 
 export default function getPageSource(server: FastMCP): void {
   server.addTool({
@@ -24,7 +29,7 @@ export default function getPageSource(server: FastMCP): void {
           throw new Error('Page source is empty or null');
         }
 
-        return {
+        const textResponse = {
           content: [
             {
               type: 'text',
@@ -36,6 +41,14 @@ export default function getPageSource(server: FastMCP): void {
             },
           ],
         };
+
+        // Add interactive page source inspector UI
+        const uiResource = createUIResource(
+          `ui://appium-mcp/page-source-inspector/${Date.now()}`,
+          createPageSourceInspectorUI(pageSource)
+        );
+
+        return addUIResourceToResponse(textResponse, uiResource);
       } catch (err: any) {
         return {
           content: [
