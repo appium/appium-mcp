@@ -36,12 +36,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         name: Release
       # MCP publishing
-      - name: Update server.json version to match package.json
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > tmp && mv tmp server.json
-          echo "Updated server.json version to $VERSION"
-
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
