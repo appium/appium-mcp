@@ -7,6 +7,7 @@ import {
   jest,
 } from '@jest/globals';
 import { join, isAbsolute } from 'path';
+import * as os from 'os';
 
 /**
  * Local implementation of resolveScreenshotDir for testing.
@@ -17,7 +18,7 @@ function resolveScreenshotDir(): string {
   const screenshotDir = process.env.SCREENSHOTS_DIR;
 
   if (!screenshotDir) {
-    return process.cwd();
+    return os.tmpdir();
   }
 
   if (isAbsolute(screenshotDir)) {
@@ -95,15 +96,15 @@ describe('resolveScreenshotDir', () => {
     }
   });
 
-  test('should return process.cwd() when SCREENSHOTS_DIR is not set', () => {
+  test('should return os.tmpdir() when SCREENSHOTS_DIR is not set', () => {
     const result = resolveScreenshotDir();
-    expect(result).toBe(cwd);
+    expect(result).toBe(os.tmpdir());
   });
 
-  test('should return process.cwd() when SCREENSHOTS_DIR is empty string', () => {
+  test('should return os.tmpdir() when SCREENSHOTS_DIR is empty string', () => {
     process.env.SCREENSHOTS_DIR = '';
     const result = resolveScreenshotDir();
-    expect(result).toBe(cwd);
+    expect(result).toBe(os.tmpdir());
   });
 
   test('should return absolute path as-is when SCREENSHOTS_DIR is absolute', () => {
