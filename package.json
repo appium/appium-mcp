@@ -33,7 +33,7 @@
     "index-docs": "node dist/scripts/simple-index-documentation.js",
     "query-docs": "node dist/scripts/simple-query-documentation.js",
     "sync-version": "node scripts/sync-version.mjs",
-    "prepublish": "npm run sync-version && npm run build"
+    "prepare": "npm run sync-version && npm run build"
   },
   "author": "",
   "license": "Apache-2.0",
