@@ -1,5 +1,5 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.appium/appium-mcp",
   "title": "MCP Appium - Mobile Development and Automation Server",
   "description": "MCP server for Appium mobile automation on iOS and Android devices with test creation tools.",
