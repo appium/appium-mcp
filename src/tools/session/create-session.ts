@@ -218,6 +218,9 @@ export default function createSession(server: any): void {
         .object({})
         .optional()
         .describe('Optional custom capabilities for the session (W3C format).'),
+      remote_server_url: z.string().optional().describe(
+        'Remote server url to send a new session request to.',
+      )
     }),
     annotations: {
       readOnlyHint: false,
@@ -232,7 +235,13 @@ export default function createSession(server: any): void {
           await safeDeleteSession();
         }
 
-        const { platform, capabilities: customCapabilities } = args;
+        const { platform, capabilities: customCapabilities, remote_server_url} = args;
+
+        if (remote_server_url) {
+          log.info(`Given remote url is ${remote_server_url}`);
+        } else {
+          log.info(`No remote url was provided.`);
+        }
 
         const configCapabilities = await loadCapabilitiesConfig();
         const platformCaps =
