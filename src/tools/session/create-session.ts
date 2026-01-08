@@ -208,6 +208,15 @@ export default function createSession(server: any): void {
     description: `Create a new mobile session with Android or iOS device.
       MUST use select_platform tool first to ask the user which platform they want.
       DO NOT assume or default to any platform.
+
+      CRITICAL INSTRUCTION FOR remote_server_url PARAMETER:
+      - If user mentions ANY URL, server address, or host (e.g., "http://localhost:4723", "192.168.1.100:4723", "appium.example.com:4723"), ALWAYS extract it
+      - Look for patterns: "http://", "localhost:", any IP:port, domain names with ports
+      - Examples that should extract remote_server_url:
+        * "start session with http://localhost:4723"
+        * "connect to remote server at 192.168.1.100:4723"
+        * "use appium server http://example.com:4723"
+      - If no URL mentioned, leave remote_server_url empty/undefined
       `,
     parameters: z.object({
       platform: z.enum(['ios', 'android']).describe(
@@ -219,7 +228,7 @@ export default function createSession(server: any): void {
         .optional()
         .describe('Optional custom capabilities for the session (W3C format).'),
       remote_server_url: z.string().optional().describe(
-        'Remote server url to send a new session request to.',
+        'The full remote Appium server URL. Extract from user input if they mention any server address, URL, or host.',
       )
     }),
     annotations: {
@@ -236,6 +245,8 @@ export default function createSession(server: any): void {
         }
 
         const { platform, capabilities: customCapabilities, remote_server_url} = args;
+
+        log.info(`Given arguments: ${JSON.stringify(args)}`);
 
         if (remote_server_url) {
           log.info(`Given remote url is ${remote_server_url}`);
