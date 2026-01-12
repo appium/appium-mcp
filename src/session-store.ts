@@ -1,5 +1,6 @@
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
+import type { Client } from 'webdriver';
 import log from './logger.js';
 
 let driver: any = null;
@@ -11,7 +12,28 @@ export const PLATFORM = {
   ios: 'iOS',
 };
 
-export function setSession(d: any, id: string | null) {
+/**
+ * Determine whether the provided driver represents a remote driver session.
+ *
+ * This checks for the presence of a string-valued `sessionId` property on the
+ * driver object, which indicates a remote/WebDriver session.
+ *
+ * @param driver - The driver instance to inspect (may be a Client, AndroidUiautomator2Driver, XCUITestDriver, or null).
+ * @returns `true` if `driver` is non-null and has a string `sessionId`; otherwise `false`.
+ */
+export function isRemoteDriverSession(
+  driver: Client | AndroidUiautomator2Driver | XCUITestDriver | null
+): boolean {
+  if (driver) {
+    return typeof (driver as any).sessionId === 'string';
+  }
+  return false;
+}
+
+export function setSession(
+  d: Client | AndroidUiautomator2Driver | XCUITestDriver,
+  id: string | null
+) {
   driver = d;
   sessionId = id;
   // Reset deletion flag when setting a new session
@@ -20,7 +42,10 @@ export function setSession(d: any, id: string | null) {
   }
 }
 
-export function getDriver() {
+export function getDriver():
+  | Client
+  | AndroidUiautomator2Driver
+  | XCUITestDriver {
   return driver;
 }
 
@@ -74,5 +99,12 @@ export async function safeDeleteSession(): Promise<boolean> {
 export const getPlatformName = (driver: any): string => {
   if (driver instanceof AndroidUiautomator2Driver) return PLATFORM.android;
   if (driver instanceof XCUITestDriver) return PLATFORM.ios;
+
+  if ((driver as Client).isAndroid) {
+    return PLATFORM.android;
+  } else if ((driver as Client).isIOS) {
+    return PLATFORM.ios;
+  }
+
   throw new Error('Unknown driver type');
 };

@@ -1,6 +1,11 @@
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../../session-store.js';
+import {
+  getDriver,
+  getPlatformName,
+  isRemoteDriverSession,
+} from '../../session-store.js';
 import log from '../../logger.js';
+import type { Client } from 'webdriver';
 
 export default function scroll(server: any): void {
   server.addTool({
@@ -25,7 +30,7 @@ export default function scroll(server: any): void {
       }
 
       try {
-        const { width, height } = await driver.getWindowSize();
+        const { width, height } = await (driver as any).getWindowSize();
         log.info('Device screen size:', { width, height });
         const startX = Math.floor(width / 2);
         // calculate start and end Y positions for scrolling depending on the direction
@@ -47,7 +52,7 @@ export default function scroll(server: any): void {
         log.info('Going to scroll to:', { startX, endY });
 
         if (getPlatformName(driver) === 'Android') {
-          await driver.performActions([
+          await (driver as any).performActions([
             {
               type: 'pointer',
               id: 'finger1',
@@ -63,13 +68,23 @@ export default function scroll(server: any): void {
           ]);
           log.info('Scroll action completed successfully.');
         } else if (getPlatformName(driver) === 'iOS') {
-          await driver.execute('mobile: scroll', {
-            direction: args.direction,
-            startX: startX,
-            startY: startY,
-            endX: startX,
-            endY: endY,
-          });
+          const _ok = isRemoteDriverSession(driver)
+            ? await (driver as Client).executeScript('mobile: scroll', [
+                {
+                  direction: args.direction,
+                  startX: startX,
+                  startY: startY,
+                  endX: startX,
+                  endY: endY,
+                },
+              ])
+            : await (driver as any).execute('mobile: scroll', {
+                direction: args.direction,
+                startX: startX,
+                startY: startY,
+                endX: startX,
+                endY: endY,
+              });
         } else {
           throw new Error(
             `Unsupported platform: ${getPlatformName(driver)}. Only Android and iOS are supported.`

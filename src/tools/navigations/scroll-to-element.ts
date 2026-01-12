@@ -133,7 +133,7 @@ export default function scrollToElement(server: any): void {
 
         // First try to find the element directly (it might already be in viewport)
         try {
-          const element = await driver.findElement(
+          const element = await (driver as any).findElement(
             args.strategy,
             args.selector
           );
@@ -160,7 +160,7 @@ export default function scrollToElement(server: any): void {
               );
           }
 
-          const element = await driver.findElement(
+          const element = await (driver as any).findElement(
             args.strategy,
             args.selector
           );

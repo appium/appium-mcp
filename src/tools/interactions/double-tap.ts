@@ -1,7 +1,12 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../../session-store.js';
+import {
+  getDriver,
+  getPlatformName,
+  isRemoteDriverSession,
+} from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
+import type { Client } from 'webdriver';
 
 export default function doubleTap(server: FastMCP): void {
   const doubleTapActionSchema = z.object({
@@ -27,7 +32,9 @@ export default function doubleTap(server: FastMCP): void {
 
         if (platform === 'Android') {
           // Get element location for Android double tap
-          const element = await driver.findElement('id', args.elementUUID);
+          const element = isRemoteDriverSession(driver)
+            ? await (driver as Client).findElement('id', args.elementUUID)
+            : await (driver as any).findElement('id', args.elementUUID);
           const location = await element.getLocation();
           const size = await element.getSize();
 
@@ -36,7 +43,7 @@ export default function doubleTap(server: FastMCP): void {
           const y = location.y + size.height / 2;
 
           // Perform double tap using performActions
-          await driver.performActions([
+          await (driver as any).performActions([
             {
               type: 'pointer',
               id: 'finger1',
@@ -55,9 +62,13 @@ export default function doubleTap(server: FastMCP): void {
           ]);
         } else if (platform === 'iOS') {
           // Use iOS mobile: doubleTap execute method
-          await driver.execute('mobile: doubleTap', [
-            { elementId: args.elementUUID },
-          ]);
+          const _ok = isRemoteDriverSession(driver)
+            ? await (driver as Client).executeScript('mobile: doubleTap', [
+                { elementId: args.elementUUID },
+              ])
+            : await (driver as any).execute('mobile: doubleTap', [
+                { elementId: args.elementUUID },
+              ]);
         } else {
           throw new Error(
             `Unsupported platform: ${platform}. Only Android and iOS are supported.`

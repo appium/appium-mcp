@@ -1,6 +1,11 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import {
+  getDriver,
+  getPlatformName,
+  isRemoteDriverSession,
+  PLATFORM,
+} from '../../session-store.js';
 
 export default function switchContext(server: FastMCP): void {
   const schema = z.object({
@@ -26,10 +31,16 @@ export default function switchContext(server: FastMCP): void {
         throw new Error('No driver found. Please create a session first.');
       }
 
+      if (isRemoteDriverSession(driver)) {
+        throw new Error(
+          'Get context is not yet implemented for the remote driver'
+        );
+      }
+
       try {
         const [currentContext, availableContexts] = await Promise.all([
-          driver.getCurrentContext().catch(() => null),
-          driver.getContexts().catch(() => []),
+          (driver as any).getCurrentContext().catch(() => null),
+          (driver as any).getContexts().catch(() => []),
         ]);
 
         if (currentContext === args.context) {
@@ -66,10 +77,10 @@ export default function switchContext(server: FastMCP): void {
             isError: true,
           };
         }
-        await driver.switchContext(args.context);
+        await (driver as any).switchContext(args.context);
 
         // Verify the switch was successful
-        const newContext = await driver.getCurrentContext();
+        const newContext = await (driver as any).getCurrentContext();
 
         return {
           content: [

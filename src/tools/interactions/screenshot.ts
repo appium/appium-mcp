@@ -1,5 +1,5 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
-import { getDriver } from '../../session-store.js';
+import { getDriver, isRemoteDriverSession } from '../../session-store.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, isAbsolute } from 'path';
 import {
@@ -31,15 +31,6 @@ export function resolveScreenshotDir(): string {
   return join(process.cwd(), screenshotDir);
 }
 
-function isWebDriver(
-  driver: Client | AndroidUiautomator2Driver | XCUITestDriver | null
-): boolean {
-  if (driver) {
-    return typeof (driver as any).sessionId === 'string';
-  }
-  return false;
-}
-
 export interface ScreenshotDeps {
   getDriver: () => Client | AndroidUiautomator2Driver | XCUITestDriver | null;
   writeFile: typeof writeFile;
@@ -65,7 +56,7 @@ export async function executeScreenshot(
   }
 
   try {
-    const screenshotBase64 = isWebDriver(driver)
+    const screenshotBase64 = isRemoteDriverSession(driver)
       ? await (driver as Client).takeScreenshot()
       : await (driver as any).getScreenshot();
 

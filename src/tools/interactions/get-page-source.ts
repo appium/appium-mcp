@@ -23,7 +23,7 @@ export default function getPageSource(server: FastMCP): void {
       }
 
       try {
-        const pageSource = await driver.getPageSource();
+        const pageSource = await (driver as any).getPageSource();
 
         if (!pageSource) {
           throw new Error('Page source is empty or null');

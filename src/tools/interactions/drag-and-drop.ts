@@ -1,7 +1,12 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../../session-store.js';
+import {
+  getDriver,
+  getPlatformName,
+  isRemoteDriverSession,
+} from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
+import type { Client } from 'webdriver';
 
 const DROP_PAUSE_DURATION_MS = 150;
 
@@ -108,13 +113,13 @@ export default function dragAndDrop(server: FastMCP): void {
       1. Long press (default 600ms, configurable) on the source to initiate drag mode
       2. While holding, drag to the target location
       3. Release at the target to complete the drop
-      
+
       Supports four modes:
       1. Element to Element: Drag from one element to another element
       2. Element to Coordinates: Drag from an element to specific coordinates
       3. Coordinates to Element: Drag from coordinates to an element
       4. Coordinates to Coordinates: Drag from coordinates to coordinates
-      
+
       This is useful for reordering lists, moving items, drag-to-delete, and other drag interactions.`,
     parameters: dragAndDropSchema,
     annotations: {
@@ -154,7 +159,9 @@ export default function dragAndDrop(server: FastMCP): void {
         let endX: number, endY: number;
 
         if (args.sourceElementUUID) {
-          const rect = await driver.getElementRect(args.sourceElementUUID);
+          const rect = await (driver as any).getElementRect(
+            args.sourceElementUUID
+          );
           startX = Math.floor(rect.x + rect.width / 2);
           startY = Math.floor(rect.y + rect.height / 2);
         } else {
@@ -163,7 +170,9 @@ export default function dragAndDrop(server: FastMCP): void {
         }
 
         if (args.targetElementUUID) {
-          const rect = await driver.getElementRect(args.targetElementUUID);
+          const rect = await (driver as any).getElementRect(
+            args.targetElementUUID
+          );
           endX = Math.floor(rect.x + rect.width / 2);
           endY = Math.floor(rect.y + rect.height / 2);
         } else {
@@ -171,7 +180,7 @@ export default function dragAndDrop(server: FastMCP): void {
           endY = args.targetY;
         }
 
-        const { width, height } = await driver.getWindowSize();
+        const { width, height } = await (driver as any).getWindowSize();
         if (startX < 0 || startX >= width || startY < 0 || startY >= height) {
           throw new Error(
             `Source coordinates (${startX}, ${startY}) are out of screen bounds (${width}x${height})`

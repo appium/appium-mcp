@@ -1,7 +1,12 @@
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../../session-store.js';
+import {
+  getDriver,
+  getPlatformName,
+  isRemoteDriverSession,
+} from '../../session-store.js';
 import log from '../../logger.js';
 import { elementUUIDScheme } from '../../schema.js';
+import type { Client } from 'webdriver';
 
 function calculateSwipeCoordinates(
   direction: 'left' | 'right' | 'up' | 'down',
@@ -227,7 +232,7 @@ export default function swipe(server: any): void {
               endY,
             });
           } else {
-            const { width, height } = await driver.getWindowSize();
+            const { width, height } = await (driver as any).getWindowSize();
             log.info('Device screen size:', { width, height });
             const coords = calculateSwipeCoordinates(
               args.direction,
@@ -268,7 +273,7 @@ export default function swipe(server: any): void {
         if (platform === 'Android') {
           if (startX !== endX && Math.abs(startY - endY) < 50) {
             const swipeDuration = Math.min(duration, 400);
-            await driver.performActions([
+            await (driver as any).performActions([
               {
                 type: 'pointer',
                 id: 'finger1',
@@ -303,9 +308,15 @@ export default function swipe(server: any): void {
         } else if (platform === 'iOS') {
           if (args.direction) {
             try {
-              await driver.execute('mobile: swipe', {
-                direction: args.direction,
-              });
+              const _ok = isRemoteDriverSession(driver)
+                ? await (driver as Client).executeScript('mobile: swipe', [
+                    {
+                      direction: args.direction,
+                    },
+                  ])
+                : await (driver as any).execute('mobile: swipe', {
+                    direction: args.direction,
+                  });
               log.info(
                 `iOS swipe completed using mobile: swipe (${args.direction})`
               );

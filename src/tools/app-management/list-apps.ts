@@ -1,11 +1,16 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../../session-store.js';
+import {
+  getDriver,
+  getPlatformName,
+  isRemoteDriverSession,
+} from '../../session-store.js';
 import {
   createUIResource,
   createAppListUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 
 async function listAppsFromDevice(): Promise<any[]> {
   const driver = await getDriver();
@@ -13,12 +18,16 @@ async function listAppsFromDevice(): Promise<any[]> {
     throw new Error('No driver found');
   }
 
+  if (isRemoteDriverSession(driver)) {
+    throw new Error('listApps is not yet implemented for the remote driver');
+  }
+
   const platform = getPlatformName(driver);
   if (platform === 'iOS') {
     throw new Error('listApps is not yet implemented for iOS');
   }
 
-  const appPackages = await driver.adb.adbExec([
+  const appPackages = await (driver as AndroidUiautomator2Driver).adb.adbExec([
     'shell',
     'cmd',
     'package',

@@ -1,7 +1,8 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
+import { getDriver, isRemoteDriverSession } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
+import type { Client } from 'webdriver';
 
 export default function generateTest(server: FastMCP): void {
   const clickActionSchema = z.object({
@@ -23,7 +24,9 @@ export default function generateTest(server: FastMCP): void {
       }
 
       try {
-        await driver.click(args.elementUUID);
+        const _ok = isRemoteDriverSession(driver)
+          ? await (driver as Client).elementClick(args.elementUUID)
+          : await (driver as any).click(args.elementUUID);
         return {
           content: [
             {

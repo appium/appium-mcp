@@ -1,6 +1,11 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../../session-store.js';
+import {
+  getDriver,
+  getPlatformName,
+  isRemoteDriverSession,
+} from '../../session-store.js';
+import type { Client } from 'webdriver';
 
 export default function terminateApp(server: FastMCP): void {
   const schema = z.object({
@@ -23,7 +28,11 @@ export default function terminateApp(server: FastMCP): void {
         const platform = getPlatformName(driver);
         const params =
           platform === 'Android' ? { appId: id } : { bundleId: id };
-        await (driver as any).execute('mobile: terminateApp', params);
+        const _ok = isRemoteDriverSession(driver)
+          ? await (driver as Client).executeScript('mobile: terminateApp', [
+              params,
+            ])
+          : await (driver as any).execute('mobile: terminateApp', params);
         return {
           content: [
             {

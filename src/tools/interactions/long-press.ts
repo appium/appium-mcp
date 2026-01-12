@@ -1,7 +1,12 @@
 import { FastMCP } from 'fastmcp/dist/FastMCP.js';
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../../session-store.js';
+import {
+  getDriver,
+  getPlatformName,
+  isRemoteDriverSession,
+} from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
+import type { Client } from 'webdriver';
 
 export default function longPress(server: FastMCP): void {
   const longPressSchema = z.object({
@@ -37,11 +42,11 @@ export default function longPress(server: FastMCP): void {
         const duration = args.duration || 2000;
 
         if (platform === 'Android') {
-          const rect = await driver.getElementRect(args.elementUUID);
+          const rect = await (driver as any).getElementRect(args.elementUUID);
           const x = Math.floor(rect.x + rect.width / 2);
           const y = Math.floor(rect.y + rect.height / 2);
 
-          await driver.performActions([
+          await (driver as any).performActions([
             {
               type: 'pointer',
               id: 'finger1',
@@ -56,16 +61,23 @@ export default function longPress(server: FastMCP): void {
           ]);
         } else if (platform === 'iOS') {
           try {
-            await driver.execute('mobile: touchAndHold', {
-              elementId: args.elementUUID,
-              duration: duration / 1000,
-            });
+            const _ok = isRemoteDriverSession(driver)
+              ? await (driver as Client).executeScript('mobile: touchAndHold', [
+                  {
+                    elementId: args.elementUUID,
+                    duration: duration / 1000,
+                  },
+                ])
+              : await (driver as any).execute('mobile: touchAndHold', {
+                  elementId: args.elementUUID,
+                  duration: duration / 1000,
+                });
           } catch (touchAndHoldError) {
-            const rect = await driver.getElementRect(args.elementUUID);
+            const rect = await (driver as any).getElementRect(args.elementUUID);
             const x = Math.floor(rect.x + rect.width / 2);
             const y = Math.floor(rect.y + rect.height / 2);
 
-            await driver.performActions([
+            await (driver as any).performActions([
               {
                 type: 'pointer',
                 id: 'finger1',

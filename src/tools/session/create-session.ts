@@ -281,12 +281,6 @@ export default function createSession(server: any): void {
           remoteServerUrl,
         } = args;
 
-        if (remoteServerUrl) {
-          log.info(`Given remote url is ${remoteServerUrl}`);
-        } else {
-          log.info(`No remote url was provided.`);
-        }
-
         const configCapabilities = await loadCapabilitiesConfig();
         const platformCaps =
           platform === 'android'
