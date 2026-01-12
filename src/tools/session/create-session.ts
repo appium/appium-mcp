@@ -24,6 +24,7 @@ import {
   createSessionDashboardUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import WebDriver from 'webdriver';
 
 // Define capabilities type
 interface Capabilities {
@@ -208,7 +209,7 @@ export default function createSession(server: any): void {
     description: `Create a new mobile session with Android or iOS device.
       MUST use select_platform tool first to ask the user which platform they want.
       DO NOT assume or default to any platform.
-      If the user mentions connecting to a REMOTE Appium server (e.g., a specific URL or host), include the remote_server_url parameter.
+      If the user mentions connecting to a REMOTE Appium server (e.g., a specific URL or host), include the remoteServerUrl parameter.
       `,
     parameters: z.object({
       platform: z.enum(['ios', 'android']).describe(
@@ -219,7 +220,7 @@ export default function createSession(server: any): void {
         .object({})
         .optional()
         .describe('Optional custom capabilities for the session (W3C format).'),
-      remote_server_url: z.string().optional().describe(
+      remoteServerUrl: z.string().optional().describe(
         'Remote Appium server URL (e.g., http://localhost:4723 or http://192.168.1.100:4723). If not provided, uses local Appium server.',
       )
     }),
@@ -236,10 +237,10 @@ export default function createSession(server: any): void {
           await safeDeleteSession();
         }
 
-        const { platform, capabilities: customCapabilities, remote_server_url} = args;
+        const { platform, capabilities: customCapabilities, remoteServerUrl} = args;
 
-        if (remote_server_url) {
-          log.info(`Given remote url is ${remote_server_url}`);
+        if (remoteServerUrl) {
+          log.info(`Given remote url is ${remoteServerUrl}`);
         } else {
           log.info(`No remote url was provided.`);
         }
@@ -255,15 +256,28 @@ export default function createSession(server: any): void {
             ? buildAndroidCapabilities(platformCaps, customCapabilities)
             : await buildIOSCapabilities(platformCaps, customCapabilities);
 
-        const driver = createDriverForPlatform(platform);
-
         log.info(
           `Creating new ${platform.toUpperCase()} session with capabilities:`,
           JSON.stringify(finalCapabilities, null, 2)
         );
 
-        const sessionId = await createDriverSession(driver, finalCapabilities);
-        setSession(driver, sessionId);
+        let sessionId;
+        if (remoteServerUrl) {
+          const remoteUrl = new URL(remoteServerUrl);
+          const client = await WebDriver.newSession({
+            protocol: remoteUrl.protocol,
+            hostname: remoteUrl.hostname,
+            port: parseInt(remoteUrl.port, 10),
+            path: remoteUrl.pathname,
+            capabilities: finalCapabilities
+          })
+          sessionId = client.sessionId;
+          setSession(client, client.sessionId);
+        } else {
+          const driver = createDriverForPlatform(platform);
+          sessionId = await createDriverSession(driver, finalCapabilities);
+          setSession(driver, sessionId);
+        }
 
         // Safely convert sessionId to string for display
         const sessionIdStr =

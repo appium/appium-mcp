@@ -58,7 +58,8 @@
     "node-simctl": "^8.0.4",
     "rimraf": "^6.0.1",
     "xpath": "^0.0.34",
-    "zod": "^3.24.3"
+    "zod": "^3.24.3",
+    "webdriver": "^9.23.0"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
