@@ -40,7 +40,16 @@ export default function deleteSession(server: any): void {
         }
       } catch (error: any) {
         log.error(`Error deleting session`, error);
-        throw new Error(`Failed to delete session: ${error.message}`);
+        // don't need to raise an error since session end means anyway we should create a new session
+        // to proceed further requests.
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Session delete might fail as error ${error}`,
+            },
+          ],
+        };
       }
     },
   });

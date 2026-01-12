@@ -2,8 +2,9 @@
  * Tool to create a new mobile session (Android or iOS)
  */
 import { z } from 'zod';
-import { access, readFile } from 'fs/promises';
-import { constants } from 'fs';
+import { access, readFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { URL } from 'node:url';
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
 import {
@@ -203,6 +204,36 @@ async function createDriverSession(
   return sessionId;
 }
 
+/**
+ * Registers a tool for creating a new mobile session with Android or iOS devices.
+ *
+ * This function adds a 'create_session' tool to the provided server that handles
+ * mobile session creation with support for both local and remote Appium servers.
+ *
+ * @param server - The server instance to which the create_session tool will be added
+ *
+ * @tool create_session
+ * @description Creates a new mobile session with Android or iOS device. Requires prior
+ * platform selection via the select_platform tool. Supports both local and remote
+ * Appium server connections.
+ *
+ * @param {Object} args - Tool execution arguments
+ * @param {'ios' | 'android'} args.platform - REQUIRED. The target platform, must match
+ * the platform explicitly selected via select_platform tool
+ * @param {Object} [args.capabilities] - Optional custom W3C format capabilities
+ * @param {string} [args.remoteServerUrl] - Optional remote Appium server URL
+ * (e.g., http://localhost:4723). If not provided, uses local Appium server
+ *
+ * @returns {Promise<Object>} Response object containing:
+ * - text: Success message with session ID and device details
+ * - ui: Interactive session dashboard UI component
+ *
+ * @throws {Error} If session creation fails or platform capabilities cannot be loaded
+ *
+ * @example
+ * // Register the tool
+ * createSession(server);
+ */
 export default function createSession(server: any): void {
   server.addTool({
     name: 'create_session',
@@ -220,9 +251,12 @@ export default function createSession(server: any): void {
         .object({})
         .optional()
         .describe('Optional custom capabilities for the session (W3C format).'),
-      remoteServerUrl: z.string().optional().describe(
-        'Remote Appium server URL (e.g., http://localhost:4723 or http://192.168.1.100:4723). If not provided, uses local Appium server.',
-      )
+      remoteServerUrl: z
+        .string()
+        .optional()
+        .describe(
+          'Remote Appium server URL (e.g., http://localhost:4723 or http://192.168.1.100:4723). If not provided, uses local Appium server.'
+        ),
     }),
     annotations: {
       readOnlyHint: false,
@@ -234,10 +268,18 @@ export default function createSession(server: any): void {
           log.info(
             'Existing session detected, cleaning up before creating new session...'
           );
-          await safeDeleteSession();
+          try {
+            await safeDeleteSession();
+          } catch {
+            // ok to ignore
+          }
         }
 
-        const { platform, capabilities: customCapabilities, remoteServerUrl} = args;
+        const {
+          platform,
+          capabilities: customCapabilities,
+          remoteServerUrl,
+        } = args;
 
         if (remoteServerUrl) {
           log.info(`Given remote url is ${remoteServerUrl}`);
@@ -265,12 +307,12 @@ export default function createSession(server: any): void {
         if (remoteServerUrl) {
           const remoteUrl = new URL(remoteServerUrl);
           const client = await WebDriver.newSession({
-            protocol: remoteUrl.protocol,
+            protocol: remoteUrl.protocol.replace(':', ''),
             hostname: remoteUrl.hostname,
             port: parseInt(remoteUrl.port, 10),
             path: remoteUrl.pathname,
-            capabilities: finalCapabilities
-          })
+            capabilities: finalCapabilities,
+          });
           sessionId = client.sessionId;
           setSession(client, client.sessionId);
         } else {

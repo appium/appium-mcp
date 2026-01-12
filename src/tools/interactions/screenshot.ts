@@ -7,6 +7,9 @@ import {
   createScreenshotViewerUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import type { Client } from 'webdriver';
+import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 
 /**
  * Resolves the screenshot directory path.
@@ -28,8 +31,17 @@ export function resolveScreenshotDir(): string {
   return join(process.cwd(), screenshotDir);
 }
 
+function isWebDriver(
+  driver: Client | AndroidUiautomator2Driver | XCUITestDriver | null
+): boolean {
+  if (driver) {
+    return typeof (driver as any).sessionId === 'string';
+  }
+  return false;
+}
+
 export interface ScreenshotDeps {
-  getDriver: () => { getScreenshot: () => Promise<string> } | null;
+  getDriver: () => Client | AndroidUiautomator2Driver | XCUITestDriver | null;
   writeFile: typeof writeFile;
   mkdir: typeof mkdir;
   resolveScreenshotDir: typeof resolveScreenshotDir;
@@ -53,7 +65,9 @@ export async function executeScreenshot(
   }
 
   try {
-    const screenshotBase64 = await driver.getScreenshot();
+    const screenshotBase64 = isWebDriver(driver)
+      ? await (driver as Client).takeScreenshot()
+      : await (driver as any).getScreenshot();
 
     // Convert base64 to buffer
     const screenshotBuffer = Buffer.from(screenshotBase64, 'base64');
