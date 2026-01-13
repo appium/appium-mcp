@@ -22,7 +22,7 @@ export default function activateApp(server: FastMCP): void {
       }
 
       try {
-        await driver.activateApp(args.id);
+        await (driver as any).activateApp(args.id);
         return {
           content: [
             {

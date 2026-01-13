@@ -195,10 +195,17 @@ async function handleIOSPlatformSelection(
 export default function selectPlatform(server: any): void {
   server.addTool({
     name: 'select_platform',
-    description: `REQUIRED: First ASK THE USER which mobile platform they want to use (Android or iOS) before creating a session.
-      DO NOT assume or default to any platform.
-      You MUST explicitly prompt the user to choose between Android or iOS.
-      This is mandatory before proceeding to use the create_session tool.
+    description: `Select the mobile platform for LOCAL Appium servers ONLY.
+      DO NOT use this tool if the user mentions a REMOTE Appium server URL (e.g., http://localhost:4723, http://192.168.1.100:4723, or any other server address).
+      WORKFLOW FOR LOCAL SERVERS:
+      1. First, ASK THE USER which mobile platform they want to use (Android or iOS)
+      2. You MUST explicitly prompt the user to choose between Android or iOS
+      3. DO NOT assume or default to any platform
+      4. After platform selection, available devices will be listed
+      5. If multiple devices are available, use select_device to let the user choose
+      6. After device selection, proceed to create_session
+      WORKFLOW FOR REMOTE SERVERS:
+      If user provides a remote server URL, SKIP this tool entirely. Instead, infer the platform and device type from the user's request (e.g., 'ios xcuitest driver with iphone 17 simulator' means platform='ios') and call create_session directly with the remoteServerUrl parameter.
       `,
     parameters: z.object({
       platform: z
@@ -210,7 +217,7 @@ export default function selectPlatform(server: any): void {
         .enum(['simulator', 'real'])
         .optional()
         .describe(
-          "For iOS only: Specify whether to use 'simulator' or 'real' device. REQUIRED when platform is 'ios'."
+          "For iOS only: Specify whether to use 'simulator' (iOS Simulator on macOS) or 'real' (physical iOS device). REQUIRED when platform is 'ios'."
         ),
     }),
     annotations: {

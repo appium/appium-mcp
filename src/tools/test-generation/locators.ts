@@ -10,7 +10,7 @@
  * For detailed documentation on adding tools, see docs/CONTRIBUTING.md
  */
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
+import { getDriver, isRemoteDriverSession } from '../../session-store.js';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
 import log from '../../logger.js';
 import {
@@ -18,6 +18,7 @@ import {
   createLocatorGeneratorUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import type { Client } from 'webdriver';
 
 export default function generateLocators(server: any): void {
   server.addTool({
@@ -42,8 +43,10 @@ export default function generateLocators(server: any): void {
 
         try {
           // Get the page source from the driver
-          const pageSource = await driver.getPageSource();
-          const driverName = (await driver.caps.automationName).toLowerCase();
+          const pageSource = await (driver as any).getPageSource();
+          const driverName = isRemoteDriverSession(driver)
+            ? (driver as Client).capabilities['appium:automationName']?.toLowerCase()
+            : (await (driver as any).caps.automationName).toLowerCase();
           if (!pageSource) {
             throw new Error('Page source is empty or null');
           }

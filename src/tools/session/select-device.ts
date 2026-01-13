@@ -269,10 +269,17 @@ async function handleIOSDeviceSelection(
 export default function selectDevice(server: any): void {
   server.addTool({
     name: 'select_device',
-    description: `REQUIRED when multiple devices are found: Ask the user to select which specific device they want to use from the available devices. 
-      This tool lists all available devices and allows selection by UDID. 
-      You MUST use this tool when select_platform returns multiple devices before calling create_session for android.
-      You MUST use this tool when select_platform returns multiple devices before calling boot_simulator for ios if the user has selected simulator device type.
+    description: `Select a specific device from available LOCAL devices. For LOCAL Appium servers ONLY.
+      DO NOT use this tool for REMOTE Appium servers - remoteServerUrl indicates a remote server.
+      WORKFLOW FOR LOCAL SERVERS:
+      - Use this tool ONLY when select_platform returns multiple devices
+      - For Android: Use before calling create_session if multiple devices are found
+      - For iOS: Use before calling boot_simulator or create_session if multiple simulators/devices are found
+      - Ask the user which device they want to use from the list provided
+      WORKFLOW FOR REMOTE SERVERS:
+      - SKIP this tool entirely
+      - Device selection should be handled via capabilities in create_session (e.g., appium:deviceName, appium:udid)
+      - The remote Appium server is already configured for specific device(s)
       `,
     parameters: z.object({
       platform: z
