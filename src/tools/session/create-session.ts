@@ -78,7 +78,8 @@ function filterEmptyCapabilities(capabilities: Capabilities): Capabilities {
  */
 function buildAndroidCapabilities(
   configCaps: Record<string, any>,
-  customCaps: Record<string, any> | undefined
+  customCaps: Record<string, any> | undefined,
+  isRemoteServer: boolean
 ): Capabilities {
   const defaultCaps: Capabilities = {
     platformName: 'Android',
@@ -86,7 +87,7 @@ function buildAndroidCapabilities(
     'appium:deviceName': 'Android Device',
   };
 
-  const selectedDeviceUdid = getSelectedDevice();
+  const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
 
   const capabilities = {
     ...defaultCaps,
@@ -130,9 +131,10 @@ async function validateIOSDeviceSelection(
  */
 async function buildIOSCapabilities(
   configCaps: Record<string, any>,
-  customCaps: Record<string, any> | undefined
+  customCaps: Record<string, any> | undefined,
+  isRemoteServer: boolean
 ): Promise<Capabilities> {
-  const deviceType = getSelectedDeviceType();
+  const deviceType = isRemoteServer ? null : getSelectedDeviceType();
   await validateIOSDeviceSelection(deviceType);
 
   const defaultCaps: Capabilities = {
@@ -141,8 +143,10 @@ async function buildIOSCapabilities(
     'appium:deviceName': 'iPhone Simulator',
   };
 
-  const selectedDeviceUdid = getSelectedDevice();
-  const selectedDeviceInfo = getSelectedDeviceInfo();
+  const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
+  const selectedDeviceInfo = isRemoteServer
+    ? undefined
+    : getSelectedDeviceInfo();
 
   log.debug('Selected device info:', selectedDeviceInfo);
 
@@ -250,7 +254,9 @@ export default function createSession(server: any): void {
       capabilities: z
         .object({})
         .optional()
-        .describe('Optional custom capabilities for the session (W3C format).'),
+        .describe(
+          'Optional custom W3C format capabilities for the session. Common options include appium:app (app path), appium:deviceName, appium:platformVersion, appium:bundleId, appium:autoGrantPermissions, etc. Custom capabilities override default and config file settings.'
+        ),
       remoteServerUrl: z
         .string()
         .optional()
@@ -286,16 +292,18 @@ export default function createSession(server: any): void {
           platform === 'android'
             ? configCapabilities.android
             : configCapabilities.ios;
-
         const finalCapabilities =
           platform === 'android'
-            ? buildAndroidCapabilities(platformCaps, customCapabilities)
-            : await buildIOSCapabilities(platformCaps, customCapabilities);
-
-        log.info(
-          `Creating new ${platform.toUpperCase()} session with capabilities:`,
-          JSON.stringify(finalCapabilities, null, 2)
-        );
+            ? buildAndroidCapabilities(
+                platformCaps,
+                customCapabilities,
+                !!remoteServerUrl
+              )
+            : await buildIOSCapabilities(
+                platformCaps,
+                customCapabilities,
+                !!remoteServerUrl
+              );
 
         let sessionId;
         if (remoteServerUrl) {
@@ -310,6 +318,11 @@ export default function createSession(server: any): void {
           sessionId = client.sessionId;
           setSession(client, client.sessionId);
         } else {
+          log.info(
+            `Creating new ${platform.toUpperCase()} session with capabilities:`,
+            JSON.stringify(finalCapabilities, null, 2)
+          );
+
           const driver = createDriverForPlatform(platform);
           sessionId = await createDriverSession(driver, finalCapabilities);
           setSession(driver, sessionId);
