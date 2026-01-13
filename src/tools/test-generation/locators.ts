@@ -45,7 +45,9 @@ export default function generateLocators(server: any): void {
           // Get the page source from the driver
           const pageSource = await (driver as any).getPageSource();
           const driverName = isRemoteDriverSession(driver)
-            ? (driver as Client).capabilities['appium:automationName']?.toLowerCase()
+            ? (driver as Client).capabilities[
+                'appium:automationName'
+              ]?.toLowerCase()
             : (await (driver as any).caps.automationName).toLowerCase();
           if (!pageSource) {
             throw new Error('Page source is empty or null');
