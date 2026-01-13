@@ -32,9 +32,7 @@ export default function doubleTap(server: FastMCP): void {
 
         if (platform === 'Android') {
           // Get element location for Android double tap
-          const element = isRemoteDriverSession(driver)
-            ? await (driver as Client).findElement('id', args.elementUUID)
-            : await (driver as any).findElement('id', args.elementUUID);
+          const element = await (driver as any).findElement('id', args.elementUUID);
           const location = await element.getLocation();
           const size = await element.getSize();
 
