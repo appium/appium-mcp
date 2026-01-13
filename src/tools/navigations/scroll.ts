@@ -30,7 +30,7 @@ export default function scroll(server: any): void {
       }
 
       try {
-        const { width, height } = await (driver as any).getWindowSize();
+        const { width, height } = await (driver as any).getWindowRect();
         log.info('Device screen size:', { width, height });
         const startX = Math.floor(width / 2);
         // calculate start and end Y positions for scrolling depending on the direction

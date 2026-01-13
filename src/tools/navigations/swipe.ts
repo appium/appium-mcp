@@ -232,7 +232,7 @@ export default function swipe(server: any): void {
               endY,
             });
           } else {
-            const { width, height } = await (driver as any).getWindowSize();
+            const { width, height } = await (driver as any).getWindowRect();
             log.info('Device screen size:', { width, height });
             const coords = calculateSwipeCoordinates(
               args.direction,

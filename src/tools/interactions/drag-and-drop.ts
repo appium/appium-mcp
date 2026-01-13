@@ -180,7 +180,7 @@ export default function dragAndDrop(server: FastMCP): void {
           endY = args.targetY;
         }
 
-        const { width, height } = await (driver as any).getWindowSize();
+        const { width, height } = await (driver as any).getWindowRect();
         if (startX < 0 || startX >= width || startY < 0 || startY >= height) {
           throw new Error(
             `Source coordinates (${startX}, ${startY}) are out of screen bounds (${width}x${height})`

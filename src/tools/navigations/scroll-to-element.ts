@@ -84,7 +84,7 @@ async function performAndroidScroll(
     await driver.findElement('-android uiautomator', scrollCommand);
   } catch (error) {
     // If UiScrollable fails, try touch actions
-    const { width, height } = await driver.getWindowSize();
+    const { width, height } = await driver.getWindowRect();
     const startX = width / 2;
     const startY = direction === 'up' ? height * 0.3 : height * 0.7;
     const endY = direction === 'up' ? height * 0.7 : height * 0.3;
@@ -100,7 +100,7 @@ async function performAndroidScroll(
 
 async function performiOSScroll(driver: any, direction: string): Promise<void> {
   // Use iOS mobile commands for scrolling
-  const { width, height } = await driver.getWindowSize();
+  const { width, height } = await driver.getWindowRect();
 
   await driver.execute('mobile: scroll', {
     direction: direction,
