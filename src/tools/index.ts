@@ -23,6 +23,8 @@ import selectDevice from './session/select-device.js';
 import bootSimulator from './ios/boot-simulator.js';
 import setupWDA from './ios/setup-wda.js';
 import installWDA from './ios/install-wda.js';
+import listAndroidEmulators from './android/list-emulators.js';
+import bootAndroidEmulator from './android/boot-emulator.js';
 import generateTest from './test-generation/generate-tests.js';
 import scroll from './navigations/scroll.js';
 import scrollToElement from './navigations/scroll-to-element.js';
@@ -121,6 +123,10 @@ export default function registerTools(server: FastMCP): void {
   bootSimulator(server);
   setupWDA(server);
   installWDA(server);
+
+  // Android Setup
+  listAndroidEmulators(server);
+  bootAndroidEmulator(server);
 
   // Navigation
   scroll(server);
