@@ -15,7 +15,7 @@
     "mcp-appium": "dist/index.js"
   },
   "scripts": {
-    "build": "rimraf dist && tsc && chmod +x dist/index.js && npm run copy-docs",
+    "build": "rimraf dist && tsc -b && chmod +x dist/index.js && npm run copy-docs",
     "copy-docs": "mkdir -p dist/tools/documentation/uploads && cp -f src/tools/documentation/uploads/documents.json dist/tools/documentation/uploads/documents.json 2>/dev/null || true",
     "start": "node dist/index.js",
     "start:stdio": "node dist/index.js",
@@ -61,6 +61,8 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
+    "@appium/tsconfig": "^1.0.0",
+    "@appium/eslint-config-appium-ts": "^2.0.0",
     "@jest/globals": "^30.2.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
@@ -68,10 +70,7 @@
     "@types/lodash": "^4.17.17",
     "@types/node": "^22.15.18",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
-    "@typescript-eslint/parser": "^8.34.0",
     "conventional-changelog-conventionalcommits": "^9.1.0",
-    "eslint": "^9.28.0",
-    "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.1",
     "jest": "^29.7.0",
     "prettier": "^3.5.3",
