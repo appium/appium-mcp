@@ -137,18 +137,19 @@ async function buildIOSCapabilities(
   const deviceType = isRemoteServer ? null : getSelectedDeviceType();
   await validateIOSDeviceSelection(deviceType);
 
-  const defaultCaps: Capabilities = {
-    platformName: 'iOS',
-    'appium:automationName': 'XCUITest',
-    'appium:deviceName': 'iPhone Simulator',
-  };
-
+  // Get selected device info BEFORE constructing defaultCaps so we can use the actual device name
   const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
   const selectedDeviceInfo = isRemoteServer
     ? undefined
     : getSelectedDeviceInfo();
 
   log.debug('Selected device info:', selectedDeviceInfo);
+
+  const defaultCaps: Capabilities = {
+    platformName: 'iOS',
+    'appium:automationName': 'XCUITest',
+    'appium:deviceName': selectedDeviceInfo?.name || 'iPhone Simulator',
+  };
 
   const platformVersion =
     selectedDeviceInfo?.platform && selectedDeviceInfo.platform.trim() !== ''
