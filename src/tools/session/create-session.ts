@@ -133,16 +133,16 @@ async function buildIOSCapabilities(
   const deviceType = getSelectedDeviceType();
   await validateIOSDeviceSelection(deviceType);
 
-  const defaultCaps: Capabilities = {
-    platformName: 'iOS',
-    'appium:automationName': 'XCUITest',
-    'appium:deviceName': 'iPhone Simulator',
-  };
-
   const selectedDeviceUdid = getSelectedDevice();
   const selectedDeviceInfo = getSelectedDeviceInfo();
 
   log.debug('Selected device info:', selectedDeviceInfo);
+
+  const defaultCaps: Capabilities = {
+    platformName: 'iOS',
+    'appium:automationName': 'XCUITest',
+    'appium:deviceName': selectedDeviceInfo?.name || 'iPhone Simulator',
+  };
 
   const platformVersion =
     selectedDeviceInfo?.platform && selectedDeviceInfo.platform.trim() !== ''
