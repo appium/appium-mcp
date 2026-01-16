@@ -1,4 +1,4 @@
-import { FastMCP } from 'fastmcp/dist/FastMCP.js';
+import { FastMCP } from 'fastmcp';
 import { getDriver, isRemoteDriverSession } from '../../session-store.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, isAbsolute } from 'path';
