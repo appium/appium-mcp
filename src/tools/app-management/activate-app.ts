@@ -1,4 +1,4 @@
-import { FastMCP } from 'fastmcp/dist/FastMCP.js';
+import { FastMCP } from 'fastmcp';
 import { getDriver } from '../../session-store.js';
 import { z } from 'zod';
 

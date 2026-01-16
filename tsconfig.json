@@ -7,6 +7,7 @@
     "declaration": true,
     "resolveJsonModule": true,
     "rootDir": "src",
+    "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },
   "include": ["src/**/*"],
