@@ -6,7 +6,8 @@
     "sourceMap": true,
     "declaration": true,
     "resolveJsonModule": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "moduleResolution": "NodeNext"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
