@@ -7,7 +7,7 @@ import log from './logger.js';
 const args = process.argv.slice(2);
 const useHttpStream = args.includes('--httpStream');
 const port =
-  args.find(arg => arg.startsWith('--port='))?.split('=')[1] || '8080';
+  args.find((arg) => arg.startsWith('--port='))?.split('=')[1] || '8080';
 
 async function startServer(): Promise<void> {
   log.info('Starting MCP Appium MCP Server...');

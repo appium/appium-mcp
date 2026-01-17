@@ -482,25 +482,27 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (indexSingleFile) {
     // Index a single Markdown file
     log.info(`Indexing single Markdown file: ${markdownPath}`);
-    indexMarkdown(markdownPath, chunkSize, chunkOverlap)
-      .then(() => {
-        process.exit(0);
-      })
-      .catch((error) => {
-        log.error('Indexing failed:', error);
-        process.exit(1);
-      });
+    try {
+      await indexMarkdown(markdownPath, chunkSize, chunkOverlap);
+      process.exit(0);
+    } catch (error) {
+      log.error('Indexing failed:', error);
+      process.exit(1);
+    }
   } else {
     // Index all Markdown files in the directory
     log.info(`Indexing all Markdown files in directory: ${markdownPath}`);
-    indexAllMarkdownFiles(markdownPath, chunkSize, chunkOverlap)
-      .then((indexedFiles) => {
-        log.info(`Successfully indexed ${indexedFiles.length} Markdown files`);
-        process.exit(0);
-      })
-      .catch((error) => {
-        log.error('Indexing failed:', error);
-        process.exit(1);
-      });
+    try {
+      const indexedFiles = await indexAllMarkdownFiles(
+        markdownPath,
+        chunkSize,
+        chunkOverlap
+      );
+      log.info(`Successfully indexed ${indexedFiles.length} Markdown files`);
+      process.exit(0);
+    } catch (error) {
+      log.error('Indexing failed:', error);
+      process.exit(1);
+    }
   }
 }

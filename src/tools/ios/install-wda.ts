@@ -28,7 +28,7 @@ async function getLatestWDAVersion(): Promise<string> {
 
   const entries = await readdir(wdaCacheDir);
   const versions = await Promise.all(
-    entries.map(async dir => {
+    entries.map(async (dir) => {
       const dirPath = path.join(wdaCacheDir, dir);
       const stats = await stat(dirPath);
       return stats.isDirectory() ? dir : null;

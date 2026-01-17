@@ -31,14 +31,18 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
     const file = fs.createWriteStream(destPath);
 
     https
-      .get(url, response => {
+      .get(url, async (response) => {
         // Handle redirects
         if (response.statusCode === 302 || response.statusCode === 301) {
           file.close();
           fs.unlinkSync(destPath);
-          return downloadFile(response.headers.location!, destPath)
-            .then(resolve)
-            .catch(reject);
+          try {
+            await downloadFile(response.headers.location!, destPath);
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+          return;
         }
 
         if (response.statusCode !== 200) {
@@ -55,7 +59,7 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
         );
         let downloadedSize = 0;
 
-        response.on('data', chunk => {
+        response.on('data', (chunk) => {
           downloadedSize += chunk.length;
           const percent = ((downloadedSize / totalSize) * 100).toFixed(1);
           process.stdout.write(
@@ -71,7 +75,7 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
           resolve();
         });
       })
-      .on('error', err => {
+      .on('error', (err) => {
         file.close();
         fs.unlinkSync(destPath);
         reject(err);
@@ -102,10 +106,10 @@ async function getLatestWDAVersion(): Promise<string> {
     };
 
     https
-      .get(options, response => {
+      .get(options, (response) => {
         let data = '';
 
-        response.on('data', chunk => {
+        response.on('data', (chunk) => {
           data += chunk;
         });
 
@@ -124,7 +128,7 @@ async function getLatestWDAVersion(): Promise<string> {
           }
         });
       })
-      .on('error', err => {
+      .on('error', (err) => {
         reject(err);
       });
   });
@@ -163,7 +167,7 @@ async function main() {
       // Show app contents
       const appContents = fs.readdirSync(appPath);
       console.log('\n📋 Cached App bundle contents:');
-      appContents.forEach(item => {
+      appContents.forEach((item) => {
         console.log(`      - ${item}`);
       });
 
@@ -204,7 +208,7 @@ async function main() {
     // List contents
     console.log('\n📋 Extracted contents:');
     const contents = fs.readdirSync(extractDir);
-    contents.forEach(item => {
+    contents.forEach((item) => {
       const itemPath = path.join(extractDir, item);
       const isDir = fs.statSync(itemPath).isDirectory();
       console.log(`   ${isDir ? '📁' : '📄'} ${item}`);
@@ -218,7 +222,7 @@ async function main() {
       // Show app contents
       const appContents = fs.readdirSync(appPath);
       console.log('\n   App bundle contents:');
-      appContents.forEach(item => {
+      appContents.forEach((item) => {
         console.log(`      - ${item}`);
       });
     } else {
@@ -241,7 +245,11 @@ async function main() {
 }
 
 // Run main function
-main().catch(error => {
-  console.error('\n💥 Unexpected error:', error);
-  process.exit(1);
-});
+(async () => {
+  try {
+    await main();
+  } catch (error: any) {
+    console.error('\n💥 Unexpected error:', error);
+    process.exit(1);
+  }
+})();

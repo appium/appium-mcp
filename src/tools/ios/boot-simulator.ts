@@ -34,7 +34,7 @@ export default function bootSimulator(server: any): void {
         const simulators = await iosManager.listSimulators();
 
         // Find the simulator with the given UDID
-        const simulator = simulators.find(sim => sim.udid === udid);
+        const simulator = simulators.find((sim) => sim.udid === udid);
 
         if (!simulator) {
           throw new Error(

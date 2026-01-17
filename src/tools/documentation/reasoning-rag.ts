@@ -220,8 +220,8 @@ export class ReasoningRAG {
     for (let i = 0; i < chunks.length; i += batchSize) {
       const batch = chunks.slice(i, i + batchSize);
 
-      const batchPromises = batch.flatMap(chunk =>
-        configs.map(config =>
+      const batchPromises = batch.flatMap((chunk) =>
+        configs.map((config) =>
           this.performReasoning(chunk.pageContent, config, query)
         )
       );
@@ -249,16 +249,16 @@ export class ReasoningRAG {
   ): Promise<string> {
     // Extract all reasoning outputs
     const summaries = reasoningResults
-      .filter(result => result.metadata.task === 'summarization')
-      .map(result => result.reasoningOutput);
+      .filter((result) => result.metadata.task === 'summarization')
+      .map((result) => result.reasoningOutput);
 
     const analyses = reasoningResults
-      .filter(result => result.metadata.task === 'analysis')
-      .map(result => result.reasoningOutput);
+      .filter((result) => result.metadata.task === 'analysis')
+      .map((result) => result.reasoningOutput);
 
     const qaResults = reasoningResults
-      .filter(result => result.metadata.task === 'question-answering')
-      .map(result => result.reasoningOutput);
+      .filter((result) => result.metadata.task === 'question-answering')
+      .map((result) => result.reasoningOutput);
 
     // Combine all insights
     let comprehensiveSummary = `## Query: ${query}\n\n`;
@@ -332,7 +332,7 @@ export class ReasoningRAG {
       ];
 
       // Filter configs based on requested tasks
-      const filteredConfigs = configs.filter(config =>
+      const filteredConfigs = configs.filter((config) =>
         reasoningTasks.includes(config.task)
       );
 
@@ -355,7 +355,7 @@ export class ReasoningRAG {
 
       // Step 5: Extract best answer from reasoning results
       const qaResults = reasoningResults.filter(
-        result =>
+        (result) =>
           result.metadata.task === 'question-answering' &&
           !result.metadata.error
       );

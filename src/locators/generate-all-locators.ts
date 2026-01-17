@@ -104,7 +104,7 @@ function traverseAndProcessElements(
 
   // Recursively process children (even if parent was filtered out)
   if (element.children && element.children.length > 0) {
-    element.children.forEach(child =>
+    element.children.forEach((child) =>
       traverseAndProcessElements(
         child,
         sourceXML,

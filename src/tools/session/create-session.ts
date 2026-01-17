@@ -65,7 +65,7 @@ async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
  */
 function filterEmptyCapabilities(capabilities: Capabilities): Capabilities {
   const filtered = { ...capabilities };
-  Object.keys(filtered).forEach(key => {
+  Object.keys(filtered).forEach((key) => {
     if (filtered[key] === '') {
       delete filtered[key];
     }
