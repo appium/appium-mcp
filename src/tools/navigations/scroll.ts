@@ -72,18 +72,18 @@ export default function scroll(server: any): void {
             ? await (driver as Client).executeScript('mobile: scroll', [
                 {
                   direction: args.direction,
-                  startX: startX,
-                  startY: startY,
+                  startX,
+                  startY,
                   endX: startX,
-                  endY: endY,
+                  endY,
                 },
               ])
             : await (driver as any).execute('mobile: scroll', {
                 direction: args.direction,
-                startX: startX,
-                startY: startY,
+                startX,
+                startY,
                 endX: startX,
-                endY: endY,
+                endY,
               });
         } else {
           throw new Error(

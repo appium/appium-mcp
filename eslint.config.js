@@ -1,11 +1,11 @@
-import js from '@eslint/js';
+import appiumConfig from '@appium/eslint-config-appium-ts';
+
 import typescript from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import prettier from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
 
 export default [
-  js.configs.recommended,
+  ...appiumConfig,
   {
     files: ['src/**/*.ts'],
     languageOptions: {
@@ -31,8 +31,7 @@ export default [
       prettier: prettier,
     },
     rules: {
-      ...typescript.configs.recommended.rules,
-      ...prettierConfig.rules,
+      // Keep project-specific overrides here; base rules come from appiumConfig
       'prettier/prettier': 'error',
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',

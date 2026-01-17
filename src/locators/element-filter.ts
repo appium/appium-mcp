@@ -41,7 +41,9 @@ function matchesAttributeFilters(
     const hasRequiredAttr = requireAttributes.some(
       attr => element.attributes && element.attributes[attr]
     );
-    if (!hasRequiredAttr) return false;
+    if (!hasRequiredAttr) {
+      return false;
+    }
   }
 
   if (

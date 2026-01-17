@@ -97,8 +97,12 @@ export async function safeDeleteSession(): Promise<boolean> {
 }
 
 export const getPlatformName = (driver: any): string => {
-  if (driver instanceof AndroidUiautomator2Driver) return PLATFORM.android;
-  if (driver instanceof XCUITestDriver) return PLATFORM.ios;
+  if (driver instanceof AndroidUiautomator2Driver) {
+    return PLATFORM.android;
+  }
+  if (driver instanceof XCUITestDriver) {
+    return PLATFORM.ios;
+  }
 
   if ((driver as Client).isAndroid) {
     return PLATFORM.android;

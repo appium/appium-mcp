@@ -24,7 +24,7 @@ const getValue = (xpath: string, expression: string): string => {
   // Extracts the value from an XPath expression.
   let start = xpath.indexOf(expression) + expression.length;
   start = xpath.indexOf("'", start) + 1;
-  let end = xpath.indexOf("'", start);
+  const end = xpath.indexOf("'", start);
   return xpath.substring(start, end);
 };
 
@@ -33,26 +33,30 @@ const transformXPath = (
 ): { strategy: string; selector: string } => {
   // normalize xpath expression by replacing " by '
   xpath = xpath.replace(/"/g, "'");
-  if (xpath.includes('@text='))
+  if (xpath.includes('@text=')) {
     return { strategy: 'text', selector: getValue(xpath, '@text=') };
+  }
 
-  if (xpath.includes('@content-desc='))
+  if (xpath.includes('@content-desc=')) {
     return {
       strategy: 'description',
       selector: getValue(xpath, '@content-desc='),
     };
+  }
 
-  if (xpath.includes('contains(@text,'))
+  if (xpath.includes('contains(@text,')) {
     return {
       strategy: 'textContains',
       selector: getValue(xpath, 'contains(@text,'),
     };
+  }
 
-  if (xpath.includes('contains(@content-desc,'))
+  if (xpath.includes('contains(@content-desc,')) {
     return {
       strategy: 'descriptionContains',
       selector: getValue(xpath, 'contains(@content-desc,'),
     };
+  }
 
   throw new Error(
     `Unsupported XPath expression: ${xpath}. Supported expressions are: @text, @content-desc, contains(@text, ...), contains(@content-desc, ...)`
@@ -63,9 +67,15 @@ const transformLocator = (
   strategy: string,
   selector: string
 ): { strategy: string; selector: string } => {
-  if (strategy === 'id') return { strategy: 'resourceId', selector };
-  if (strategy === 'xpath') return transformXPath(selector);
-  if (strategy === 'class name') return { strategy: 'className', selector };
+  if (strategy === 'id') {
+    return { strategy: 'resourceId', selector };
+  }
+  if (strategy === 'xpath') {
+    return transformXPath(selector);
+  }
+  if (strategy === 'class name') {
+    return { strategy: 'className', selector };
+  }
 
   return { strategy, selector };
 };
@@ -103,7 +113,7 @@ async function performiOSScroll(driver: any, direction: string): Promise<void> {
   const { width, height } = await driver.getWindowRect();
 
   await driver.execute('mobile: scroll', {
-    direction: direction,
+    direction,
     startX: width / 2,
     startY: direction === 'up' ? height * 0.3 : height * 0.7,
     endX: width / 2,

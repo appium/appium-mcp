@@ -28,7 +28,7 @@ async function performDragAndDrop(
         { type: 'pointerMove', duration: 0, x: startX, y: startY },
         { type: 'pointerDown', button: 0 },
         { type: 'pause', duration: longPressDuration },
-        { type: 'pointerMove', duration: duration, x: endX, y: endY },
+        { type: 'pointerMove', duration, x: endX, y: endY },
         { type: 'pause', duration: DROP_PAUSE_DURATION_MS },
         { type: 'pointerUp', button: 0 },
       ],

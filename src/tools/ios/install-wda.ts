@@ -37,10 +37,10 @@ async function getLatestWDAVersion(): Promise<string> {
 
   const filteredVersions = versions
     .filter((v): v is string => v !== null)
-    .sort((a, b) => {
+    .sort((a, b) =>
       // Simple version comparison - you might want to use semver for more complex versions
-      return b.localeCompare(a, undefined, { numeric: true });
-    });
+      b.localeCompare(a, undefined, { numeric: true })
+    );
 
   if (filteredVersions.length === 0) {
     throw new Error(

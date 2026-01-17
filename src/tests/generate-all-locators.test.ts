@@ -129,12 +129,11 @@ describe('generateAllElementLocators', () => {
       ];
 
       expect(
-        result.every(element => {
-          return (
-            interactableTags.some(tag => element.tagName.includes(tag)) ||
+        result.every(
+          element =>
+            interactableTags.some((tag) => element.tagName.includes(tag)) ||
             element.clickable === true
-          );
-        })
+        )
       ).toBe(true);
     }
   });
@@ -160,9 +159,9 @@ describe('generateAllElementLocators', () => {
       ];
 
       expect(
-        result.every(element => {
-          return interactableTags.some(tag => element.tagName.includes(tag));
-        })
+        result.every(element =>
+          interactableTags.some(tag => element.tagName.includes(tag))
+        )
       ).toBe(true);
     }
   });
