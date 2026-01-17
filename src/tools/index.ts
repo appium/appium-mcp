@@ -36,6 +36,7 @@ import setValue from './interactions/set-value.js';
 import getText from './interactions/get-text.js';
 import getPageSource from './interactions/get-page-source.js';
 import screenshot from './interactions/screenshot.js';
+import handleAlert from './interactions/handle-alert.js';
 import activateApp from './app-management/activate-app.js';
 import installApp from './app-management/install-app.js';
 import uninstallApp from './app-management/uninstall-app.js';
@@ -137,6 +138,7 @@ export default function registerTools(server: FastMCP): void {
   getText(server);
   getPageSource(server);
   screenshot(server);
+  handleAlert(server);
 
   // App Management
   activateApp(server);
