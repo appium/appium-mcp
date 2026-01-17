@@ -1,3 +1,9 @@
+## [1.8.1](https://github.com/appium/appium-mcp/compare/v1.8.0...v1.8.1) (2026-01-17)
+
+### Bug Fixes
+
+* screenshot default path to a writable location (use os.tmpdir() instead of process.cwd()) ([#59](https://github.com/appium/appium-mcp/issues/59)) ([3792e26](https://github.com/appium/appium-mcp/commit/3792e26a610900ccef0186ad80b4bf01b6d8df9b))
+
 ## [1.8.0](https://github.com/appium/appium-mcp/compare/v1.7.5...v1.8.0) (2026-01-16)
 
 ### Features
