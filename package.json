@@ -62,7 +62,6 @@
     "webdriver": "^9.23.0"
   },
   "devDependencies": {
-    "@appium/tsconfig": "^1.0.0",
     "@appium/eslint-config-appium-ts": "^2.0.0",
     "@jest/globals": "^30.2.0",
     "@semantic-release/changelog": "^6.0.3",
@@ -70,9 +69,7 @@
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.17",
     "@types/node": "^22.15.18",
-    "@typescript-eslint/eslint-plugin": "^8.34.0",
     "conventional-changelog-conventionalcommits": "^9.1.0",
-    "eslint-plugin-prettier": "^5.4.1",
     "jest": "^29.7.0",
     "prettier": "^3.5.3",
     "semantic-release": "^25.0.2",
