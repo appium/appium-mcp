@@ -37,19 +37,16 @@ export default function switchContext(server: FastMCP): void {
         );
       }
 
-      const _getCurrentContext = async () =>
-        isAndroidUiautomator2DriverSession(driver)
-          ? await driver.getCurrentContext()
-          : await (driver as XCUITestDriver).getCurrentContext();
-      const _getContexts = async () =>
-        isAndroidUiautomator2DriverSession(driver)
-          ? await driver.getContexts()
-          : await (driver as XCUITestDriver).getContexts();
-
       try {
         const [currentContext, availableContexts] = await Promise.all([
-          _getCurrentContext().catch(() => null),
-          _getContexts().catch(() => []),
+          isAndroidUiautomator2DriverSession(driver)
+            ? await driver.getCurrentContext().catch(() => null)
+            : await (driver as XCUITestDriver)
+                .getCurrentContext()
+                .catch(() => null),
+          isAndroidUiautomator2DriverSession(driver)
+            ? await driver.getContexts().catch(() => [])
+            : await (driver as XCUITestDriver).getContexts().catch(() => []),
         ]);
 
         if (currentContext === args.context) {
@@ -90,7 +87,9 @@ export default function switchContext(server: FastMCP): void {
           ? await driver.setContext(args.context)
           : await (driver as XCUITestDriver).setContext(args.context);
         // Verify the switch was successful
-        const newContext = await _getCurrentContext();
+        const newContext = isAndroidUiautomator2DriverSession(driver)
+          ? await driver.getCurrentContext()
+          : await (driver as XCUITestDriver);
 
         return {
           content: [

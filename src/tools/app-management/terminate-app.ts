@@ -31,9 +31,9 @@ export default function terminateApp(server: FastMCP): void {
         const params =
           platform === 'Android' ? { appId: id } : { bundleId: id };
         if (isAndroidUiautomator2DriverSession(driver)) {
-          await (driver as any).execute('mobile: terminateApp', params);
+          await driver.execute('mobile: terminateApp', params);
         } else if (isXCUITestDriverSession(driver)) {
-          await (driver as any).execute('mobile: terminateApp', params);
+          await driver.execute('mobile: terminateApp', params);
         } else {
           await (driver as Client).executeScript('mobile: terminateApp', [
             params,

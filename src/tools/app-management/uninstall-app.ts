@@ -31,9 +31,9 @@ export default function uninstallApp(server: FastMCP): void {
         const params =
           platform === 'Android' ? { appId: id } : { bundleId: id };
         if (isAndroidUiautomator2DriverSession(driver)) {
-          await (driver as any).execute('mobile: removeApp', params);
+          await driver.execute('mobile: removeApp', params);
         } else if (isXCUITestDriverSession(driver)) {
-          await (driver as any).execute('mobile: removeApp', params);
+          await driver.execute('mobile: removeApp', params);
         } else {
           await (driver as Client).executeScript('mobile: removeApp', [params]);
         }
