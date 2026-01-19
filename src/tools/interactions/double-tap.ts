@@ -33,15 +33,16 @@ export default function doubleTap(server: FastMCP): void {
         const platform = getPlatformName(driver);
         if (platform === PLATFORM.android) {
           // Get element location for Android double tap
-          const element = await driver.findElement(
-            'id',
-            args.elementUUID
-          );
+          const element = await driver.findElement('id', args.elementUUID);
           let elementRect;
           if (isAndroidUiautomator2DriverSession(driver)) {
-            elementRect = await driver.getElementRect(element['element-6066-11e4-a52e-4f735466cecf']);
+            elementRect = await driver.getElementRect(
+              element['element-6066-11e4-a52e-4f735466cecf']
+            );
           } else {
-            elementRect = await (driver as Client).getElementRect(element['element-6066-11e4-a52e-4f735466cecf']);
+            elementRect = await (driver as Client).getElementRect(
+              element['element-6066-11e4-a52e-4f735466cecf']
+            );
           }
 
           // Calculate center coordinates
@@ -68,14 +69,14 @@ export default function doubleTap(server: FastMCP): void {
           ];
 
           const _ok = isAndroidUiautomator2DriverSession(driver)
-          ? await driver.performActions(operation)
-          : await (driver as Client).performActions(operation);
+            ? await driver.performActions(operation)
+            : await (driver as Client).performActions(operation);
         } else if (platform === PLATFORM.ios) {
           // Use iOS mobile: doubleTap execute method
           const _ok = isXCUITestDriverSession(driver)
-            ? await driver.execute('mobile: doubleTap', [
-                { elementId: args.elementUUID },
-              ])
+            ? await driver.execute('mobile: doubleTap', {
+                elementId: args.elementUUID,
+              })
             : await (driver as Client).executeScript('mobile: doubleTap', [
                 { elementId: args.elementUUID },
               ]);

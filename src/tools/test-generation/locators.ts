@@ -10,7 +10,12 @@
  * For detailed documentation on adding tools, see docs/CONTRIBUTING.md
  */
 import { z } from 'zod';
-import { getDriver, isRemoteDriverSession } from '../../session-store.js';
+import {
+  getDriver,
+  isAndroidUiautomator2DriverSession,
+  isRemoteDriverSession,
+  isXCUITestDriverSession,
+} from '../../session-store.js';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
 import log from '../../logger.js';
 import {
@@ -43,12 +48,19 @@ export default function generateLocators(server: any): void {
 
         try {
           // Get the page source from the driver
-          const pageSource = await (driver as any).getPageSource();
-          const driverName = isRemoteDriverSession(driver)
-            ? (driver as Client).capabilities[
-                'appium:automationName'
-              ]?.toLowerCase()
-            : (await (driver as any).caps.automationName).toLowerCase();
+          let pageSource;
+          let driverName;
+          if (isAndroidUiautomator2DriverSession(driver)) {
+            pageSource = driver.getPageSource();
+            driverName = await driver.caps.automationName?.toLowerCase();
+          } else if (isXCUITestDriverSession(driver)) {
+            pageSource = driver.getPageSource();
+            driverName = await driver.caps.automationName?.toLowerCase();
+          } else {
+            pageSource = (driver as Client).getPageSource();
+            driverName =
+              await driver.capabilities['appium:automationName']?.toLowerCase();
+          }
           if (!pageSource) {
             throw new Error('Page source is empty or null');
           }

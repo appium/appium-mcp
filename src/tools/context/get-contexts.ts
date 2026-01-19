@@ -1,12 +1,16 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, isAndroidUiautomator2DriverSession, isRemoteDriverSession } from '../../session-store.js';
+import {
+  getDriver,
+  isAndroidUiautomator2DriverSession,
+  isRemoteDriverSession,
+} from '../../session-store.js';
 import {
   createUIResource,
   createContextSwitcherUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import type {XCUITestDriver} from 'appium-xcuitest-driver';
+import type { XCUITestDriver } from 'appium-xcuitest-driver';
 
 export default function getContexts(server: FastMCP): void {
   server.addTool({

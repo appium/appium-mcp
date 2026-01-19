@@ -62,8 +62,8 @@ export default function scroll(server: any): void {
         log.info('Going to scroll from:', { startX, startY });
         log.info('Going to scroll to:', { startX, endY });
 
-        if (getPlatformName(driver) === 'Android') {
-          await (driver as any).performActions([
+        if (getPlatformName(driver) === PLATFORM.android) {
+          const operation = [
             {
               type: 'pointer',
               id: 'finger1',
@@ -76,7 +76,10 @@ export default function scroll(server: any): void {
                 { type: 'pointerUp', button: 0 },
               ],
             },
-          ]);
+          ];
+          const _ok = isAndroidUiautomator2DriverSession(driver)
+            ? await driver.performActions(operation)
+            : await (driver as Client).performActions(operation);
           log.info('Scroll action completed successfully.');
         } else if (getPlatformName(driver) === PLATFORM.ios) {
           const _ok = isXCUITestDriverSession(driver)

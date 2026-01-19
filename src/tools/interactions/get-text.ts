@@ -1,6 +1,11 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, isAndroidUiautomator2DriverSession, isRemoteDriverSession, isXCUITestDriverSession } from '../../session-store.js';
+import {
+  getDriver,
+  isAndroidUiautomator2DriverSession,
+  isRemoteDriverSession,
+  isXCUITestDriverSession,
+} from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
 

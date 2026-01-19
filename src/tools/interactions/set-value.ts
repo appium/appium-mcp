@@ -1,6 +1,10 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, isRemoteDriverSession } from '../../session-store.js';
+import {
+  getDriver,
+  isAndroidUiautomator2DriverSession,
+  isRemoteDriverSession,
+} from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
 
@@ -25,12 +29,13 @@ export default function setValue(server: FastMCP): void {
       }
 
       try {
-        const _ok = isRemoteDriverSession(driver)
-          ? await (driver as Client).elementSendKeys(
-              args.elementUUID,
-              args.text
-            )
-          : await (driver as any).setValue(args.text, args.elementUUID);
+        if (isRemoteDriverSession(driver)) {
+          await (driver as Client).elementSendKeys(args.elementUUID, args.text);
+        } else if (isAndroidUiautomator2DriverSession(driver)) {
+          await driver.setValue(args.text, args.elementUUID);
+        } else {
+          await driver.setValue(args.text, args.elementUUID);
+        }
         return {
           content: [
             {

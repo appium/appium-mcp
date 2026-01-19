@@ -65,8 +65,8 @@ export default function longPress(server: FastMCP): void {
             },
           ];
           const _ok = isAndroidUiautomator2DriverSession(driver)
-          ? await driver.performActions(operation)
-          : await (driver as Client).performActions(operation);
+            ? await driver.performActions(operation)
+            : await (driver as Client).performActions(operation);
         } else if (platform === 'iOS') {
           try {
             const _ok = isXCUITestDriverSession(driver)
@@ -82,8 +82,8 @@ export default function longPress(server: FastMCP): void {
                 ]);
           } catch (touchAndHoldError) {
             const rect = isXCUITestDriverSession(driver)
-            ? await driver.getElementRect(args.elementUUID)
-            : await (driver as Client).getElementRect(args.elementUUID);
+              ? await driver.getElementRect(args.elementUUID)
+              : await (driver as Client).getElementRect(args.elementUUID);
             const x = Math.floor(rect.x + rect.width / 2);
             const y = Math.floor(rect.y + rect.height / 2);
 
@@ -101,8 +101,10 @@ export default function longPress(server: FastMCP): void {
               },
             ];
             const _ok = isXCUITestDriverSession(driver)
-            ? await driver.performActions(operation as import('@appium/types').ActionSequence[])
-            : await (driver as Client).performActions(operation);
+              ? await driver.performActions(
+                  operation as import('@appium/types').ActionSequence[]
+                )
+              : await (driver as Client).performActions(operation);
           }
         } else {
           throw new Error(
