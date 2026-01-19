@@ -4,11 +4,11 @@ import {
   getDriver,
   getPlatformName,
   isAndroidUiautomator2DriverSession,
-  isXCUITestDriverSession,
   PLATFORM,
 } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
+import { execute } from '../../command.js';
 
 export default function doubleTap(server: FastMCP): void {
   const doubleTapActionSchema = z.object({
@@ -73,13 +73,9 @@ export default function doubleTap(server: FastMCP): void {
             : await (driver as Client).performActions(operation);
         } else if (platform === PLATFORM.ios) {
           // Use iOS mobile: doubleTap execute method
-          const _ok = isXCUITestDriverSession(driver)
-            ? await driver.execute('mobile: doubleTap', {
-                elementId: args.elementUUID,
-              })
-            : await (driver as Client).executeScript('mobile: doubleTap', [
-                { elementId: args.elementUUID },
-              ]);
+          await execute(driver, 'mobile: doubleTap', {
+            elementId: args.elementUUID,
+          });
         } else {
           throw new Error(
             `Unsupported platform: ${platform}. Only Android and iOS are supported.`

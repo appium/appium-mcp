@@ -3,12 +3,12 @@ import {
   getDriver,
   getPlatformName,
   isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
   isXCUITestDriverSession,
   PLATFORM,
 } from '../../session-store.js';
 import log from '../../logger.js';
 import type { Client } from 'webdriver';
+import { execute } from '../../command.js';
 
 export default function scroll(server: any): void {
   server.addTool({
@@ -82,23 +82,13 @@ export default function scroll(server: any): void {
             : await (driver as Client).performActions(operation);
           log.info('Scroll action completed successfully.');
         } else if (getPlatformName(driver) === PLATFORM.ios) {
-          const _ok = isXCUITestDriverSession(driver)
-            ? await driver.execute('mobile: scroll', {
+          await execute(driver, 'mobile: scroll', {
                 direction: args.direction,
                 startX,
                 startY,
                 endX: startX,
                 endY,
-              })
-            : await (driver as Client).executeScript('mobile: scroll', [
-                {
-                  direction: args.direction,
-                  startX,
-                  startY,
-                  endX: startX,
-                  endY,
-                },
-              ]);
+              });
         } else {
           throw new Error(
             `Unsupported platform: ${getPlatformName(driver)}. Only Android and iOS are supported.`

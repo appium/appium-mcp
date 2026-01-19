@@ -3,10 +3,9 @@ import { z } from 'zod';
 import {
   getDriver,
   getPlatformName,
-  isAndroidUiautomator2DriverSession,
-  isXCUITestDriverSession,
+  PLATFORM,
 } from '../../session-store.js';
-import type { Client } from 'webdriver';
+import { execute } from '../../command.js';
 
 export default function installApp(server: FastMCP): void {
   const schema = z.object({
@@ -26,16 +25,8 @@ export default function installApp(server: FastMCP): void {
       try {
         const platform = getPlatformName(driver);
         const params =
-          platform === 'Android' ? { appPath: path } : { app: path };
-        if (isAndroidUiautomator2DriverSession(driver)) {
-          await driver.execute('mobile: installApp', params);
-        } else if (isXCUITestDriverSession(driver)) {
-          await driver.execute('mobile: installApp', params);
-        } else {
-          await (driver as Client).executeScript('mobile: installApp', [
-            params,
-          ]);
-        }
+          platform === PLATFORM.android ? { appPath: path } : { app: path };
+        await execute(driver, 'mobile: installApp', params);
         return {
           content: [
             {

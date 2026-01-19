@@ -3,11 +3,9 @@ import { z } from 'zod';
 import {
   getDriver,
   getPlatformName,
-  isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
-  isXCUITestDriverSession,
+  PLATFORM,
 } from '../../session-store.js';
-import type { Client } from 'webdriver';
+import { execute } from '../../command.js';
 
 export default function terminateApp(server: FastMCP): void {
   const schema = z.object({
@@ -29,16 +27,8 @@ export default function terminateApp(server: FastMCP): void {
       try {
         const platform = getPlatformName(driver);
         const params =
-          platform === 'Android' ? { appId: id } : { bundleId: id };
-        if (isAndroidUiautomator2DriverSession(driver)) {
-          await driver.execute('mobile: terminateApp', params);
-        } else if (isXCUITestDriverSession(driver)) {
-          await driver.execute('mobile: terminateApp', params);
-        } else {
-          await (driver as Client).executeScript('mobile: terminateApp', [
-            params,
-          ]);
-        }
+          platform === PLATFORM.android ? { appId: id } : { bundleId: id };
+        await execute(driver, 'mobile: terminateApp', params);
         return {
           content: [
             {

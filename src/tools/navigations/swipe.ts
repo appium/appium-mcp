@@ -11,6 +11,7 @@ import log from '../../logger.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import { execute } from '../../command.js';
 
 function calculateSwipeCoordinates(
   direction: 'left' | 'right' | 'up' | 'down',
@@ -346,13 +347,7 @@ export default function swipe(server: any): void {
         } else if (platform === PLATFORM.ios) {
           if (args.direction) {
             try {
-              const _ok = isRemoteDriverSession(driver)
-                ? await (driver as Client).executeScript('mobile: swipe', [
-                    {
-                      direction: args.direction,
-                    },
-                  ])
-                : await (driver as XCUITestDriver).execute('mobile: swipe', {
+              await execute(driver, 'mobile: swipe', {
                     direction: args.direction,
                   });
               log.info(

@@ -4,12 +4,12 @@ import {
   getDriver,
   getPlatformName,
   isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
   isXCUITestDriverSession,
   PLATFORM,
 } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
+import { execute } from '../../command.js';
 
 export default function longPress(server: FastMCP): void {
   const longPressSchema = z.object({
@@ -67,19 +67,12 @@ export default function longPress(server: FastMCP): void {
           const _ok = isAndroidUiautomator2DriverSession(driver)
             ? await driver.performActions(operation)
             : await (driver as Client).performActions(operation);
-        } else if (platform === 'iOS') {
+        } else if (platform === PLATFORM.ios) {
           try {
-            const _ok = isXCUITestDriverSession(driver)
-              ? await driver.execute('mobile: touchAndHold', {
-                  elementId: args.elementUUID,
-                  duration: duration / 1000,
-                })
-              : await (driver as Client).executeScript('mobile: touchAndHold', [
-                  {
-                    elementId: args.elementUUID,
-                    duration: duration / 1000,
-                  },
-                ]);
+            await execute(driver, 'mobile: touchAndHold', {
+              elementId: args.elementUUID,
+              duration: duration / 1000,
+            });
           } catch (touchAndHoldError) {
             const rect = isXCUITestDriverSession(driver)
               ? await driver.getElementRect(args.elementUUID)
