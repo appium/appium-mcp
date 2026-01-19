@@ -2,10 +2,10 @@ import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import {
   getDriver,
-  getPlatformName,
+  isAndroidUiautomator2DriverSession,
   isRemoteDriverSession,
-  PLATFORM,
 } from '../../session-store.js';
+import type { XCUITestDriver } from 'appium-xcuitest-driver';
 
 export default function switchContext(server: FastMCP): void {
   const schema = z.object({
@@ -37,10 +37,19 @@ export default function switchContext(server: FastMCP): void {
         );
       }
 
+      const _getCurrentContext = async () =>
+        isAndroidUiautomator2DriverSession(driver)
+          ? await driver.getCurrentContext()
+          : await (driver as XCUITestDriver).getCurrentContext();
+      const _getContexts = async () =>
+        isAndroidUiautomator2DriverSession(driver)
+          ? await driver.getContexts()
+          : await (driver as XCUITestDriver).getContexts();
+
       try {
         const [currentContext, availableContexts] = await Promise.all([
-          (driver as any).getCurrentContext().catch(() => null),
-          (driver as any).getContexts().catch(() => []),
+          _getCurrentContext().catch(() => null),
+          _getContexts().catch(() => []),
         ]);
 
         if (currentContext === args.context) {
@@ -77,10 +86,11 @@ export default function switchContext(server: FastMCP): void {
             isError: true,
           };
         }
-        await (driver as any).switchContext(args.context);
-
+        const _ok = isAndroidUiautomator2DriverSession(driver)
+          ? await driver.setContext(args.context)
+          : await (driver as XCUITestDriver).setContext(args.context);
         // Verify the switch was successful
-        const newContext = await (driver as any).getCurrentContext();
+        const newContext = await _getCurrentContext();
 
         return {
           content: [

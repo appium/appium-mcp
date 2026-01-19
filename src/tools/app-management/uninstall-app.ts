@@ -3,7 +3,9 @@ import { z } from 'zod';
 import {
   getDriver,
   getPlatformName,
+  isAndroidUiautomator2DriverSession,
   isRemoteDriverSession,
+  isXCUITestDriverSession,
 } from '../../session-store.js';
 import type { Client } from 'webdriver';
 
@@ -28,11 +30,13 @@ export default function uninstallApp(server: FastMCP): void {
         const platform = getPlatformName(driver);
         const params =
           platform === 'Android' ? { appId: id } : { bundleId: id };
-        const _ok = isRemoteDriverSession(driver)
-          ? await (driver as Client).executeScript('mobile: removeApp', [
-              params,
-            ])
-          : await (driver as any).execute('mobile: removeApp', params);
+        if (isAndroidUiautomator2DriverSession(driver)) {
+          await (driver as any).execute('mobile: removeApp', params);
+        } else if (isXCUITestDriverSession(driver)) {
+          await (driver as any).execute('mobile: removeApp', params);
+        } else {
+          await (driver as Client).executeScript('mobile: removeApp', [params]);
+        }
         return {
           content: [
             {
