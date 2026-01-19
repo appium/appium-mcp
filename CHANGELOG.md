@@ -1,3 +1,9 @@
+## [1.8.7](https://github.com/appium/appium-mcp/compare/v1.8.6...v1.8.7) (2026-01-19)
+
+### Miscellaneous Chores
+
+* **deps:** bump appium-ios-device from 3.1.0 to 3.1.7 ([#100](https://github.com/appium/appium-mcp/issues/100)) ([b572a50](https://github.com/appium/appium-mcp/commit/b572a500e0250ee70fef155ed8ba0dcd8302d73f))
+
 ## [1.8.6](https://github.com/appium/appium-mcp/compare/v1.8.5...v1.8.6) (2026-01-19)
 
 ### Miscellaneous Chores
