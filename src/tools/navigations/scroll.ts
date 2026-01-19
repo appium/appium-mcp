@@ -83,12 +83,12 @@ export default function scroll(server: any): void {
           log.info('Scroll action completed successfully.');
         } else if (getPlatformName(driver) === PLATFORM.ios) {
           await execute(driver, 'mobile: scroll', {
-                direction: args.direction,
-                startX,
-                startY,
-                endX: startX,
-                endY,
-              });
+            direction: args.direction,
+            startX,
+            startY,
+            endX: startX,
+            endY,
+          });
         } else {
           throw new Error(
             `Unsupported platform: ${getPlatformName(driver)}. Only Android and iOS are supported.`

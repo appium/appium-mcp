@@ -348,8 +348,8 @@ export default function swipe(server: any): void {
           if (args.direction) {
             try {
               await execute(driver, 'mobile: swipe', {
-                    direction: args.direction,
-                  });
+                direction: args.direction,
+              });
               log.info(
                 `iOS swipe completed using mobile: swipe (${args.direction})`
               );

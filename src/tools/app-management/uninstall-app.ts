@@ -1,10 +1,6 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  getPlatformName,
-  PLATFORM,
-} from '../../session-store.js';
+import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
 
 export default function uninstallApp(server: FastMCP): void {

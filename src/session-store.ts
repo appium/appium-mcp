@@ -7,6 +7,13 @@ let driver: any = null;
 let sessionId: string | null = null;
 let isDeletingSession = false; // Lock to prevent concurrent deletion
 
+// Type aliases for driver variants used throughout the project.
+export type DriverInstance =
+  | Client
+  | AndroidUiautomator2Driver
+  | XCUITestDriver;
+export type NullableDriverInstance = DriverInstance | null;
+
 export const PLATFORM = {
   android: 'Android',
   ios: 'iOS',
@@ -21,9 +28,7 @@ export const PLATFORM = {
  * @param driver - The driver instance to inspect (may be a Client, AndroidUiautomator2Driver, XCUITestDriver, or null).
  * @returns `true` if `driver` is non-null and has a string `sessionId`; otherwise `false`.
  */
-export function isRemoteDriverSession(
-  driver: Client | AndroidUiautomator2Driver | XCUITestDriver | null
-): driver is Client {
+export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
   if (driver) {
     return typeof (driver as any).sessionId === 'string';
   }
@@ -43,7 +48,7 @@ export function isRemoteDriverSession(
  * @returns `true` if `driver` is an `AndroidUiautomator2Driver`.
  */
 export function isAndroidUiautomator2DriverSession(
-  driver: Client | AndroidUiautomator2Driver | XCUITestDriver | null
+  driver: NullableDriverInstance
 ): driver is AndroidUiautomator2Driver {
   return driver instanceof AndroidUiautomator2Driver;
 }
@@ -60,15 +65,12 @@ export function isAndroidUiautomator2DriverSession(
  * @returns `true` if `driver` is an `XCUITestDriver`.
  */
 export function isXCUITestDriverSession(
-  driver: Client | AndroidUiautomator2Driver | XCUITestDriver | null
+  driver: NullableDriverInstance
 ): driver is XCUITestDriver {
   return driver instanceof XCUITestDriver;
 }
 
-export function setSession(
-  d: Client | AndroidUiautomator2Driver | XCUITestDriver,
-  id: string | null
-) {
+export function setSession(d: DriverInstance, id: string | null) {
   driver = d;
   sessionId = id;
   // Reset deletion flag when setting a new session
@@ -77,10 +79,7 @@ export function setSession(
   }
 }
 
-export function getDriver():
-  | Client
-  | AndroidUiautomator2Driver
-  | XCUITestDriver {
+export function getDriver(): DriverInstance | null {
   return driver;
 }
 

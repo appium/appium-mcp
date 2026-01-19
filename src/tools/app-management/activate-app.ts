@@ -1,11 +1,7 @@
 import { FastMCP } from 'fastmcp';
-import {
-  getDriver,
-  isAndroidUiautomator2DriverSession,
-  isXCUITestDriverSession,
-} from '../../session-store.js';
+import { getDriver } from '../../session-store.js';
 import { z } from 'zod';
-import type { Client } from 'webdriver';
+import { activateApp as _activateApp } from '../../command.js';
 
 export default function activateApp(server: FastMCP): void {
   const activateAppSchema = z.object({
@@ -27,13 +23,7 @@ export default function activateApp(server: FastMCP): void {
       }
 
       try {
-        if (isAndroidUiautomator2DriverSession(driver)) {
-          await driver.activateApp(args.id);
-        } else if (isXCUITestDriverSession(driver)) {
-          await driver.activateApp(args.id);
-        } else {
-          await (driver as Client).activateApp(args.id);
-        }
+        await _activateApp(driver, args.id);
         return {
           content: [
             {

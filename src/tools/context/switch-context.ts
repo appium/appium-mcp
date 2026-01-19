@@ -6,6 +6,7 @@ import {
   isRemoteDriverSession,
 } from '../../session-store.js';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import { getCurrentContext, setContext } from '../../command.js';
 
 export default function switchContext(server: FastMCP): void {
   const schema = z.object({
@@ -83,13 +84,9 @@ export default function switchContext(server: FastMCP): void {
             isError: true,
           };
         }
-        const _ok = isAndroidUiautomator2DriverSession(driver)
-          ? await driver.setContext(args.context)
-          : await (driver as XCUITestDriver).setContext(args.context);
+        await setContext(driver, args.context);
         // Verify the switch was successful
-        const newContext = isAndroidUiautomator2DriverSession(driver)
-          ? await driver.getCurrentContext()
-          : await (driver as XCUITestDriver);
+        const newContext = await getCurrentContext(driver);
 
         return {
           content: [

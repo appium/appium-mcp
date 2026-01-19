@@ -11,6 +11,10 @@ import {
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import {
+  getCurrentContext,
+  getContexts as _getContexts,
+} from '../../command.js';
 
 export default function getContexts(server: FastMCP): void {
   server.addTool({
@@ -36,14 +40,8 @@ export default function getContexts(server: FastMCP): void {
 
       try {
         const [currentContext, contexts] = await Promise.all([
-          isAndroidUiautomator2DriverSession(driver)
-            ? await driver.getCurrentContext().catch(() => null)
-            : await (driver as XCUITestDriver)
-                .getCurrentContext()
-                .catch(() => null),
-          isAndroidUiautomator2DriverSession(driver)
-            ? await driver.getContexts().catch(() => [])
-            : await (driver as XCUITestDriver).getContexts().catch(() => []),
+          getCurrentContext(driver).catch(() => null),
+          _getContexts(driver).catch(() => []),
         ]);
 
         if (!contexts || contexts.length === 0) {
