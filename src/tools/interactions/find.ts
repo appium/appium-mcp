@@ -34,7 +34,7 @@ export default function findElement(server: FastMCP): void {
       }
 
       try {
-        const element = await (driver as any).findElement(
+        const element = await driver.findElement(
           args.strategy,
           args.selector
         );

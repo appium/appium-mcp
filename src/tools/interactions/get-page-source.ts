@@ -1,11 +1,12 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
+import { getDriver, isAndroidUiautomator2DriverSession, isRemoteDriverSession, isXCUITestDriverSession } from '../../session-store.js';
 import {
   createUIResource,
   createPageSourceInspectorUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import { Client } from 'webdriver';
 
 export default function getPageSource(server: FastMCP): void {
   server.addTool({
@@ -23,8 +24,14 @@ export default function getPageSource(server: FastMCP): void {
       }
 
       try {
-        const pageSource = await (driver as any).getPageSource();
-
+        let pageSource;
+        if (isAndroidUiautomator2DriverSession(driver)) {
+          pageSource = driver.getPageSource();
+        } else if (isXCUITestDriverSession(driver)) {
+          pageSource = driver.getPageSource();
+        } else {
+          pageSource = (driver as Client).getPageSource();
+        }
         if (!pageSource) {
           throw new Error('Page source is empty or null');
         }

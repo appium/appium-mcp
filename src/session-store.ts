@@ -23,7 +23,7 @@ export const PLATFORM = {
  */
 export function isRemoteDriverSession(
   driver: Client | AndroidUiautomator2Driver | XCUITestDriver | null
-): boolean {
+): driver is Client {
   if (driver) {
     return typeof (driver as any).sessionId === 'string';
   }
