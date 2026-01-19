@@ -3,7 +3,8 @@ import { z } from 'zod';
 import {
   getDriver,
   getPlatformName,
-  isRemoteDriverSession,
+  isAndroidUiautomator2DriverSession,
+  isXCUITestDriverSession,
 } from '../../session-store.js';
 import type { Client } from 'webdriver';
 
@@ -26,11 +27,15 @@ export default function installApp(server: FastMCP): void {
         const platform = getPlatformName(driver);
         const params =
           platform === 'Android' ? { appPath: path } : { app: path };
-        const _ok = isRemoteDriverSession(driver)
-          ? await (driver as Client).executeScript('mobile: installApp', [
-              params,
-            ])
-          : await (driver as any).execute('mobile: installApp', params);
+        if (isAndroidUiautomator2DriverSession(driver)) {
+          await driver.execute('mobile: installApp', params);
+        } else if (isXCUITestDriverSession(driver)) {
+          await driver.execute('mobile: installApp', params);
+        } else {
+          await (driver as Client).executeScript('mobile: installApp', [
+            params,
+          ]);
+        }
         return {
           content: [
             {
