@@ -72,7 +72,7 @@ async function saveDocuments(
     }
 
     // Serialize the new documents
-    const serializedNew = documents.map(doc => ({
+    const serializedNew = documents.map((doc) => ({
       pageContent: doc.pageContent,
       metadata: doc.metadata,
     }));
@@ -357,12 +357,12 @@ export async function indexAllMarkdownFiles(
         // Add file metadata to each document
         const filename = path.basename(markdownFile);
         const relativePath = path.relative(dirPath, markdownFile);
-        documents.forEach(doc => {
+        documents.forEach((doc) => {
           doc.metadata = {
             ...doc.metadata,
             source: markdownFile,
-            filename: filename,
-            relativePath: relativePath,
+            filename,
+            relativePath,
           };
         });
 
@@ -482,25 +482,27 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (indexSingleFile) {
     // Index a single Markdown file
     log.info(`Indexing single Markdown file: ${markdownPath}`);
-    indexMarkdown(markdownPath, chunkSize, chunkOverlap)
-      .then(() => {
-        process.exit(0);
-      })
-      .catch(error => {
-        log.error('Indexing failed:', error);
-        process.exit(1);
-      });
+    try {
+      await indexMarkdown(markdownPath, chunkSize, chunkOverlap);
+      process.exit(0);
+    } catch (error) {
+      log.error('Indexing failed:', error);
+      process.exit(1);
+    }
   } else {
     // Index all Markdown files in the directory
     log.info(`Indexing all Markdown files in directory: ${markdownPath}`);
-    indexAllMarkdownFiles(markdownPath, chunkSize, chunkOverlap)
-      .then(indexedFiles => {
-        log.info(`Successfully indexed ${indexedFiles.length} Markdown files`);
-        process.exit(0);
-      })
-      .catch(error => {
-        log.error('Indexing failed:', error);
-        process.exit(1);
-      });
+    try {
+      const indexedFiles = await indexAllMarkdownFiles(
+        markdownPath,
+        chunkSize,
+        chunkOverlap
+      );
+      log.info(`Successfully indexed ${indexedFiles.length} Markdown files`);
+      process.exit(0);
+    } catch (error) {
+      log.error('Indexing failed:', error);
+      process.exit(1);
+    }
   }
 }

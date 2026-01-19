@@ -82,7 +82,7 @@ export function getSimpleSuggestedLocators(
   isNative: boolean = true
 ): Record<string, string> {
   const res: Record<string, string> = {};
-  for (let [strategyAlias, strategy] of SIMPLE_STRATEGY_MAPPINGS) {
+  for (const [strategyAlias, strategy] of SIMPLE_STRATEGY_MAPPINGS) {
     // accessibility id is only supported in native context
     if (!(strategy === 'accessibility id' && !isNative)) {
       const value = attributes[strategyAlias];
@@ -103,7 +103,7 @@ export function getComplexSuggestedLocators(
   isNative: boolean,
   automationName: string
 ): Record<string, string> {
-  let complexLocators: Record<string, string | null> = {};
+  const complexLocators: Record<string, string | null> = {};
   const domNode = findDOMNodeByPath(path, sourceDoc);
   if (isNative) {
     switch (automationName) {
@@ -342,7 +342,7 @@ export function getOptimalXPath(
     ];
     const attrPairsPermutations: [string, string][] = attrsForPairs.flatMap(
       (v1, i) =>
-        attrsForPairs.slice(i + 1).map(v2 => [v1, v2] as [string, string])
+        attrsForPairs.slice(i + 1).map((v2) => [v1, v2] as [string, string])
     );
 
     const cases = [
@@ -405,7 +405,7 @@ export function getOptimalXPath(
 
       // If there's more than one sibling, append the index
       if (childNodes.length > 1) {
-        let index = childNodes.indexOf(domNode);
+        const index = childNodes.indexOf(domNode);
         xpath += `[${index + 1}]`;
       }
     }
@@ -440,7 +440,7 @@ export function getOptimalClassChain(
     // BASE CASE #2: If this node has a unique class chain based on attributes, return it
     let classChain: string, othersWithAttr: XMLNode[];
 
-    for (let attrName of CHECKED_CLASS_CHAIN_ATTRIBUTES) {
+    for (const attrName of CHECKED_CLASS_CHAIN_ATTRIBUTES) {
       const attrValue = (domNode as XMLElement).getAttribute?.(attrName);
       if (_.isEmpty(attrValue)) {
         continue;
@@ -462,7 +462,7 @@ export function getOptimalClassChain(
 
       // If the attribute isn't actually unique, get its index too
       if (othersWithAttr.length > 1) {
-        let index = othersWithAttr.indexOf(domNode);
+        const index = othersWithAttr.indexOf(domNode);
         classChain = `${classChain}[${index + 1}]`;
       }
       return classChain;
@@ -484,7 +484,7 @@ export function getOptimalClassChain(
 
       // If there's more than one sibling, append the index
       if (childNodes.length > 1) {
-        let index = childNodes.indexOf(domNode);
+        const index = childNodes.indexOf(domNode);
         classChain += `[${index + 1}]`;
       }
     }
@@ -513,11 +513,11 @@ export function getOptimalPredicateString(
     }
 
     // BASE CASE #2: Check all attributes and try to find the best way
-    let xpathAttributes: string[] = [];
-    let predicateString: string[] = [];
+    const xpathAttributes: string[] = [];
+    const predicateString: string[] = [];
     let othersWithAttr: XMLNode[];
 
-    for (let attrName of CHECKED_PREDICATE_ATTRIBUTES) {
+    for (const attrName of CHECKED_PREDICATE_ATTRIBUTES) {
       const attrValue = (domNode as XMLElement).getAttribute?.(attrName);
       if (_.isEmpty(attrValue)) {
         continue;
@@ -579,7 +579,7 @@ export function getOptimalUiAutomatorSelector(
     // BASE CASE #3: If looking for an element that is not inside
     // the last direct child of the hierarchy, return null
     const lastHierarchyChildIndex = (hierarchyChildren.length - 1).toString();
-    let pathArray = path.split('.');
+    const pathArray = path.split('.');
     const requestedHierarchyChildIndex = pathArray[0];
     if (requestedHierarchyChildIndex !== lastHierarchyChildIndex) {
       return null;

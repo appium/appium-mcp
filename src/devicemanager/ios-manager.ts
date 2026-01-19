@@ -81,7 +81,7 @@ export class IOSManager {
    */
   public async listBootedSimulators(): Promise<IOSDevice[]> {
     const allSimulators = await this.listSimulators();
-    return allSimulators.filter(simulator => simulator.state === 'Booted');
+    return allSimulators.filter((simulator) => simulator.state === 'Booted');
   }
 
   /**
@@ -98,7 +98,7 @@ export class IOSManager {
       const devices = await utilities.getConnectedDevices();
       return devices.map((udid: string) => ({
         name: udid, // We'll use UDID as name for now
-        udid: udid,
+        udid,
         type: 'real' as const,
       }));
     } catch (error) {

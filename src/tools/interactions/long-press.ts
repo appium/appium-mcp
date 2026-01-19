@@ -54,7 +54,7 @@ export default function longPress(server: FastMCP): void {
               actions: [
                 { type: 'pointerMove', duration: 0, x, y },
                 { type: 'pointerDown', button: 0 },
-                { type: 'pause', duration: duration },
+                { type: 'pause', duration },
                 { type: 'pointerUp', button: 0 },
               ],
             },
@@ -85,7 +85,7 @@ export default function longPress(server: FastMCP): void {
                 actions: [
                   { type: 'pointerMove', duration: 0, x, y },
                   { type: 'pointerDown', button: 0 },
-                  { type: 'pause', duration: duration },
+                  { type: 'pause', duration },
                   { type: 'pointerUp', button: 0 },
                 ],
               },

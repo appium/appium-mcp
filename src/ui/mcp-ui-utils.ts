@@ -222,7 +222,7 @@ export function createDevicePickerUI(
         }
       }, '*');
     }
-    
+
     // Add click handlers for better UX
     document.querySelectorAll('.device-card').forEach(card => {
       card.addEventListener('click', (e) => {
@@ -378,9 +378,9 @@ export function createScreenshotViewerUI(
       </div>
     </div>
     <div class="image-container" id="imageContainer">
-      <img src="data:image/png;base64,${screenshotBase64}" 
-           alt="Screenshot" 
-           class="screenshot-img" 
+      <img src="data:image/png;base64,${screenshotBase64}"
+           alt="Screenshot"
+           class="screenshot-img"
            id="screenshotImg"
            onclick="toggleZoom()">
     </div>
@@ -393,7 +393,7 @@ export function createScreenshotViewerUI(
   <script>
     let currentZoom = 1;
     const img = document.getElementById('screenshotImg');
-    
+
     function toggleZoom() {
       if (currentZoom === 1) {
         zoomIn();
@@ -401,29 +401,29 @@ export function createScreenshotViewerUI(
         resetZoom();
       }
     }
-    
+
     function zoomIn() {
       currentZoom = Math.min(currentZoom + 0.5, 4);
       img.style.transform = \`scale(\${currentZoom})\`;
     }
-    
+
     function zoomOut() {
       currentZoom = Math.max(currentZoom - 0.5, 0.5);
       img.style.transform = \`scale(\${currentZoom})\`;
     }
-    
+
     function resetZoom() {
       currentZoom = 1;
       img.style.transform = 'scale(1)';
     }
-    
+
     function downloadScreenshot() {
       const link = document.createElement('a');
       link.href = img.src;
       link.download = '${filepath.split('/').pop() || 'screenshot.png'}';
       link.click();
     }
-    
+
     function takeNewScreenshot() {
       window.parent.postMessage({
         type: 'tool',
@@ -433,7 +433,7 @@ export function createScreenshotViewerUI(
         }
       }, '*');
     }
-    
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === '+' || e.key === '=') zoomIn();
@@ -650,7 +650,7 @@ export function createSessionDashboardUI(sessionInfo: {
         }
       }, '*');
     }
-    
+
     function getPageSource() {
       window.parent.postMessage({
         type: 'tool',
@@ -660,7 +660,7 @@ export function createSessionDashboardUI(sessionInfo: {
         }
       }, '*');
     }
-    
+
     function generateLocators() {
       window.parent.postMessage({
         type: 'tool',
@@ -670,7 +670,7 @@ export function createSessionDashboardUI(sessionInfo: {
         }
       }, '*');
     }
-    
+
     function getContexts() {
       window.parent.postMessage({
         type: 'tool',
@@ -680,7 +680,7 @@ export function createSessionDashboardUI(sessionInfo: {
         }
       }, '*');
     }
-    
+
     function deleteSession() {
       if (confirm('Are you sure you want to end this session?')) {
         window.parent.postMessage({
@@ -1034,7 +1034,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
         alert('Copied to clipboard!');
       });
     }
-    
+
     function formatXML() {
       const content = document.getElementById('xmlContent').textContent;
       try {
@@ -1047,7 +1047,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
         alert('Failed to format XML');
       }
     }
-    
+
     function generateLocators() {
       window.parent.postMessage({
         type: 'tool',
@@ -1057,7 +1057,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
         }
       }, '*');
     }
-    
+
     // Search functionality
     document.getElementById('searchBox').addEventListener('input', (e) => {
       const searchTerm = e.target.value.toLowerCase();
@@ -1090,8 +1090,8 @@ export function createContextSwitcherUI(
 ): string {
   const contextCards = contexts
     .map(
-      context => `
-    <div class="context-card ${context === currentContext ? 'active' : ''}" 
+      (context) => `
+    <div class="context-card ${context === currentContext ? 'active' : ''}"
          onclick="switchContext('${context}')">
       <div class="context-header">
         <h3>${context}</h3>
@@ -1248,7 +1248,7 @@ export function createAppListUI(
 ): string {
   const appCards = apps
     .map(
-      app => `
+      (app) => `
     <div class="app-card" data-package="${app.packageName}">
       <div class="app-header">
         <h3>${app.appName || app.packageName}</h3>
@@ -1407,7 +1407,7 @@ export function createAppListUI(
         }
       }, '*');
     }
-    
+
     function terminateApp(packageName) {
       if (confirm('Are you sure you want to terminate this app?')) {
         window.parent.postMessage({
@@ -1421,7 +1421,7 @@ export function createAppListUI(
         }, '*');
       }
     }
-    
+
     function uninstallApp(packageName) {
       if (confirm('Are you sure you want to uninstall this app? This action cannot be undone.')) {
         window.parent.postMessage({
@@ -1435,7 +1435,7 @@ export function createAppListUI(
         }, '*');
       }
     }
-    
+
     // Search functionality
     document.getElementById('searchBox').addEventListener('input', (e) => {
       const searchTerm = e.target.value.toLowerCase();
@@ -1584,7 +1584,7 @@ export function createTestCodeViewerUI(
         alert('Code copied to clipboard!');
       });
     }
-    
+
     function downloadCode() {
       const text = document.getElementById('codeContent').textContent;
       const blob = new Blob([text], { type: 'text/plain' });
@@ -1595,19 +1595,19 @@ export function createTestCodeViewerUI(
       a.click();
       URL.revokeObjectURL(url);
     }
-    
+
     function formatCode() {
       // Basic formatting - could be enhanced with a proper formatter
       const content = document.getElementById('codeContent');
       const text = content.textContent;
       // Add line numbers
       const lines = text.split('\\n');
-      const formatted = lines.map((line, i) => 
+      const formatted = lines.map((line, i) =>
         \`<span class="line-numbers">\${i + 1}</span>\${line}\`
       ).join('\\n');
       content.innerHTML = formatted;
     }
-    
+
     // Initial format
     formatCode();
   </script>

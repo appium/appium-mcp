@@ -75,9 +75,9 @@ describe('generateAllElementLocators', () => {
     // If the filter works, either the result will be empty (if no buttons found)
     // or all elements will be buttons
     if (result.length > 0) {
-      expect(result.every(element => element.tagName.includes('Button'))).toBe(
-        true
-      );
+      expect(
+        result.every((element) => element.tagName.includes('Button'))
+      ).toBe(true);
     }
   });
 
@@ -88,7 +88,7 @@ describe('generateAllElementLocators', () => {
     });
 
     // Verify no Button elements are included
-    expect(result.every(element => !element.tagName.includes('Button'))).toBe(
+    expect(result.every((element) => !element.tagName.includes('Button'))).toBe(
       true
     );
   });
@@ -129,12 +129,11 @@ describe('generateAllElementLocators', () => {
       ];
 
       expect(
-        result.every(element => {
-          return (
-            interactableTags.some(tag => element.tagName.includes(tag)) ||
+        result.every(
+          (element) =>
+            interactableTags.some((tag) => element.tagName.includes(tag)) ||
             element.clickable === true
-          );
-        })
+        )
       ).toBe(true);
     }
   });
@@ -160,9 +159,9 @@ describe('generateAllElementLocators', () => {
       ];
 
       expect(
-        result.every(element => {
-          return interactableTags.some(tag => element.tagName.includes(tag));
-        })
+        result.every((element) =>
+          interactableTags.some((tag) => element.tagName.includes(tag))
+        )
       ).toBe(true);
     }
   });
@@ -174,6 +173,6 @@ describe('generateAllElementLocators', () => {
     });
 
     // Verify all elements are clickable
-    expect(result.every(element => element.clickable === true)).toBe(true);
+    expect(result.every((element) => element.clickable === true)).toBe(true);
   });
 });

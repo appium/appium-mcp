@@ -1,3 +1,34 @@
+## [1.8.6](https://github.com/appium/appium-mcp/compare/v1.8.5...v1.8.6) (2026-01-19)
+
+### Miscellaneous Chores
+
+* **deps:** bump appium-adb from 12.13.1 to 14.1.8 ([#68](https://github.com/appium/appium-mcp/issues/68)) ([e6406e9](https://github.com/appium/appium-mcp/commit/e6406e992892a57d41c723cf11c4f7654515c9e1))
+
+## [1.8.5](https://github.com/appium/appium-mcp/compare/v1.8.4...v1.8.5) (2026-01-19)
+
+### Miscellaneous Chores
+
+* **deps:** bump rimraf from 6.0.1 to 6.1.2 ([#79](https://github.com/appium/appium-mcp/issues/79)) ([e7b81f8](https://github.com/appium/appium-mcp/commit/e7b81f8bbd6941502127087b3220301ee012d190))
+
+## [1.8.4](https://github.com/appium/appium-mcp/compare/v1.8.3...v1.8.4) (2026-01-18)
+
+### Miscellaneous Chores
+
+* **deps:** bump @appium/support from 7.0.2 to 7.0.4 ([#86](https://github.com/appium/appium-mcp/issues/86)) ([3cd5e9d](https://github.com/appium/appium-mcp/commit/3cd5e9d855db1f2bb8e19ae5f29e9c82e0574e9f))
+* **deps:** bump fastmcp from 3.23.1 to 3.26.9 ([#101](https://github.com/appium/appium-mcp/issues/101)) ([28df18d](https://github.com/appium/appium-mcp/commit/28df18dc13cb8abf5e0d0c7e2c8669edddb7e653))
+
+## [1.8.3](https://github.com/appium/appium-mcp/compare/v1.8.2...v1.8.3) (2026-01-18)
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump jest and @types/jest ([#87](https://github.com/appium/appium-mcp/issues/87)) ([3b1d35e](https://github.com/appium/appium-mcp/commit/3b1d35e6e4de8c8dd0c8bb2c05f1cabc663a2272))
+
+## [1.8.2](https://github.com/appium/appium-mcp/compare/v1.8.1...v1.8.2) (2026-01-17)
+
+### Miscellaneous Chores
+
+* use appium's eslint rule ([#102](https://github.com/appium/appium-mcp/issues/102)) ([3f34d38](https://github.com/appium/appium-mcp/commit/3f34d381c3c521e701710f69c797137211484b85))
+
 ## [1.8.1](https://github.com/appium/appium-mcp/compare/v1.8.0...v1.8.1) (2026-01-17)
 
 ### Bug Fixes

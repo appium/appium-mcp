@@ -39,9 +39,11 @@ function matchesAttributeFilters(
 ): boolean {
   if (requireAttributes.length > 0) {
     const hasRequiredAttr = requireAttributes.some(
-      attr => element.attributes && element.attributes[attr]
+      (attr) => element.attributes && element.attributes[attr]
     );
-    if (!hasRequiredAttr) return false;
+    if (!hasRequiredAttr) {
+      return false;
+    }
   }
 
   if (
@@ -87,7 +89,7 @@ function isInteractableElement(
         ];
 
   return (
-    interactableTags.some(tag => element.tagName.includes(tag)) ||
+    interactableTags.some((tag) => element.tagName.includes(tag)) ||
     element.attributes?.clickable === 'true' ||
     element.attributes?.focusable === 'true'
   );

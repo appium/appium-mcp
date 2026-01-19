@@ -69,7 +69,7 @@ export default function registerTools(server: FastMCP): void {
           JSON.stringify(obj, (key, value) => {
             if (
               key &&
-              SENSITIVE_KEYS.some(k => key.toLowerCase().includes(k))
+              SENSITIVE_KEYS.some((k) => key.toLowerCase().includes(k))
             ) {
               return '[REDACTED]';
             }

@@ -15,11 +15,11 @@ registerResources(server);
 registerTools(server);
 
 // Handle client connection and disconnection events
-server.on('connect', event => {
+server.on('connect', (event) => {
   log.info('Client connected:', event.session);
 });
 
-server.on('disconnect', async event => {
+server.on('disconnect', async (event) => {
   log.info('Client disconnected:', event.session);
   // Only try to clean up if there's an active session
   if (hasActiveSession()) {

@@ -34,17 +34,15 @@ export default function generateTest(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: instructions({
-              steps: args.steps,
-            }),
-          },
-        ],
-      };
-    },
+    execute: async (args: any, context: any): Promise<any> => ({
+      content: [
+        {
+          type: 'text',
+          text: instructions({
+            steps: args.steps,
+          }),
+        },
+      ],
+    }),
   });
 }

@@ -6,8 +6,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import { access, mkdir, unlink } from 'fs/promises';
-import { constants } from 'fs';
-import { createWriteStream } from 'fs';
+import { constants, createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import os from 'os';
 import axios from 'axios';
@@ -196,7 +195,7 @@ export default function setupWDA(server: any): void {
               text: `${JSON.stringify(
                 {
                   version: wdaVersion,
-                  platform: platform,
+                  platform,
                   architecture: archStr,
                   wdaAppPath: appPath,
                   wdaCachePath: `~/.cache/appium-mcp/wda/${wdaVersion}`,

@@ -52,10 +52,10 @@ async function getAndroidDevices(): Promise<any[]> {
  * Validate and select Android device by UDID
  */
 function selectAndroidDevice(deviceUdid: string, devices: any[]): void {
-  const selectedDevice = devices.find(d => d.udid === deviceUdid);
+  const selectedDevice = devices.find((d) => d.udid === deviceUdid);
   if (!selectedDevice) {
     throw new Error(
-      `Device with UDID "${deviceUdid}" not found. Available devices: ${devices.map(d => d.udid).join(', ')}`
+      `Device with UDID "${deviceUdid}" not found. Available devices: ${devices.map((d) => d.udid).join(', ')}`
     );
   }
 
@@ -154,9 +154,9 @@ function selectIOSDevice(
   devices: any[],
   iosDeviceType: 'simulator' | 'real'
 ): any {
-  const selectedDevice = devices.find(d => d.udid === deviceUdid);
+  const selectedDevice = devices.find((d) => d.udid === deviceUdid);
   if (!selectedDevice) {
-    const deviceList = devices.map(d => `${d.name} (${d.udid})`).join(', ');
+    const deviceList = devices.map((d) => `${d.name} (${d.udid})`).join(', ');
     throw new Error(
       `Device with UDID "${deviceUdid}" not found. Available devices: ${deviceList}`
     );

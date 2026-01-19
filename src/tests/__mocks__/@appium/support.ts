@@ -2,10 +2,10 @@
 // This avoids the ESM/CommonJS mismatch with uuid dependency
 
 export const logger = {
-  getLogger: (name: string) => {
+  getLogger: (name: string) =>
     // Simple logger implementation for tests
     // No-op functions that match the logger interface
-    return {
+    ({
       debug: (message: string, ...args: any[]) => {
         // Silent in tests by default
       },
@@ -21,8 +21,7 @@ export const logger = {
       trace: (message: string, ...args: any[]) => {
         // Silent in tests by default
       },
-    };
-  },
+    }),
 };
 
 // Export other commonly used utilities from @appium/support if needed

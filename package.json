@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.8.1",
+  "version": "1.8.6",
   "type": "module",
   "repository": {
     "type": "git",
@@ -46,7 +46,7 @@
     "@opentelemetry/sdk-node": "^0.208.0",
     "@xenova/transformers": "^2.17.2",
     "@xmldom/xmldom": "^0.9.8",
-    "appium-adb": "^12.12.1",
+    "appium-adb": "^14.1.8",
     "appium-ios-device": "^3.1.0",
     "appium-uiautomator2-driver": "^5.0.5",
     "appium-xcuitest-driver": "^10.2.1",
@@ -62,18 +62,15 @@
     "webdriver": "^9.23.0"
   },
   "devDependencies": {
-    "@appium/tsconfig": "^1.0.0",
     "@appium/eslint-config-appium-ts": "^2.0.0",
     "@jest/globals": "^30.2.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@types/jest": "^29.5.12",
+    "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.17",
     "@types/node": "^22.15.18",
-    "@typescript-eslint/eslint-plugin": "^8.34.0",
     "conventional-changelog-conventionalcommits": "^9.1.0",
-    "eslint-plugin-prettier": "^5.4.1",
-    "jest": "^29.7.0",
+    "jest": "^30.2.0",
     "prettier": "^3.5.3",
     "semantic-release": "^25.0.2",
     "ts-jest": "^29.1.2",
