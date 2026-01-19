@@ -1,5 +1,5 @@
 import { FastMCP } from 'fastmcp';
-import { getDriver, isRemoteDriverSession } from '../../session-store.js';
+import { getDriver, isAndroidUiautomator2DriverSession, isRemoteDriverSession, isXCUITestDriverSession } from '../../session-store.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, isAbsolute } from 'path';
 import * as os from 'node:os';
@@ -57,9 +57,15 @@ export async function executeScreenshot(
   }
 
   try {
-    const screenshotBase64 = isRemoteDriverSession(driver)
-      ? await (driver as Client).takeScreenshot()
-      : await (driver as any).getScreenshot();
+    let screenshotBase64;
+
+    if (isAndroidUiautomator2DriverSession(driver)) {
+      screenshotBase64 = await driver.getScreenshot();
+    } else if (isXCUITestDriverSession(driver)) {
+      screenshotBase64 = await driver.getScreenshot();
+    } else {
+      await (driver as Client).takeScreenshot();
+    };
 
     // Convert base64 to buffer
     const screenshotBuffer = Buffer.from(screenshotBase64, 'base64');

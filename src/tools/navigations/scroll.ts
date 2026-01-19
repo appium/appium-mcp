@@ -2,7 +2,10 @@ import { z } from 'zod';
 import {
   getDriver,
   getPlatformName,
+  isAndroidUiautomator2DriverSession,
   isRemoteDriverSession,
+  isXCUITestDriverSession,
+  PLATFORM,
 } from '../../session-store.js';
 import log from '../../logger.js';
 import type { Client } from 'webdriver';
@@ -30,7 +33,15 @@ export default function scroll(server: any): void {
       }
 
       try {
-        const { width, height } = await (driver as any).getWindowRect();
+        let rect;
+        if (isAndroidUiautomator2DriverSession(driver)) {
+          rect = await driver.getWindowRect();
+        } else if (isXCUITestDriverSession(driver)) {
+          rect = await driver.getWindowRect();
+        } else {
+          rect = await (driver as Client).getWindowRect();
+        }
+        const { width, height } = rect;
         log.info('Device screen size:', { width, height });
         const startX = Math.floor(width / 2);
         // calculate start and end Y positions for scrolling depending on the direction
@@ -67,9 +78,16 @@ export default function scroll(server: any): void {
             },
           ]);
           log.info('Scroll action completed successfully.');
-        } else if (getPlatformName(driver) === 'iOS') {
-          const _ok = isRemoteDriverSession(driver)
-            ? await (driver as Client).executeScript('mobile: scroll', [
+        } else if (getPlatformName(driver) === PLATFORM.ios) {
+          const _ok = isXCUITestDriverSession(driver)
+            ? await driver.execute('mobile: scroll', {
+                direction: args.direction,
+                startX,
+                startY,
+                endX: startX,
+                endY,
+              })
+            : await (driver as Client).executeScript('mobile: scroll', [
                 {
                   direction: args.direction,
                   startX,
@@ -77,14 +95,7 @@ export default function scroll(server: any): void {
                   endX: startX,
                   endY,
                 },
-              ])
-            : await (driver as any).execute('mobile: scroll', {
-                direction: args.direction,
-                startX,
-                startY,
-                endX: startX,
-                endY,
-              });
+              ]);
         } else {
           throw new Error(
             `Unsupported platform: ${getPlatformName(driver)}. Only Android and iOS are supported.`
