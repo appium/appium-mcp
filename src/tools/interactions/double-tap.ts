@@ -5,6 +5,7 @@ import {
   getPlatformName,
   isAndroidUiautomator2DriverSession,
   isXCUITestDriverSession,
+  PLATFORM,
 } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
@@ -30,7 +31,7 @@ export default function doubleTap(server: FastMCP): void {
 
       try {
         const platform = getPlatformName(driver);
-        if (platform === 'Android') {
+        if (platform === PLATFORM.android) {
           // Get element location for Android double tap
           const element = await driver.findElement(
             'id',
@@ -48,7 +49,7 @@ export default function doubleTap(server: FastMCP): void {
           const y = elementRect.y + elementRect.height / 2;
 
           // Perform double tap using performActions
-          await (driver as any).performActions([
+          const operation = [
             {
               type: 'pointer',
               id: 'finger1',
@@ -64,8 +65,12 @@ export default function doubleTap(server: FastMCP): void {
                 { type: 'pointerUp', button: 0 },
               ],
             },
-          ]);
-        } else if (platform === 'iOS') {
+          ];
+
+          const _ok = isAndroidUiautomator2DriverSession(driver)
+          ? await driver.performActions(operation)
+          : await (driver as Client).performActions(operation);
+        } else if (platform === PLATFORM.ios) {
           // Use iOS mobile: doubleTap execute method
           const _ok = isXCUITestDriverSession(driver)
             ? await driver.execute('mobile: doubleTap', [
