@@ -1,3 +1,9 @@
+## [1.8.5](https://github.com/appium/appium-mcp/compare/v1.8.4...v1.8.5) (2026-01-19)
+
+### Miscellaneous Chores
+
+* **deps:** bump rimraf from 6.0.1 to 6.1.2 ([#79](https://github.com/appium/appium-mcp/issues/79)) ([e7b81f8](https://github.com/appium/appium-mcp/commit/e7b81f8bbd6941502127087b3220301ee012d190))
+
 ## [1.8.4](https://github.com/appium/appium-mcp/compare/v1.8.3...v1.8.4) (2026-01-18)
 
 ### Miscellaneous Chores
