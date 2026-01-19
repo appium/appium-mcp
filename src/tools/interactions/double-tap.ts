@@ -4,7 +4,7 @@ import {
   getDriver,
   getPlatformName,
   isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
+  isXCUITestDriverSession,
 } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
@@ -30,19 +30,22 @@ export default function doubleTap(server: FastMCP): void {
 
       try {
         const platform = getPlatformName(driver);
-
         if (platform === 'Android') {
           // Get element location for Android double tap
-          const element = await (driver as any).findElement(
+          const element = await driver.findElement(
             'id',
             args.elementUUID
           );
-          const location = await element.getLocation();
-          const size = await element.getSize();
+          let elementRect;
+          if (isAndroidUiautomator2DriverSession(driver)) {
+            elementRect = await driver.getElementRect(element['element-6066-11e4-a52e-4f735466cecf']);
+          } else {
+            elementRect = await (driver as Client).getElementRect(element['element-6066-11e4-a52e-4f735466cecf']);
+          }
 
           // Calculate center coordinates
-          const x = location.x + size.width / 2;
-          const y = location.y + size.height / 2;
+          const x = elementRect.x + elementRect.width / 2;
+          const y = elementRect.y + elementRect.height / 2;
 
           // Perform double tap using performActions
           await (driver as any).performActions([
@@ -64,11 +67,11 @@ export default function doubleTap(server: FastMCP): void {
           ]);
         } else if (platform === 'iOS') {
           // Use iOS mobile: doubleTap execute method
-          const _ok = isRemoteDriverSession(driver)
-            ? await (driver as Client).executeScript('mobile: doubleTap', [
+          const _ok = isXCUITestDriverSession(driver)
+            ? await driver.execute('mobile: doubleTap', [
                 { elementId: args.elementUUID },
               ])
-            : await (driver as any).execute('mobile: doubleTap', [
+            : await (driver as Client).executeScript('mobile: doubleTap', [
                 { elementId: args.elementUUID },
               ]);
         } else {

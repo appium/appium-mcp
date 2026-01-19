@@ -26,11 +26,10 @@ export default function generateTest(server: FastMCP): void {
 
       try {
         const elementClick = async () => {
-          isAndroidUiautomator2DriverSession(driver)
+          const _ok = isAndroidUiautomator2DriverSession(driver)
           ? await driver.click(args.elementUUID)
-          : await (driver as XCUITestDriver).click(args.elementUUID)
-
-        }
+          : await (driver as XCUITestDriver).click(args.elementUUID);
+        };
         const _ok = isRemoteDriverSession(driver)
           ? await (driver as Client).elementClick(args.elementUUID)
           : await elementClick();
