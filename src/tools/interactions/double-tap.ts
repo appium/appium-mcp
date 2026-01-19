@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   getDriver,
   getPlatformName,
+  isAndroidUiautomator2DriverSession,
   isRemoteDriverSession,
 } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
