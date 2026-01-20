@@ -1,3 +1,9 @@
+## [1.8.8](https://github.com/appium/appium-mcp/compare/v1.8.7...v1.8.8) (2026-01-20)
+
+### Bug Fixes
+
+* isRemoteDriverSession handling ([#112](https://github.com/appium/appium-mcp/issues/112)) ([2c95859](https://github.com/appium/appium-mcp/commit/2c958599238e9e64f711426dcbdb6df5aff05183))
+
 ## [1.8.7](https://github.com/appium/appium-mcp/compare/v1.8.6...v1.8.7) (2026-01-19)
 
 ### Miscellaneous Chores
