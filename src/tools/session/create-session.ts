@@ -11,6 +11,7 @@ import {
   setSession,
   hasActiveSession,
   safeDeleteSession,
+  isRemoteDriverSession,
 } from '../../session-store.js';
 import {
   getSelectedDevice,
@@ -325,6 +326,8 @@ export default function createSession(server: any): void {
           });
           sessionId = client.sessionId;
           setSession(client, client.sessionId);
+
+          log.info(`[debug] client type: isRemoteDriverSession: ${isRemoteDriverSession(client)}`)
         } else {
           log.info(
             `Creating new ${platform.toUpperCase()} session with capabilities:`,

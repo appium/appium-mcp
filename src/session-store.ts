@@ -25,7 +25,7 @@ export function isRemoteDriverSession(
   driver: Client | AndroidUiautomator2Driver | XCUITestDriver | null
 ): boolean {
   if (driver) {
-    return typeof (driver as any).sessionId === 'string';
+    return !(driver instanceof AndroidUiautomator2Driver || driver instanceof XCUITestDriver)
   }
   return false;
 }
