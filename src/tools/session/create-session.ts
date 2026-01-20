@@ -11,7 +11,6 @@ import {
   setSession,
   hasActiveSession,
   safeDeleteSession,
-  isRemoteDriverSession,
 } from '../../session-store.js';
 import {
   getSelectedDevice,
