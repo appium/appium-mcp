@@ -76,3 +76,15 @@ export async function setValue(
   }
   return await (driver as Client).elementSendKeys(elementUUID, text);
 }
+
+export async function elementClick(
+  driver: DriverInstance,
+  elementUUID: string
+) {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.click(elementUUID);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.click(elementUUID);
+  }
+  return await driver.elementClick(elementUUID);
+}

@@ -1,13 +1,8 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
-} from '../../session-store.js';
+import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
-import type { Client } from 'webdriver';
-import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import { elementClick as _elementClick } from '../../command.js';
 
 export default function generateTest(server: FastMCP): void {
   const clickActionSchema = z.object({
@@ -29,14 +24,7 @@ export default function generateTest(server: FastMCP): void {
       }
 
       try {
-        const elementClick = async () => {
-          const _ok = isAndroidUiautomator2DriverSession(driver)
-            ? await driver.click(args.elementUUID)
-            : await (driver as XCUITestDriver).click(args.elementUUID);
-        };
-        const _ok = isRemoteDriverSession(driver)
-          ? await (driver as Client).elementClick(args.elementUUID)
-          : await elementClick();
+        await _elementClick(driver, args.elementUUID);
         return {
           content: [
             {
