@@ -1,3 +1,10 @@
+## [1.8.10](https://github.com/appium/appium-mcp/compare/v1.8.9...v1.8.10) (2026-01-22)
+
+### Miscellaneous Chores
+
+* **deps:** bump @modelcontextprotocol/sdk from 1.25.2 to 1.25.3 ([#115](https://github.com/appium/appium-mcp/issues/115)) ([5aab38b](https://github.com/appium/appium-mcp/commit/5aab38ba23559ce3db4c673f26acedd6e4c769bf))
+* **deps:** bump fastmcp from 3.26.9 to 3.28.0 ([#116](https://github.com/appium/appium-mcp/issues/116)) ([86aec9b](https://github.com/appium/appium-mcp/commit/86aec9b0e7947167bd893324d839b22fab39f521))
+
 ## [1.8.9](https://github.com/appium/appium-mcp/compare/v1.8.8...v1.8.9) (2026-01-21)
 
 ### Bug Fixes
