@@ -88,3 +88,15 @@ export async function elementClick(
   }
   return await driver.elementClick(elementUUID);
 }
+
+export async function getElementRect(
+  driver: DriverInstance,
+  elementUUID: string
+): Promise<import('@appium/types').Rect> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getElementRect(elementUUID);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.getElementRect(elementUUID);
+  }
+  return await driver.getElementRect(elementUUID);
+}

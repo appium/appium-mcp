@@ -8,7 +8,7 @@ import {
 } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
-import { execute } from '../../command.js';
+import { execute, getElementRect } from '../../command.js';
 
 export default function doubleTap(server: FastMCP): void {
   const doubleTapActionSchema = z.object({
@@ -34,16 +34,10 @@ export default function doubleTap(server: FastMCP): void {
         if (platform === PLATFORM.android) {
           // Get element location for Android double tap
           const element = await driver.findElement('id', args.elementUUID);
-          let elementRect;
-          if (isAndroidUiautomator2DriverSession(driver)) {
-            elementRect = await driver.getElementRect(
-              element['element-6066-11e4-a52e-4f735466cecf']
-            );
-          } else {
-            elementRect = await (driver as Client).getElementRect(
-              element['element-6066-11e4-a52e-4f735466cecf']
-            );
-          }
+          const elementRect = await getElementRect(
+            driver,
+            element['element-6066-11e4-a52e-4f735466cecf']
+          );
 
           // Calculate center coordinates
           const x = elementRect.x + elementRect.width / 2;
