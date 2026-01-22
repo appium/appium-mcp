@@ -39,7 +39,7 @@ export default function findElement(server: FastMCP): void {
           content: [
             {
               type: 'text',
-              text: `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${element.ELEMENT}`,
+              text: `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${element['element-6066-11e4-a52e-4f735466cecf']}`,
             },
           ],
         };

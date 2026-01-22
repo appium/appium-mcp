@@ -1,12 +1,7 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
-} from '../../session-store.js';
-import type { XCUITestDriver } from 'appium-xcuitest-driver';
-import { getCurrentContext, setContext } from '../../command.js';
+import { getDriver, isRemoteDriverSession } from '../../session-store.js';
+import { getContexts, getCurrentContext, setContext } from '../../command.js';
 
 export default function switchContext(server: FastMCP): void {
   const schema = z.object({
@@ -40,14 +35,8 @@ export default function switchContext(server: FastMCP): void {
 
       try {
         const [currentContext, availableContexts] = await Promise.all([
-          isAndroidUiautomator2DriverSession(driver)
-            ? await driver.getCurrentContext().catch(() => null)
-            : await (driver as XCUITestDriver)
-                .getCurrentContext()
-                .catch(() => null),
-          isAndroidUiautomator2DriverSession(driver)
-            ? await driver.getContexts().catch(() => [])
-            : await (driver as XCUITestDriver).getContexts().catch(() => []),
+          getCurrentContext(driver).catch(() => null),
+          getContexts(driver).catch(() => [] as string[]),
         ]);
 
         if (currentContext === args.context) {

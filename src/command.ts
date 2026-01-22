@@ -63,3 +63,16 @@ export async function setContext(
   }
   throw new Error('setContext is not supported');
 }
+
+export async function setValue(
+  driver: DriverInstance,
+  elementUUID: string,
+  text: string
+) {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.setValue(text, elementUUID);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.setValue(text, elementUUID);
+  }
+  return await (driver as Client).elementSendKeys(elementUUID, text);
+}
