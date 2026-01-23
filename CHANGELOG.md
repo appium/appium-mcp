@@ -1,3 +1,10 @@
+## [1.8.11](https://github.com/appium/appium-mcp/compare/v1.8.10...v1.8.11) (2026-01-23)
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump @types/node from 25.0.9 to 25.0.10 ([#119](https://github.com/appium/appium-mcp/issues/119)) ([b29f37c](https://github.com/appium/appium-mcp/commit/b29f37c0c79fdbf1b7e7070de10381fcb0001046))
+* **deps:** bump lodash and @types/lodash ([#118](https://github.com/appium/appium-mcp/issues/118)) ([a018c02](https://github.com/appium/appium-mcp/commit/a018c0238cb6fa3e3c91707ad5fd9528d2dfd3a1))
+
 ## [1.8.10](https://github.com/appium/appium-mcp/compare/v1.8.9...v1.8.10) (2026-01-22)
 
 ### Miscellaneous Chores
