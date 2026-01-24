@@ -8,7 +8,7 @@ import {
 } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
-import { execute, getElementRect } from '../../command.js';
+import { execute, getElementRect, performActions } from '../../command.js';
 
 export default function doubleTap(server: FastMCP): void {
   const doubleTapActionSchema = z.object({
@@ -61,10 +61,7 @@ export default function doubleTap(server: FastMCP): void {
               ],
             },
           ];
-
-          const _ok = isAndroidUiautomator2DriverSession(driver)
-            ? await driver.performActions(operation)
-            : await (driver as Client).performActions(operation);
+          await performActions(driver, operation);
         } else if (platform === PLATFORM.ios) {
           // Use iOS mobile: doubleTap execute method
           await execute(driver, 'mobile: doubleTap', {

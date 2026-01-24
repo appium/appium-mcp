@@ -9,6 +9,7 @@ import {
 } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { Client } from 'webdriver';
+import { getElementRect, getWindowRect } from '../../command.js';
 
 const DROP_PAUSE_DURATION_MS = 150;
 
@@ -159,18 +160,8 @@ export default function dragAndDrop(server: FastMCP): void {
 
         let startX: number, startY: number;
         let endX: number, endY: number;
-
-        const getElementRectCall = async (elementId) => {
-          if (isAndroidUiautomator2DriverSession(driver)) {
-            return await driver.getElementRect(elementId);
-          } else if (isXCUITestDriverSession(driver)) {
-            return await driver.getElementRect(elementId);
-          }
-          return await (driver as Client).getElementRect(elementId);
-        };
-
         if (args.sourceElementUUID) {
-          const rect = await getElementRectCall(args.sourceElementUUID);
+          const rect = await getElementRect(driver, args.sourceElementUUID);
           startX = Math.floor(rect.x + rect.width / 2);
           startY = Math.floor(rect.y + rect.height / 2);
         } else {
@@ -179,7 +170,7 @@ export default function dragAndDrop(server: FastMCP): void {
         }
 
         if (args.targetElementUUID) {
-          const rect = await getElementRectCall(args.targetElementUUID);
+          const rect = await getElementRect(driver, args.targetElementUUID);
           endX = Math.floor(rect.x + rect.width / 2);
           endY = Math.floor(rect.y + rect.height / 2);
         } else {
@@ -187,16 +178,7 @@ export default function dragAndDrop(server: FastMCP): void {
           endY = args.targetY;
         }
 
-        const getWindowRectCall = async () => {
-          if (isAndroidUiautomator2DriverSession(driver)) {
-            return await driver.getWindowRect();
-          } else if (isXCUITestDriverSession(driver)) {
-            return await driver.getWindowRect();
-          }
-          return await (driver as Client).getWindowRect();
-        };
-        const { width, height } = await getWindowRectCall();
-
+        const { width, height } = await getWindowRect(driver);
         if (startX < 0 || startX >= width || startY < 0 || startY >= height) {
           throw new Error(
             `Source coordinates (${startX}, ${startY}) are out of screen bounds (${width}x${height})`

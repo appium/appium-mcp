@@ -12,6 +12,7 @@ import {
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
 import { Client } from 'webdriver';
+import { getPageSource as _getPageSource } from '../../command.js';
 
 export default function getPageSource(server: FastMCP): void {
   server.addTool({
@@ -29,14 +30,7 @@ export default function getPageSource(server: FastMCP): void {
       }
 
       try {
-        let pageSource;
-        if (isAndroidUiautomator2DriverSession(driver)) {
-          pageSource = driver.getPageSource();
-        } else if (isXCUITestDriverSession(driver)) {
-          pageSource = driver.getPageSource();
-        } else {
-          pageSource = (driver as Client).getPageSource();
-        }
+        const pageSource = await _getPageSource(driver);
         if (!pageSource) {
           throw new Error('Page source is empty or null');
         }

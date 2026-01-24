@@ -4,6 +4,7 @@ import {
   isXCUITestDriverSession,
 } from './session-store.js';
 import type { DriverInstance } from './session-store.js';
+import { StringRecord } from '@appium/types';
 
 export async function execute(
   driver: DriverInstance,
@@ -80,7 +81,7 @@ export async function setValue(
 export async function elementClick(
   driver: DriverInstance,
   elementUUID: string
-) {
+): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.click(elementUUID);
   } else if (isXCUITestDriverSession(driver)) {
@@ -99,4 +100,38 @@ export async function getElementRect(
     return await driver.getElementRect(elementUUID);
   }
   return await driver.getElementRect(elementUUID);
+}
+
+export async function getWindowRect(
+  driver: DriverInstance
+): Promise<import('@appium/types').Rect> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getWindowRect();
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.getWindowRect();
+  }
+  return await driver.getWindowRect();
+}
+
+export async function performActions(
+  driver: DriverInstance,
+  operation: StringRecord<any>[] | import('@appium/types').ActionSequence[]
+): Promise<void> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.performActions(operation);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.performActions(
+      operation as import('@appium/types').ActionSequence[]
+    );
+  }
+  return await driver.performActions(operation);
+}
+
+export async function getPageSource(driver: DriverInstance): Promise<string> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getPageSource();
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.getPageSource();
+  }
+  return await driver.getPageSource();
 }
