@@ -1,17 +1,13 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import {
-  getDriver,
-  isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
-  isXCUITestDriverSession,
+  getDriver
 } from '../../session-store.js';
 import {
   createUIResource,
   createPageSourceInspectorUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import { Client } from 'webdriver';
 import { getPageSource as _getPageSource } from '../../command.js';
 
 export default function getPageSource(server: FastMCP): void {
