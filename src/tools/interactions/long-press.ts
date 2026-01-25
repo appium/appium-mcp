@@ -1,15 +1,8 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  getPlatformName,
-  isAndroidUiautomator2DriverSession,
-  isXCUITestDriverSession,
-  PLATFORM,
-} from '../../session-store.js';
+import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
-import type { Client } from 'webdriver';
-import { execute } from '../../command.js';
+import { execute, getElementRect, performActions } from '../../command.js';
 
 export default function longPress(server: FastMCP): void {
   const longPressSchema = z.object({
@@ -45,9 +38,7 @@ export default function longPress(server: FastMCP): void {
         const duration = args.duration || 2000;
 
         if (platform === PLATFORM.android) {
-          const rect = isAndroidUiautomator2DriverSession(driver)
-            ? await driver.getElementRect(args.elementUUID)
-            : await (driver as Client).getElementRect(args.elementUUID);
+          const rect = await getElementRect(driver, args.elementUUID);
           const x = Math.floor(rect.x + rect.width / 2);
           const y = Math.floor(rect.y + rect.height / 2);
 
@@ -64,9 +55,7 @@ export default function longPress(server: FastMCP): void {
               ],
             },
           ];
-          const _ok = isAndroidUiautomator2DriverSession(driver)
-            ? await driver.performActions(operation)
-            : await (driver as Client).performActions(operation);
+          await performActions(driver, operation);
         } else if (platform === PLATFORM.ios) {
           try {
             await execute(driver, 'mobile: touchAndHold', {
@@ -74,9 +63,7 @@ export default function longPress(server: FastMCP): void {
               duration: duration / 1000,
             });
           } catch (touchAndHoldError) {
-            const rect = isXCUITestDriverSession(driver)
-              ? await driver.getElementRect(args.elementUUID)
-              : await (driver as Client).getElementRect(args.elementUUID);
+            const rect = await getElementRect(driver, args.elementUUID);
             const x = Math.floor(rect.x + rect.width / 2);
             const y = Math.floor(rect.y + rect.height / 2);
 
@@ -93,11 +80,7 @@ export default function longPress(server: FastMCP): void {
                 ],
               },
             ];
-            const _ok = isXCUITestDriverSession(driver)
-              ? await driver.performActions(
-                  operation as import('@appium/types').ActionSequence[]
-                )
-              : await (driver as Client).performActions(operation);
+            await performActions(driver, operation);
           }
         } else {
           throw new Error(

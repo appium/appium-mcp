@@ -13,17 +13,15 @@ import { z } from 'zod';
 import {
   getDriver,
   isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
   isXCUITestDriverSession,
 } from '../../session-store.js';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
-import log from '../../logger.js';
 import {
   createUIResource,
   createLocatorGeneratorUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import type { Client } from 'webdriver';
+import { getPageSource } from '../../command.js';
 
 export default function generateLocators(server: any): void {
   server.addTool({
@@ -48,16 +46,13 @@ export default function generateLocators(server: any): void {
 
         try {
           // Get the page source from the driver
-          let pageSource;
+          const pageSource = await getPageSource(driver);
           let driverName;
           if (isAndroidUiautomator2DriverSession(driver)) {
-            pageSource = driver.getPageSource();
             driverName = await driver.caps.automationName?.toLowerCase();
           } else if (isXCUITestDriverSession(driver)) {
-            pageSource = driver.getPageSource();
             driverName = await driver.caps.automationName?.toLowerCase();
           } else {
-            pageSource = (driver as Client).getPageSource();
             driverName =
               await driver.capabilities['appium:automationName']?.toLowerCase();
           }
@@ -65,11 +60,6 @@ export default function generateLocators(server: any): void {
             throw new Error('Page source is empty or null');
           }
           const sampleXML = pageSource;
-          const allElements = generateAllElementLocators(
-            sampleXML,
-            true,
-            driverName
-          );
           const interactableElements = generateAllElementLocators(
             sampleXML,
             true,

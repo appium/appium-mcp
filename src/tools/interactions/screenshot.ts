@@ -1,10 +1,5 @@
 import { FastMCP } from 'fastmcp';
-import {
-  getDriver,
-  isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
-  isXCUITestDriverSession,
-} from '../../session-store.js';
+import { DriverInstance, getDriver } from '../../session-store.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, isAbsolute } from 'path';
 import * as os from 'node:os';
@@ -13,9 +8,7 @@ import {
   createScreenshotViewerUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import type { Client } from 'webdriver';
-import type { XCUITestDriver } from 'appium-xcuitest-driver';
-import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
+import { getScreenshot } from '../../command.js';
 
 /**
  * Resolves the screenshot directory path.
@@ -38,7 +31,7 @@ export function resolveScreenshotDir(): string {
 }
 
 export interface ScreenshotDeps {
-  getDriver: () => Client | AndroidUiautomator2Driver | XCUITestDriver | null;
+  getDriver: () => DriverInstance;
   writeFile: typeof writeFile;
   mkdir: typeof mkdir;
   resolveScreenshotDir: typeof resolveScreenshotDir;
@@ -62,15 +55,7 @@ export async function executeScreenshot(
   }
 
   try {
-    let screenshotBase64;
-
-    if (isAndroidUiautomator2DriverSession(driver)) {
-      screenshotBase64 = await driver.getScreenshot();
-    } else if (isXCUITestDriverSession(driver)) {
-      screenshotBase64 = await driver.getScreenshot();
-    } else {
-      await (driver as Client).takeScreenshot();
-    }
+    const screenshotBase64 = await getScreenshot(driver);
 
     // Convert base64 to buffer
     const screenshotBuffer = Buffer.from(screenshotBase64, 'base64');

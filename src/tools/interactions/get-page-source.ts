@@ -1,8 +1,6 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver
-} from '../../session-store.js';
+import { getDriver } from '../../session-store.js';
 import {
   createUIResource,
   createPageSourceInspectorUI,

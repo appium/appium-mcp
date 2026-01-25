@@ -1,14 +1,7 @@
 import { z } from 'zod';
-import {
-  getDriver,
-  getPlatformName,
-  isAndroidUiautomator2DriverSession,
-  isXCUITestDriverSession,
-  PLATFORM,
-} from '../../session-store.js';
+import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import log from '../../logger.js';
-import type { Client } from 'webdriver';
-import { execute } from '../../command.js';
+import { execute, getWindowRect, performActions } from '../../command.js';
 
 export default function scroll(server: any): void {
   server.addTool({
@@ -33,14 +26,7 @@ export default function scroll(server: any): void {
       }
 
       try {
-        let rect;
-        if (isAndroidUiautomator2DriverSession(driver)) {
-          rect = await driver.getWindowRect();
-        } else if (isXCUITestDriverSession(driver)) {
-          rect = await driver.getWindowRect();
-        } else {
-          rect = await (driver as Client).getWindowRect();
-        }
+        const rect = await getWindowRect(driver);
         const { width, height } = rect;
         log.info('Device screen size:', { width, height });
         const startX = Math.floor(width / 2);
@@ -77,9 +63,7 @@ export default function scroll(server: any): void {
               ],
             },
           ];
-          const _ok = isAndroidUiautomator2DriverSession(driver)
-            ? await driver.performActions(operation)
-            : await (driver as Client).performActions(operation);
+          await performActions(driver, operation);
           log.info('Scroll action completed successfully.');
         } else if (getPlatformName(driver) === PLATFORM.ios) {
           await execute(driver, 'mobile: scroll', {

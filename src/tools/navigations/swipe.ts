@@ -1,17 +1,13 @@
 import { z } from 'zod';
-import {
-  getDriver,
-  getPlatformName,
-  isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
-  isXCUITestDriverSession,
-  PLATFORM,
-} from '../../session-store.js';
+import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import log from '../../logger.js';
 import { elementUUIDScheme } from '../../schema.js';
-import type { Client } from 'webdriver';
-import type { XCUITestDriver } from 'appium-xcuitest-driver';
-import { execute } from '../../command.js';
+import {
+  execute,
+  getElementRect,
+  getWindowRect,
+  performActions,
+} from '../../command.js';
 
 function calculateSwipeCoordinates(
   direction: 'left' | 'right' | 'up' | 'down',
@@ -88,28 +84,13 @@ async function performiOSSwipe(
   duration: number
 ): Promise<void> {
   try {
-    if (isRemoteDriverSession(driver)) {
-      await driver.executeScript('mobile: dragFromToForDuration', [
-        {
-          fromX: startX,
-          fromY: startY,
-          toX: endX,
-          toY: endY,
-          duration: duration / 1000,
-        },
-      ]);
-    } else {
-      await (driver as XCUITestDriver).execute(
-        'mobile: dragFromToForDuration',
-        {
-          fromX: startX,
-          fromY: startY,
-          toX: endX,
-          toY: endY,
-          duration: duration / 1000,
-        }
-      );
-    }
+    await execute(driver, 'mobile: dragFromToForDuration', {
+      fromX: startX,
+      fromY: startY,
+      toX: endX,
+      toY: endY,
+      duration: duration / 1000,
+    });
     log.info('iOS swipe completed using mobile: dragFromToForDuration');
   } catch (dragError) {
     log.info('mobile: dragFromToForDuration failed, trying performActions');
@@ -212,15 +193,7 @@ export default function swipe(server: any): void {
 
         if (args.direction) {
           if (args.elementUUID) {
-            const getElementRectCall = async (elementId) => {
-              if (isAndroidUiautomator2DriverSession(driver)) {
-                return await driver.getElementRect(elementId);
-              } else if (isXCUITestDriverSession(driver)) {
-                return await driver.getElementRect(elementId);
-              }
-              return await (driver as Client).getElementRect(elementId);
-            };
-            const rect = await getElementRectCall(args.elementUUID);
+            const rect = await getElementRect(driver, args.elementUUID);
             const elementCenterX = Math.floor(rect.x + rect.width / 2);
             const elementCenterY = Math.floor(rect.y + rect.height / 2);
 
@@ -260,15 +233,7 @@ export default function swipe(server: any): void {
               endY,
             });
           } else {
-            const getWindowRectCall = async () => {
-              if (isAndroidUiautomator2DriverSession(driver)) {
-                return await driver.getWindowRect();
-              } else if (isXCUITestDriverSession(driver)) {
-                return await driver.getWindowRect();
-              }
-              return await (driver as Client).getWindowRect();
-            };
-            const { width, height } = await getWindowRectCall();
+            const { width, height } = await getWindowRect(driver);
             log.info('Device screen size:', { width, height });
             const coords = calculateSwipeCoordinates(
               args.direction,
@@ -329,9 +294,7 @@ export default function swipe(server: any): void {
                 ],
               },
             ];
-            const _ok = isAndroidUiautomator2DriverSession(driver)
-              ? await driver.performActions(operation)
-              : await (driver as Client).performActions(operation);
+            await performActions(driver, operation);
             log.info('Android horizontal swipe completed');
           } else {
             await performAndroidSwipe(

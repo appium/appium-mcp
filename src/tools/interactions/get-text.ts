@@ -1,13 +1,8 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
-  isXCUITestDriverSession,
-} from '../../session-store.js';
+import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
-import type { Client } from 'webdriver';
+import { getElementText } from '../../command.js';
 
 export default function getText(server: FastMCP): void {
   const getTextSchema = z.object({
@@ -29,15 +24,7 @@ export default function getText(server: FastMCP): void {
       }
 
       try {
-        let text;
-
-        if (isAndroidUiautomator2DriverSession(driver)) {
-          text = await driver.getText(args.elementUUID);
-        } else if (isXCUITestDriverSession(driver)) {
-          text = await driver.getText(args.elementUUID);
-        } else {
-          text = await (driver as Client).getElementText(args.elementUUID);
-        }
+        const text = getElementText(driver, args.elementUUID);
         return {
           content: [
             {

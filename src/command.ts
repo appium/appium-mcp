@@ -135,3 +135,24 @@ export async function getPageSource(driver: DriverInstance): Promise<string> {
   }
   return await driver.getPageSource();
 }
+
+export async function getScreenshot(driver: DriverInstance): Promise<string> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getScreenshot();
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.getScreenshot();
+  }
+  return await driver.takeScreenshot();
+}
+
+export async function getElementText(
+  driver: DriverInstance,
+  elementUUID: string
+): Promise<string> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getText(elementUUID);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.getText(elementUUID);
+  }
+  return await driver.getElementText(elementUUID);
+}
