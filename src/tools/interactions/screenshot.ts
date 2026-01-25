@@ -1,5 +1,6 @@
 import { FastMCP } from 'fastmcp';
-import { DriverInstance, getDriver } from '../../session-store.js';
+import { getDriver } from '../../session-store.js';
+import type { NullableDriverInstance } from '../../session-store.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, isAbsolute } from 'path';
 import * as os from 'node:os';
@@ -31,7 +32,7 @@ export function resolveScreenshotDir(): string {
 }
 
 export interface ScreenshotDeps {
-  getDriver: () => DriverInstance;
+  getDriver: () => NullableDriverInstance;
   writeFile: typeof writeFile;
   mkdir: typeof mkdir;
   resolveScreenshotDir: typeof resolveScreenshotDir;

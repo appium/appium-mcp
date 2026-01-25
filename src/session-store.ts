@@ -79,7 +79,7 @@ export function setSession(d: DriverInstance, id: string | null) {
   }
 }
 
-export function getDriver(): DriverInstance | null {
+export function getDriver(): NullableDriverInstance {
   return driver;
 }
 
