@@ -1,3 +1,9 @@
+## [1.8.12](https://github.com/appium/appium-mcp/compare/v1.8.11...v1.8.12) (2026-01-25)
+
+### Miscellaneous Chores
+
+* publish only necessary files ([#128](https://github.com/appium/appium-mcp/issues/128)) ([1e16422](https://github.com/appium/appium-mcp/commit/1e16422d646343e58952238573036d2c0e04d36b))
+
 ## [1.8.11](https://github.com/appium/appium-mcp/compare/v1.8.10...v1.8.11) (2026-01-23)
 
 ### Miscellaneous Chores
