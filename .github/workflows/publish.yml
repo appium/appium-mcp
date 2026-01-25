@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: lts/*
           check-latest: true
-      - run: npm install --no-package-lock --force
+      - run: npm ci
         name: Install dependencies
       - run: npm run build
         name: Build
