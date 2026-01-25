@@ -1,3 +1,9 @@
+## [1.8.13](https://github.com/appium/appium-mcp/compare/v1.8.12...v1.8.13) (2026-01-25)
+
+### Bug Fixes
+
+* removing as any ([#103](https://github.com/appium/appium-mcp/issues/103)) ([c90545c](https://github.com/appium/appium-mcp/commit/c90545c508b1dcf7aa6816d54b5de450548a4035))
+
 ## [1.8.12](https://github.com/appium/appium-mcp/compare/v1.8.11...v1.8.12) (2026-01-25)
 
 ### Miscellaneous Chores
