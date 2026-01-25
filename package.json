@@ -10,7 +10,8 @@
   "bugs": {
     "url": "https://github.com/appium/appium-mcp/issues"
   },
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "mcp-appium": "dist/index.js"
   },
@@ -76,5 +77,14 @@
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
-  }
+  },
+  "files": [
+    "src",
+    "scripts",
+    "dist",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE",
+    "server.json"
+  ]
 }
