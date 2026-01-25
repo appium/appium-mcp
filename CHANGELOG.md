@@ -1,3 +1,11 @@
+## [1.8.14](https://github.com/appium/appium-mcp/compare/v1.8.13...v1.8.14) (2026-01-25)
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump prettier from 3.8.0 to 3.8.1 ([#125](https://github.com/appium/appium-mcp/issues/125)) ([e0e83d4](https://github.com/appium/appium-mcp/commit/e0e83d4632793786c1e026761e9b75ceee836d50))
+* **deps-dev:** bump typescript from 5.8.3 to 5.9.3 ([#108](https://github.com/appium/appium-mcp/issues/108)) ([3a956c9](https://github.com/appium/appium-mcp/commit/3a956c92c3ed186c99c5abbf6ca4212e8f073248))
+* **deps:** bump appium-adb from 14.1.8 to 14.1.9 ([#107](https://github.com/appium/appium-mcp/issues/107)) ([0715b1b](https://github.com/appium/appium-mcp/commit/0715b1bda6bcdecf63978680aa0bd074e2f14fca))
+
 ## [1.8.13](https://github.com/appium/appium-mcp/compare/v1.8.12...v1.8.13) (2026-01-25)
 
 ### Bug Fixes
