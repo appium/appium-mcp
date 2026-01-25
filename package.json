@@ -79,7 +79,6 @@
     "typescript": "^5.8.3"
   },
   "files": [
-    "src",
     "scripts",
     "dist",
     "CHANGELOG.md",
