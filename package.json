@@ -47,7 +47,6 @@
     "@langfuse/otel": "^4.2.0",
     "@langfuse/tracing": "^4.2.0",
     "@modelcontextprotocol/sdk": "^1.22.0",
-    "@opentelemetry/sdk-node": "^0.208.0",
     "@xenova/transformers": "^2.17.2",
     "@xmldom/xmldom": "^0.9.8",
     "appium-adb": "^14.1.8",
