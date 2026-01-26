@@ -41,6 +41,7 @@
   "description": "Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation",
   "dependencies": {
     "@appium/support": "^7.0.2",
+    "@langchain/core":  "^0.3.27",
     "@langfuse/otel": "^4.2.0",
     "@langfuse/tracing": "^4.2.0",
     "@modelcontextprotocol/sdk": "^1.22.0",
