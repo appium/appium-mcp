@@ -191,10 +191,10 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 ### Session Management
 
-| Tool             | Description                                                                                  |
-| ---------------- | -------------------------------------------------------------------------------------------- |
-| `create_session` | Create a new mobile automation session for Android, iOS, or general capabilities (see below) |
-| `delete_session` | Delete the current mobile session and clean up resources                                      |
+| Tool             | Description                                                                                                 |
+| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| `create_session` | Create a new mobile automation session for Android, iOS, or general capabilities (see 'general' mode above) |
+| `delete_session` | Delete the current mobile session and clean up resources                                                    |
 
 ### Context Management
 

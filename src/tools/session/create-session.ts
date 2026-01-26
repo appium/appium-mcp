@@ -307,7 +307,7 @@ export default function createSession(server: any): void {
             configCapabilities.android,
             customCapabilities,
             !!remoteServerUrl
-          )
+          );
         } else if (platform === 'ios') {
           finalCapabilities = await buildIOSCapabilities(
             configCapabilities.ios,
@@ -318,7 +318,7 @@ export default function createSession(server: any): void {
           finalCapabilities = {
             ...configCapabilities.general,
             ...customCapabilities
-          }
+          };
         }
 
         let sessionId;
