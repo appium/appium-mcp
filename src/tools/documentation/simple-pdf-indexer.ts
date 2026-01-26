@@ -6,9 +6,9 @@
  * The vector store is persisted to a file for use across different script executions.
  */
 
-import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { Document } from 'langchain/document';
-import { MemoryVectorStore } from 'langchain/vectorstores/memory';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+import { Document } from '@langchain/core/documents';
+import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
