@@ -57,7 +57,7 @@ async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
     return JSON.parse(configContent);
   } catch (error) {
     log.warn(`Failed to parse capabilities config: ${error}`);
-    return { android: {}, ios: {}, general: {}};
+    return { android: {}, ios: {}, general: {} };
   }
 }
 
@@ -317,12 +317,20 @@ export default function createSession(server: any): void {
         } else {
           finalCapabilities = {
             ...configCapabilities.general,
-            ...customCapabilities
+            ...customCapabilities,
           };
         }
 
+        log.info(
+          `Creating new ${platform.toUpperCase()} session with capabilities:`,
+          JSON.stringify(finalCapabilities, null, 2)
+        );
+
         let sessionId;
         if (remoteServerUrl) {
+          log.info(
+            `Sending the capabilities to the remote server: ${remoteServerUrl}`
+          );
           const remoteUrl = new URL(remoteServerUrl);
           const client = await WebDriver.newSession({
             protocol: remoteUrl.protocol.replace(':', ''),
@@ -334,11 +342,6 @@ export default function createSession(server: any): void {
           sessionId = client.sessionId;
           setSession(client, client.sessionId);
         } else {
-          log.info(
-            `Creating new ${platform.toUpperCase()} session with capabilities:`,
-            JSON.stringify(finalCapabilities, null, 2)
-          );
-
           const driver = createDriverForPlatform(platform);
           sessionId = await createDriverSession(driver, finalCapabilities);
           setSession(driver, sessionId);
