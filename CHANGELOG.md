@@ -1,3 +1,9 @@
+## [1.9.0](https://github.com/appium/appium-mcp/compare/v1.8.16...v1.9.0) (2026-01-26)
+
+### Features
+
+* use newer langchain stuff ([#133](https://github.com/appium/appium-mcp/issues/133)) ([525ea20](https://github.com/appium/appium-mcp/commit/525ea2001bbe3a2adf38a44b2d3c3b1e9c71491c))
+
 ## [1.8.16](https://github.com/appium/appium-mcp/compare/v1.8.15...v1.8.16) (2026-01-26)
 
 ### Bug Fixes
