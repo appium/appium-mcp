@@ -6,7 +6,7 @@
  * It can perform summarization, question-answering, and analysis on retrieved chunks.
  */
 
-import { Document } from 'langchain/document';
+import { Document } from '@langchain/core/documents';
 import { queryVectorStore } from './simple-pdf-indexer.js';
 import log from '../../logger.js';
 
