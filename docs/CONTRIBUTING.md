@@ -387,7 +387,7 @@ For better readability when descriptions are long, use template literals with pr
 **Bad (hard to read):**
 
 ```typescript
-description: 'REQUIRED: First ASK THE USER which mobile platform they want to use (Android or iOS) before creating a session. DO NOT assume or default to any platform. You MUST explicitly prompt the user to choose between Android or iOS. This is mandatory before proceeding to use the create_session tool.',
+description: 'REQUIRED: First ASK THE USER which mobile platform they want to use (Android or iOS) before creating a session. If a non-Android/iOS name is provided, it will be treated as "general" and capabilities will be used as-is or merged from CAPABILITIES_CONFIG.',
 ```
 
 **Good (readable):**
@@ -395,7 +395,8 @@ description: 'REQUIRED: First ASK THE USER which mobile platform they want to us
 ```typescript
 description: `REQUIRED: First ASK THE USER which mobile platform they want to use (Android or iOS) before creating a session.
   DO NOT assume or default to any platform.
-  You MUST explicitly prompt the user to choose between Android or iOS.
+  You MUST explicitly prompt the user to choose between Android or iOS for local servers.
+  If the user provides any other name, it will be treated internally as "general": capabilities are used as-is or merged from CAPABILITIES_CONFIG.
   This is mandatory before proceeding to use the create_session tool.
   `,
 ```
@@ -406,9 +407,9 @@ For long parameter descriptions, also use template literals:
 
 ```typescript
 parameters: z.object({
-  platform: z.enum(['ios', 'android']).describe(
+  platform: z.enum(['ios', 'android', 'general']).describe(
     `REQUIRED: Must match the platform the user explicitly selected via the select_platform tool.
-      DO NOT default to Android or iOS without asking the user first.`
+      If a non-Android/iOS name is provided, it will be treated as "general" and the session will use provided capabilities or those from CAPABILITIES_CONFIG.general.`
   ),
 });
 ```
