@@ -65,7 +65,7 @@
     "webdriver": "^9.23.0"
   },
   "devDependencies": {
-    "@appium/eslint-config-appium-ts": "^2.0.0",
+    "@appium/eslint-config-appium-ts": "^3.0.0",
     "@jest/globals": "^30.2.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
