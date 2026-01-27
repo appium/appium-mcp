@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/appium/appium-mcp/compare/v1.9.1...v1.9.2) (2026-01-27)
+
+### Miscellaneous Chores
+
+* **deps:** bump @langfuse/tracing from 4.2.0 to 4.5.1 ([#88](https://github.com/appium/appium-mcp/issues/88)) ([d6bd6cb](https://github.com/appium/appium-mcp/commit/d6bd6cb29bad61845c54dadab88720acb7e2941a))
+* **deps:** bump fastmcp from 3.28.0 to 3.30.0 ([#136](https://github.com/appium/appium-mcp/issues/136)) ([db497b5](https://github.com/appium/appium-mcp/commit/db497b5a83b45ef34729aff90ee86b3056b28aaf))
+
 ## [1.9.1](https://github.com/appium/appium-mcp/compare/v1.9.0...v1.9.1) (2026-01-26)
 
 ### Miscellaneous Chores
