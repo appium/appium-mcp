@@ -151,11 +151,25 @@ Create a `capabilities.json` file to define your device capabilities:
     "appium:platformVersion": "17.0",
     "appium:automationName": "XCUITest",
     "appium:udid": "your-device-udid"
+  },
+  "general": {
+    "platformName": "mac",
+    "appium:automationName": "mac2",
+    "appium:bundleId": "com.apple.Safari"
   }
 }
 ```
 
 Set the `CAPABILITIES_CONFIG` environment variable to point to your configuration file.
+
+#### Platform names and "general" mode
+
+- You can pass any platform name to `create_session`.
+- If the platform is `ios` or `android`, the server builds capabilities for that platform (including selected device info when local).
+- If the platform is any other value, it is treated internally as `general`:
+  - The session will use the provided `capabilities` exactly as given, or
+  - If `CAPABILITIES_CONFIG` is set, it will merge with the `general` section from your capabilities file.
+- This allows custom setups and non-standard platforms to work without changing server logic.
 
 ### Screenshots
 
@@ -177,10 +191,10 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 ### Session Management
 
-| Tool             | Description                                               |
-| ---------------- | --------------------------------------------------------- |
-| `create_session` | Create a new mobile automation session for Android or iOS |
-| `delete_session` | Delete the current mobile session and clean up resources  |
+| Tool             | Description                                                                                                 |
+| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| `create_session` | Create a new mobile automation session for Android, iOS, or general capabilities (see 'general' mode above) |
+| `delete_session` | Delete the current mobile session and clean up resources                                                    |
 
 ### Context Management
 
