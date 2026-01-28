@@ -9,10 +9,10 @@
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Document } from '@langchain/core/documents';
 import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
-import * as fs from 'fs';
-import * as path from 'path';
-import { promisify } from 'util';
-import { fileURLToPath } from 'url';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 
 // Initialize embeddings using sentence-transformers (no API key required)
 import { SentenceTransformersEmbeddings } from './sentence-transformers-embeddings.js';

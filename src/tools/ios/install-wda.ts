@@ -2,12 +2,12 @@
  * Tool to install and launch WebDriverAgent (WDA) on a booted iOS simulator
  */
 import { z } from 'zod';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
-import { access, readdir, stat } from 'fs/promises';
-import { constants } from 'fs';
-import os from 'os';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+import path from 'node:path';
+import { access, readdir, stat } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import os from 'node:os';
 import log from '../../logger.js';
 
 const execAsync = promisify(exec);

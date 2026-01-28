@@ -9,7 +9,7 @@ import {
   queryVectorStore,
   indexAllMarkdownFiles,
 } from './simple-pdf-indexer.js';
-import * as path from 'path';
+import * as path from 'node:path';
 import log from '../../logger.js';
 
 /**
