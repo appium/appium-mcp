@@ -1,3 +1,9 @@
+## [1.9.3](https://github.com/appium/appium-mcp/compare/v1.9.2...v1.9.3) (2026-01-28)
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump @appium/eslint-config-appium-ts from 2.0.5 to 3.0.0 ([#144](https://github.com/appium/appium-mcp/issues/144)) ([caa2c24](https://github.com/appium/appium-mcp/commit/caa2c24e8b80ad068364eb9494e8826259955a62))
+
 ## [1.9.2](https://github.com/appium/appium-mcp/compare/v1.9.1...v1.9.2) (2026-01-27)
 
 ### Miscellaneous Chores
