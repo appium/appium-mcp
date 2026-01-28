@@ -1,8 +1,8 @@
 import { FastMCP } from 'fastmcp';
 import { getDriver } from '../../session-store.js';
 import type { NullableDriverInstance } from '../../session-store.js';
-import { writeFile, mkdir } from 'fs/promises';
-import { join, isAbsolute } from 'path';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { join, isAbsolute } from 'node:path';
 import * as os from 'node:os';
 import {
   createUIResource,

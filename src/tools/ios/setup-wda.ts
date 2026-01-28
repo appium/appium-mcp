@@ -2,13 +2,13 @@
  * Tool to download and setup WebDriverAgent (WDA) for iOS simulators
  */
 import { z } from 'zod';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
-import { access, mkdir, unlink } from 'fs/promises';
-import { constants, createWriteStream } from 'fs';
-import { pipeline } from 'stream/promises';
-import os from 'os';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+import path from 'node:path';
+import { access, mkdir, unlink } from 'node:fs/promises';
+import { constants, createWriteStream } from 'node:fs';
+import { pipeline } from 'node:stream/promises';
+import os from 'node:os';
 import axios from 'axios';
 import log from '../../logger.js';
 

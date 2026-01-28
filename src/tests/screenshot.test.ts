@@ -6,7 +6,7 @@ import {
   afterEach,
   jest,
 } from '@jest/globals';
-import { join, isAbsolute } from 'path';
+import { join, isAbsolute } from 'node:path';
 import * as os from 'node:os';
 
 /**

@@ -18,8 +18,8 @@
  * If a directory path is provided, it will index all Markdown files in that directory.
  */
 
-import * as path from 'path';
-import * as fs from 'fs';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 import {
   indexMarkdown,
   indexAllMarkdownFiles,
