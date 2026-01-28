@@ -1,3 +1,9 @@
+## [1.10.0](https://github.com/appium/appium-mcp/compare/v1.9.3...v1.10.0) (2026-01-28)
+
+### Features
+
+* add non ios/android target as 'general' ([#135](https://github.com/appium/appium-mcp/issues/135)) ([7f9d948](https://github.com/appium/appium-mcp/commit/7f9d9485d112596c798b0dc61bae79e24edc0af3))
+
 ## [1.9.3](https://github.com/appium/appium-mcp/compare/v1.9.2...v1.9.3) (2026-01-28)
 
 ### Miscellaneous Chores
