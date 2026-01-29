@@ -10,7 +10,7 @@ jobs:
   node_matrix:
     uses: appium/appium-workflows/.github/workflows/node-lts-matrix.yml@main
 
-  lint-format-and-test:    
+  lint-format-and-test:
     name: ESLint, Prettier, and Tests
     runs-on: ubuntu-latest
     needs:
@@ -35,7 +35,7 @@ jobs:
           mode: firewall-free
 
       - name: Install dependencies
-        run: sfw npm ci
+        run: sfw npm install
 
       - name: List installed packages
         run: npm list --depth=0
