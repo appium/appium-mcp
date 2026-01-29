@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: lts/*
           check-latest: true
-      - run: npm ci
+      - run: npm install
         name: Install dependencies
       - run: npm run build
         name: Build
