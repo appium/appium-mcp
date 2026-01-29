@@ -188,7 +188,7 @@ function createDriverForPlatform(platform: 'android' | 'ios'): any {
     return new AndroidUiautomator2Driver();
   }
   if (platform === 'ios') {
-    return new XCUITestDriver();
+    return new XCUITestDriver({} as any);
   }
   throw new Error(
     `Unsupported platform: ${platform}. Please choose 'android' or 'ios'.`
