@@ -98,8 +98,10 @@ export async function setContext(
 ): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     await driver.setContext(name);
+    return;
   } else if (isXCUITestDriverSession(driver)) {
     await driver.setContext(name || null);
+    return;
   }
   throw new Error('setContext is not supported');
 }
