@@ -10,17 +10,26 @@ await jest.unstable_mockModule('../../../tools/session/select-device', () => ({
 
 await jest.unstable_mockModule('../../../devicemanager/ios-manager', () => ({
   IOSManager: {
-    getInstance: () => ({ getDevicesByType: async (t: any) => [{ udid: 'u1' }] }),
+    getInstance: () => ({
+      getDevicesByType: async (t: any) => [{ udid: 'u1' }],
+    }),
   },
 }));
 
-await jest.unstable_mockModule('../../../logger', () => ({ default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} } }));
+await jest.unstable_mockModule('../../../logger', () => ({
+  default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
+}));
 
 // Mock external driver packages to avoid loading heavy native modules
-await jest.unstable_mockModule('appium-uiautomator2-driver', () => ({ AndroidUiautomator2Driver: class {} }));
-await jest.unstable_mockModule('appium-xcuitest-driver', () => ({ XCUITestDriver: class {} }));
-await jest.unstable_mockModule('webdriver', () => ({ default: { newSession: async () => ({ sessionId: 'remote-session' }) } }));
-
+await jest.unstable_mockModule('appium-uiautomator2-driver', () => ({
+  AndroidUiautomator2Driver: class {},
+}));
+await jest.unstable_mockModule('appium-xcuitest-driver', () => ({
+  XCUITestDriver: class {},
+}));
+await jest.unstable_mockModule('webdriver', () => ({
+  default: { newSession: async () => ({ sessionId: 'remote-session' }) },
+}));
 
 // @ts-ignore - allow import of TS module in Jest ESM environment
 const module = await import('../../../tools/session/create-session');

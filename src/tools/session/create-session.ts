@@ -64,7 +64,9 @@ async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
 /**
  * Remove empty string values from capabilities object
  */
-export function filterEmptyCapabilities(capabilities: Capabilities): Capabilities {
+export function filterEmptyCapabilities(
+  capabilities: Capabilities
+): Capabilities {
   const filtered = { ...capabilities };
   Object.keys(filtered).forEach((key) => {
     if (filtered[key] === '') {
@@ -93,7 +95,7 @@ export function buildAndroidCapabilities(
   const additionalCaps = {
     'appium:settings[actionAcknowledgmentTimeout]': 0,
     'appium:settings[waitForIdleTimeout]': 0,
-    'appium:settings[waitForSelectorTimeout]': 0
+    'appium:settings[waitForSelectorTimeout]': 0,
   };
 
   const capabilities = {
@@ -164,11 +166,14 @@ export async function buildIOSCapabilities(
       ? selectedDeviceInfo.platform
       : undefined;
 
-  const additionalCaps = deviceType === 'simulator' ? {
-    'appium:usePrebuiltWDA': true,
-    'appium:wdaStartupRetries': 4,
-    'appium:wdaStartupRetryInterval': 20000,
-  } : {};
+  const additionalCaps =
+    deviceType === 'simulator'
+      ? {
+          'appium:usePrebuiltWDA': true,
+          'appium:wdaStartupRetries': 4,
+          'appium:wdaStartupRetryInterval': 20000,
+        }
+      : {};
 
   log.debug('Platform version:', platformVersion);
 
