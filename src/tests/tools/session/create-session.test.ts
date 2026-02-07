@@ -31,8 +31,7 @@ await jest.unstable_mockModule('webdriver', () => ({
   default: { newSession: async () => ({ sessionId: 'remote-session' }) },
 }));
 
-// @ts-ignore - allow import of TS module in Jest ESM environment
-const module = await import('../../../tools/session/create-session');
+const module = await import('../../../tools/session/create-session.js');
 const { buildAndroidCapabilities, buildIOSCapabilities } = module;
 
 describe('capability builders', () => {

@@ -179,11 +179,11 @@ export async function buildIOSCapabilities(
 
   const capabilities = {
     ...defaultCaps,
+    ...additionalCaps,
     // Auto-detected platform version as fallback (before config)
     ...(platformVersion && { 'appium:platformVersion': platformVersion }),
     ...configCaps,
     ...(selectedDeviceUdid && { 'appium:udid': selectedDeviceUdid }),
-    ...additionalCaps,
     // customCaps should override additionalCaps.
     ...customCaps,
   };
