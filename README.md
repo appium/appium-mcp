@@ -130,6 +130,62 @@ claude mcp add appium-mcp -- npx -y appium-mcp@latest
 
 This will automatically configure the MCP server for use with Claude Code. Make sure to update the `ANDROID_HOME` environment variable in the configuration to match your Android SDK path.
 
+### With VS Code
+
+You can run the MCP server locally and register it with any MCP-compatible VS Code extension (or client) that supports launching external MCP servers via a command + stdio. Example VS Code settings snippet (add to your workspace/user settings):
+
+```json
+{
+  "mcpServers": {
+    "appium-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["appium-mcp@latest"],
+      "env": {
+        "ANDROID_HOME": "/path/to/android/sdk",
+        "CAPABILITIES_CONFIG": "/path/to/capabilities.json",
+        "SCREENSHOTS_DIR": "./screens"
+      }
+    }
+  }
+}
+```
+
+Start the server by running the configured command (the VS Code MCP client will spawn it when needed), or start it manually in a terminal:
+
+```bash
+CAPABILITIES_CONFIG=/path/to/capabilities.json SCREENSHOTS_DIR=./screens npx appium-mcp@latest
+```
+
+### With LibreChat
+
+LibreChat can use external tools/agents that communicate over stdio. To use this MCP server from LibreChat:
+
+1. Run the MCP server locally (see command above).
+2. Configure a LibreChat custom tool that invokes the MCP server command and connects via stdio. Example tool config (adapt to LibreChat's tool/plugin schema):
+
+```json
+{
+  "name": "appium-mcp",
+  "type": "external",
+  "command": "npx",
+  "args": ["appium-mcp@latest"],
+  "env": {
+    "ANDROID_HOME": "/path/to/android/sdk",
+    "CAPABILITIES_CONFIG": "/path/to/capabilities.json",
+    "SCREENSHOTS_DIR": "./screens"
+  },
+  "description": "MCP Appium server for mobile automation (stdio-based tool)"
+}
+```
+
+Notes:
+- Ensure the tool runner in LibreChat is allowed to run local commands and that environment variables are set correctly.
+- If LibreChat expects a different tool manifest, adapt the fields above to match its schema; the core idea is to run the MCP server command and communicate via stdio.
+- For CI or multi-user setups, consider running the MCP server behind a supervised process manager (systemd, PM2) and exposing a secure endpoint your client can reach.
+
+If you want, I can add an example LibreChat plugin manifest adapted to the specific LibreChat version you use.
+
 ## ⚙️ Configuration
 
 ### Capabilities
