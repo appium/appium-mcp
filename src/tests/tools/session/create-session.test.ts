@@ -21,9 +21,7 @@ await jest.unstable_mockModule('appium-uiautomator2-driver', () => ({ AndroidUia
 await jest.unstable_mockModule('appium-xcuitest-driver', () => ({ XCUITestDriver: class {} }));
 await jest.unstable_mockModule('webdriver', () => ({ default: { newSession: async () => ({ sessionId: 'remote-session' }) } }));
 
-// (driver modules not needed for capability-only tests)
 
-// Import the exported helpers from the module under test
 // @ts-ignore - allow import of TS module in Jest ESM environment
 const module = await import('../../../tools/session/create-session');
 const { buildAndroidCapabilities, buildIOSCapabilities } = module;
@@ -36,10 +34,10 @@ describe('capability builders', () => {
     expect(caps.platformName).toBe('Android');
     expect(caps['appium:app']).toBe('/path/app.apk');
     expect(caps['appium:udid']).toBe('device-udid');
-    // Empty string deviceName should be filtered out
     expect(caps).not.toHaveProperty('appium:deviceName');
-    // additional settings should be present
     expect(caps['appium:settings[actionAcknowledgmentTimeout]']).toBe(0);
+    expect(caps['appium:settings[waitForIdleTimeout]']).toBe(0);
+    expect(caps['appium:settings[waitForSelectorTimeout]']).toBe(0);
   });
 
   test('buildAndroidCapabilities does not include udid for remote server', () => {
@@ -55,7 +53,6 @@ describe('capability builders', () => {
     expect(caps.platformName).toBe('iOS');
     expect(caps['appium:deviceName']).toBe('iPhone 12');
     expect(caps['appium:platformVersion']).toBe('16.0');
-    // Simulator additional caps
     expect(caps['appium:usePrebuiltWDA']).toBe(true);
     expect(caps['appium:wdaStartupRetries']).toBe(4);
     expect(caps['custom:cap']).toBe('value');
