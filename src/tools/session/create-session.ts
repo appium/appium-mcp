@@ -100,9 +100,9 @@ export function buildAndroidCapabilities(
 
   const capabilities = {
     ...defaultCaps,
+    ...additionalCaps,
     ...configCaps,
     ...(selectedDeviceUdid && { 'appium:udid': selectedDeviceUdid }),
-    ...additionalCaps,
     ...customCaps,
   };
 
