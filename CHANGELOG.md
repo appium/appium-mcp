@@ -1,3 +1,9 @@
+## [1.11.1](https://github.com/appium/appium-mcp/compare/v1.11.0...v1.11.1) (2026-02-07)
+
+### Miscellaneous Chores
+
+* **deps:** bump zod from 3.25.76 to 4.3.6 ([#126](https://github.com/appium/appium-mcp/issues/126)) ([2165d41](https://github.com/appium/appium-mcp/commit/2165d41441d70c7a9d0947ad207405f3055aa1c2))
+
 ## [1.11.0](https://github.com/appium/appium-mcp/compare/v1.10.0...v1.11.0) (2026-01-29)
 
 ### Features
