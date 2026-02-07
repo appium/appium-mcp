@@ -64,7 +64,7 @@ async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
 /**
  * Remove empty string values from capabilities object
  */
-function filterEmptyCapabilities(capabilities: Capabilities): Capabilities {
+export function filterEmptyCapabilities(capabilities: Capabilities): Capabilities {
   const filtered = { ...capabilities };
   Object.keys(filtered).forEach((key) => {
     if (filtered[key] === '') {
@@ -77,7 +77,7 @@ function filterEmptyCapabilities(capabilities: Capabilities): Capabilities {
 /**
  * Build Android capabilities by merging defaults, config, device selection, and custom capabilities
  */
-function buildAndroidCapabilities(
+export function buildAndroidCapabilities(
   configCaps: Record<string, any>,
   customCaps: Record<string, any> | undefined,
   isRemoteServer: boolean
@@ -90,10 +90,17 @@ function buildAndroidCapabilities(
 
   const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
 
+  const additionalCaps = {
+    'appium:settings[actionAcknowledgmentTimeout]': 0,
+    'appium:settings[waitForIdleTimeout]': 0,
+    'appium:settings[waitForSelectorTimeout]': 0
+  };
+
   const capabilities = {
     ...defaultCaps,
     ...configCaps,
     ...(selectedDeviceUdid && { 'appium:udid': selectedDeviceUdid }),
+    ...additionalCaps,
     ...customCaps,
   };
 
@@ -107,7 +114,7 @@ function buildAndroidCapabilities(
 /**
  * Validate iOS device selection when multiple devices are available
  */
-async function validateIOSDeviceSelection(
+export async function validateIOSDeviceSelection(
   deviceType: 'simulator' | 'real' | null
 ): Promise<void> {
   if (!deviceType) {
@@ -130,7 +137,7 @@ async function validateIOSDeviceSelection(
 /**
  * Build iOS capabilities by merging defaults, config, device selection, and custom capabilities
  */
-async function buildIOSCapabilities(
+export async function buildIOSCapabilities(
   configCaps: Record<string, any>,
   customCaps: Record<string, any> | undefined,
   isRemoteServer: boolean
@@ -157,6 +164,12 @@ async function buildIOSCapabilities(
       ? selectedDeviceInfo.platform
       : undefined;
 
+  const additionalCaps = deviceType === 'simulator' ? {
+    'appium:usePrebuiltWDA': true,
+    'appium:wdaStartupRetries': 4,
+    'appium:wdaStartupRetryInterval': 20000,
+  } : {};
+
   log.debug('Platform version:', platformVersion);
 
   const capabilities = {
@@ -165,11 +178,8 @@ async function buildIOSCapabilities(
     ...(platformVersion && { 'appium:platformVersion': platformVersion }),
     ...configCaps,
     ...(selectedDeviceUdid && { 'appium:udid': selectedDeviceUdid }),
-    ...(deviceType === 'simulator' && {
-      'appium:usePrebuiltWDA': true,
-      'appium:wdaStartupRetries': 4,
-      'appium:wdaStartupRetryInterval': 20000,
-    }),
+    ...additionalCaps,
+    // customCaps should be prior than the additonalCaps.
     ...customCaps,
   };
 
