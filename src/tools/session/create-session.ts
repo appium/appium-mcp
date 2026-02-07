@@ -184,7 +184,7 @@ export async function buildIOSCapabilities(
     ...configCaps,
     ...(selectedDeviceUdid && { 'appium:udid': selectedDeviceUdid }),
     ...additionalCaps,
-    // customCaps should be prior than the additonalCaps.
+    // customCaps should override additionalCaps.
     ...customCaps,
   };
 
