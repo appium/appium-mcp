@@ -1,4 +1,4 @@
-name: Code Quality and Tests
+name: Code Quality and Unit Tests
 
 on:
   push:
@@ -49,5 +49,5 @@ jobs:
       - run: npm run build
         name: Build
 
-      - name: Run Locator Tests
-        run: npm run test:locators
+      - name: Run Unit Tests
+        run: npm run test
