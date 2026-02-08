@@ -46,12 +46,11 @@ export async function activateApp(
   appId: string
 ): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    await driver.activateApp(appId);
+    return await driver.activateApp(appId);
   } else if (isXCUITestDriverSession(driver)) {
-    await driver.activateApp(appId);
-  } else {
-    await (driver as Client).activateApp(appId);
+    return await driver.activateApp(appId);
   }
+  return await (driver as Client).activateApp(appId);
 }
 
 /**

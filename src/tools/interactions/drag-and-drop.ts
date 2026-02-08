@@ -1,14 +1,7 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  getPlatformName,
-  isAndroidUiautomator2DriverSession,
-  isRemoteDriverSession,
-  isXCUITestDriverSession,
-} from '../../session-store.js';
+import { getDriver, getPlatformName } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
-import type { Client } from 'webdriver';
 import { getElementRect, getWindowRect } from '../../command.js';
 
 const DROP_PAUSE_DURATION_MS = 150;
