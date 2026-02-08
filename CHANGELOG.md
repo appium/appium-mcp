@@ -1,3 +1,9 @@
+## [1.12.0](https://github.com/appium/appium-mcp/compare/v1.11.1...v1.12.0) (2026-02-08)
+
+### Features
+
+* add additional caps to improve the session ([#155](https://github.com/appium/appium-mcp/issues/155)) ([962d426](https://github.com/appium/appium-mcp/commit/962d4264de3f5450b1097bb7989c9395ce6aae14))
+
 ## [1.11.1](https://github.com/appium/appium-mcp/compare/v1.11.0...v1.11.1) (2026-02-07)
 
 ### Miscellaneous Chores
