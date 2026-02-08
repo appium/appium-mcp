@@ -193,7 +193,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 | Tool             | Description                                                                                                 |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| `create_session` | Create a new mobile automation session for Android, iOS, or general capabilities (see 'general' mode above) |
+| `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
 | `delete_session` | Delete the current mobile session and clean up resources                                                    |
 
 ### Context Management
