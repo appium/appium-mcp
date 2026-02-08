@@ -1,3 +1,9 @@
+## [1.12.2](https://github.com/appium/appium-mcp/compare/v1.12.1...v1.12.2) (2026-02-08)
+
+### Miscellaneous Chores
+
+* update the release pipeline to not run MCP publish when it does not get published new one ([#158](https://github.com/appium/appium-mcp/issues/158)) ([5def0c3](https://github.com/appium/appium-mcp/commit/5def0c3da9efbcd70b943f53f2b5724597bff766))
+
 ## [1.12.1](https://github.com/appium/appium-mcp/compare/v1.12.0...v1.12.1) (2026-02-08)
 
 ### Miscellaneous Chores

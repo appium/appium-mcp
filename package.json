@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.12.1",
+  "version": "1.12.2",
   "type": "module",
   "repository": {
     "type": "git",
