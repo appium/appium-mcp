@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: linux-latest
     steps:
       - uses: actions/checkout@v6
         with:

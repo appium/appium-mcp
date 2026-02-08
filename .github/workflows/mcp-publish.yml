@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   publish-mcp:
-    runs-on: ubuntu-latest
+    runs-on: linux-latest
     steps:
       - uses: actions/checkout@v6
         with:
