@@ -1,3 +1,9 @@
+## [1.12.1](https://github.com/appium/appium-mcp/compare/v1.12.0...v1.12.1) (2026-02-08)
+
+### Miscellaneous Chores
+
+* remove unused imports ([#156](https://github.com/appium/appium-mcp/issues/156)) ([49595f9](https://github.com/appium/appium-mcp/commit/49595f98796114eca20a1cc6e71edebdd656c5f0))
+
 ## [1.12.0](https://github.com/appium/appium-mcp/compare/v1.11.1...v1.12.0) (2026-02-08)
 
 ### Features
