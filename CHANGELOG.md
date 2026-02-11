@@ -1,3 +1,9 @@
+## [1.12.3](https://github.com/appium/appium-mcp/compare/v1.12.2...v1.12.3) (2026-02-11)
+
+### Bug Fixes
+
+* setContext behavior ([#160](https://github.com/appium/appium-mcp/issues/160)) ([81ae558](https://github.com/appium/appium-mcp/commit/81ae5585c5c5ebb8c6977432bd85e9661ca0f6d4))
+
 ## [1.12.2](https://github.com/appium/appium-mcp/compare/v1.12.1...v1.12.2) (2026-02-08)
 
 ### Miscellaneous Chores
