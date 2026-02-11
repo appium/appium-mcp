@@ -96,9 +96,9 @@ export async function setContext(
   name?: string
 ): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    await driver.setContext(name);
+    return await driver.setContext(name);
   } else if (isXCUITestDriverSession(driver)) {
-    await driver.setContext(name || null);
+    return await driver.setContext(name || null);
   }
   throw new Error('setContext is not supported');
 }
