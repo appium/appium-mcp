@@ -280,7 +280,7 @@ export default function createSession(server: any): void {
           - If remoteServerUrl is provided, the assistant should confirm or infer the platform from the conversation; do not assume a default.`
       ),
       capabilities: z
-        .record(z.any())
+        .record(z.string(), z.any())
         .optional()
         .describe(
           'Optional custom W3C format capabilities for the session. These are applied on top of defaults for ios/android or used as-is for platform="general". Common options include appium:app (app path), appium:deviceName, appium:platformVersion, appium:bundleId, appium:autoGrantPermissions, etc. Custom capabilities override default and config file settings.'
