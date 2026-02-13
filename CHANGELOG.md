@@ -1,3 +1,9 @@
+## [1.12.4](https://github.com/appium/appium-mcp/compare/v1.12.3...v1.12.4) (2026-02-13)
+
+### Bug Fixes
+
+* fix zod in create_session to accept custom caps ([#161](https://github.com/appium/appium-mcp/issues/161)) ([b833d75](https://github.com/appium/appium-mcp/commit/b833d75c3acd6b3d7f04c2f50cd30424f9e99973))
+
 ## [1.12.3](https://github.com/appium/appium-mcp/compare/v1.12.2...v1.12.3) (2026-02-11)
 
 ### Bug Fixes
