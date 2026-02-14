@@ -7,7 +7,6 @@
  * Reference: https://mcpui.dev/guide/introduction
  */
 
-import log from "../logger.js";
 
 /**
  * Creates a UIResource object following MCP-UI protocol
