@@ -7,7 +7,6 @@
  * Reference: https://mcpui.dev/guide/introduction
  */
 
-
 /**
  * Creates a UIResource object following MCP-UI protocol
  * @param uri - Unique identifier using ui:// scheme (e.g., 'ui://appium-mcp/device-picker')
