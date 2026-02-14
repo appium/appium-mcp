@@ -1,6 +1,6 @@
 import { logger } from '@appium/support';
 
-const log = logger.getLogger('mcp-appium');
+const log = logger.getLogger('appium-mcp');
 
 export default log;
 export { log };
