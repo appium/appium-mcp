@@ -1624,6 +1624,10 @@ export function addUIResourceToResponse(
   response: { content: Array<{ type: string; text?: string }> },
   uiResource: ReturnType<typeof createUIResource>
 ): { content: Array<any> } {
+  if (process.env.NO_UI === 'true' || process.env.NO_UI === '1') {
+    return response;
+  }
+
   return {
     content: [...response.content, uiResource],
   };
