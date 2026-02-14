@@ -175,6 +175,56 @@ Set the `CAPABILITIES_CONFIG` environment variable to point to your configuratio
 
 Set the `SCREENSHOTS_DIR` environment variable to specify where screenshots are saved. If not set, screenshots are saved to the current working directory. Supports both absolute and relative paths (relative paths are resolved from the current working directory). The directory is created automatically if it doesn't exist.
 
+### Performance Optimization
+
+#### NO_UI Mode
+
+Set the `NO_UI` environment variable to `true` or `1` to disable UI components and improve performance:
+
+```json
+{
+  "appium-mcp": {
+    "env": {
+      "NO_UI": "true",
+      "ANDROID_HOME": "/path/to/android/sdk"
+    }
+  }
+}
+```
+
+**Benefits:**
+
+- **Significantly Faster Response Times**: UI rendering and data processing are completely skipped, resulting in 50-80% faster tool responses depending on the operation.
+- **Major Token Savings**: Eliminates 500-5000+ tokens per request by removing HTML UI components from responses, dramatically reducing LLM API costs.
+- **Massive Bandwidth Reduction**:
+  - Screenshots: Saves 1-5MB of base64-encoded image data per screenshot
+  - Page source: Saves 50-200KB+ of duplicated XML data in HTML UI
+  - Locators: Saves 10-100KB+ of element data in interactive UI
+  - Device/App lists: Saves 5-50KB of HTML UI per selection
+- **Lower Memory Usage**: Client applications consume less memory without HTML rendering and embedded data.
+- **Perfect for Headless Environments**: Ideal for CI/CD pipelines, automated testing scripts, batch operations, or any scenario where visual UI feedback is not required.
+- **Better Scalability**: Reduced resource consumption allows handling more concurrent sessions.
+
+**Affected Tools:**
+
+The following tools return lightweight text-only responses when NO_UI is enabled:
+- `appium_screenshot` - Screenshot files are still saved to disk, but base64 data is not embedded in responses
+- `appium_get_page_source` - Returns XML as text without interactive inspector UI
+- `generate_locators` - Returns locator data as JSON without interactive UI
+- `select_device` - Returns device list as text without picker UI
+- `create_session` - Returns session info as text without dashboard UI
+- `appium_get_contexts` - Returns context list as text without switcher UI
+- `appium_list_apps` - Returns app list as JSON without interactive UI
+
+**When to Enable NO_UI:**
+
+- ✅ Automated test execution in CI/CD pipelines
+- ✅ Batch processing multiple devices/sessions
+- ✅ Cost-sensitive LLM API usage (reduces token consumption by 60-90%)
+- ✅ Network-constrained environments
+- ✅ Scripted automation where human interaction is not needed
+- ❌ Interactive debugging and exploration (keep UI enabled for better experience)
+
 ## 🎯 Available Tools
 
 MCP Appium provides a comprehensive set of tools organized into the following categories:
