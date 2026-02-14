@@ -1,3 +1,13 @@
+## [1.13.0](https://github.com/appium/appium-mcp/compare/v1.12.4...v1.13.0) (2026-02-14)
+
+### Features
+
+* add NO_UI environment variables to optimize some use cases ([#164](https://github.com/appium/appium-mcp/issues/164)) ([07a8243](https://github.com/appium/appium-mcp/commit/07a824334fb4b1cf6db8212bfcf07737d84b7bf5))
+
+### Miscellaneous Chores
+
+* use appium-mcp instead of mcp-appium ([#163](https://github.com/appium/appium-mcp/issues/163)) ([f4d45f2](https://github.com/appium/appium-mcp/commit/f4d45f2147733edeeedd8b79ad717ab59c847697))
+
 ## [1.12.4](https://github.com/appium/appium-mcp/compare/v1.12.3...v1.12.4) (2026-02-13)
 
 ### Bug Fixes
