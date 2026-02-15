@@ -49,16 +49,11 @@ const defaultDeps: ScreenshotDeps = {
   dateNow: () => Date.now(),
 };
 
-export async function executeScreenshot(
-  opts: {
-      deps?: ScreenshotDeps
-      elementId?
-  }
-): Promise<any> {
-  const {
-    deps = defaultDeps,
-    elementId
-  } = opts;
+export async function executeScreenshot(opts: {
+  deps?: ScreenshotDeps;
+  elementId?;
+}): Promise<any> {
+  const { deps = defaultDeps, elementId } = opts;
 
   const driver = deps.getDriver();
   if (!driver) {
@@ -139,8 +134,9 @@ export function elementScreenshot(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any): Promise<any> => executeScreenshot({
-      elementId: args.elementUUID
-    }),
+    execute: async (args: any): Promise<any> =>
+      executeScreenshot({
+        elementId: args.elementUUID,
+      }),
   });
 }

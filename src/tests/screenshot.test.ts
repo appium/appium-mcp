@@ -32,7 +32,9 @@ function resolveScreenshotDir(): string {
  * Interface for screenshot dependencies (mirrors screenshot.ts).
  */
 interface ScreenshotDeps {
-  getDriver: () => { getScreenshot: (elementId?: string) => Promise<string> } | null;
+  getDriver: () => {
+    getScreenshot: (elementId?: string) => Promise<string>;
+  } | null;
   writeFile: (path: string, data: Buffer) => Promise<void>;
   mkdir: (path: string, options: { recursive: boolean }) => Promise<void>;
   resolveScreenshotDir: () => string;
@@ -168,7 +170,9 @@ describe('executeScreenshot', () => {
   ): ScreenshotDeps {
     return {
       getDriver: jest.fn(() => ({
-        getScreenshot: jest.fn((elementId?: string) => Promise.resolve(mockBase64)),
+        getScreenshot: jest.fn((elementId?: string) =>
+          Promise.resolve(mockBase64)
+        ),
       })) as any,
       writeFile: jest.fn(() => Promise.resolve()) as any,
       mkdir: jest.fn(() => Promise.resolve()) as any,
@@ -183,7 +187,9 @@ describe('executeScreenshot', () => {
       getDriver: jest.fn(() => null) as any,
     });
 
-    await expect(executeScreenshot({ deps })).rejects.toThrow('No driver found');
+    await expect(executeScreenshot({ deps })).rejects.toThrow(
+      'No driver found'
+    );
   });
 
   test('should return success content with filename', async () => {
@@ -295,7 +301,9 @@ describe('executeScreenshot', () => {
 
   test('should pass elementId to getScreenshot when provided', async () => {
     const elementId = 'element-uuid-123';
-    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>((elementId?: string) => Promise.resolve(mockBase64));
+    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>(
+      (elementId?: string) => Promise.resolve(mockBase64)
+    );
     const deps = createMockDeps({
       getDriver: jest.fn(() => ({
         getScreenshot: mockScreenshot as any,
@@ -308,7 +316,9 @@ describe('executeScreenshot', () => {
   });
 
   test('should pass undefined elementId to getScreenshot when not provided', async () => {
-    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>((elementId?: string) => Promise.resolve(mockBase64));
+    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>(
+      (elementId?: string) => Promise.resolve(mockBase64)
+    );
     const deps = createMockDeps({
       getDriver: jest.fn(() => ({
         getScreenshot: mockScreenshot as any,

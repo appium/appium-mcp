@@ -219,7 +219,10 @@ export async function getPageSource(driver: DriverInstance): Promise<string> {
  * @param driver - The driver instance to capture from.
  * @returns Base64-encoded PNG string.
  */
-export async function getScreenshot(driver: DriverInstance, elementId?: string): Promise<string> {
+export async function getScreenshot(
+  driver: DriverInstance,
+  elementId?: string
+): Promise<string> {
   if (elementId) {
     if (isAndroidUiautomator2DriverSession(driver)) {
       return await driver.getElementScreenshot(elementId);
