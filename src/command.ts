@@ -267,10 +267,24 @@ export async function getElementText(
  */
 type OrientationDriver = {
   getOrientation(): Promise<'LANDSCAPE' | 'PORTRAIT'>;
+  setOrientation(orientation: 'LANDSCAPE' | 'PORTRAIT'): Promise<void>;
 };
 
 export async function getOrientation(
   driver: DriverInstance
 ): Promise<'LANDSCAPE' | 'PORTRAIT'> {
   return await (driver as OrientationDriver).getOrientation();
+}
+
+/**
+ * Set the device/screen orientation.
+ *
+ * @param driver - The driver instance to use.
+ * @param orientation - LANDSCAPE or PORTRAIT.
+ */
+export async function setOrientation(
+  driver: DriverInstance,
+  orientation: 'LANDSCAPE' | 'PORTRAIT'
+): Promise<void> {
+  await (driver as OrientationDriver).setOrientation(orientation);
 }
