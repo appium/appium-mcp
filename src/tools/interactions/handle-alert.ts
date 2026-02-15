@@ -1,7 +1,12 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
-import { DriverInstance, getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import {
+  DriverInstance,
+  getDriver,
+  getPlatformName,
+  PLATFORM,
+} from '../../session-store.js';
 import { elementClick, execute, getPageSource } from '../../command.js';
 
 export const handleAlertSchema = z.object({

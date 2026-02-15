@@ -1,10 +1,6 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  getPlatformName,
-  PLATFORM,
-} from '../../session-store.js';
+import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import { execute, getElementRect, performActions } from '../../command.js';
 

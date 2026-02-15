@@ -1,9 +1,6 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  isRemoteDriverSession,
-} from '../../session-store.js';
+import { getDriver, isRemoteDriverSession } from '../../session-store.js';
 import {
   createUIResource,
   createContextSwitcherUI,

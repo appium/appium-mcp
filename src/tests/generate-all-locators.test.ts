@@ -1,7 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import {
-  generateAllElementLocators
-} from '../locators/generate-all-locators.js';
+import { generateAllElementLocators } from '../locators/generate-all-locators.js';
 
 describe('generateAllElementLocators', () => {
   // Sample XML for testing
