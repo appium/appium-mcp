@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.12.4",
+  "version": "1.13.0",
   "type": "module",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "mcp-appium": "dist/index.js"
+    "appium-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "rimraf dist tsconfig.tsbuildinfo && tsc -b && chmod +x dist/index.js && npm run copy-docs",

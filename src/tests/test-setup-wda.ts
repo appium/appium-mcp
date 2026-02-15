@@ -100,7 +100,7 @@ async function getLatestWDAVersion(): Promise<string> {
       path: '/repos/appium/WebDriverAgent/releases/latest',
       method: 'GET',
       headers: {
-        'User-Agent': 'mcp-appium-test',
+        'User-Agent': 'appium-mcp-test',
         Accept: 'application/vnd.github.v3+json',
       },
     };
