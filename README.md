@@ -25,6 +25,7 @@ MCP Appium is an intelligent MCP (Model Context Protocol) server designed to emp
 - **Automated Test Generation**: Generate Java/TestNG test code from natural language descriptions.
 - **Page Object Model Support**: Utilize built-in templates that follow industry best practices.
 - **Flexible Configuration**: Customize capabilities and settings for different environments.
+- **Multilingual Support**: Use your native language - AI handles all interactions naturally in any language (English, Spanish, Chinese, Japanese, Korean, etc.).
 
 ## 📋 Prerequisites
 
@@ -308,6 +309,26 @@ Open Amazon mobile app, search for "iPhone 15 Pro", select the first search resu
 ```
 
 This example demonstrates a complete e-commerce checkout flow that can be automated using MCP Appium's intelligent locator generation and test creation capabilities.
+
+### Working in Your Native Language
+
+**MCP Appium works seamlessly in any language** - you don't need to know English! The AI assistant understands and responds in your native language. Simply describe what you want to do in your preferred language:
+
+**Examples in different languages:**
+
+🇪🇸 **Spanish**: "Abre la aplicación de Amazon, busca 'iPhone 15 Pro' y agrégalo al carrito"
+
+🇨🇳 **Chinese**: "打开Amazon应用，搜索'iPhone 15 Pro'并添加到购物车"
+
+🇯🇵 **Japanese**: "Amazonアプリを開いて、'iPhone 15 Pro'を検索してカートに追加する"
+
+🇰🇷 **Korean**: "Amazon 앱을 열고 'iPhone 15 Pro'를 검색한 후 장바구니에 추가"
+
+🇫🇷 **French**: "Ouvre l'application Amazon, recherche 'iPhone 15 Pro' et ajoute-le au panier"
+
+🇩🇪 **German**: "Öffne die Amazon App, suche nach 'iPhone 15 Pro' und füge es zum Warenkorb hinzu"
+
+The AI will handle your requests naturally and generate the appropriate test code, regardless of the language you use.
 
 ## 🙌 Contributing
 
