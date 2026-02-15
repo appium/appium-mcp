@@ -16,7 +16,7 @@ export default function answerAppium(server: any): void {
         .string()
         .describe('The question or query about Appium documentation'),
     }),
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       const query = args.query;
       if (!query) {
         return {
@@ -40,7 +40,7 @@ export default function answerAppium(server: any): void {
             },
           ],
         };
-      } catch (docError) {
+      } catch (_docError) {
         // If documentation query fails, try to initialize and retry once
         try {
           log.info('Documentation not initialized, initializing now...');

@@ -32,7 +32,7 @@ export default function generateLocators(server: any): void {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (args: any, { log }: any): Promise<any> => {
+    execute: async (_args: any, { log }: any): Promise<any> => {
       log.info('Getting page source');
       try {
         // Check for active driver session

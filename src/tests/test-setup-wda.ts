@@ -5,26 +5,11 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
-import { createRequire } from 'node:module';
 import https from 'node:https';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
-
-// Mock server object to test the tool
-class MockServer {
-  private tools: Map<string, any> = new Map();
-
-  addTool(tool: any) {
-    this.tools.set(tool.name, tool);
-    console.log(`✅ Tool registered: ${tool.name}`);
-  }
-
-  getTool(name: string) {
-    return this.tools.get(name);
-  }
-}
 
 async function downloadFile(url: string, destPath: string): Promise<void> {
   return new Promise((resolve, reject) => {

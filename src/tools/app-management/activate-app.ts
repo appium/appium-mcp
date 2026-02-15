@@ -16,7 +16,7 @@ export default function activateApp(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: { id: string }, context: any): Promise<any> => {
+    execute: async (args: { id: string }, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');

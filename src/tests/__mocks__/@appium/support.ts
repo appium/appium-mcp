@@ -2,23 +2,23 @@
 // This avoids the ESM/CommonJS mismatch with uuid dependency
 
 export const logger = {
-  getLogger: (name: string) =>
+  getLogger: (_name: string) =>
     // Simple logger implementation for tests
     // No-op functions that match the logger interface
     ({
-      debug: (message: string, ...args: any[]) => {
+      debug: (_message: string, ..._args: any[]) => {
         // Silent in tests by default
       },
-      info: (message: string, ...args: any[]) => {
+      info: (_message: string, ..._args: any[]) => {
         // Silent in tests by default
       },
-      warn: (message: string, ...args: any[]) => {
+      warn: (_message: string, ..._args: any[]) => {
         // Silent in tests by default
       },
-      error: (message: string, ...args: any[]) => {
+      error: (_message: string, ..._args: any[]) => {
         // Silent in tests by default
       },
-      trace: (message: string, ...args: any[]) => {
+      trace: (_message: string, ..._args: any[]) => {
         // Silent in tests by default
       },
     }),

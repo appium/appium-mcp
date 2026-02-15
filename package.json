@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.14.0",
+  "version": "1.15.1",
   "type": "module",
   "repository": {
     "type": "git",
@@ -41,8 +41,8 @@
   "description": "Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation",
   "dependencies": {
     "@appium/support": "^7.0.2",
-    "@langchain/core": "^1.1.17",
     "@langchain/classic": "^1.0.10",
+    "@langchain/core": "^1.1.17",
     "@langchain/textsplitters": "^1.0.1",
     "@langfuse/otel": "^4.2.0",
     "@langfuse/tracing": "^4.2.0",
@@ -60,9 +60,9 @@
     "lodash": "^4.17.21",
     "node-simctl": "^8.0.4",
     "rimraf": "^6.0.1",
+    "webdriver": "^9.23.0",
     "xpath": "^0.0.34",
-    "zod": "^4.3.6",
-    "webdriver": "^9.23.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@appium/eslint-config-appium-ts": "^3.0.0",
@@ -73,7 +73,9 @@
     "@types/lodash": "^4.17.17",
     "@types/node": "^25.0.9",
     "conventional-changelog-conventionalcommits": "^9.1.0",
+    "husky": "^9.1.7",
     "jest": "^30.2.0",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.5.3",
     "semantic-release": "^25.0.2",
     "ts-jest": "^29.1.2",
@@ -88,5 +90,14 @@
     "README.md",
     "LICENSE",
     "server.json"
-  ]
+  ],
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint src --fix",
+      "prettier --write"
+    ],
+    "src/**/*.{js,json}": [
+      "prettier --write"
+    ]
+  }
 }

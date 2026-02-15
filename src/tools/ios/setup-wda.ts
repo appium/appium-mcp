@@ -113,7 +113,7 @@ export default function setupWDA(server: any): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       try {
         const { platform = 'ios' } = args;
 
@@ -158,9 +158,6 @@ export default function setupWDA(server: any): void {
           // File doesn't exist, continue to download
         }
 
-        // Version not cached, download it
-        const startTime = Date.now();
-
         // Create cache directories
         await mkdir(versionCacheDir, { recursive: true });
         await mkdir(extractDir, { recursive: true });
@@ -176,8 +173,6 @@ export default function setupWDA(server: any): void {
 
         log.info('Extracting WebDriverAgent...');
         await unzipFile(zipPath, extractDir);
-
-        const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 
         // Verify extraction
         try {

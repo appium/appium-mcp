@@ -122,7 +122,7 @@ export default function dragAndDrop(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');

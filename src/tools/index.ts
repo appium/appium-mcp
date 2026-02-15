@@ -37,6 +37,7 @@ import getText from './interactions/get-text.js';
 import getPageSource from './interactions/get-page-source.js';
 import getOrientation from './interactions/get-orientation.js';
 import setOrientation from './interactions/set-orientation.js';
+import handleAlert from './interactions/handle-alert.js';
 import { screenshot, elementScreenshot } from './interactions/screenshot.js';
 import activateApp from './app-management/activate-app.js';
 import installApp from './app-management/install-app.js';
@@ -140,6 +141,7 @@ export default function registerTools(server: FastMCP): void {
   getPageSource(server);
   getOrientation(server);
   setOrientation(server);
+  handleAlert(server);
   screenshot(server);
   elementScreenshot(server);
 

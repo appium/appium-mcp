@@ -21,7 +21,7 @@ export default function bootSimulator(server: any): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       try {
         const { udid } = args;
 
@@ -57,11 +57,8 @@ export default function bootSimulator(server: any): void {
         const simctl = new Simctl();
         simctl.udid = udid;
 
-        // Boot the device and measure time
-        const bootStartTime = Date.now();
         await simctl.bootDevice();
         await simctl.startBootMonitor({ timeout: 120000 });
-        const bootDuration = ((Date.now() - bootStartTime) / 1000).toFixed(1);
 
         return {
           content: [

@@ -34,7 +34,7 @@ export default function generateTest(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => ({
+    execute: async (args: any, _context: any): Promise<any> => ({
       content: [
         {
           type: 'text',

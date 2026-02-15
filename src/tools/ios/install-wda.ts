@@ -57,7 +57,7 @@ async function getBootedSimulators(): Promise<string[]> {
     const data = JSON.parse(stdout);
     const bootedSimulators: string[] = [];
 
-    for (const [runtime, devices] of Object.entries(data.devices)) {
+    for (const [_runtime, devices] of Object.entries(data.devices)) {
       if (Array.isArray(devices)) {
         for (const device of devices as any[]) {
           if (device.state === 'Booted') {
@@ -127,7 +127,7 @@ async function isWDAInstalled(simulatorUdid: string): Promise<boolean> {
       }
     }
     return false;
-  } catch (error) {
+  } catch (_error) {
     // If we can't check, assume it's not installed
     return false;
   }
@@ -150,7 +150,7 @@ async function isWDARunning(simulatorUdid: string): Promise<boolean> {
       }
     }
     return false;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -180,7 +180,7 @@ export default function installWDA(server: any): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       try {
         const { simulatorUdid, appPath: providedAppPath } = args;
 
