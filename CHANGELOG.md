@@ -1,3 +1,9 @@
+## [1.15.0](https://github.com/appium/appium-mcp/compare/v1.14.0...v1.15.0) (2026-02-15)
+
+### Features
+
+* **interactions:** add handle-alert tool ([#57](https://github.com/appium/appium-mcp/issues/57)) ([966d035](https://github.com/appium/appium-mcp/commit/966d035455c2767cc027e78bda592a01a3847c17))
+
 ## [1.14.0](https://github.com/appium/appium-mcp/compare/v1.13.0...v1.14.0) (2026-02-15)
 
 ### Features
