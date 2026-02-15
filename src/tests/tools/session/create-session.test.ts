@@ -11,7 +11,7 @@ await jest.unstable_mockModule('../../../tools/session/select-device', () => ({
 await jest.unstable_mockModule('../../../devicemanager/ios-manager', () => ({
   IOSManager: {
     getInstance: () => ({
-      getDevicesByType: async (t: any) => [{ udid: 'u1' }],
+      getDevicesByType: async (_t: any) => [{ udid: 'u1' }],
     }),
   },
 }));

@@ -121,7 +121,7 @@ To discover button labels and screen structure first, use appium_get_page_source
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');

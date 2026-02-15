@@ -2,7 +2,6 @@ import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import {
   getDriver,
-  isAndroidUiautomator2DriverSession,
   isRemoteDriverSession,
 } from '../../session-store.js';
 import {
@@ -10,7 +9,6 @@ import {
   createContextSwitcherUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import type { XCUITestDriver } from 'appium-xcuitest-driver';
 import {
   getCurrentContext,
   getContexts as _getContexts,
@@ -26,7 +24,7 @@ export default function getContexts(server: FastMCP): void {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (_args: any, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found. Please create a session first.');

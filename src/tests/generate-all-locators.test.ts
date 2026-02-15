@@ -1,7 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import {
-  generateAllElementLocators,
-  ElementWithLocators,
+  generateAllElementLocators
 } from '../locators/generate-all-locators.js';
 
 describe('generateAllElementLocators', () => {

@@ -92,7 +92,7 @@ async function performiOSSwipe(
       duration: duration / 1000,
     });
     log.info('iOS swipe completed using mobile: dragFromToForDuration');
-  } catch (dragError) {
+  } catch (_dragError) {
     log.info('mobile: dragFromToForDuration failed, trying performActions');
     await driver.performActions([
       {
@@ -179,7 +179,7 @@ export default function swipe(server: any): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error(
@@ -316,7 +316,7 @@ export default function swipe(server: any): void {
               log.info(
                 `iOS swipe completed using mobile: swipe (${args.direction})`
               );
-            } catch (swipeError) {
+            } catch (_swipeError) {
               log.info('mobile: swipe failed, trying dragFromToForDuration');
               await performiOSSwipe(
                 driver,

@@ -3,11 +3,9 @@ import { z } from 'zod';
 import {
   getDriver,
   getPlatformName,
-  isAndroidUiautomator2DriverSession,
   PLATFORM,
 } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
-import type { Client } from 'webdriver';
 import { execute, getElementRect, performActions } from '../../command.js';
 
 export default function doubleTap(server: FastMCP): void {
@@ -23,7 +21,7 @@ export default function doubleTap(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');
