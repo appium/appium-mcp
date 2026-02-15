@@ -1,5 +1,6 @@
 import { FastMCP } from 'fastmcp';
 import { getDriver } from '../../session-store.js';
+import { elementUUIDScheme } from '../../schema.js';
 import type { NullableDriverInstance } from '../../session-store.js';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, isAbsolute } from 'node:path';
@@ -10,6 +11,7 @@ import {
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
 import { getScreenshot } from '../../command.js';
+import z from 'zod';
 
 /**
  * Resolves the screenshot directory path.
@@ -48,15 +50,23 @@ const defaultDeps: ScreenshotDeps = {
 };
 
 export async function executeScreenshot(
-  deps: ScreenshotDeps = defaultDeps
+  opts: {
+      deps?: ScreenshotDeps
+      elementId?
+  }
 ): Promise<any> {
+  const {
+    deps = defaultDeps,
+    elementId
+  } = opts;
+
   const driver = deps.getDriver();
   if (!driver) {
     throw new Error('No driver found');
   }
 
   try {
-    const screenshotBase64 = await getScreenshot(driver);
+    const screenshotBase64 = await getScreenshot(driver, elementId);
 
     // Convert base64 to buffer
     const screenshotBuffer = Buffer.from(screenshotBase64, 'base64');
@@ -102,7 +112,7 @@ export async function executeScreenshot(
   }
 }
 
-export default function screenshot(server: FastMCP): void {
+export function screenshot(server: FastMCP): void {
   server.addTool({
     name: 'appium_screenshot',
     description:
@@ -111,6 +121,26 @@ export default function screenshot(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (): Promise<any> => executeScreenshot(),
+    execute: async (): Promise<any> => executeScreenshot({}),
+  });
+}
+
+export function elementScreenshot(server: FastMCP): void {
+  const elementScreenshotSchema = z.object({
+    elementUUID: elementUUIDScheme,
+  });
+
+  server.addTool({
+    name: 'appium_element_screenshot',
+    description:
+      'Take a screenshot of the given element uuid and return as PNG image',
+    parameters: elementScreenshotSchema,
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+    },
+    execute: async (args: any): Promise<any> => executeScreenshot({
+      elementId: args.elementUUID
+    }),
   });
 }

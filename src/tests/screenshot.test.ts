@@ -32,7 +32,7 @@ function resolveScreenshotDir(): string {
  * Interface for screenshot dependencies (mirrors screenshot.ts).
  */
 interface ScreenshotDeps {
-  getDriver: () => { getScreenshot: () => Promise<string> } | null;
+  getDriver: () => { getScreenshot: (elementId?: string) => Promise<string> } | null;
   writeFile: (path: string, data: Buffer) => Promise<void>;
   mkdir: (path: string, options: { recursive: boolean }) => Promise<void>;
   resolveScreenshotDir: () => string;
@@ -43,14 +43,29 @@ interface ScreenshotDeps {
  * Local implementation of executeScreenshot for testing.
  * This mirrors the implementation in screenshot.ts.
  */
-async function executeScreenshot(deps: ScreenshotDeps): Promise<any> {
+async function executeScreenshot(
+  opts: {
+    deps?: ScreenshotDeps;
+    elementId?: string;
+  } = {}
+): Promise<any> {
+  const defaultDeps: ScreenshotDeps = {
+    getDriver: () => null as any,
+    writeFile: async () => {},
+    mkdir: async () => {},
+    resolveScreenshotDir: () => '',
+    dateNow: () => 0,
+  };
+
+  const { deps = defaultDeps, elementId } = opts;
+
   const driver = deps.getDriver();
   if (!driver) {
     throw new Error('No driver found');
   }
 
   try {
-    const screenshotBase64 = await driver.getScreenshot();
+    const screenshotBase64 = await driver.getScreenshot(elementId);
     const screenshotBuffer = Buffer.from(screenshotBase64, 'base64');
     const timestamp = deps.dateNow();
     const filename = `screenshot_${timestamp}.png`;
@@ -60,11 +75,12 @@ async function executeScreenshot(deps: ScreenshotDeps): Promise<any> {
     const filepath = join(screenshotDir, filename);
     await deps.writeFile(filepath, screenshotBuffer);
 
+    // Return text response (UI resource is added by addUIResourceToResponse in actual implementation)
     return {
       content: [
         {
           type: 'text',
-          text: `Screenshot saved successfully to: ${filename}`,
+          text: `Screenshot saved successfully to: ${filepath}`,
         },
       ],
     };
@@ -152,7 +168,7 @@ describe('executeScreenshot', () => {
   ): ScreenshotDeps {
     return {
       getDriver: jest.fn(() => ({
-        getScreenshot: jest.fn(() => Promise.resolve(mockBase64)),
+        getScreenshot: jest.fn((elementId?: string) => Promise.resolve(mockBase64)),
       })) as any,
       writeFile: jest.fn(() => Promise.resolve()) as any,
       mkdir: jest.fn(() => Promise.resolve()) as any,
@@ -167,19 +183,19 @@ describe('executeScreenshot', () => {
       getDriver: jest.fn(() => null) as any,
     });
 
-    await expect(executeScreenshot(deps)).rejects.toThrow('No driver found');
+    await expect(executeScreenshot({ deps })).rejects.toThrow('No driver found');
   });
 
   test('should return success content with filename', async () => {
     const deps = createMockDeps();
 
-    const result = await executeScreenshot(deps);
+    const result = await executeScreenshot({ deps });
 
     expect(result).toEqual({
       content: [
         {
           type: 'text',
-          text: `Screenshot saved successfully to: screenshot_${mockTimestamp}.png`,
+          text: `Screenshot saved successfully to: /mock/screenshots/screenshot_${mockTimestamp}.png`,
         },
       ],
     });
@@ -191,7 +207,7 @@ describe('executeScreenshot', () => {
       resolveScreenshotDir: jest.fn(() => customDir) as any,
     });
 
-    await executeScreenshot(deps);
+    await executeScreenshot({ deps });
 
     expect(deps.mkdir).toHaveBeenCalledWith(customDir, { recursive: true });
     expect(deps.writeFile).toHaveBeenCalledWith(
@@ -203,7 +219,7 @@ describe('executeScreenshot', () => {
   test('should create directory with recursive option', async () => {
     const deps = createMockDeps();
 
-    await executeScreenshot(deps);
+    await executeScreenshot({ deps });
 
     expect(deps.mkdir).toHaveBeenCalledWith('/mock/screenshots', {
       recursive: true,
@@ -213,7 +229,7 @@ describe('executeScreenshot', () => {
   test('should write screenshot buffer to correct filepath', async () => {
     const deps = createMockDeps();
 
-    await executeScreenshot(deps);
+    await executeScreenshot({ deps });
 
     expect(deps.writeFile).toHaveBeenCalledWith(
       `/mock/screenshots/screenshot_${mockTimestamp}.png`,
@@ -229,7 +245,7 @@ describe('executeScreenshot', () => {
       })) as any,
     });
 
-    const result = await executeScreenshot(deps);
+    const result = await executeScreenshot({ deps });
 
     expect(result).toEqual({
       content: [
@@ -247,7 +263,7 @@ describe('executeScreenshot', () => {
       mkdir: jest.fn(() => Promise.reject(new Error(errorMessage))) as any,
     });
 
-    const result = await executeScreenshot(deps);
+    const result = await executeScreenshot({ deps });
 
     expect(result).toEqual({
       content: [
@@ -265,7 +281,7 @@ describe('executeScreenshot', () => {
       writeFile: jest.fn(() => Promise.reject(new Error(errorMessage))) as any,
     });
 
-    const result = await executeScreenshot(deps);
+    const result = await executeScreenshot({ deps });
 
     expect(result).toEqual({
       content: [
@@ -275,5 +291,32 @@ describe('executeScreenshot', () => {
         },
       ],
     });
+  });
+
+  test('should pass elementId to getScreenshot when provided', async () => {
+    const elementId = 'element-uuid-123';
+    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>((elementId?: string) => Promise.resolve(mockBase64));
+    const deps = createMockDeps({
+      getDriver: jest.fn(() => ({
+        getScreenshot: mockScreenshot as any,
+      })) as any,
+    });
+
+    await executeScreenshot({ deps, elementId });
+
+    expect(mockScreenshot).toHaveBeenCalledWith(elementId);
+  });
+
+  test('should pass undefined elementId to getScreenshot when not provided', async () => {
+    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>((elementId?: string) => Promise.resolve(mockBase64));
+    const deps = createMockDeps({
+      getDriver: jest.fn(() => ({
+        getScreenshot: mockScreenshot as any,
+      })) as any,
+    });
+
+    await executeScreenshot({ deps });
+
+    expect(mockScreenshot).toHaveBeenCalledWith(undefined);
   });
 });
