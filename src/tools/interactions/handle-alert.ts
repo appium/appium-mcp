@@ -1,7 +1,13 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import {
+  DriverInstance,
+  getDriver,
+  getPlatformName,
+  PLATFORM,
+} from '../../session-store.js';
+import { elementClick, execute, getPageSource } from '../../command.js';
 
 export const handleAlertSchema = z.object({
   action: z
@@ -29,12 +35,12 @@ const ANDROID_LOCATOR_STRATEGY_ORDER = [
 ];
 
 async function handleAndroidAlert(
-  driver: any,
+  driver: DriverInstance,
   action: string,
   buttonLabel?: string
 ): Promise<void> {
   if (buttonLabel) {
-    const pageSource = await driver.getPageSource();
+    const pageSource = await getPageSource(driver);
     const elements = generateAllElementLocators(
       pageSource,
       true,
@@ -82,18 +88,18 @@ async function handleAndroidAlert(
       );
     }
     const buttonUUID = button.ELEMENT || button;
-    await driver.click(buttonUUID);
+    await elementClick(driver, buttonUUID);
   } else {
     if (action === 'accept') {
-      await driver.execute('mobile: acceptAlert', {});
+      await execute(driver, 'mobile: acceptAlert', {});
     } else {
-      await driver.execute('mobile: dismissAlert', {});
+      await execute(driver, 'mobile: dismissAlert', {});
     }
   }
 }
 
 async function handleiOSAlert(
-  driver: any,
+  driver: DriverInstance,
   action: string,
   buttonLabel?: string
 ): Promise<void> {
@@ -101,7 +107,7 @@ async function handleiOSAlert(
   if (buttonLabel) {
     params.buttonLabel = buttonLabel;
   }
-  await driver.execute('mobile: alert', params);
+  await execute(driver, 'mobile: alert', params);
 }
 
 export default function handleAlert(server: FastMCP): void {
@@ -121,7 +127,7 @@ To discover button labels and screen structure first, use appium_get_page_source
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');

@@ -304,7 +304,7 @@ export default function selectDevice(server: any): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       try {
         const { platform, iosDeviceType, deviceUdid } = args;
 

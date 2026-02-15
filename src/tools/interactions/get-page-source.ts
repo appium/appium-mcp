@@ -17,7 +17,7 @@ export default function getPageSource(server: FastMCP): void {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (_args: any, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found. Please create a session first.');

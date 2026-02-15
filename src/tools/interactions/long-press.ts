@@ -27,7 +27,7 @@ export default function longPress(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');
@@ -62,7 +62,7 @@ export default function longPress(server: FastMCP): void {
               elementId: args.elementUUID,
               duration: duration / 1000,
             });
-          } catch (touchAndHoldError) {
+          } catch (_touchAndHoldError) {
             const rect = await getElementRect(driver, args.elementUUID);
             const x = Math.floor(rect.x + rect.width / 2);
             const y = Math.floor(rect.y + rect.height / 2);

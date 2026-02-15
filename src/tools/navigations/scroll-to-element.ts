@@ -63,7 +63,7 @@ const transformXPath = (
   );
 };
 
-const transformLocator = (
+const _transformLocator = (
   strategy: string,
   selector: string
 ): { strategy: string; selector: string } => {
@@ -82,7 +82,7 @@ const transformLocator = (
 
 async function performAndroidScroll(
   driver: any,
-  args: any,
+  _args: any,
   direction: string
 ): Promise<void> {
   // Use UiAutomator scroll gestures for Android
@@ -92,7 +92,7 @@ async function performAndroidScroll(
 
   try {
     await driver.findElement('-android uiautomator', scrollCommand);
-  } catch (error) {
+  } catch (_error) {
     // If UiScrollable fails, try touch actions
     const { width, height } = await driver.getWindowRect();
     const startX = width / 2;
@@ -130,7 +130,7 @@ export default function scrollToElement(server: any): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<any> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error(
@@ -143,7 +143,7 @@ export default function scrollToElement(server: any): void {
 
         // First try to find the element directly (it might already be in viewport)
         try {
-          const element = await driver.findElement(
+          const _element = await driver.findElement(
             args.strategy,
             args.selector
           );
@@ -155,7 +155,7 @@ export default function scrollToElement(server: any): void {
               },
             ],
           };
-        } catch (error) {
+        } catch (_error) {
           const direction = args.direction || 'down';
           switch (platform) {
             case 'Android':
@@ -170,7 +170,7 @@ export default function scrollToElement(server: any): void {
               );
           }
 
-          const element = await driver.findElement(
+          const _element = await driver.findElement(
             args.strategy,
             args.selector
           );

@@ -170,7 +170,7 @@ describe('executeScreenshot', () => {
   ): ScreenshotDeps {
     return {
       getDriver: jest.fn(() => ({
-        getScreenshot: jest.fn((elementId?: string) =>
+        getScreenshot: jest.fn((_elementId?: string) =>
           Promise.resolve(mockBase64)
         ),
       })) as any,
@@ -302,7 +302,7 @@ describe('executeScreenshot', () => {
   test('should pass elementId to getScreenshot when provided', async () => {
     const elementId = 'element-uuid-123';
     const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>(
-      (elementId?: string) => Promise.resolve(mockBase64)
+      (_elementId?: string) => Promise.resolve(mockBase64)
     );
     const deps = createMockDeps({
       getDriver: jest.fn(() => ({
@@ -317,7 +317,7 @@ describe('executeScreenshot', () => {
 
   test('should pass undefined elementId to getScreenshot when not provided', async () => {
     const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>(
-      (elementId?: string) => Promise.resolve(mockBase64)
+      (_elementId?: string) => Promise.resolve(mockBase64)
     );
     const deps = createMockDeps({
       getDriver: jest.fn(() => ({
