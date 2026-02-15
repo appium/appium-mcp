@@ -277,8 +277,8 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `appium_scroll_to_element` | Scroll until a specific element becomes visible         |
 | `appium_swipe`             | Swipe the screen in a direction (left, right, up, down) or between custom coordinates |
 | `appium_get_page_source`   | Get the page source (XML) from the current screen       |
-| `appium_get_orientation`   | Get the current device/screen orientation (LANDSCAPE or PORTRAIT) |
-| `appium_set_orientation`   | Set the device/screen orientation to LANDSCAPE or PORTRAIT (rotate screen) |
+| `appium_get_orientation`   | Get the current device/screen orientation (LANDSCAPE or PORTRAIT). |
+| `appium_set_orientation`   | Set the device/screen orientation to LANDSCAPE or PORTRAIT (rotate screen). |
 
 ### App Management
 

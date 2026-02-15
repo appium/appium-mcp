@@ -265,15 +265,17 @@ export async function getElementText(
  * @param driver - The driver instance to query.
  * @returns Orientation string: LANDSCAPE or PORTRAIT.
  */
-type OrientationDriver = {
-  getOrientation(): Promise<'LANDSCAPE' | 'PORTRAIT'>;
-  setOrientation(orientation: 'LANDSCAPE' | 'PORTRAIT'): Promise<void>;
-};
-
 export async function getOrientation(
   driver: DriverInstance
 ): Promise<'LANDSCAPE' | 'PORTRAIT'> {
-  return await (driver as OrientationDriver).getOrientation();
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getOrientation();
+  } else if (isXCUITestDriverSession(driver)) {
+    return (await driver.proxyCommand('/orientation', 'GET')) as
+      | 'LANDSCAPE'
+      | 'PORTRAIT';
+  }
+  return (await driver.getOrientation()) as 'LANDSCAPE' | 'PORTRAIT';
 }
 
 /**
@@ -286,5 +288,10 @@ export async function setOrientation(
   driver: DriverInstance,
   orientation: 'LANDSCAPE' | 'PORTRAIT'
 ): Promise<void> {
-  await (driver as OrientationDriver).setOrientation(orientation);
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.setOrientation(orientation);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.proxyCommand('/orientation', 'POST', { orientation });
+  }
+  return await driver.setOrientation(orientation);
 }
