@@ -258,3 +258,19 @@ export async function getElementText(
   }
   return await driver.getElementText(elementUUID);
 }
+
+/**
+ * Get the current device/screen orientation.
+ *
+ * @param driver - The driver instance to query.
+ * @returns Orientation string: LANDSCAPE or PORTRAIT.
+ */
+type OrientationDriver = {
+  getOrientation(): Promise<'LANDSCAPE' | 'PORTRAIT'>;
+};
+
+export async function getOrientation(
+  driver: DriverInstance
+): Promise<'LANDSCAPE' | 'PORTRAIT'> {
+  return await (driver as OrientationDriver).getOrientation();
+}
