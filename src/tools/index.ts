@@ -35,6 +35,7 @@ import dragAndDrop from './interactions/drag-and-drop.js';
 import setValue from './interactions/set-value.js';
 import getText from './interactions/get-text.js';
 import getPageSource from './interactions/get-page-source.js';
+import handleAlert from './interactions/handle-alert.js';
 import { screenshot, elementScreenshot } from './interactions/screenshot.js';
 import activateApp from './app-management/activate-app.js';
 import installApp from './app-management/install-app.js';
@@ -136,6 +137,7 @@ export default function registerTools(server: FastMCP): void {
   setValue(server);
   getText(server);
   getPageSource(server);
+  handleAlert(server);
   screenshot(server);
   elementScreenshot(server);
 
