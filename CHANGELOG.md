@@ -1,3 +1,9 @@
+## [1.14.0](https://github.com/appium/appium-mcp/compare/v1.13.0...v1.14.0) (2026-02-15)
+
+### Features
+
+* add element screenshot support ([#165](https://github.com/appium/appium-mcp/issues/165)) ([b6e42c7](https://github.com/appium/appium-mcp/commit/b6e42c75085dec12d1ef96229c3f53947c7ec652))
+
 ## [1.13.0](https://github.com/appium/appium-mcp/compare/v1.12.4...v1.13.0) (2026-02-14)
 
 ### Features
