@@ -4,15 +4,52 @@ import {
   getDriver,
   getPlatformName,
   isRemoteDriverSession,
+  PLATFORM,
 } from '../../session-store.js';
 import {
   createUIResource,
   createAppListUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 
-async function listAppsFromDevice(): Promise<any[]> {
+const PACKAGE_PREFIX = 'package:';
+
+function normalizeListAppsResult(
+  result: Record<string, Record<string, unknown> | undefined>
+): { packageName: string; appName: string }[] {
+  return Object.entries(result).map(([id, attrs]) => {
+    let appName = '';
+    if (attrs) {
+      if (typeof attrs.CFBundleDisplayName === 'string') {
+        appName = attrs.CFBundleDisplayName;
+      } else if (typeof attrs.CFBundleName === 'string') {
+        appName = attrs.CFBundleName;
+      } else if (typeof (attrs as Record<string, unknown>).name === 'string') {
+        appName = (attrs as Record<string, unknown>).name as string;
+      }
+    }
+    return { packageName: id, appName };
+  });
+}
+
+function parsePackageListOutput(
+  raw: string
+): { packageName: string; appName: string }[] {
+  return raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith(PACKAGE_PREFIX))
+    .map((line) => ({
+      packageName: line.slice(PACKAGE_PREFIX.length).trim(),
+      appName: '',
+    }));
+}
+
+async function listAppsFromDevice(): Promise<
+  { packageName: string; appName: string }[]
+> {
   const driver = await getDriver();
   if (!driver) {
     throw new Error('No driver found');
@@ -23,27 +60,63 @@ async function listAppsFromDevice(): Promise<any[]> {
   }
 
   const platform = getPlatformName(driver);
-  if (platform === 'iOS') {
-    throw new Error('listApps is not yet implemented for iOS');
+
+  if (platform === PLATFORM.ios) {
+    const result = await execute(driver, 'mobile: listApps', {});
+    if (result && typeof result === 'object' && !Array.isArray(result)) {
+      return normalizeListAppsResult(
+        result as Record<string, Record<string, unknown> | undefined>
+      );
+    }
+    return [];
   }
 
-  const appPackages = await (driver as AndroidUiautomator2Driver).adb.adbExec([
-    'shell',
-    'cmd',
-    'package',
-    'list',
-    'packages',
-  ]);
+  if (platform === PLATFORM.android) {
+    try {
+      const result = await execute(driver, 'mobile: listApps', {});
+      if (result && typeof result === 'object' && !Array.isArray(result)) {
+        return normalizeListAppsResult(
+          result as Record<string, Record<string, unknown> | undefined>
+        );
+      }
+    } catch {}
 
-  const apps: any[] = appPackages
-    .split('package:')
-    .filter((s: any) => s.trim())
-    .map((s: any) => ({
-      packageName: s.trim(),
-      appName: '',
-    }));
+    const adb = (driver as AndroidUiautomator2Driver).adb;
+    let firstError: Error | null = null;
 
-  return apps;
+    try {
+      const output = await adb.adbExec([
+        'shell',
+        'cmd',
+        'package',
+        'list',
+        'packages',
+      ]);
+      return parsePackageListOutput(output);
+    } catch (err) {
+      firstError = err instanceof Error ? err : new Error(String(err));
+    }
+
+    try {
+      const output = await adb.adbExec([
+        'shell',
+        'pm',
+        'list',
+        'packages',
+        '--user',
+        '0',
+      ]);
+      return parsePackageListOutput(output);
+    } catch (err) {
+      const secondError = err instanceof Error ? err : new Error(String(err));
+      throw new Error(
+        `listApps failed. First: ${firstError?.message ?? firstError}. ` +
+          `Second: ${secondError.message}.`
+      );
+    }
+  }
+
+  throw new Error(`listApps is not implemented for platform: ${platform}`);
 }
 
 export default function listApps(server: FastMCP): void {
@@ -65,7 +138,6 @@ export default function listApps(server: FastMCP): void {
           ],
         };
 
-        // Add interactive app list UI
         const uiResource = createUIResource(
           `ui://appium-mcp/app-list/${Date.now()}`,
           createAppListUI(apps)
