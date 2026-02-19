@@ -4,6 +4,8 @@ import {
   getDriver,
   getPlatformName,
   isRemoteDriverSession,
+  isAndroidUiautomator2DriverSession,
+  isXCUITestDriverSession,
   PLATFORM,
 } from '../../session-store.js';
 import {
@@ -11,10 +13,8 @@ import {
   createAppListUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
-
-const PACKAGE_PREFIX = 'package:';
+import type { XCUITestDriver } from 'appium-xcuitest-driver';
 
 function normalizeListAppsResult(
   result: Record<string, Record<string, unknown> | undefined>
@@ -34,19 +34,6 @@ function normalizeListAppsResult(
   });
 }
 
-function parsePackageListOutput(
-  raw: string
-): { packageName: string; appName: string }[] {
-  return raw
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.startsWith(PACKAGE_PREFIX))
-    .map((line) => ({
-      packageName: line.slice(PACKAGE_PREFIX.length).trim(),
-      appName: '',
-    }));
-}
-
 async function listAppsFromDevice(): Promise<
   { packageName: string; appName: string }[]
 > {
@@ -61,8 +48,8 @@ async function listAppsFromDevice(): Promise<
 
   const platform = getPlatformName(driver);
 
-  if (platform === PLATFORM.ios) {
-    const result = await execute(driver, 'mobile: listApps', {});
+  if (platform === PLATFORM.ios && isXCUITestDriverSession(driver)) {
+    const result = await (driver as XCUITestDriver).mobileListApps();
     if (result && typeof result === 'object' && !Array.isArray(result)) {
       return normalizeListAppsResult(
         result as Record<string, Record<string, unknown> | undefined>
@@ -71,49 +58,23 @@ async function listAppsFromDevice(): Promise<
     return [];
   }
 
-  if (platform === PLATFORM.android) {
-    try {
-      const result = await execute(driver, 'mobile: listApps', {});
-      if (result && typeof result === 'object' && !Array.isArray(result)) {
-        return normalizeListAppsResult(
-          result as Record<string, Record<string, unknown> | undefined>
-        );
-      }
-    } catch {}
-
-    const adb = (driver as AndroidUiautomator2Driver).adb;
-    let firstError: Error | null = null;
-
-    try {
-      const output = await adb.adbExec([
-        'shell',
-        'cmd',
-        'package',
-        'list',
-        'packages',
-      ]);
-      return parsePackageListOutput(output);
-    } catch (err) {
-      firstError = err instanceof Error ? err : new Error(String(err));
+  if (
+    platform === PLATFORM.android &&
+    isAndroidUiautomator2DriverSession(driver)
+  ) {
+    const result = await (driver as AndroidUiautomator2Driver).mobileListApps();
+    // Android mobile: listApps returns only package name strings (no display names)
+    if (Array.isArray(result)) {
+      return result
+        .filter((id): id is string => typeof id === 'string')
+        .map((packageName) => ({ packageName, appName: packageName }));
     }
-
-    try {
-      const output = await adb.adbExec([
-        'shell',
-        'pm',
-        'list',
-        'packages',
-        '--user',
-        '0',
-      ]);
-      return parsePackageListOutput(output);
-    } catch (err) {
-      const secondError = err instanceof Error ? err : new Error(String(err));
-      throw new Error(
-        `listApps failed. First: ${firstError?.message ?? firstError}. ` +
-          `Second: ${secondError.message}.`
+    if (result && typeof result === 'object') {
+      return normalizeListAppsResult(
+        result as Record<string, Record<string, unknown> | undefined>
       );
     }
+    return [];
   }
 
   throw new Error(`listApps is not implemented for platform: ${platform}`);
@@ -124,7 +85,8 @@ export default function listApps(server: FastMCP): void {
 
   server.addTool({
     name: 'appium_list_apps',
-    description: 'List all installed apps on the device.',
+    description:
+      'List all installed apps on the device. On Android, only package IDs are returned (no display names); on iOS, bundle IDs and display names are returned.',
     parameters: schema,
     execute: async () => {
       try {
