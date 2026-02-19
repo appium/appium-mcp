@@ -1,3 +1,9 @@
+## [1.16.0](https://github.com/appium/appium-mcp/compare/v1.15.1...v1.16.0) (2026-02-19)
+
+### Features
+
+* **interactions:** add set-get-orientation tool ([#167](https://github.com/appium/appium-mcp/issues/167)) ([dbcf431](https://github.com/appium/appium-mcp/commit/dbcf431495dd8dda9e126c5e793924112e6ed3d9))
+
 ## [1.15.1](https://github.com/appium/appium-mcp/compare/v1.15.0...v1.15.1) (2026-02-15)
 
 ### Bug Fixes
