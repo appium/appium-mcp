@@ -1,4 +1,9 @@
-import { FastMCP } from 'fastmcp';
+import type {
+  ContentResult,
+  Context,
+  FastMCP,
+  FastMCPSessionAuth,
+} from 'fastmcp';
 import { z } from 'zod';
 import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
@@ -17,7 +22,10 @@ export default function doubleTap(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, _context: any): Promise<any> => {
+    execute: async (
+      args: z.infer<typeof doubleTapActionSchema>,
+      _context: Context<FastMCPSessionAuth>
+    ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');
