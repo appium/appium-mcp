@@ -258,3 +258,40 @@ export async function getElementText(
   }
   return await driver.getElementText(elementUUID);
 }
+
+/**
+ * Get the current device/screen orientation.
+ *
+ * @param driver - The driver instance to query.
+ * @returns Orientation string: LANDSCAPE or PORTRAIT.
+ */
+export async function getOrientation(
+  driver: DriverInstance
+): Promise<'LANDSCAPE' | 'PORTRAIT'> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getOrientation();
+  } else if (isXCUITestDriverSession(driver)) {
+    return (await driver.proxyCommand('/orientation', 'GET')) as
+      | 'LANDSCAPE'
+      | 'PORTRAIT';
+  }
+  return (await driver.getOrientation()) as 'LANDSCAPE' | 'PORTRAIT';
+}
+
+/**
+ * Set the device/screen orientation.
+ *
+ * @param driver - The driver instance to use.
+ * @param orientation - LANDSCAPE or PORTRAIT.
+ */
+export async function setOrientation(
+  driver: DriverInstance,
+  orientation: 'LANDSCAPE' | 'PORTRAIT'
+): Promise<void> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.setOrientation(orientation);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.proxyCommand('/orientation', 'POST', { orientation });
+  }
+  return await driver.setOrientation(orientation);
+}
