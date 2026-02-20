@@ -1,4 +1,9 @@
-import { FastMCP } from 'fastmcp';
+import type {
+  ContentResult,
+  Context,
+  FastMCP,
+  FastMCPSessionAuth,
+} from 'fastmcp';
 import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
 import {
@@ -9,15 +14,19 @@ import {
 import { getPageSource as _getPageSource } from '../../command.js';
 
 export default function getPageSource(server: FastMCP): void {
+  const pageSourceSchema = z.object({});
   server.addTool({
     name: 'appium_get_page_source',
     description: 'Get the page source (XML) from the current screen',
-    parameters: z.object({}),
+    parameters: pageSourceSchema,
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (_args: any, _context: any): Promise<any> => {
+    execute: async (
+      _args: z.infer<typeof pageSourceSchema>,
+      _context: Context<FastMCPSessionAuth>
+    ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found. Please create a session first.');

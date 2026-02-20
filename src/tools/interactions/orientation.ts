@@ -1,4 +1,9 @@
-import { FastMCP } from 'fastmcp';
+import type {
+  ContentResult,
+  Context,
+  FastMCP,
+  FastMCPSessionAuth,
+} from 'fastmcp';
 import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
 import {
@@ -7,16 +12,20 @@ import {
 } from '../../command.js';
 
 export function getOrientation(server: FastMCP): void {
+  const orientationScheme = z.object({});
   server.addTool({
     name: 'appium_get_orientation',
     description:
       'Get the current device/screen orientation. Returns LANDSCAPE or PORTRAIT.',
-    parameters: z.object({}),
+    parameters: orientationScheme,
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (_args: any, _context: any): Promise<any> => {
+    execute: async (
+      _args: z.infer<typeof orientationScheme>,
+      _context: Context<FastMCPSessionAuth>
+    ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');
@@ -62,7 +71,10 @@ export function setOrientation(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, _context: any): Promise<any> => {
+    execute: async (
+      args: z.infer<typeof setOrientationSchema>,
+      _context: Context<FastMCPSessionAuth>
+    ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');
