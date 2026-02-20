@@ -63,7 +63,6 @@ async function listAppsFromDevice(): Promise<
     isAndroidUiautomator2DriverSession(driver)
   ) {
     const result = await (driver as AndroidUiautomator2Driver).mobileListApps();
-    // Android mobile: listApps returns only package name strings (no display names)
     if (Array.isArray(result)) {
       return result
         .filter((id): id is string => typeof id === 'string')

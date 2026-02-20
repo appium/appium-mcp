@@ -41,11 +41,7 @@ export default function isAppInstalled(server: FastMCP): void {
           const params =
             platform === PLATFORM.android ? { appId: id } : { bundleId: id };
           const raw = await execute(driver, 'mobile: isAppInstalled', params);
-          const val =
-            raw != null && typeof raw === 'object' && 'value' in raw
-              ? (raw as { value: unknown }).value
-              : raw;
-          result = Boolean(val);
+          result = Boolean(raw);
         } else if (isXCUITestDriverSession(driver)) {
           result = await (driver as XCUITestDriver).isAppInstalled(id);
         } else if (isAndroidUiautomator2DriverSession(driver)) {
