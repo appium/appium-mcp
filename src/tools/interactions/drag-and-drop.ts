@@ -1,4 +1,9 @@
-import { FastMCP } from 'fastmcp';
+import type {
+  ContentResult,
+  Context,
+  FastMCP,
+  FastMCPSessionAuth,
+} from 'fastmcp';
 import { z } from 'zod';
 import { getDriver, getPlatformName } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
@@ -122,7 +127,10 @@ export default function dragAndDrop(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, _context: any): Promise<any> => {
+    execute: async (
+      args: z.infer<typeof dragAndDropSchema>,
+      _context: Context<FastMCPSessionAuth>
+    ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {
         throw new Error('No driver found');
@@ -158,8 +166,8 @@ export default function dragAndDrop(server: FastMCP): void {
           startX = Math.floor(rect.x + rect.width / 2);
           startY = Math.floor(rect.y + rect.height / 2);
         } else {
-          startX = args.sourceX;
-          startY = args.sourceY;
+          startX = args.sourceX || -1;
+          startY = args.sourceY || -1;
         }
 
         if (args.targetElementUUID) {
@@ -167,8 +175,8 @@ export default function dragAndDrop(server: FastMCP): void {
           endX = Math.floor(rect.x + rect.width / 2);
           endY = Math.floor(rect.y + rect.height / 2);
         } else {
-          endX = args.targetX;
-          endY = args.targetY;
+          endX = args.targetX || -1;
+          endY = args.targetY || -1;
         }
 
         const { width, height } = await getWindowRect(driver);
