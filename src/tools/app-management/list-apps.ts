@@ -19,19 +19,13 @@ import type { XCUITestDriver } from 'appium-xcuitest-driver';
 function normalizeListAppsResult(
   result: Record<string, Record<string, unknown> | undefined>
 ): { packageName: string; appName: string }[] {
-  return Object.entries(result).map(([id, attrs]) => {
-    let appName = '';
-    if (attrs) {
-      if (typeof attrs.CFBundleDisplayName === 'string') {
-        appName = attrs.CFBundleDisplayName;
-      } else if (typeof attrs.CFBundleName === 'string') {
-        appName = attrs.CFBundleName;
-      } else if (typeof (attrs as Record<string, unknown>).name === 'string') {
-        appName = (attrs as Record<string, unknown>).name as string;
-      }
-    }
-    return { packageName: id, appName };
-  });
+  return Object.entries(result).map(([id, attrs]) => ({
+    packageName: id,
+    appName: (attrs?.CFBundleDisplayName ||
+      attrs?.CFBundleName ||
+      (attrs as any)?.name ||
+      '') as string,
+  }));
 }
 
 async function listAppsFromDevice(): Promise<
@@ -50,12 +44,7 @@ async function listAppsFromDevice(): Promise<
 
   if (platform === PLATFORM.ios && isXCUITestDriverSession(driver)) {
     const result = await (driver as XCUITestDriver).mobileListApps();
-    if (result && typeof result === 'object' && !Array.isArray(result)) {
-      return normalizeListAppsResult(
-        result as Record<string, Record<string, unknown> | undefined>
-      );
-    }
-    return [];
+    return normalizeListAppsResult(result || {});
   }
 
   if (
@@ -63,17 +52,8 @@ async function listAppsFromDevice(): Promise<
     isAndroidUiautomator2DriverSession(driver)
   ) {
     const result = await (driver as AndroidUiautomator2Driver).mobileListApps();
-    if (Array.isArray(result)) {
-      return result
-        .filter((id): id is string => typeof id === 'string')
-        .map((packageName) => ({ packageName, appName: packageName }));
-    }
-    if (result && typeof result === 'object') {
-      return normalizeListAppsResult(
-        result as Record<string, Record<string, unknown> | undefined>
-      );
-    }
-    return [];
+    const ids = Object.keys(result || {});
+    return ids.map((packageName) => ({ packageName, appName: packageName }));
   }
 
   throw new Error(`listApps is not implemented for platform: ${platform}`);
