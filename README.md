@@ -288,7 +288,8 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `appium_installApp`   | Install an app on the device from a file path                      |
 | `appium_uninstallApp` | Uninstall an app from the device by bundle ID                      |
 | `appium_terminateApp` | Terminate (close) a specified app                                  |
-| `appium_list_apps`    | List all installed apps on the device (Android only)               |
+| `appium_list_apps`    | List all installed apps on the device (Android and iOS)             |
+| `appium_is_app_installed` | Check whether an app is installed. Package name for Android, bundle ID for iOS. |
 
 ### Test Generation & Documentation
 
