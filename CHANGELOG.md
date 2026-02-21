@@ -1,3 +1,9 @@
+## [1.17.0](https://github.com/appium/appium-mcp/compare/v1.16.1...v1.17.0) (2026-02-21)
+
+### Features
+
+* **app-management:** add is-app-installed tool and improve list-apps ([#169](https://github.com/appium/appium-mcp/issues/169)) ([625a364](https://github.com/appium/appium-mcp/commit/625a364c37d643dc007130cc1f25e45c79969126))
+
 ## [1.16.1](https://github.com/appium/appium-mcp/compare/v1.16.0...v1.16.1) (2026-02-20)
 
 ### Miscellaneous Chores
