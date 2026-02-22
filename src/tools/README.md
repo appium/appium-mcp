@@ -38,6 +38,7 @@ This directory contains all MCP tools available in MCP Appium.
 ### App Management (`app-management/`)
 
 - `activate-app.ts` - Activate apps
+- `deep-link.ts` - Open a deep link URL with the default or specified app
 - `terminate-app.ts` - Terminate apps
 - `install-app.ts` - Install apps
 - `uninstall-app.ts` - Uninstall apps
