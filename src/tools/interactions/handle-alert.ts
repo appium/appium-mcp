@@ -1,9 +1,4 @@
-import type {
-  ContentResult,
-  Context,
-  FastMCP,
-  FastMCPSessionAuth,
-} from 'fastmcp';
+import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
 import {
@@ -134,7 +129,7 @@ To discover button labels and screen structure first, use appium_get_page_source
     },
     execute: async (
       args: z.infer<typeof handleAlertSchema>,
-      _context: Context<FastMCPSessionAuth>
+      _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {

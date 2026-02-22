@@ -1,9 +1,4 @@
-import type {
-  ContentResult,
-  Context,
-  FastMCP,
-  FastMCPSessionAuth,
-} from 'fastmcp';
+import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver, getPlatformName } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
@@ -129,7 +124,7 @@ export default function dragAndDrop(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof dragAndDropSchema>,
-      _context: Context<FastMCPSessionAuth>
+      _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {

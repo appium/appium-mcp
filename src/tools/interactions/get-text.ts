@@ -1,9 +1,4 @@
-import type {
-  ContentResult,
-  Context,
-  FastMCP,
-  FastMCPSessionAuth,
-} from 'fastmcp';
+import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
@@ -24,7 +19,7 @@ export default function getText(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof getTextSchema>,
-      _context: Context<FastMCPSessionAuth>
+      _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {

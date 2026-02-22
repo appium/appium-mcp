@@ -28,7 +28,10 @@ export default function isAppInstalled(server: FastMCP): void {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (args: z.infer<typeof schema>) => {
+    execute: async (
+      args: z.infer<typeof schema>,
+      _context: Record<string, unknown> | undefined
+    ) => {
       const { id } = args;
       const driver = await getDriver();
       if (!driver) {

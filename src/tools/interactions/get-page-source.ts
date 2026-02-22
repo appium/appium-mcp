@@ -1,9 +1,4 @@
-import type {
-  ContentResult,
-  Context,
-  FastMCP,
-  FastMCPSessionAuth,
-} from 'fastmcp';
+import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
 import {
@@ -25,7 +20,7 @@ export default function getPageSource(server: FastMCP): void {
     },
     execute: async (
       _args: z.infer<typeof pageSourceSchema>,
-      _context: Context<FastMCPSessionAuth>
+      _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {

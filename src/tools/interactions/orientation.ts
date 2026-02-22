@@ -1,9 +1,4 @@
-import type {
-  ContentResult,
-  Context,
-  FastMCP,
-  FastMCPSessionAuth,
-} from 'fastmcp';
+import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
 import {
@@ -24,7 +19,7 @@ export function getOrientation(server: FastMCP): void {
     },
     execute: async (
       _args: z.infer<typeof orientationScheme>,
-      _context: Context<FastMCPSessionAuth>
+      _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {
@@ -73,7 +68,7 @@ export function setOrientation(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof setOrientationSchema>,
-      _context: Context<FastMCPSessionAuth>
+      _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
       const driver = getDriver();
       if (!driver) {
