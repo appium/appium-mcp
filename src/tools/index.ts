@@ -34,6 +34,7 @@ import longPress from './interactions/long-press.js';
 import dragAndDrop from './interactions/drag-and-drop.js';
 import setValue from './interactions/set-value.js';
 import getText from './interactions/get-text.js';
+import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
 import { getOrientation, setOrientation } from './interactions/orientation.js';
 import handleAlert from './interactions/handle-alert.js';
@@ -139,6 +140,7 @@ export default function registerTools(server: FastMCP): void {
   dragAndDrop(server);
   setValue(server);
   getText(server);
+  getActiveElement(server);
   getPageSource(server);
   getOrientation(server);
   setOrientation(server);

@@ -24,7 +24,7 @@ export default function findElement(server: FastMCP): void {
       'Find an element with the given strategy and selector which will return a uuid that can be used while interaction',
     parameters: findElementSchema,
     annotations: {
-      readOnlyHint: false,
+      readOnlyHint: true,
       openWorldHint: false,
     },
     execute: async (
