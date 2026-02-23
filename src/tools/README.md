@@ -30,6 +30,7 @@ This directory contains all MCP tools available in MCP Appium.
 - `double-tap.ts` - Double tap elements
 - `long-press.ts` - Long press (press and hold) elements
 - `drag-and-drop.ts` - Drag and drop elements or coordinates
+- `press-key.ts` - Press navigation keys or physical buttons
 - `set-value.ts` - Enter text
 - `get-text.ts` - Get element text
 - `get-page-source.ts` - Get page source (XML) from current screen
