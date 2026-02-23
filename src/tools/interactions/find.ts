@@ -21,7 +21,7 @@ export default function findElement(server: FastMCP): void {
   server.addTool({
     name: 'appium_find_element',
     description:
-      'Find an element with the given strategy and selector which will return a uuid that can be used while interaction',
+      'Find a specific element by strategy and selector which will return a uuid that can be used for interactions. [PRIORITY 2: Use this to search for a target element by xpath, id, accessibility id, etc.]',
     parameters: findElementSchema,
     annotations: {
       readOnlyHint: true,

@@ -26,7 +26,7 @@ import { getPageSource } from '../../command.js';
 export default function generateLocators(server: any): void {
   server.addTool({
     name: 'generate_locators',
-    description: `Generate locators for the current page.`,
+    description: `Generate locators for all interactable elements on the current page. [PRIORITY 3: Use this for debugging/inspection or when you need comprehensive element info with locator suggestions]`,
     parameters: z.object({}),
     annotations: {
       readOnlyHint: true,

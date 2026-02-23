@@ -35,6 +35,25 @@ This directory contains all MCP tools available in MCP Appium.
 - `get-page-source.ts` - Get page source (XML) from current screen
 - `screenshot.ts` - Capture screenshots
 
+#### Element Search Priority Order
+
+When searching for elements, follow this priority order for efficiency:
+
+1. **`appium_get_active_element`** (PRIORITY 1) - Use this first to get the currently focused element
+   - Lightweight and instant
+   - Returns single element UUID
+   - Best for: Finding what element currently has focus
+
+2. **`appium_find_element`** (PRIORITY 2) - Use this to search for a specific target element
+   - Specify strategy (xpath, id, accessibility id, etc.) and selector
+   - Returns specific element UUID
+   - Best for: Targeting a known element
+
+3. **`generate_locators`** (PRIORITY 3) - Use this for debugging/inspection only
+   - Parses entire page source
+   - Returns locators for all interactable elements
+   - Best for: Understanding page structure, debugging, generating test code
+
 ### App Management (`app-management/`)
 
 - `activate-app.ts` - Activate apps
