@@ -12,7 +12,7 @@ import {
 } from '../../ui/mcp-ui-utils.js';
 import { getScreenshot } from '../../command.js';
 import z from 'zod';
-import sharp from 'sharp';
+import { imageUtil } from '@appium/support';
 
 /**
  * Resolves the screenshot directory path.
@@ -72,6 +72,7 @@ export async function executeScreenshot(opts: {
     let screenshotBuffer: Buffer = originalBuffer;
     let displayBase64 = screenshotBase64;
     if (maxWidth !== undefined) {
+      const sharp = imageUtil.requireSharp();
       const metadata = await sharp(originalBuffer).metadata();
       if (metadata.width !== undefined && metadata.width > maxWidth) {
         const resizedBuffer = await sharp(originalBuffer)
