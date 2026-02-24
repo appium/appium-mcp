@@ -12,6 +12,7 @@ import {
 } from '../../ui/mcp-ui-utils.js';
 import { getScreenshot } from '../../command.js';
 import z from 'zod';
+import sharp from 'sharp';
 
 /**
  * Resolves the screenshot directory path.
@@ -52,8 +53,9 @@ const defaultDeps: ScreenshotDeps = {
 export async function executeScreenshot(opts: {
   deps?: ScreenshotDeps;
   elementId?;
+  maxWidth?: number;
 }): Promise<any> {
-  const { deps = defaultDeps, elementId } = opts;
+  const { deps = defaultDeps, elementId, maxWidth } = opts;
 
   const driver = deps.getDriver();
   if (!driver) {
@@ -64,7 +66,22 @@ export async function executeScreenshot(opts: {
     const screenshotBase64 = await getScreenshot(driver, elementId);
 
     // Convert base64 to buffer
-    const screenshotBuffer = Buffer.from(screenshotBase64, 'base64');
+    const originalBuffer = Buffer.from(screenshotBase64, 'base64');
+
+    // Resize if maxWidth is provided and image is wider
+    let screenshotBuffer: Buffer = originalBuffer;
+    let displayBase64 = screenshotBase64;
+    if (maxWidth !== undefined) {
+      const metadata = await sharp(originalBuffer).metadata();
+      if (metadata.width !== undefined && metadata.width > maxWidth) {
+        const resizedBuffer = await sharp(originalBuffer)
+          .resize({ width: maxWidth })
+          .png()
+          .toBuffer();
+        screenshotBuffer = Buffer.from(resizedBuffer);
+        displayBase64 = screenshotBuffer.toString('base64');
+      }
+    }
 
     // Generate filename with timestamp
     const timestamp = deps.dateNow();
@@ -91,7 +108,7 @@ export async function executeScreenshot(opts: {
     // Add interactive screenshot viewer UI
     const uiResource = createUIResource(
       `ui://appium-mcp/screenshot-viewer/${Date.now()}`,
-      createScreenshotViewerUI(screenshotBase64, filepath)
+      createScreenshotViewerUI(displayBase64, filepath)
     );
 
     return addUIResourceToResponse(textResponse, uiResource);
@@ -107,22 +124,36 @@ export async function executeScreenshot(opts: {
   }
 }
 
+const maxWidthSchema = z
+  .number()
+  .optional()
+  .describe(
+    'Optional maximum width in pixels to resize the screenshot. The aspect ratio is preserved. Useful for reducing token usage when sending screenshots to LLMs.'
+  );
+
 export function screenshot(server: FastMCP): void {
+  const screenshotSchema = z.object({
+    maxWidth: maxWidthSchema,
+  });
+
   server.addTool({
     name: 'appium_screenshot',
     description:
       'Take a screenshot of the current screen and return as PNG image',
+    parameters: screenshotSchema,
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (): Promise<any> => executeScreenshot({}),
+    execute: async (args: any, _context: any): Promise<any> =>
+      executeScreenshot({ maxWidth: args.maxWidth }),
   });
 }
 
 export function elementScreenshot(server: FastMCP): void {
   const elementScreenshotSchema = z.object({
     elementUUID: elementUUIDScheme,
+    maxWidth: maxWidthSchema,
   });
 
   server.addTool({
@@ -137,6 +168,7 @@ export function elementScreenshot(server: FastMCP): void {
     execute: async (args: any, _context: any): Promise<any> =>
       executeScreenshot({
         elementId: args.elementUUID,
+        maxWidth: args.maxWidth,
       }),
   });
 }
