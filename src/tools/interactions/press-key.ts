@@ -17,6 +17,7 @@ const ANDROID_KEYCODE_MAP: Record<string, number> = {
   HOME: 3,
   APP_SWITCH: 187,
 };
+const ANDROID_KEYS_DESCRIPTION = Object.keys(ANDROID_KEYCODE_MAP).join(', ');
 
 const IOS_BUTTON_MAP: Record<string, string> = {
   HOME: 'home',
@@ -30,6 +31,7 @@ const IOS_BUTTON_MAP: Record<string, string> = {
   PLAY_PAUSE: 'playpause',
   SELECT: 'select',
 };
+const IOS_BUTTONS_DESCRIPTION = Object.keys(IOS_BUTTON_MAP).join(', ');
 
 export default function pressKey(server: FastMCP): void {
   const pressKeySchema = z
@@ -51,7 +53,7 @@ export default function pressKey(server: FastMCP): void {
         ])
         .optional()
         .describe(
-          'Logical key/button to press. On Android: BACK, HOME, APP_SWITCH. On iOS/tvOS: HOME, VOLUME_UP, VOLUME_DOWN, UP, DOWN, LEFT, RIGHT, MENU, PLAY_PAUSE, SELECT.'
+          `Logical key/button to press. On Android: ${ANDROID_KEYS_DESCRIPTION}. On iOS/tvOS: ${IOS_BUTTONS_DESCRIPTION}.`
         ),
       keyCode: z
         .number()
@@ -73,7 +75,7 @@ export default function pressKey(server: FastMCP): void {
     });
 
   server.addTool({
-    name: 'appium_press_key',
+    name: 'appium_mobile_press_key',
     description:
       'Press navigation keys (BACK, HOME, APP_SWITCH) on Android or physical buttons (HOME, volume, etc.) on iOS/tvOS.',
     parameters: pressKeySchema,
@@ -100,7 +102,7 @@ export default function pressKey(server: FastMCP): void {
 
           if (resolvedKeyCode == null) {
             throw new Error(
-              'For Android, provide either keyCode or key in [BACK, HOME, APP_SWITCH].'
+              `For Android, provide either keyCode or key in [${ANDROID_KEYS_DESCRIPTION}].`
             );
           }
 
@@ -125,7 +127,7 @@ export default function pressKey(server: FastMCP): void {
 
           if (!buttonName) {
             throw new Error(
-              'For iOS/tvOS, key must be one of HOME, VOLUME_UP, VOLUME_DOWN, UP, DOWN, LEFT, RIGHT, MENU, PLAY_PAUSE, SELECT.'
+              `For iOS/tvOS, key must be one of ${IOS_BUTTONS_DESCRIPTION}.`
             );
           }
 
