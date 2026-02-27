@@ -78,7 +78,6 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.5.3",
     "semantic-release": "^25.0.2",
-    "sharp": "^0.34.5",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"

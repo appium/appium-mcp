@@ -4,11 +4,12 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import axios, { AxiosError } from 'axios';
-import sharp from 'sharp';
+import { imageUtil } from '@appium/support';
+
+const sharp = imageUtil.requireSharp();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 
 /**
  * Model list for benchmarking
@@ -71,7 +72,6 @@ interface BBoxCoordinates {
   target: string;
   bbox_2d: number[];
 }
-
 
 /**
  * Generate test prompt with image dimensions
@@ -148,7 +148,7 @@ async function callModelAPI(
   _imageHeight: number
 ): Promise<string> {
   const baseUrl = process.env.API_BASE_URL;
-  const token = process.env.API_TOKEN ;
+  const token = process.env.API_TOKEN;
 
   if (!baseUrl) {
     throw new Error('API_BASE_URL environment variable not set');
@@ -231,7 +231,7 @@ Accuracy Score: 85%
 Reason: The red box completely contains the yellow search button with slight margins on all sides.`;
 
     const baseUrl = process.env.API_BASE_URL;
-    const token = process.env.API_TOKEN ;
+    const token = process.env.API_TOKEN;
 
     // judge model
     const response = await axios.post(
@@ -290,7 +290,11 @@ function parseBBoxFromResponse(response: string): BBoxCoordinates | null {
     const jsonMatch = response.match(/\{[^}]*"target"[^}]*"bbox_2d"[^}]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
-      if (parsed.bbox_2d && Array.isArray(parsed.bbox_2d) && parsed.bbox_2d.length === 4) {
+      if (
+        parsed.bbox_2d &&
+        Array.isArray(parsed.bbox_2d) &&
+        parsed.bbox_2d.length === 4
+      ) {
         return parsed;
       }
     }
@@ -349,10 +353,14 @@ async function drawBBoxOnImage(
       y1 = Math.floor((y1 / 1000) * height);
       x2 = Math.floor((x2 / 1000) * width);
       y2 = Math.floor((y2 / 1000) * height);
-      console.log(`  [${modelName}] Converted normalized coords ${JSON.stringify(originalCoords)} to absolute: [${x1}, ${y1}, ${x2}, ${y2}]`);
+      console.log(
+        `  [${modelName}] Converted normalized coords ${JSON.stringify(originalCoords)} to absolute: [${x1}, ${y1}, ${x2}, ${y2}]`
+      );
     } else {
       // Absolute pixel coordinates, use directly
-      console.log(`  [${modelName}] Using absolute coords: [${x1}, ${y1}, ${x2}, ${y2}]`);
+      console.log(
+        `  [${modelName}] Using absolute coords: [${x1}, ${y1}, ${x2}, ${y2}]`
+      );
     }
 
     // Ensure coordinate order is correct (x1 < x2, y1 < y2)
@@ -365,7 +373,9 @@ async function drawBBoxOnImage(
 
     // Ensure coordinates are valid
     if (x1 >= x2 || y1 >= y2) {
-      throw new Error(`Invalid bbox coordinates after normalization: [${x1}, ${y1}, ${x2}, ${y2}]`);
+      throw new Error(
+        `Invalid bbox coordinates after normalization: [${x1}, ${y1}, ${x2}, ${y2}]`
+      );
     }
 
     // Ensure coordinates are within image bounds
@@ -399,7 +409,9 @@ async function drawBBoxOnImage(
       .toFile(outputPath);
 
     console.log(`✓ Saved annotated image: ${outputPath}`);
-    console.log(`  BBox: [${x1}, ${y1}, ${x2}, ${y2}] (${boxWidth}x${boxHeight})`);
+    console.log(
+      `  BBox: [${x1}, ${y1}, ${x2}, ${y2}] (${boxWidth}x${boxHeight})`
+    );
   } catch (error) {
     console.error(`✗ Failed to draw bbox for ${modelName}:`, error);
     throw error;
@@ -453,27 +465,27 @@ function updateSummaryTable(results: TestResult[]): void {
 
   // Sort results by accuracy score (descending), failed models go to the end
   const sortedResults = [...results].sort((a, b) => {
-    const scoreA = a.error ? -1 : (a.judgeResult || 0);
-    const scoreB = b.error ? -1 : (b.judgeResult || 0);
+    const scoreA = a.error ? -1 : a.judgeResult || 0;
+    const scoreB = b.error ? -1 : b.judgeResult || 0;
     return scoreB - scoreA;
   });
 
   // Generate summary table rows
-  const tableRows = sortedResults.map((result) => {
-    const status = result.error ? '❌ Failed' : '✅ Success';
-    const accuracy = result.judgeResult !== undefined ? `${result.judgeResult}%` : 'N/A';
-    const annotatedImage = result.annotatedImagePath
-      ? `[View](${path.relative(__dirname, result.annotatedImagePath).replace(/\\/g, '/')})`
-      : 'N/A';
-    return `| ${result.modelName} | ${result.duration} | ${status} | ${accuracy} | ${annotatedImage} |`;
-  }).join('\n');
+  const tableRows = sortedResults
+    .map((result) => {
+      const status = result.error ? '❌ Failed' : '✅ Success';
+      const accuracy =
+        result.judgeResult !== undefined ? `${result.judgeResult}%` : 'N/A';
+      const annotatedImage = result.annotatedImagePath
+        ? `[View](${path.relative(__dirname, result.annotatedImagePath).replace(/\\/g, '/')})`
+        : 'N/A';
+      return `| ${result.modelName} | ${result.duration} | ${status} | ${accuracy} | ${annotatedImage} |`;
+    })
+    .join('\n');
 
   // Replace placeholder with actual rows and remove the placeholder
   if (content.includes('<!-- SUMMARY_TABLE_ROWS -->')) {
-    content = content.replace(
-      '<!-- SUMMARY_TABLE_ROWS -->',
-      tableRows
-    );
+    content = content.replace('<!-- SUMMARY_TABLE_ROWS -->', tableRows);
   }
 
   // Calculate statistics
@@ -481,8 +493,11 @@ function updateSummaryTable(results: TestResult[]): void {
   const failCount = results.filter((r) => r.error).length;
   const avgAccuracyScore =
     results.reduce((sum, r) => sum + (r.judgeResult || 0), 0) / results.length;
-  const highAccuracyCount = results.filter((r) => (r.judgeResult || 0) >= 70).length;
-  const avgDuration = results.reduce((sum, r) => sum + r.duration, 0) / results.length;
+  const highAccuracyCount = results.filter(
+    (r) => (r.judgeResult || 0) >= 70
+  ).length;
+  const avgDuration =
+    results.reduce((sum, r) => sum + r.duration, 0) / results.length;
   const minDuration = Math.min(...results.map((r) => r.duration));
   const maxDuration = Math.max(...results.map((r) => r.duration));
 
@@ -498,10 +513,7 @@ function updateSummaryTable(results: TestResult[]): void {
 
   // Replace placeholder with actual statistics and remove the placeholder
   if (content.includes('<!-- STATISTICS_SECTION -->')) {
-    content = content.replace(
-      '<!-- STATISTICS_SECTION -->',
-      statisticsSection
-    );
+    content = content.replace('<!-- STATISTICS_SECTION -->', statisticsSection);
   }
 
   fs.writeFileSync(reportPath, content, 'utf-8');
@@ -533,7 +545,14 @@ async function testModel(
     writeToReport(`${separator}\n## ${model.name}\n`);
     writeToReport(`**Started at:** ${new Date().toLocaleString()}\n`);
 
-    const response = await callModelAPI(model, imageBase64, prompt, mimeType, imageWidth, imageHeight);
+    const response = await callModelAPI(
+      model,
+      imageBase64,
+      prompt,
+      mimeType,
+      imageWidth,
+      imageHeight
+    );
     const duration = Date.now() - startTime;
 
     const successMsg = `✓ Completed in ${duration}ms`;
@@ -559,11 +578,19 @@ async function testModel(
       }
       const annotatedImageName = `${model.name.replace(/[^a-zA-Z0-9]/g, '_')}_annotated.png`;
       const annotatedImagePath = path.join(outputDir, annotatedImageName);
-      await drawBBoxOnImage(originalImagePath, bbox, annotatedImagePath, model.name, model.coordType);
+      await drawBBoxOnImage(
+        originalImagePath,
+        bbox,
+        annotatedImagePath,
+        model.name,
+        model.coordType
+      );
 
       writeToReport(`**BBox:** [${bbox.join(', ')}]`);
       writeToReport(`**Target:** ${bboxData.target}`);
-      writeToReport(`**Annotated Image:** [${annotatedImageName}](output/${annotatedImageName})`);
+      writeToReport(
+        `**Annotated Image:** [${annotatedImageName}](output/${annotatedImageName})`
+      );
 
       // Use judge model to evaluate annotation result
       const judgeResult = await judgeAnnotation(annotatedImagePath, model.name);
@@ -607,13 +634,17 @@ async function testModel(
     if (error instanceof AxiosError) {
       const status = error.response?.status || 'N/A';
       const errorData = error.response?.data;
-      const errorDetail = errorData?.error?.message || errorData?.message || error.message;
+      const errorDetail =
+        errorData?.error?.message || errorData?.message || error.message;
       errorMessage = `HTTP ${status}: ${errorDetail}`;
 
       // Log detailed error information
       console.error(`✗ Failed (${model.name}): ${errorMessage}`);
       if (error.response?.data) {
-        console.error('Response data:', JSON.stringify(error.response.data, null, 2));
+        console.error(
+          'Response data:',
+          JSON.stringify(error.response.data, null, 2)
+        );
       }
     } else if (error instanceof Error) {
       errorMessage = error.message;
@@ -650,8 +681,11 @@ function printSummary(results: TestResult[]): void {
   results.forEach((result) => {
     const status = result.error ? '❌ Failed' : '✅ Success';
     const duration = `${result.duration}ms`;
-    const judgeStatus = result.judgeResult !== undefined ? `${result.judgeResult}%` : 'N/A';
-    console.log(`  ${result.modelName}: ${status} (${duration}) - Judge: ${judgeStatus}`);
+    const judgeStatus =
+      result.judgeResult !== undefined ? `${result.judgeResult}%` : 'N/A';
+    console.log(
+      `  ${result.modelName}: ${status} (${duration}) - Judge: ${judgeStatus}`
+    );
   });
 
   console.log(`\n📈 Statistics:\n`);
@@ -659,17 +693,25 @@ function printSummary(results: TestResult[]): void {
   const failCount = results.filter((r) => r.error).length;
   const avgAccuracyScore =
     results.reduce((sum, r) => sum + (r.judgeResult || 0), 0) / results.length;
-  const highAccuracyCount = results.filter((r) => (r.judgeResult || 0) >= 70).length;
+  const highAccuracyCount = results.filter(
+    (r) => (r.judgeResult || 0) >= 70
+  ).length;
   const avgDuration =
     results.reduce((sum, r) => sum + r.duration, 0) / results.length;
 
   console.log(`  Total: ${results.length} models`);
-  console.log(`  Success: ${successCount} (${((successCount / results.length) * 100).toFixed(1)}%)`);
+  console.log(
+    `  Success: ${successCount} (${((successCount / results.length) * 100).toFixed(1)}%)`
+  );
   console.log(`  Failed: ${failCount}`);
-  console.log(`  High Accuracy (≥70%): ${highAccuracyCount} (${((highAccuracyCount / results.length) * 100).toFixed(1)}%)`);
+  console.log(
+    `  High Accuracy (≥70%): ${highAccuracyCount} (${((highAccuracyCount / results.length) * 100).toFixed(1)}%)`
+  );
   console.log(`  Avg Accuracy Score: ${avgAccuracyScore.toFixed(1)}%`);
   console.log(`  Average Duration: ${avgDuration.toFixed(2)}ms`);
-  console.log(`  Min Duration: ${Math.min(...results.map((r) => r.duration))}ms`);
+  console.log(
+    `  Min Duration: ${Math.min(...results.map((r) => r.duration))}ms`
+  );
   console.log(
     `  Max Duration: ${Math.max(...results.map((r) => r.duration))}ms`
   );
@@ -709,9 +751,7 @@ async function runBenchmark(): Promise<void> {
 
     console.log(`Image Size: ${imageWidth}x${imageHeight}`);
     console.log(`Models to Test: ${MODELS.length}`);
-    console.log(
-      `List: ${MODELS.map((m) => m.name).join(', ')}`
-    );
+    console.log(`List: ${MODELS.map((m) => m.name).join(', ')}`);
 
     // Generate test prompt
     const testPrompt = generateTestPrompt(imageWidth, imageHeight);
@@ -722,7 +762,15 @@ async function runBenchmark(): Promise<void> {
     // Test all models concurrently
     const results = await Promise.all(
       MODELS.map((model) =>
-        testModel(model, imageBase64, testPrompt, mimeType, absoluteImagePath, imageWidth, imageHeight)
+        testModel(
+          model,
+          imageBase64,
+          testPrompt,
+          mimeType,
+          absoluteImagePath,
+          imageWidth,
+          imageHeight
+        )
       )
     );
 
