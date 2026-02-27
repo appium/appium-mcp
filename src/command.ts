@@ -4,7 +4,7 @@ import {
   isXCUITestDriverSession,
 } from './session-store.js';
 import type { DriverInstance } from './session-store.js';
-import { StringRecord } from '@appium/types';
+import type { StringRecord, Element as AppiumElement } from '@appium/types';
 
 /**
  * Execute a driver command.
@@ -257,6 +257,18 @@ export async function getElementText(
     return await driver.getText(elementUUID);
   }
   return await driver.getElementText(elementUUID);
+}
+
+export async function getActiveElement(
+  driver: DriverInstance
+): Promise<AppiumElement> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.active();
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.active();
+  }
+  const result = await driver.getActiveElement();
+  return result as unknown as AppiumElement;
 }
 
 /**

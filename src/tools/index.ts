@@ -20,6 +20,7 @@ import deleteSession from './session/delete-session.js';
 import generateLocators from './test-generation/locators.js';
 import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
+import openNotifications from './session/open-notifications.js';
 import bootSimulator from './ios/boot-simulator.js';
 import setupWDA from './ios/setup-wda.js';
 import installWDA from './ios/install-wda.js';
@@ -32,8 +33,10 @@ import clickElement from './interactions/click.js';
 import doubleTap from './interactions/double-tap.js';
 import longPress from './interactions/long-press.js';
 import dragAndDrop from './interactions/drag-and-drop.js';
+import pressKey from './interactions/press-key.js';
 import setValue from './interactions/set-value.js';
 import getText from './interactions/get-text.js';
+import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
 import { getOrientation, setOrientation } from './interactions/orientation.js';
 import handleAlert from './interactions/handle-alert.js';
@@ -120,6 +123,7 @@ export default function registerTools(server: FastMCP): void {
   selectDevice(server);
   createSession(server);
   deleteSession(server);
+  openNotifications(server);
 
   // iOS Setup
   bootSimulator(server);
@@ -132,13 +136,19 @@ export default function registerTools(server: FastMCP): void {
   swipe(server);
 
   // Element Interactions
+  // PRIORITY ORDER FOR ELEMENT SEARCH:
+  // 1. getActiveElement    - Get currently focused element (efficient, instant)
+  // 2. findElement         - Find specific element by strategy/selector
+  // 3. generateLocators    - Generate all locators (heavyweight, for debugging only)
   findElement(server);
   clickElement(server);
   doubleTap(server);
   longPress(server);
   dragAndDrop(server);
+  pressKey(server);
   setValue(server);
   getText(server);
+  getActiveElement(server);
   getPageSource(server);
   getOrientation(server);
   setOrientation(server);

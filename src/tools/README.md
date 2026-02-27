@@ -8,6 +8,7 @@ This directory contains all MCP tools available in MCP Appium.
 
 - `create-session.ts` - Create mobile automation sessions
 - `delete-session.ts` - Clean up sessions
+- `open-notifications.ts` - Open notifications panel (Android only)
 - `select-platform.ts` - Choose Android or iOS
 - `select-device.ts` - Choose specific device
 
@@ -30,10 +31,30 @@ This directory contains all MCP tools available in MCP Appium.
 - `double-tap.ts` - Double tap elements
 - `long-press.ts` - Long press (press and hold) elements
 - `drag-and-drop.ts` - Drag and drop elements or coordinates
+- `press-key.ts` - Press navigation keys or physical buttons
 - `set-value.ts` - Enter text
 - `get-text.ts` - Get element text
 - `get-page-source.ts` - Get page source (XML) from current screen
 - `screenshot.ts` - Capture screenshots
+
+#### Element Search Priority Order
+
+When searching for elements, follow this priority order for efficiency:
+
+1. **`appium_get_active_element`** (PRIORITY 1) - Use this first to get the currently focused element
+   - Lightweight and instant
+   - Returns single element UUID
+   - Best for: Finding what element currently has focus
+
+2. **`appium_find_element`** (PRIORITY 2) - Use this to search for a specific target element
+   - Specify strategy (xpath, id, accessibility id, etc.) and selector
+   - Returns specific element UUID
+   - Best for: Targeting a known element
+
+3. **`generate_locators`** (PRIORITY 3) - Use this for debugging/inspection only
+   - Parses entire page source
+   - Returns locators for all interactable elements
+   - Best for: Understanding page structure, debugging, generating test code
 
 ### App Management (`app-management/`)
 
