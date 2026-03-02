@@ -343,15 +343,37 @@ export default function createSession(server: any): void {
 
         let sessionId;
         if (remoteServerUrl) {
-          log.info(
-            `Sending the capabilities to the remote server: ${remoteServerUrl}`
-          );
           const remoteUrl = new URL(remoteServerUrl);
+          const protocol = remoteUrl.protocol.replace(':', '');
+          const port = remoteUrl.port
+            ? parseInt(remoteUrl.port, 10)
+            : protocol === 'https'
+              ? 443
+              : 80;
+          const path =
+            remoteUrl.pathname && remoteUrl.pathname !== ''
+              ? remoteUrl.pathname
+              : '/wd/hub';
+          const user = remoteUrl.username
+            ? decodeURIComponent(remoteUrl.username)
+            : undefined;
+          const key = remoteUrl.password
+            ? decodeURIComponent(remoteUrl.password)
+            : undefined;
+
+          log.info(
+            `Sending capabilities to remote server: ${protocol}://${remoteUrl.hostname}:${port}${path}`
+          );
+          log.debug(
+            `Remote URL auth provided: ${Boolean(user) && Boolean(key)}`
+          );
+
           const client = await WebDriver.newSession({
-            protocol: remoteUrl.protocol.replace(':', ''),
+            protocol,
             hostname: remoteUrl.hostname,
-            port: parseInt(remoteUrl.port, 10),
-            path: remoteUrl.pathname,
+            port,
+            path,
+            ...(user && key ? { user, key } : {}),
             capabilities: finalCapabilities,
           });
           sessionId = client.sessionId;
