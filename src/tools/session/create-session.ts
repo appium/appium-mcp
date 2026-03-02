@@ -196,6 +196,17 @@ export async function buildIOSCapabilities(
 }
 
 /**
+ * Extract port number from a URL object, using protocol defaults when not specified
+ */
+export function getPortFromUrl(url: URL): number {
+  if (url.port) {
+    return parseInt(url.port, 10);
+  }
+  const protocol = url.protocol.replace(':', '');
+  return protocol === 'https' ? 443 : 80;
+}
+
+/**
  * Create the appropriate driver instance for the given platform
  */
 function createDriverForPlatform(platform: 'android' | 'ios'): any {
@@ -348,13 +359,7 @@ export default function createSession(server: any): void {
           );
           const remoteUrl = new URL(remoteServerUrl);
           const protocol = remoteUrl.protocol.replace(':', '');
-          // Use default port based on protocol when port is not specified
-          // URL.port returns empty string for default ports (443 for https, 80 for http)
-          const port = remoteUrl.port
-            ? parseInt(remoteUrl.port, 10)
-            : protocol === 'https'
-              ? 443
-              : 80;
+          const port = getPortFromUrl(remoteUrl);
           const client = await WebDriver.newSession({
             protocol,
             hostname: remoteUrl.hostname,
