@@ -27,3 +27,6 @@ Thumbs.db
 
 # Documents
 src/tools/documentation/uploads/documents.json
+
+# submodules
+src/resources/submodules

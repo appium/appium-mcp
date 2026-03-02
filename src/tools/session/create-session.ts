@@ -196,14 +196,10 @@ export async function buildIOSCapabilities(
 }
 
 /**
- * Extract port number from a URL object, using protocol defaults when not specified
+ * Extract port number from a URL object, using protocol defaults (https/http) when not specified.
  */
 export function getPortFromUrl(url: URL): number {
-  if (url.port) {
-    return parseInt(url.port, 10);
-  }
-  const protocol = url.protocol.replace(':', '');
-  return protocol === 'https' ? 443 : 80;
+  return Number(url.port) || (url.protocol === 'https:' ? 443 : 80);
 }
 
 /**
@@ -358,12 +354,10 @@ export default function createSession(server: any): void {
             `Sending the capabilities to the remote server: ${remoteServerUrl}`
           );
           const remoteUrl = new URL(remoteServerUrl);
-          const protocol = remoteUrl.protocol.replace(':', '');
-          const port = getPortFromUrl(remoteUrl);
           const client = await WebDriver.newSession({
-            protocol,
+            protocol: remoteUrl.protocol.replace(':', ''),
             hostname: remoteUrl.hostname,
-            port,
+            port: getPortFromUrl(remoteUrl),
             path: remoteUrl.pathname,
             capabilities: finalCapabilities,
           });

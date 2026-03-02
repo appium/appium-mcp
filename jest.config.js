@@ -11,7 +11,7 @@ export default {
     '^@appium/support$': '<rootDir>/src/tests/__mocks__/@appium/support.ts',
   },
   // Ignore compiled files under dist to prevent duplicate test discovery
-  testPathIgnorePatterns: ['/dist/', '/node_modules/'],
+  testPathIgnorePatterns: ['/dist/', '/node_modules/', '/src/resources/submodules'],
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
