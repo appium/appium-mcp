@@ -1,3 +1,9 @@
+## [1.21.2](https://github.com/appium/appium-mcp/compare/v1.21.1...v1.21.2) (2026-03-02)
+
+### Miscellaneous Chores
+
+* simplify a bit, ignore submodules for tests ([#185](https://github.com/appium/appium-mcp/issues/185)) ([59e9d02](https://github.com/appium/appium-mcp/commit/59e9d02909cb5236c3172bbb45c5dad7cbf4c7fc))
+
 ## [1.21.1](https://github.com/appium/appium-mcp/compare/v1.21.0...v1.21.1) (2026-03-02)
 
 ### Bug Fixes
