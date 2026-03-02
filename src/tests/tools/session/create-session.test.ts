@@ -74,3 +74,61 @@ describe('capability builders', () => {
     expect(caps).not.toHaveProperty('appium:udid');
   });
 });
+
+describe('remote server URL port handling', () => {
+  test('should use port 443 for https URLs without explicit port', () => {
+    const url = new URL('https://hub-cloud.browserstack.com/wd/hub');
+    const protocol = url.protocol.replace(':', '');
+    const port = url.port
+      ? parseInt(url.port, 10)
+      : protocol === 'https'
+        ? 443
+        : 80;
+    expect(port).toBe(443);
+  });
+
+  test('should use port 80 for http URLs without explicit port', () => {
+    const url = new URL('http://localhost/wd/hub');
+    const protocol = url.protocol.replace(':', '');
+    const port = url.port
+      ? parseInt(url.port, 10)
+      : protocol === 'https'
+        ? 443
+        : 80;
+    expect(port).toBe(80);
+  });
+
+  test('should use explicit port when provided', () => {
+    const url = new URL('http://localhost:4723/wd/hub');
+    const protocol = url.protocol.replace(':', '');
+    const port = url.port
+      ? parseInt(url.port, 10)
+      : protocol === 'https'
+        ? 443
+        : 80;
+    expect(port).toBe(4723);
+  });
+
+  test('should use explicit port 443 in https URL', () => {
+    // Note: URL.port returns empty string for default ports even when explicitly specified
+    const url = new URL('https://example.com:443/path');
+    const protocol = url.protocol.replace(':', '');
+    const port = url.port
+      ? parseInt(url.port, 10)
+      : protocol === 'https'
+        ? 443
+        : 80;
+    expect(port).toBe(443);
+  });
+
+  test('should handle non-default https port', () => {
+    const url = new URL('https://example.com:8443/path');
+    const protocol = url.protocol.replace(':', '');
+    const port = url.port
+      ? parseInt(url.port, 10)
+      : protocol === 'https'
+        ? 443
+        : 80;
+    expect(port).toBe(8443);
+  });
+});

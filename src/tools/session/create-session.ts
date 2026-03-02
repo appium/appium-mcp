@@ -347,10 +347,18 @@ export default function createSession(server: any): void {
             `Sending the capabilities to the remote server: ${remoteServerUrl}`
           );
           const remoteUrl = new URL(remoteServerUrl);
+          const protocol = remoteUrl.protocol.replace(':', '');
+          // Use default port based on protocol when port is not specified
+          // URL.port returns empty string for default ports (443 for https, 80 for http)
+          const port = remoteUrl.port
+            ? parseInt(remoteUrl.port, 10)
+            : protocol === 'https'
+              ? 443
+              : 80;
           const client = await WebDriver.newSession({
-            protocol: remoteUrl.protocol.replace(':', ''),
+            protocol,
             hostname: remoteUrl.hostname,
-            port: parseInt(remoteUrl.port, 10),
+            port,
             path: remoteUrl.pathname,
             capabilities: finalCapabilities,
           });
