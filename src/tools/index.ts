@@ -21,6 +21,7 @@ import generateLocators from './test-generation/locators.js';
 import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
 import openNotifications from './session/open-notifications.js';
+import { lockDevice, unlockDevice } from './session/lock.js';
 import bootSimulator from './ios/boot-simulator.js';
 import setupWDA from './ios/setup-wda.js';
 import installWDA from './ios/install-wda.js';
@@ -124,6 +125,8 @@ export default function registerTools(server: FastMCP): void {
   createSession(server);
   deleteSession(server);
   openNotifications(server);
+  lockDevice(server);
+  unlockDevice(server);
 
   // iOS Setup
   bootSimulator(server);

@@ -9,6 +9,8 @@ This directory contains all MCP tools available in MCP Appium.
 - `create-session.ts` - Create mobile automation sessions
 - `delete-session.ts` - Clean up sessions
 - `open-notifications.ts` - Open notifications panel (Android only)
+- `lock.ts` - Lock device (`appium_mobile_lock`); optionally lock for N seconds (Android & iOS)
+- `lock.ts` - Unlock device (`appium_mobile_unlock`)
 - `select-platform.ts` - Choose Android or iOS
 - `select-device.ts` - Choose specific device
 
