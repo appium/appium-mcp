@@ -1,3 +1,9 @@
+## [1.23.0](https://github.com/appium/appium-mcp/compare/v1.22.0...v1.23.0) (2026-03-08)
+
+### Features
+
+* support user and pass in the URL, add newCommandTimeout to expand it ([#191](https://github.com/appium/appium-mcp/issues/191)) ([f413df5](https://github.com/appium/appium-mcp/commit/f413df5cb4f10780e6e3f1ef5ef041a2ad308f3f))
+
 ## [1.22.0](https://github.com/appium/appium-mcp/compare/v1.21.2...v1.22.0) (2026-03-03)
 
 ### Features
