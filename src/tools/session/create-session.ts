@@ -96,6 +96,7 @@ export function buildAndroidCapabilities(
     'appium:settings[actionAcknowledgmentTimeout]': 0,
     'appium:settings[waitForIdleTimeout]': 0,
     'appium:settings[waitForSelectorTimeout]': 0,
+    'appium:newCommandTimeout': 300,
   };
 
   const capabilities = {
@@ -174,6 +175,7 @@ export async function buildIOSCapabilities(
           'appium:wdaStartupRetryInterval': 20000,
         }
       : {};
+  additionalCaps['appium:newCommandTimeout'] = 300;
 
   log.debug('Platform version:', platformVersion);
 
@@ -350,15 +352,24 @@ export default function createSession(server: any): void {
 
         let sessionId;
         if (remoteServerUrl) {
-          log.info(
-            `Sending the capabilities to the remote server: ${remoteServerUrl}`
-          );
           const remoteUrl = new URL(remoteServerUrl);
+          const protocol = remoteUrl.protocol.replace(':', '');
+          const port = getPortFromUrl(remoteUrl);
+          const user = remoteUrl.username
+            ? decodeURIComponent(remoteUrl.username)
+            : undefined;
+          const key = remoteUrl.password
+            ? decodeURIComponent(remoteUrl.password)
+            : undefined;
+          log.info(
+            `Sending capabilities to remote server: ${protocol}://${remoteUrl.hostname}:${port}${remoteUrl.pathname}`
+          );
           const client = await WebDriver.newSession({
-            protocol: remoteUrl.protocol.replace(':', ''),
+            protocol,
             hostname: remoteUrl.hostname,
-            port: getPortFromUrl(remoteUrl),
+            port,
             path: remoteUrl.pathname,
+            ...(user && key ? { user, key } : {}),
             capabilities: finalCapabilities,
           });
           sessionId = client.sessionId;

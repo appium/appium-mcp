@@ -790,7 +790,9 @@ async function runBenchmark(): Promise<void> {
 }
 
 // Run the benchmark
-runBenchmark().catch((error) => {
+try {
+  await runBenchmark();
+} catch (error) {
   console.error('Fatal error:', error);
   process.exit(1);
-});
+}
