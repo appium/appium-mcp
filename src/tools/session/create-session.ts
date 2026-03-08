@@ -96,6 +96,7 @@ export function buildAndroidCapabilities(
     'appium:settings[actionAcknowledgmentTimeout]': 0,
     'appium:settings[waitForIdleTimeout]': 0,
     'appium:settings[waitForSelectorTimeout]': 0,
+    'appium:newCommandTimeout': 300,
   };
 
   const capabilities = {
@@ -172,8 +173,11 @@ export async function buildIOSCapabilities(
           'appium:usePrebuiltWDA': true,
           'appium:wdaStartupRetries': 4,
           'appium:wdaStartupRetryInterval': 20000,
+          'appium:newCommandTimeout': 300,
         }
-      : {};
+      : {
+        'appium:newCommandTimeout': 300,
+      };
 
   log.debug('Platform version:', platformVersion);
 
