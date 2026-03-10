@@ -361,11 +361,11 @@ export default function createSession(server: any): void {
             capabilities: finalCapabilities,
           });
           sessionId = client.sessionId;
-          setSession(client, client.sessionId);
+          setSession(client, client.sessionId, finalCapabilities);
         } else {
           const driver = createDriverForPlatform(platform);
           sessionId = await createDriverSession(driver, finalCapabilities);
-          setSession(driver, sessionId);
+          setSession(driver, sessionId, finalCapabilities);
         }
 
         // Safely convert sessionId to string for display

@@ -26,11 +26,18 @@ export default function listSessionsTool(server: any): void {
         };
       }
 
+      const sessionSummary = sessions
+        .map(
+          (session, index) =>
+            `${index + 1}. sessionId=${session.sessionId}${session.isActive ? ' (active)' : ''}\n   platform=${session.platform || 'N/A'}, automationName=${session.automationName || 'N/A'}, deviceName=${session.deviceName || 'N/A'}, currentContext=${session.currentContext || 'N/A'}`
+        )
+        .join('\n');
+
       return {
         content: [
           {
             type: 'text',
-            text: `Active session: ${activeSessionId || 'N/A'}\nSessions:\n${JSON.stringify(sessions, null, 2)}`,
+            text: `Active session: ${activeSessionId || 'N/A'}\nSelect with: select_session { "sessionId": "..." }\n\nSessions:\n${sessionSummary}`,
           },
         ],
       };

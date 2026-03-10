@@ -9,15 +9,30 @@ export type DriverInstance =
   | AndroidUiautomator2Driver
   | XCUITestDriver;
 export type NullableDriverInstance = DriverInstance | null;
+export type SessionCapabilities = Record<string, any>;
+
+interface SessionMetadata {
+  platform: string | null;
+  automationName: string | null;
+  deviceName: string | null;
+  capabilities: SessionCapabilities;
+}
 
 interface SessionInfo {
   driver: DriverInstance;
   sessionId: string;
   currentContext: string | null;
   isDeletingSession: boolean;
+  metadata: SessionMetadata;
 }
 
+/**
+ * In-memory store for active Appium sessions and their associated drivers.
+ */
 const sessions = new Map<string, SessionInfo>();
+/**
+ * The ID of the currently active session, or `null` if no session is active.
+ */
 let activeSessionId: string | null = null;
 
 export const PLATFORM = {
@@ -79,17 +94,36 @@ export function isXCUITestDriverSession(
   return driver instanceof XCUITestDriver;
 }
 
-export function setSession(d: DriverInstance, id: string | null) {
+export function setSession(
+  d: DriverInstance,
+  id: string | null,
+  capabilities: SessionCapabilities = {}
+) {
   if (!id) {
     activeSessionId = null;
     return;
   }
+
+  const metadata: SessionMetadata = {
+    platform:
+      (capabilities.platformName as string | undefined) ??
+      (capabilities['appium:platformName'] as string | undefined) ??
+      null,
+    automationName:
+      (capabilities['appium:automationName'] as string | undefined) ?? null,
+    deviceName:
+      (capabilities['appium:deviceName'] as string | undefined) ??
+      (capabilities.deviceName as string | undefined) ??
+      null,
+    capabilities,
+  };
 
   sessions.set(id, {
     driver: d,
     sessionId: id,
     currentContext: 'NATIVE_APP',
     isDeletingSession: false,
+    metadata,
   });
   activeSessionId = id;
 }
@@ -110,11 +144,19 @@ export function listSessions(): Array<{
   sessionId: string;
   currentContext: string | null;
   isActive: boolean;
+  platform: string | null;
+  automationName: string | null;
+  deviceName: string | null;
+  capabilities: SessionCapabilities;
 }> {
   return Array.from(sessions.values()).map((session) => ({
     sessionId: session.sessionId,
     currentContext: session.currentContext,
     isActive: session.sessionId === activeSessionId,
+    platform: session.metadata.platform,
+    automationName: session.metadata.automationName,
+    deviceName: session.metadata.deviceName,
+    capabilities: session.metadata.capabilities,
   }));
 }
 
