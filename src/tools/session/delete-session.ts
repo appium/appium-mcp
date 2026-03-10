@@ -8,23 +8,33 @@ import log from '../../logger.js';
 export default function deleteSession(server: any): void {
   server.addTool({
     name: 'delete_session',
-    description: 'Delete the current mobile session and clean up resources.',
-    parameters: z.object({}),
+    description:
+      'Delete a mobile session and clean up resources. If sessionId is omitted, deletes the active session.',
+    parameters: z.object({
+      sessionId: z
+        .string()
+        .optional()
+        .describe(
+          'Optional session ID to delete. If omitted, deletes active session.'
+        ),
+    }),
     annotations: {
       destructiveHint: true,
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (): Promise<any> => {
+    execute: async (args: { sessionId?: string }): Promise<any> => {
       try {
-        const deleted = await safeDeleteSession();
+        const deleted = await safeDeleteSession(args.sessionId);
 
         if (deleted) {
           return {
             content: [
               {
                 type: 'text',
-                text: 'Session deleted successfully.',
+                text: args.sessionId
+                  ? `Session ${args.sessionId} deleted successfully.`
+                  : 'Active session deleted successfully.',
               },
             ],
           };
@@ -33,7 +43,9 @@ export default function deleteSession(server: any): void {
             content: [
               {
                 type: 'text',
-                text: 'No active session found or deletion already in progress.',
+                text: args.sessionId
+                  ? `Session ${args.sessionId} not found or deletion already in progress.`
+                  : 'No active session found or deletion already in progress.',
               },
             ],
           };

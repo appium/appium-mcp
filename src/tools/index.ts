@@ -17,6 +17,8 @@ import log from '../logger.js';
 import answerAppium from './documentation/answer-appium.js';
 import createSession from './session/create-session.js';
 import deleteSession from './session/delete-session.js';
+import listSessions from './session/list-sessions.js';
+import selectSession from './session/select-session.js';
 import generateLocators from './test-generation/locators.js';
 import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
@@ -123,6 +125,8 @@ export default function registerTools(server: FastMCP): void {
   selectPlatform(server);
   selectDevice(server);
   createSession(server);
+  listSessions(server);
+  selectSession(server);
   deleteSession(server);
   openNotifications(server);
   lockDevice(server);

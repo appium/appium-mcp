@@ -1,6 +1,11 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, isRemoteDriverSession } from '../../session-store.js';
+import {
+  getCurrentContext as getStoredCurrentContext,
+  getDriver,
+  isRemoteDriverSession,
+  setCurrentContext,
+} from '../../session-store.js';
 import { getContexts, getCurrentContext, setContext } from '../../command.js';
 
 export default function switchContext(server: FastMCP): void {
@@ -39,7 +44,14 @@ export default function switchContext(server: FastMCP): void {
           getContexts(driver).catch(() => [] as string[]),
         ]);
 
-        if (currentContext === args.context) {
+        if (currentContext) {
+          setCurrentContext(currentContext);
+        }
+
+        const effectiveCurrentContext =
+          currentContext || getStoredCurrentContext() || null;
+
+        if (effectiveCurrentContext === args.context) {
           return {
             content: [
               {
@@ -76,12 +88,13 @@ export default function switchContext(server: FastMCP): void {
         await setContext(driver, args.context);
         // Verify the switch was successful
         const newContext = await getCurrentContext(driver);
+        setCurrentContext(newContext);
 
         return {
           content: [
             {
               type: 'text',
-              text: `Successfully switched context from "${currentContext || 'N/A'}" to "${newContext}".`,
+              text: `Successfully switched context from "${effectiveCurrentContext || 'N/A'}" to "${newContext}".`,
             },
           ],
         };

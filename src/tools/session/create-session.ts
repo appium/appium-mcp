@@ -7,11 +7,7 @@ import { constants } from 'node:fs';
 import { URL } from 'node:url';
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
-import {
-  setSession,
-  hasActiveSession,
-  safeDeleteSession,
-} from '../../session-store.js';
+import { setSession, listSessions } from '../../session-store.js';
 import {
   getSelectedDevice,
   getSelectedDeviceType,
@@ -310,17 +306,6 @@ export default function createSession(server: any): void {
     },
     execute: async (args: any, _context: any): Promise<any> => {
       try {
-        if (hasActiveSession()) {
-          log.info(
-            'Existing session detected, cleaning up before creating new session...'
-          );
-          try {
-            await safeDeleteSession();
-          } catch {
-            // ok to ignore
-          }
-        }
-
         const {
           platform,
           capabilities: customCapabilities,
@@ -393,11 +378,13 @@ export default function createSession(server: any): void {
           `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}`
         );
 
+        const totalSessions = listSessions().length;
+
         const textResponse = {
           content: [
             {
               type: 'text',
-              text: `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}`,
+              text: `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`,
             },
           ],
         };

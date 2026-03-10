@@ -1,6 +1,11 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, isRemoteDriverSession } from '../../session-store.js';
+import {
+  getCurrentContext as getStoredCurrentContext,
+  getDriver,
+  isRemoteDriverSession,
+  setCurrentContext,
+} from '../../session-store.js';
 import {
   createUIResource,
   createContextSwitcherUI,
@@ -39,6 +44,13 @@ export default function getContexts(server: FastMCP): void {
           _getContexts(driver).catch(() => []),
         ]);
 
+        if (currentContext) {
+          setCurrentContext(currentContext);
+        }
+
+        const effectiveCurrentContext =
+          currentContext || getStoredCurrentContext() || 'N/A';
+
         if (!contexts || contexts.length === 0) {
           return {
             content: [
@@ -54,7 +66,7 @@ export default function getContexts(server: FastMCP): void {
           content: [
             {
               type: 'text',
-              text: `Available contexts: ${JSON.stringify(contexts, null, 2)}\nCurrent context: ${currentContext || 'N/A'}`,
+              text: `Available contexts: ${JSON.stringify(contexts, null, 2)}\nCurrent context: ${effectiveCurrentContext}`,
             },
           ],
         };
@@ -62,7 +74,7 @@ export default function getContexts(server: FastMCP): void {
         // Add interactive context switcher UI
         const uiResource = createUIResource(
           `ui://appium-mcp/context-switcher/${Date.now()}`,
-          createContextSwitcherUI(contexts as string[], currentContext)
+          createContextSwitcherUI(contexts as string[], effectiveCurrentContext)
         );
 
         return addUIResourceToResponse(textResponse, uiResource);
