@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getSessionId, listSessions } from '../../session-store.js';
+import { getDriver, getSessionId, listSessions } from '../../session-store.js';
 
 export default function listSessionsTool(server: any): void {
   server.addTool({
@@ -27,10 +27,11 @@ export default function listSessionsTool(server: any): void {
       }
 
       const sessionSummary = sessions
-        .map(
-          (session, index) =>
-            `${index + 1}. sessionId=${session.sessionId}${session.isActive ? ' (active)' : ''}\n   platform=${session.platform || 'N/A'}, automationName=${session.automationName || 'N/A'}, deviceName=${session.deviceName || 'N/A'}, currentContext=${session.currentContext || 'N/A'}`
-        )
+        .map((session, index) => {
+          const driver = getDriver(session.sessionId);
+          const rawClassName = driver?.constructor?.name;
+          return `${index + 1}. sessionId=${session.sessionId}${session.isActive ? ' (active)' : ''}\n   driverInstance=${rawClassName || 'N/A'}, platform=${session.platform || 'N/A'}, automationName=${session.automationName || 'N/A'}, deviceName=${session.deviceName || 'N/A'}, currentContext=${session.currentContext || 'N/A'}`;
+        })
         .join('\n');
 
       return {
