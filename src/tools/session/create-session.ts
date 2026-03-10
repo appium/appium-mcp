@@ -230,11 +230,12 @@ async function createDriverSession(
   capabilities: Capabilities
 ): Promise<string> {
   // @ts-ignore
-  const sessionId = await driver.createSession(null, {
+  const result = await driver.createSession(null, {
     alwaysMatch: capabilities,
     firstMatch: [{}],
   });
-  return sessionId;
+  // Appium drivers return [sessionId, caps], extract just the session ID
+  return Array.isArray(result) ? result[0] : result;
 }
 
 /**
