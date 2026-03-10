@@ -27,7 +27,7 @@ export default function getText(server: FastMCP): void {
       }
 
       try {
-        const text = getElementText(driver, args.elementUUID);
+        const text = await getElementText(driver, args.elementUUID);
         return {
           content: [
             {
