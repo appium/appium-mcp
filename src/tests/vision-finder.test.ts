@@ -159,7 +159,7 @@ describe('AIVisionFinder', () => {
         { headers: Record<string, string> },
       ];
       expect(url).toBe('https://mock-api.example.com/v1/chat/completions');
-      expect(config.headers['Authorization']).toBe('Bearer mock-token-12345');
+      expect(config.headers.Authorization).toBe('Bearer mock-token-12345');
     });
 
     test('should send image as JPEG base64 data URL in the request body', async () => {
@@ -459,7 +459,7 @@ describe('AIVisionFinder', () => {
       await finder.findElement(
         BENCHMARK_IMAGE_BASE64,
         'Search button',
-        IMAGE_WIDTH,   // 1080 > 100, resize must be triggered
+        IMAGE_WIDTH, // 1080 > 100, resize must be triggered
         IMAGE_HEIGHT
       );
 
@@ -482,7 +482,7 @@ describe('AIVisionFinder', () => {
       await finder.findElement(
         BENCHMARK_IMAGE_BASE64,
         'Search button',
-        IMAGE_WIDTH,   // 1080 < 2000, no resize
+        IMAGE_WIDTH, // 1080 < 2000, no resize
         IMAGE_HEIGHT
       );
 
