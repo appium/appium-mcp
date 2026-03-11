@@ -2,7 +2,7 @@ export default {
   preset: 'ts-jest/presets/js-with-ts-esm',
   testEnvironment: 'node',
   // Restrict Jest to the source tree to avoid discovering compiled tests under dist/
-  roots: ['<rootDir>/src', '<rootDir>/tests'],
+  roots: ['<rootDir>/src'],
   testMatch: ['**/?(*.)+(spec|test).[tj]s?(x)'],
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
