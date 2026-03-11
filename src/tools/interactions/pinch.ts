@@ -32,7 +32,7 @@ export default function pinch(server: FastMCP): void {
       .default(2.2)
       .optional()
       .describe(
-        'iOS only. The velocity of the pinch in scale factor per second. Default is 2.2.'
+        'The velocity of the pinch in scale factor per second. Used natively by iOS for zoom in, and controls gesture speed for zoom out on both platforms. Default is 2.2.'
       ),
   });
 
@@ -128,6 +128,8 @@ export default function pinch(server: FastMCP): void {
           await execute(driver, 'mobile: pinch', params);
         } else if (platform === PLATFORM.android) {
           // Zoom in on Android: mobile: pinchOpenGesture
+          // Convert scale factor to percent (0–1) for pinchOpenGesture:
+          // scale=2 → 0.5, scale=4 → 0.75, scale=10 → 0.9. Capped at 0.99 to avoid edge collisions.
           const percent = Math.min(0.99, 1 - 1 / scale);
           const params: Record<string, any> = { percent };
           if (elementUUID) {
