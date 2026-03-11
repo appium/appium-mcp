@@ -7,7 +7,14 @@
 
 import { imageUtil } from '@appium/support';
 import axios, { AxiosError } from 'axios';
-import type { AIVisionConfig, BBoxCoordinates, AIFindResult } from './types.js';
+import crypto from 'node:crypto';
+import type {
+  AIVisionConfig,
+  BBoxCoordinates,
+  AIFindResult,
+  CompressedImage,
+  CacheStorage,
+} from './types.js';
 import log from '../logger.js';
 
 /**
@@ -16,6 +23,9 @@ import log from '../logger.js';
  */
 export class AIVisionFinder {
   private config: AIVisionConfig;
+  private cache: CacheStorage = {};
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly MAX_CACHE_SIZE = 50;
 
   constructor() {
     // Environment-based configuration (matches benchmark_model.ts)
@@ -66,39 +76,62 @@ export class AIVisionFinder {
   ): Promise<AIFindResult> {
     try {
       log.info(`AI Vision: Finding element with instruction: "${instruction}"`);
-      log.info(`AI Vision: Image dimensions: ${imageWidth}x${imageHeight}`);
+      log.debug(
+        `AI Vision: Original image dimensions: ${imageWidth}x${imageHeight}`
+      );
+
+      // Check cache first
+      const cacheKey = this.generateCacheKey(instruction, screenshotBase64);
+      const cachedResult = this.getFromCache(cacheKey);
+      if (cachedResult) {
+        log.info('AI Vision: Using cached result');
+        return cachedResult;
+      }
 
       // Step 1: Compress image using @appium/support
-      const compressedBase64 = await this.compressImage(
+      const compressedImage = await this.compressImage(
         screenshotBase64,
         imageWidth,
         imageHeight
       );
 
-      // Step 2: Build prompt
-      const prompt = this.buildPrompt(instruction, imageWidth, imageHeight);
+      // Step 2: Build prompt with compressed image dimensions
+      const prompt = this.buildPrompt(
+        instruction,
+        compressedImage.width,
+        compressedImage.height
+      );
 
       // Step 3: Call vision model API
       const response = await this.callVisionAPI(
-        compressedBase64,
+        compressedImage.base64,
         prompt,
         'image/jpeg'
       );
 
-      // Step 4: Parse bbox from response
+      // Step 4: Parse bbox from response (coordinates are based on compressed image)
       const { target, bbox_2d } = this.parseBBox(response);
-      log.info(
-        `AI Vision: Parsed target: "${target}", bbox: [${bbox_2d.join(', ')}]`
+      log.debug(
+        `AI Vision: Parsed target: "${target}", bbox (compressed): [${bbox_2d.join(', ')}]`
       );
 
-      // Step 5: Convert coordinates (normalized or absolute)
-      const absoluteBBox = this.convertCoordinates(
+      // Step 5: Scale coordinates from compressed image to original image
+      const scaledBBox = this.scaleCoordinates(
         bbox_2d,
+        compressedImage.width,
+        compressedImage.height,
         imageWidth,
         imageHeight
       );
 
-      // Step 6: Calculate center point for tapping
+      // Step 6: Convert coordinates (normalized or absolute)
+      const absoluteBBox = this.convertCoordinates(
+        scaledBBox,
+        imageWidth,
+        imageHeight
+      );
+
+      // Step 7: Calculate center point for tapping
       const center = {
         x: Math.floor((absoluteBBox[0] + absoluteBBox[2]) / 2),
         y: Math.floor((absoluteBBox[1] + absoluteBBox[3]) / 2),
@@ -108,7 +141,12 @@ export class AIVisionFinder {
         `AI Vision: Final center coordinates: (${center.x}, ${center.y})`
       );
 
-      return { bbox: absoluteBBox, center, target };
+      const result: AIFindResult = { bbox: absoluteBBox, center, target };
+
+      // Cache the result
+      this.saveToCache(cacheKey, result);
+
+      return result;
     } catch (error) {
       log.error('AI Vision: Element finding failed:', error);
       throw error;
@@ -118,12 +156,13 @@ export class AIVisionFinder {
   /**
    * Compress image using @appium/support sharp utilities
    * Reduces API latency and token consumption
+   * Returns compressed image with actual dimensions
    */
   private async compressImage(
     base64Image: string,
     width: number,
     height: number
-  ): Promise<string> {
+  ): Promise<CompressedImage> {
     try {
       const imageBuffer = Buffer.from(base64Image, 'base64');
 
@@ -131,17 +170,18 @@ export class AIVisionFinder {
       const sharp = imageUtil.requireSharp();
       let sharpInstance = sharp(imageBuffer);
 
+      let finalWidth = width;
+      let finalHeight = height;
+
       // Resize if image is too large
       if (width > this.config.imageMaxWidth) {
         const scaleFactor = this.config.imageMaxWidth / width;
-        const newHeight = Math.floor(height * scaleFactor);
+        finalWidth = this.config.imageMaxWidth;
+        finalHeight = Math.floor(height * scaleFactor);
         log.info(
-          `AI Vision: Resizing image from ${width}x${height} to ${this.config.imageMaxWidth}x${newHeight}`
+          `AI Vision: Resizing image from ${width}x${height} to ${finalWidth}x${finalHeight}`
         );
-        sharpInstance = sharpInstance.resize(
-          this.config.imageMaxWidth,
-          newHeight
-        );
+        sharpInstance = sharpInstance.resize(finalWidth, finalHeight);
       }
 
       // Compress to JPEG with quality setting
@@ -156,11 +196,19 @@ export class AIVisionFinder {
         `AI Vision: Image compressed: ${originalSize} → ${compressedSize} bytes (${reduction}% reduction)`
       );
 
-      return compressedBuffer.toString('base64');
+      return {
+        base64: compressedBuffer.toString('base64'),
+        width: finalWidth,
+        height: finalHeight,
+      };
     } catch (error) {
-      // If compression fails, return original image
+      // If compression fails, return original image with original dimensions
       log.warn('AI Vision: Image compression failed, using original:', error);
-      return base64Image;
+      return {
+        base64: base64Image,
+        width,
+        height,
+      };
     }
   }
 
@@ -310,14 +358,51 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
   }
 
   /**
+   * Scale coordinates from compressed image to original image
+   */
+  private scaleCoordinates(
+    bbox: [number, number, number, number],
+    compressedWidth: number,
+    compressedHeight: number,
+    originalWidth: number,
+    originalHeight: number
+  ): [number, number, number, number] {
+    // If no scaling occurred, return original bbox
+    if (
+      compressedWidth === originalWidth &&
+      compressedHeight === originalHeight
+    ) {
+      return bbox;
+    }
+
+    const scaleX = originalWidth / compressedWidth;
+    const scaleY = originalHeight / compressedHeight;
+
+    const [x1, y1, x2, y2] = bbox;
+
+    const scaledBBox: [number, number, number, number] = [
+      Math.floor(x1 * scaleX),
+      Math.floor(y1 * scaleY),
+      Math.floor(x2 * scaleX),
+      Math.floor(y2 * scaleY),
+    ];
+
+    log.debug(
+      `AI Vision: Scaled coordinates from ${compressedWidth}x${compressedHeight} to ${originalWidth}x${originalHeight}: [${bbox.join(', ')}] → [${scaledBBox.join(', ')}]`
+    );
+
+    return scaledBBox;
+  }
+
+  /**
    * Convert coordinates based on model's coordinate type
    * Matches benchmark_model.ts coordinate conversion logic
    */
   private convertCoordinates(
-    bbox: number[],
+    bbox: [number, number, number, number],
     width: number,
     height: number
-  ): number[] {
+  ): [number, number, number, number] {
     let [x1, y1, x2, y2] = bbox;
 
     // Process according to model's configured coordinate type (matches benchmark_model.ts)
@@ -328,12 +413,12 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
       y1 = Math.floor((y1 / 1000) * height);
       x2 = Math.floor((x2 / 1000) * width);
       y2 = Math.floor((y2 / 1000) * height);
-      log.info(
+      log.debug(
         `AI Vision: Converted normalized coords ${JSON.stringify(originalCoords)} to absolute: [${x1}, ${y1}, ${x2}, ${y2}]`
       );
     } else {
       // Absolute pixel coordinates, use directly
-      log.info(
+      log.debug(
         `AI Vision: Using absolute coords: [${x1}, ${y1}, ${x2}, ${y2}]`
       );
     }
@@ -362,5 +447,61 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
     }
 
     return [x1, y1, x2, y2];
+  }
+
+  /**
+   * Generate cache key from instruction and image
+   */
+  private generateCacheKey(instruction: string, imageBase64: string): string {
+    const imageHash = crypto
+      .createHash('md5')
+      .update(imageBase64)
+      .digest('hex')
+      .substring(0, 16);
+    return `${instruction}_${imageHash}`;
+  }
+
+  /**
+   * Get result from cache if valid
+   */
+  private getFromCache(key: string): AIFindResult | null {
+    const entry = this.cache[key];
+    if (!entry) {
+      return null;
+    }
+
+    const now = Date.now();
+    if (now - entry.timestamp > this.CACHE_TTL) {
+      delete this.cache[key];
+      return null;
+    }
+
+    return entry.result;
+  }
+
+  /**
+   * Save result to cache with LRU eviction
+   */
+  private saveToCache(key: string, result: AIFindResult): void {
+    // Clean expired entries
+    const now = Date.now();
+    Object.keys(this.cache).forEach((k) => {
+      if (now - this.cache[k].timestamp > this.CACHE_TTL) {
+        delete this.cache[k];
+      }
+    });
+
+    // LRU eviction if cache is full
+    if (Object.keys(this.cache).length >= this.MAX_CACHE_SIZE) {
+      const oldestKey = Object.keys(this.cache).reduce((oldest, k) =>
+        this.cache[k].timestamp < this.cache[oldest].timestamp ? k : oldest
+      );
+      delete this.cache[oldestKey];
+    }
+
+    this.cache[key] = {
+      result,
+      timestamp: now,
+    };
   }
 }

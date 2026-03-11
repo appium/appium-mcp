@@ -15,19 +15,43 @@ export interface AIVisionConfig {
 }
 
 /**
+ * Compressed image result interface
+ */
+export interface CompressedImage {
+  base64: string;
+  width: number;
+  height: number;
+}
+
+/**
  * Bounding box coordinates interface
  * Matches the format returned by vision models
  */
 export interface BBoxCoordinates {
   target: string;
-  bbox_2d: number[];
+  bbox_2d: [number, number, number, number];
 }
 
 /**
  * AI element finding result interface
  */
 export interface AIFindResult {
-  bbox: number[];
+  bbox: [number, number, number, number];
   center: { x: number; y: number };
   target: string;
+}
+
+/**
+ * Cache entry interface for result caching
+ */
+export interface CacheEntry {
+  result: AIFindResult;
+  timestamp: number;
+}
+
+/**
+ * Cache storage interface
+ */
+export interface CacheStorage {
+  [key: string]: CacheEntry;
 }

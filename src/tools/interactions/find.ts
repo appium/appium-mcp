@@ -92,7 +92,8 @@ export default function findElement(server: FastMCP): void {
         // Route 2: AI vision-based finding
         if (!args.ai_instruction) {
           throw new Error(
-            'ai_instruction is required when strategy is ai_instruction'
+            'ai_instruction is required when strategy is ai_instruction. ' +
+              'Example: { strategy: "ai_instruction", ai_instruction: "yellow search button at bottom" }'
           );
         }
 

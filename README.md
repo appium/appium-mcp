@@ -19,6 +19,7 @@ MCP Appium is an intelligent MCP (Model Context Protocol) server designed to emp
 ## 🚀 Features
 
 - **Cross-Platform Support**: Automate tests for both Android (UiAutomator2) and iOS (XCUITest).
+- **AI-Powered Element Finding**: Locate UI elements using natural language descriptions powered by vision models - no need for complex XPath or selectors.
 - **Intelligent Locator Generation**: AI-powered element identification using priority-based strategies.
 - **Interactive Session Management**: Easily create and manage sessions on local mobile devices.
 - **Smart Element Interactions**: Perform actions like clicks, text input, screenshots, and element finding.
@@ -176,6 +177,59 @@ Set the `CAPABILITIES_CONFIG` environment variable to point to your configuratio
 
 Set the `SCREENSHOTS_DIR` environment variable to specify where screenshots are saved. If not set, screenshots are saved to the current working directory. Supports both absolute and relative paths (relative paths are resolved from the current working directory). The directory is created automatically if it doesn't exist.
 
+### AI Vision Element Finding
+
+Configure AI-powered element finding using vision models. This feature allows you to locate UI elements using natural language descriptions instead of traditional XPath or ID selectors.
+
+**Required Environment Variables:**
+
+```json
+{
+  "appium-mcp": {
+    "env": {
+      "ANDROID_HOME": "/path/to/android/sdk",
+      "API_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "API_TOKEN": "your_api_key_here"
+    }
+  }
+}
+```
+
+**Optional Environment Variables:**
+
+- `AI_VISION_MODEL`: Model name (default: `Qwen3-VL-235B-A22B-Instruct`)
+- `AI_VISION_COORD_TYPE`: Coordinate type - `normalized` or `absolute` (default: `normalized`)
+- `AI_VISION_IMAGE_MAX_WIDTH`: Max image width for compression in pixels (default: `1080`)
+- `AI_VISION_IMAGE_QUALITY`: JPEG quality 1-100 (default: `80`)
+
+**Supported Vision Model Providers:**
+
+Based on benchmark testing, the following models are recommended:
+
+1. **Qwen3-VL-235B-A22B-Instruct**
+   - Provider: Alibaba Cloud DashScope
+   - Accuracy: 100%
+   - Speed: ~8.4s
+   - API: `https://dashscope.aliyuncs.com/compatible-mode/v1`
+
+2. **Gemini 2.0 Flash**
+   - Provider: Google AI
+   - Accuracy: 100%
+   - Speed: ~10.5s
+   - API: `https://generativelanguage.googleapis.com/v1beta`
+
+3. **GPT-4o**
+   - Provider: OpenAI
+   - Accuracy: 100%
+   - Speed: ~18.2s
+   - API: `https://api.openai.com/v1`
+
+**Performance Features:**
+
+- **Image Compression**: Automatically compresses screenshots to reduce API latency and token costs (50-80% size reduction)
+- **Result Caching**: Caches results for 5 minutes to avoid redundant API calls for identical queries
+- **Coordinate Scaling**: Automatically scales coordinates from compressed images back to original dimensions for accurate tapping
+
 ### Performance Optimization
 
 #### NO_UI Mode
@@ -258,7 +312,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 | Tool                  | Description                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------- |
-| `appium_find_element` | Find a specific element using various locator strategies (xpath, id, accessibility id, etc.) |
+| `appium_find_element` | Find a specific element using traditional locator strategies (xpath, id, accessibility id, etc.) **OR** AI-powered natural language descriptions (e.g., "yellow search button at bottom"). Supports both traditional and AI modes. |
 | `appium_click`        | Click on an element                                                                          |
 | `appium_double_tap`   | Perform double tap on an element                                                             |
 | `appium_long_press`   | Perform a long press (press and hold) gesture on an element                                  |
@@ -314,6 +368,43 @@ Open Amazon mobile app, search for "iPhone 15 Pro", select the first search resu
 ```
 
 This example demonstrates a complete e-commerce checkout flow that can be automated using MCP Appium's intelligent locator generation and test creation capabilities.
+
+### AI-Powered Element Finding Examples
+
+**Traditional Mode (XPath/ID):**
+```json
+{
+  "tool": "appium_find_element",
+  "arguments": {
+    "strategy": "xpath",
+    "selector": "//android.widget.Button[@text='Search']"
+  }
+}
+```
+
+**AI Mode (Natural Language):**
+```json
+{
+  "tool": "appium_find_element",
+  "arguments": {
+    "strategy": "ai_instruction",
+    "ai_instruction": "yellow search button at the bottom of the screen"
+  }
+}
+```
+
+**More AI Mode Examples:**
+- `"username input field at top"`
+- `"settings icon in top-right corner"`
+- `"red delete button next to the item"`
+- `"blue submit button at bottom"`
+- `"profile picture in navigation bar"`
+
+**Benefits of AI Mode:**
+- **No Complex Selectors**: Describe elements in plain language
+- **Resilient to UI Changes**: Semantic understanding adapts to layout changes
+- **Faster Development**: No need to inspect element hierarchies
+- **Works Across Languages**: Describe in any language you're comfortable with
 
 ### Working in Your Native Language
 
