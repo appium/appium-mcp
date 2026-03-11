@@ -263,6 +263,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `appium_double_tap`   | Perform double tap on an element                                                             |
 | `appium_long_press`   | Perform a long press (press and hold) gesture on an element                                  |
 | `appium_drag_and_drop` | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates) |
+| `appium_pinch`        | Perform a pinch gesture to zoom in (scale > 1) or zoom out (scale < 1) on an element or the whole screen. Works on both iOS and Android. |
 | `appium_set_value`    | Enter text into an input field                                                               |
 | `appium_get_text`     | Get text content from an element                                                             |
 | `appium_handle_alert` | Accept or dismiss system/permission alerts, or click a dialog button by label |

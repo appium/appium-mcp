@@ -34,6 +34,7 @@ import clickElement from './interactions/click.js';
 import doubleTap from './interactions/double-tap.js';
 import longPress from './interactions/long-press.js';
 import dragAndDrop from './interactions/drag-and-drop.js';
+import pinch from './interactions/pinch.js';
 import pressKey from './interactions/press-key.js';
 import setValue from './interactions/set-value.js';
 import getText from './interactions/get-text.js';
@@ -148,6 +149,7 @@ export default function registerTools(server: FastMCP): void {
   doubleTap(server);
   longPress(server);
   dragAndDrop(server);
+  pinch(server);
   pressKey(server);
   setValue(server);
   getText(server);
