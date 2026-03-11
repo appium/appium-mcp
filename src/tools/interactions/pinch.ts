@@ -2,7 +2,12 @@ import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
-import { execute, getElementRect, getWindowRect, performActions } from '../../command.js';
+import {
+  execute,
+  getElementRect,
+  getWindowRect,
+  performActions,
+} from '../../command.js';
 
 export default function pinch(server: FastMCP): void {
   const pinchSchema = z.object({
@@ -66,7 +71,9 @@ export default function pinch(server: FastMCP): void {
           windowRect = await getWindowRect(driver);
           cx = Math.floor(windowRect.width / 2);
           cy = Math.floor(windowRect.height / 2);
-          spread = Math.floor(Math.min(windowRect.width, windowRect.height) * 0.3);
+          spread = Math.floor(
+            Math.min(windowRect.width, windowRect.height) * 0.3
+          );
         }
 
         if (scale < 1) {
@@ -81,7 +88,12 @@ export default function pinch(server: FastMCP): void {
               id: 'finger1',
               parameters: { pointerType: 'touch' },
               actions: [
-                { type: 'pointerMove', duration: 0, x: cx - startSpread, y: cy },
+                {
+                  type: 'pointerMove',
+                  duration: 0,
+                  x: cx - startSpread,
+                  y: cy,
+                },
                 { type: 'pointerDown', button: 0 },
                 { type: 'pointerMove', duration, x: cx - endSpread, y: cy },
                 { type: 'pointerUp', button: 0 },
@@ -92,7 +104,12 @@ export default function pinch(server: FastMCP): void {
               id: 'finger2',
               parameters: { pointerType: 'touch' },
               actions: [
-                { type: 'pointerMove', duration: 0, x: cx + startSpread, y: cy },
+                {
+                  type: 'pointerMove',
+                  duration: 0,
+                  x: cx + startSpread,
+                  y: cy,
+                },
                 { type: 'pointerDown', button: 0 },
                 { type: 'pointerMove', duration, x: cx + endSpread, y: cy },
                 { type: 'pointerUp', button: 0 },
@@ -101,8 +118,13 @@ export default function pinch(server: FastMCP): void {
           ]);
         } else if (platform === PLATFORM.ios) {
           // Zoom in on iOS: mobile: pinch
-          const params: Record<string, any> = { scale, velocity: Math.abs(velocity) };
-          if (elementUUID) {params.elementId = elementUUID;}
+          const params: Record<string, any> = {
+            scale,
+            velocity: Math.abs(velocity),
+          };
+          if (elementUUID) {
+            params.elementId = elementUUID;
+          }
           await execute(driver, 'mobile: pinch', params);
         } else if (platform === PLATFORM.android) {
           // Zoom in on Android: mobile: pinchOpenGesture
