@@ -1,11 +1,4 @@
-import {
-  describe,
-  test,
-  expect,
-  jest,
-  beforeEach,
-  afterEach,
-} from '@jest/globals';
+import { describe, test, expect, jest, afterEach } from '@jest/globals';
 
 // Mock heavy native driver packages so the module can be imported without
 // native dependencies installed in the test environment.
