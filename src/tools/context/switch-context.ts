@@ -49,7 +49,7 @@ export default function switchContext(server: FastMCP): void {
         }
 
         const effectiveCurrentContext =
-          currentContext || getStoredCurrentContext() || null;
+          currentContext || getStoredCurrentContext();
 
         if (effectiveCurrentContext === args.context) {
           return {
@@ -94,7 +94,7 @@ export default function switchContext(server: FastMCP): void {
           content: [
             {
               type: 'text',
-              text: `Successfully switched context from "${effectiveCurrentContext || 'N/A'}" to "${newContext}".`,
+              text: `Successfully switched context from "${effectiveCurrentContext || 'Unknown'}" to "${newContext}".`,
             },
           ],
         };

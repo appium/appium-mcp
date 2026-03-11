@@ -30,7 +30,7 @@ export default function listSessionsTool(server: any): void {
         .map((session, index) => {
           const driver = getDriver(session.sessionId);
           const rawClassName = driver?.constructor?.name;
-          return `${index + 1}. sessionId=${session.sessionId}${session.isActive ? ' (active)' : ''}\n   driverInstance=${rawClassName || 'N/A'}, platform=${session.platform || 'N/A'}, automationName=${session.automationName || 'N/A'}, deviceName=${session.deviceName || 'N/A'}, currentContext=${session.currentContext || 'N/A'}`;
+          return `${index + 1}. sessionId=${session.sessionId}${session.isActive ? ' (active)' : ''}\n   driverInstance=${rawClassName}, platform=${session.platform}, automationName=${session.automationName}, deviceName=${session.deviceName}, currentContext=${session.currentContext}`;
         })
         .join('\n');
 
@@ -38,7 +38,7 @@ export default function listSessionsTool(server: any): void {
         content: [
           {
             type: 'text',
-            text: `Active session: ${activeSessionId || 'N/A'}\nSelect with: select_session { "sessionId": "..." }\n\nSessions:\n${sessionSummary}`,
+            text: `Active session: ${activeSessionId || 'Unknown'}\nSelect with: select_session { "sessionId": "..." }\n\nSessions:\n${sessionSummary}`,
           },
         ],
       };

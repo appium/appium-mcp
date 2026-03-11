@@ -49,7 +49,7 @@ export default function getContexts(server: FastMCP): void {
         }
 
         const effectiveCurrentContext =
-          currentContext || getStoredCurrentContext() || 'N/A';
+          currentContext || getStoredCurrentContext() || 'Unknown';
 
         if (!contexts || contexts.length === 0) {
           return {
