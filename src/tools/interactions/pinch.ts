@@ -14,6 +14,8 @@ export default function pinch(server: FastMCP): void {
         'Pinch scale. Use a value between 0 and 1 to zoom out (pinch close), and a value greater than 1 to zoom in (pinch open). Example: 0.5 = zoom out 50%, 2.0 = zoom in 2x.'
       ),
     elementUUID: elementUUIDScheme
+      .trim()
+      .min(1)
       .optional()
       .describe(
         'Optional UUID of the element to pinch on. If not provided, the pinch gesture is applied to the whole screen.'
@@ -54,16 +56,17 @@ export default function pinch(server: FastMCP): void {
 
         // Compute center and spread from element or full screen
         let cx: number, cy: number, spread: number;
+        let windowRect: Awaited<ReturnType<typeof getWindowRect>> | null = null;
         if (elementUUID) {
           const rect = await getElementRect(driver, elementUUID);
           cx = Math.floor(rect.x + rect.width / 2);
           cy = Math.floor(rect.y + rect.height / 2);
           spread = Math.floor(Math.min(rect.width, rect.height) * 0.3);
         } else {
-          const rect = await getWindowRect(driver);
-          cx = Math.floor(rect.width / 2);
-          cy = Math.floor(rect.height / 2);
-          spread = Math.floor(Math.min(rect.width, rect.height) * 0.3);
+          windowRect = await getWindowRect(driver);
+          cx = Math.floor(windowRect.width / 2);
+          cy = Math.floor(windowRect.height / 2);
+          spread = Math.floor(Math.min(windowRect.width, windowRect.height) * 0.3);
         }
 
         if (scale < 1) {
@@ -108,7 +111,7 @@ export default function pinch(server: FastMCP): void {
           if (elementUUID) {
             params.elementId = elementUUID;
           } else {
-            const rect = await getWindowRect(driver);
+            const rect = windowRect!;
             params.left = rect.x ?? 0;
             params.top = rect.y ?? 0;
             params.width = rect.width;
