@@ -1,7 +1,6 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import {
-  getCurrentContext as getStoredCurrentContext,
   getDriver,
   isRemoteDriverSession,
   setCurrentContext,
@@ -44,14 +43,7 @@ export default function switchContext(server: FastMCP): void {
           getContexts(driver).catch(() => [] as string[]),
         ]);
 
-        if (currentContext) {
-          setCurrentContext(currentContext);
-        }
-
-        const effectiveCurrentContext =
-          currentContext || getStoredCurrentContext();
-
-        if (effectiveCurrentContext === args.context) {
+        if (currentContext === args.context) {
           return {
             content: [
               {
@@ -94,7 +86,7 @@ export default function switchContext(server: FastMCP): void {
           content: [
             {
               type: 'text',
-              text: `Successfully switched context from "${effectiveCurrentContext || 'Unknown'}" to "${newContext}".`,
+              text: `Successfully switched context from "${currentContext}" to "${newContext}".`,
             },
           ],
         };

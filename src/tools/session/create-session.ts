@@ -92,6 +92,7 @@ export function buildAndroidCapabilities(
     'appium:settings[actionAcknowledgmentTimeout]': 0,
     'appium:settings[waitForIdleTimeout]': 0,
     'appium:settings[waitForSelectorTimeout]': 0,
+    'appium:autoGrantPermissions': true,
     'appium:newCommandTimeout': 300,
   };
 
@@ -208,10 +209,14 @@ export function getPortFromUrl(url: URL): number {
  */
 function createDriverForPlatform(platform: 'android' | 'ios'): any {
   if (platform === 'android') {
-    return new AndroidUiautomator2Driver();
+    const driver = new AndroidUiautomator2Driver({} as any);
+    driver.relaxedSecurityEnabled = true;
+    return driver;
   }
   if (platform === 'ios') {
-    return new XCUITestDriver({} as any);
+    const driver = new XCUITestDriver({} as any);
+    driver.relaxedSecurityEnabled = true;
+    return driver;
   }
   throw new Error(
     `Unsupported platform: ${platform}. Please choose 'android' or 'ios'.`
@@ -364,6 +369,7 @@ export default function createSession(server: any): void {
           setSession(client, client.sessionId, finalCapabilities);
         } else {
           const driver = createDriverForPlatform(platform);
+          log.info(`Sending session with ${driver.constructor.name}`);
           sessionId = await createDriverSession(driver, finalCapabilities);
           setSession(driver, sessionId, finalCapabilities);
         }

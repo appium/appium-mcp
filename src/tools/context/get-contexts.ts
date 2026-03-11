@@ -1,7 +1,6 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import {
-  getCurrentContext as getStoredCurrentContext,
   getDriver,
   isRemoteDriverSession,
   setCurrentContext,
@@ -48,9 +47,6 @@ export default function getContexts(server: FastMCP): void {
           setCurrentContext(currentContext);
         }
 
-        const effectiveCurrentContext =
-          currentContext || getStoredCurrentContext() || 'Unknown';
-
         if (!contexts || contexts.length === 0) {
           return {
             content: [
@@ -66,7 +62,7 @@ export default function getContexts(server: FastMCP): void {
           content: [
             {
               type: 'text',
-              text: `Available contexts: ${JSON.stringify(contexts, null, 2)}\nCurrent context: ${effectiveCurrentContext}`,
+              text: `Available contexts: ${JSON.stringify(contexts, null, 2)}\nCurrent context: ${currentContext}`,
             },
           ],
         };
@@ -74,7 +70,7 @@ export default function getContexts(server: FastMCP): void {
         // Add interactive context switcher UI
         const uiResource = createUIResource(
           `ui://appium-mcp/context-switcher/${Date.now()}`,
-          createContextSwitcherUI(contexts as string[], effectiveCurrentContext)
+          createContextSwitcherUI(contexts as string[], currentContext)
         );
 
         return addUIResourceToResponse(textResponse, uiResource);
