@@ -323,3 +323,39 @@ That gives AI agents a clear rule set:
 - use broadcast mode only when explicitly requested
 - operate on intent-level inputs when targeting multiple sessions
 - report outcomes per session
+
+## Next Steps
+
+The following work items are planned in order of priority.
+
+### 1. Extend broadcast support to additional safe tools
+
+Apply the `sessionTargetSchema` + `executeAcrossSessions` pattern to the remaining good-candidate tools:
+
+- `terminate-app` – same structural pattern as `activate-app`
+- `screenshot` – fan out capture to each device and return per-session images
+- `set-orientation` – apply orientation change across all target sessions
+- `press-key` – send the same key code to each session
+- `scroll` – scroll by direction on each session
+
+Each tool should use `z.intersection(existingSchema, sessionTargetSchema)` and replace the direct `getDriver()` call with a broadcast executor call.
+
+### 2. Add broadcast-specific variants for session-local tools
+
+Tools that currently rely on session-local element handles need a different approach for multi-session use:
+
+- `click` – add a locator-based broadcast variant that re-finds the element independently on each session
+- `get-text` – same; resolve element by locator per session and return per-session text results
+- `drag-and-drop` – resolve both source and destination elements per session independently
+- `find` – return per-session element results when targeting multiple sessions
+
+These should not change the existing single-session signatures. The broadcast variants can be separate tool entries or activated by the presence of a `targetKind` that is not `active`.
+
+### 3. Add parallel-safe port allocation to session creation
+
+Concurrent local sessions fail if they share host ports. `create-session.ts` should automatically assign unique values for:
+
+- Android: `appium:systemPort`, `appium:chromedriverPort`, `appium:mjpegServerPort`, `appium:webviewDevtoolsPort`
+- iOS: `appium:wdaLocalPort`, `appium:mjpegServerPort`, a unique `appium:derivedDataPath` subdirectory
+
+The session store should track currently allocated ports and release them on session delete so ports are recycled without collisions.
