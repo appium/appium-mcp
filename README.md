@@ -10,6 +10,7 @@ MCP Appium is an intelligent MCP (Model Context Protocol) server designed to emp
 - [Prerequisites](#-prerequisites)
 - [Installation](#️-installation)
 - [Configuration](#️-configuration)
+- [Parallel Sessions and Broadcast Mode](#-parallel-sessions-and-broadcast-mode)
 - [Available Tools](#-available-tools)
 - [Client Support](#-client-support)
 - [Usage Examples](#-usage-examples)
@@ -225,6 +226,19 @@ The following tools return lightweight text-only responses when NO_UI is enabled
 - ✅ Network-constrained environments
 - ✅ Scripted automation where human interaction is not needed
 - ❌ Interactive debugging and exploration (keep UI enabled for better experience)
+
+## Parallel Sessions and Broadcast Mode
+
+Appium drivers already support multiple concurrent sessions when each session uses its own device identity and any required unique host resources.
+
+For this MCP server, that capability should be treated as the foundation for a higher-level broadcast mode where an AI agent intentionally applies the same action to a selected group of sessions.
+
+- Use normal Appium sessions for each device.
+- Keep one active session as the default for existing single-device tools.
+- Add explicit session-group or broadcast targeting on top rather than changing the meaning of the active session.
+- Do not reuse session-local element IDs across sessions. Broadcast actions should operate on intent-level inputs such as locators, app IDs, deep links, orientation, screenshots, and text.
+
+See [docs/AI_BROADCAST_MODE.md](docs/AI_BROADCAST_MODE.md) for the detailed design guidance for AI agents and contributors.
 
 ## 🎯 Available Tools
 
