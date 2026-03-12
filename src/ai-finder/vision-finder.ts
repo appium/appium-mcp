@@ -8,11 +8,13 @@
 import { imageUtil } from '@appium/support';
 import axios, { AxiosError } from 'axios';
 import crypto from 'node:crypto';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import * as os from 'node:os';
 import type {
   AIVisionConfig,
   BBoxCoordinates,
   AIFindResult,
-  CompressedImage,
   CacheStorage,
 } from './types.js';
 import log from '../logger.js';
@@ -76,9 +78,7 @@ export class AIVisionFinder {
   ): Promise<AIFindResult> {
     try {
       log.info(`AI Vision: Finding element with instruction: "${instruction}"`);
-      log.debug(
-        `AI Vision: Original image dimensions: ${imageWidth}x${imageHeight}`
-      );
+      log.debug(`AI Vision: Image dimensions: ${imageWidth}x${imageHeight}`);
 
       // Check cache first
       const cacheKey = this.generateCacheKey(instruction, screenshotBase64);
@@ -89,49 +89,36 @@ export class AIVisionFinder {
       }
 
       // Step 1: Compress image using @appium/support
-      const compressedImage = await this.compressImage(
+      const compressedBase64 = await this.compressImage(
         screenshotBase64,
         imageWidth,
         imageHeight
       );
 
-      // Step 2: Build prompt with compressed image dimensions
-      const prompt = this.buildPrompt(
-        instruction,
-        compressedImage.width,
-        compressedImage.height
-      );
+      // Step 2: Build prompt (always use original image dimensions)
+      const prompt = this.buildPrompt(instruction, imageWidth, imageHeight);
 
       // Step 3: Call vision model API
       const response = await this.callVisionAPI(
-        compressedImage.base64,
+        compressedBase64,
         prompt,
         'image/jpeg'
       );
 
-      // Step 4: Parse bbox from response (coordinates are based on compressed image)
+      // Step 4: Parse bbox from response
       const { target, bbox_2d } = this.parseBBox(response);
       log.debug(
-        `AI Vision: Parsed target: "${target}", bbox (compressed): [${bbox_2d.join(', ')}]`
+        `AI Vision: Parsed target: "${target}", bbox: [${bbox_2d.join(', ')}]`
       );
 
-      // Step 5: Scale coordinates from compressed image to original image
-      const scaledBBox = this.scaleCoordinates(
-        bbox_2d,
-        compressedImage.width,
-        compressedImage.height,
-        imageWidth,
-        imageHeight
-      );
-
-      // Step 6: Convert coordinates (normalized or absolute)
+      // Step 5: Convert coordinates (normalized or absolute)
       const absoluteBBox = this.convertCoordinates(
-        scaledBBox,
+        bbox_2d,
         imageWidth,
         imageHeight
       );
 
-      // Step 7: Calculate center point for tapping
+      // Step 6: Calculate center point for tapping
       const center = {
         x: Math.floor((absoluteBBox[0] + absoluteBBox[2]) / 2),
         y: Math.floor((absoluteBBox[1] + absoluteBBox[3]) / 2),
@@ -141,7 +128,27 @@ export class AIVisionFinder {
         `AI Vision: Final center coordinates: (${center.x}, ${center.y})`
       );
 
-      const result: AIFindResult = { bbox: absoluteBBox, center, target };
+      // Step 7: Draw bbox on image and save (with error handling)
+      let annotatedImagePath: string | undefined;
+      try {
+        annotatedImagePath = await this.drawBBoxOnImage(
+          screenshotBase64,
+          absoluteBBox,
+          imageWidth,
+          imageHeight,
+          target
+        );
+      } catch (error) {
+        // Annotation failure should not block the main flow
+        log.warn('AI Vision: Failed to create annotated image:', error);
+      }
+
+      const result: AIFindResult = {
+        bbox: absoluteBBox,
+        center,
+        target,
+        annotatedImagePath,
+      };
 
       // Cache the result
       this.saveToCache(cacheKey, result);
@@ -156,13 +163,12 @@ export class AIVisionFinder {
   /**
    * Compress image using @appium/support sharp utilities
    * Reduces API latency and token consumption
-   * Returns compressed image with actual dimensions
    */
   private async compressImage(
     base64Image: string,
     width: number,
     height: number
-  ): Promise<CompressedImage> {
+  ): Promise<string> {
     try {
       const imageBuffer = Buffer.from(base64Image, 'base64');
 
@@ -170,18 +176,17 @@ export class AIVisionFinder {
       const sharp = imageUtil.requireSharp();
       let sharpInstance = sharp(imageBuffer);
 
-      let finalWidth = width;
-      let finalHeight = height;
-
       // Resize if image is too large
       if (width > this.config.imageMaxWidth) {
         const scaleFactor = this.config.imageMaxWidth / width;
-        finalWidth = this.config.imageMaxWidth;
-        finalHeight = Math.floor(height * scaleFactor);
+        const newHeight = Math.floor(height * scaleFactor);
         log.info(
-          `AI Vision: Resizing image from ${width}x${height} to ${finalWidth}x${finalHeight}`
+          `AI Vision: Resizing image from ${width}x${height} to ${this.config.imageMaxWidth}x${newHeight}`
         );
-        sharpInstance = sharpInstance.resize(finalWidth, finalHeight);
+        sharpInstance = sharpInstance.resize(
+          this.config.imageMaxWidth,
+          newHeight
+        );
       }
 
       // Compress to JPEG with quality setting
@@ -196,19 +201,11 @@ export class AIVisionFinder {
         `AI Vision: Image compressed: ${originalSize} → ${compressedSize} bytes (${reduction}% reduction)`
       );
 
-      return {
-        base64: compressedBuffer.toString('base64'),
-        width: finalWidth,
-        height: finalHeight,
-      };
+      return compressedBuffer.toString('base64');
     } catch (error) {
-      // If compression fails, return original image with original dimensions
+      // If compression fails, return original image
       log.warn('AI Vision: Image compression failed, using original:', error);
-      return {
-        base64: base64Image,
-        width,
-        height,
-      };
+      return base64Image;
     }
   }
 
@@ -358,43 +355,6 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
   }
 
   /**
-   * Scale coordinates from compressed image to original image
-   */
-  private scaleCoordinates(
-    bbox: [number, number, number, number],
-    compressedWidth: number,
-    compressedHeight: number,
-    originalWidth: number,
-    originalHeight: number
-  ): [number, number, number, number] {
-    // If no scaling occurred, return original bbox
-    if (
-      compressedWidth === originalWidth &&
-      compressedHeight === originalHeight
-    ) {
-      return bbox;
-    }
-
-    const scaleX = originalWidth / compressedWidth;
-    const scaleY = originalHeight / compressedHeight;
-
-    const [x1, y1, x2, y2] = bbox;
-
-    const scaledBBox: [number, number, number, number] = [
-      Math.floor(x1 * scaleX),
-      Math.floor(y1 * scaleY),
-      Math.floor(x2 * scaleX),
-      Math.floor(y2 * scaleY),
-    ];
-
-    log.debug(
-      `AI Vision: Scaled coordinates from ${compressedWidth}x${compressedHeight} to ${originalWidth}x${originalHeight}: [${bbox.join(', ')}] → [${scaledBBox.join(', ')}]`
-    );
-
-    return scaledBBox;
-  }
-
-  /**
    * Convert coordinates based on model's coordinate type
    * Matches benchmark_model.ts coordinate conversion logic
    */
@@ -447,6 +407,80 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
     }
 
     return [x1, y1, x2, y2];
+  }
+
+  /**
+   * Draw bounding box on image and save to file
+   * Based on benchmark_model.ts drawBBoxOnImage implementation
+   * @param screenshotBase64 - Base64 encoded screenshot
+   * @param bbox - Bounding box coordinates [x1, y1, x2, y2]
+   * @param imageWidth - Image width
+   * @param imageHeight - Image height
+   * @param targetName - Target element name for label
+   * @returns Absolute path to the annotated image file
+   */
+  private async drawBBoxOnImage(
+    screenshotBase64: string,
+    bbox: [number, number, number, number],
+    imageWidth: number,
+    imageHeight: number,
+    targetName: string
+  ): Promise<string> {
+    try {
+      const [x1, y1, x2, y2] = bbox;
+      const boxWidth = x2 - x1;
+      const boxHeight = y2 - y1;
+
+      // Convert base64 to buffer
+      const imageBuffer = Buffer.from(screenshotBase64, 'base64');
+
+      // Create SVG red box (3px width) with target name label
+      const svg = `
+      <svg width="${imageWidth}" height="${imageHeight}">
+        <rect x="${x1}" y="${y1}" width="${boxWidth}" height="${boxHeight}"
+              fill="none" stroke="red" stroke-width="3"/>
+        <text x="${x1 + 5}" y="${y1 - 8}" font-family="Arial" font-size="14"
+              fill="red" font-weight="bold">${targetName}</text>
+      </svg>
+    `;
+
+      // Use sharp to overlay SVG on original image
+      const sharp = imageUtil.requireSharp();
+      const annotatedBuffer = await sharp(imageBuffer)
+        .composite([
+          {
+            input: Buffer.from(svg),
+            top: 0,
+            left: 0,
+          },
+        ])
+        .png()
+        .toBuffer();
+
+      // Determine save directory (prioritize SCREENSHOTS_DIR env var, fallback to os.tmpdir())
+      const screenshotDir = process.env.SCREENSHOTS_DIR || os.tmpdir();
+
+      // Create directory if it doesn't exist
+      await mkdir(screenshotDir, { recursive: true });
+
+      // Generate filename with timestamp
+      const timestamp = Date.now();
+      const filename = `ai_vision_annotated_${timestamp}.png`;
+      const filepath = join(screenshotDir, filename);
+
+      // Save annotated image to file
+      await writeFile(filepath, annotatedBuffer);
+
+      log.info(`AI Vision: Annotated image saved to: ${filepath}`);
+      log.debug(
+        `AI Vision: BBox drawn: [${x1}, ${y1}, ${x2}, ${y2}] (${boxWidth}x${boxHeight})`
+      );
+
+      return filepath;
+    } catch (error) {
+      log.error('AI Vision: Failed to draw bbox on image:', error);
+      throw error;
+    }
   }
 
   /**

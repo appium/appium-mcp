@@ -128,11 +128,18 @@ export default function findElement(server: FastMCP): void {
         // Format: "ai-element:{x},{y}:{bbox}"
         const elementUUID = `ai-element:${result.center.x},${result.center.y}:${result.bbox.join(',')}`;
 
+        // Step 5: Build response text with optional annotated image path
+        let responseText = `Successfully found "${result.target}" at coordinates (${result.center.x}, ${result.center.y}) using AI vision. Element id ${elementUUID}`;
+
+        if (result.annotatedImagePath) {
+          responseText += `; vision image: ${result.annotatedImagePath}`;
+        }
+
         return {
           content: [
             {
               type: 'text',
-              text: `Successfully found "${result.target}" at coordinates (${result.center.x}, ${result.center.y}) using AI vision. Element id ${elementUUID}`,
+              text: responseText,
             },
           ],
         };

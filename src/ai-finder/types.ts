@@ -15,15 +15,6 @@ export interface AIVisionConfig {
 }
 
 /**
- * Compressed image result interface
- */
-export interface CompressedImage {
-  base64: string;
-  width: number;
-  height: number;
-}
-
-/**
  * Bounding box coordinates interface
  * Matches the format returned by vision models
  */
@@ -39,6 +30,7 @@ export interface AIFindResult {
   bbox: [number, number, number, number];
   center: { x: number; y: number };
   target: string;
+  annotatedImagePath?: string;
 }
 
 /**
