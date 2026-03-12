@@ -247,13 +247,20 @@ The safest rollout is to classify tools by whether their inputs are portable acr
 - type or set value by locator
 - scroll by direction
 
-### Poor candidates for direct broadcast without redesign
+### Poor candidates for naive broadcast with shared raw arguments
 
 - click by existing element UUID
 - get text from an existing element UUID
 - actions that depend on a previously returned session-local element handle
 
-For these, introduce broadcast-specific variants that resolve the target independently on each session.
+These are not unsafe at the Appium layer. They are safe to run in parallel if each driver receives the correct session-scoped inputs.
+
+The MCP-server problem appears when one shared raw argument payload is fanned out to many sessions even though the payload is session-local.
+
+For these operations, either:
+
+- introduce broadcast-specific variants that resolve the target independently on each session, or
+- require explicit per-session inputs so each session receives its own element or handle values.
 
 ## Recommended response style for AI agents
 
