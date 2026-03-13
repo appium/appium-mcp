@@ -24,6 +24,11 @@ import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
 import openNotifications from './session/open-notifications.js';
 import { lockDevice, unlockDevice } from './session/lock.js';
+import {
+  setGeolocation,
+  getGeolocation,
+  resetGeolocation,
+} from './session/geolocation.js';
 import bootSimulator from './ios/boot-simulator.js';
 import setupWDA from './ios/setup-wda.js';
 import installWDA from './ios/install-wda.js';
@@ -132,6 +137,9 @@ export default function registerTools(server: FastMCP): void {
   openNotifications(server);
   lockDevice(server);
   unlockDevice(server);
+  setGeolocation(server);
+  getGeolocation(server);
+  resetGeolocation(server);
 
   // iOS Setup
   bootSimulator(server);

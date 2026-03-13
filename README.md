@@ -280,6 +280,9 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `appium_get_page_source`   | Get the page source (XML) from the current screen       |
 | `appium_get_orientation`   | Get the current device/screen orientation (LANDSCAPE or PORTRAIT). |
 | `appium_set_orientation`   | Set the device/screen orientation to LANDSCAPE or PORTRAIT (rotate screen). |
+| `appium_set_geolocation`   | Set the GPS coordinates (latitude, longitude, altitude) of the device. |
+| `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
+| `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
 
 ### App Management
 
