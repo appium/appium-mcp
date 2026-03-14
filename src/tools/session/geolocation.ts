@@ -1,13 +1,6 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  getPlatformName,
-  PLATFORM,
-  isXCUITestDriverSession,
-  isAndroidUiautomator2DriverSession,
-} from '../../session-store.js';
-import type { DriverInstance } from '../../session-store.js';
+import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
 
 export function setGeolocation(server: FastMCP): void {
@@ -60,10 +53,10 @@ export function setGeolocation(server: FastMCP): void {
             longitude,
           });
         } else if (platform === PLATFORM.android) {
-          await setAndroidGeoLocation(driver, {
+          await execute(driver, 'mobile: setGeolocation', {
             latitude,
             longitude,
-            altitude,
+            ...(altitude !== undefined && { altitude }),
           });
         } else {
           throw new Error(
@@ -156,7 +149,7 @@ export function resetGeolocation(server: FastMCP): void {
   server.addTool({
     name: 'appium_reset_geolocation',
     description:
-      'Reset the geolocation to the default/system value. On iOS, resets the simulated location (important: simulated location persists until device restart if not reset). On Android, resets the mocked geolocation provider.',
+      'Reset the geolocation to the default/system value. On iOS, resets the simulated location. On Android real devices, resets the mocked geolocation provider (note: GPS cache behavior varies by device — the mocked location may persist until the cache refreshes). On Android emulators, reset is not supported — use appium_set_geolocation to manually set the desired coordinates instead.',
     parameters: resetGeolocationSchema,
     annotations: {
       readOnlyHint: false,
@@ -206,17 +199,4 @@ export function resetGeolocation(server: FastMCP): void {
       }
     },
   });
-}
-
-async function setAndroidGeoLocation(
-  driver: DriverInstance,
-  location: { latitude: number; longitude: number; altitude?: number }
-): Promise<void> {
-  if (isAndroidUiautomator2DriverSession(driver)) {
-    await driver.setGeoLocation(location);
-  } else if (isXCUITestDriverSession(driver)) {
-    await driver.setGeoLocation(location);
-  } else {
-    await (driver as any).setGeoLocation(location);
-  }
 }
