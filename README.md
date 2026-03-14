@@ -10,6 +10,7 @@ MCP Appium is an intelligent MCP (Model Context Protocol) server designed to emp
 - [Prerequisites](#-prerequisites)
 - [Installation](#️-installation)
 - [Configuration](#️-configuration)
+- [Parallel Sessions and Broadcast Mode](#-parallel-sessions-and-broadcast-mode)
 - [Available Tools](#-available-tools)
 - [Client Support](#-client-support)
 - [Usage Examples](#-usage-examples)
@@ -226,6 +227,19 @@ The following tools return lightweight text-only responses when NO_UI is enabled
 - ✅ Scripted automation where human interaction is not needed
 - ❌ Interactive debugging and exploration (keep UI enabled for better experience)
 
+## Parallel Sessions and Broadcast Mode
+
+Appium drivers already support multiple concurrent sessions when each session uses its own device identity and any required unique host resources.
+
+For this MCP server, that capability should be treated as the foundation for a higher-level broadcast mode where an AI agent intentionally applies the same action to a selected group of sessions.
+
+- Use normal Appium sessions for each device.
+- Keep one active session as the default for existing single-device tools.
+- Add explicit session-group or broadcast targeting on top rather than changing the meaning of the active session.
+- Do not reuse session-local element IDs across sessions. Broadcast actions should operate on intent-level inputs such as locators, app IDs, deep links, orientation, screenshots, and text.
+
+See [docs/AI_BROADCAST_MODE.md](docs/AI_BROADCAST_MODE.md) for the detailed design guidance for AI agents and contributors.
+
 ## 🎯 Available Tools
 
 MCP Appium provides a comprehensive set of tools organized into the following categories:
@@ -242,10 +256,16 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 ### Session Management
 
-| Tool             | Description                                                                                                 |
-| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| Tool | Description |
+| ---- | ----------- |
 | `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
-| `delete_session` | Delete the current mobile session and clean up resources                                                    |
+| `list_sessions` | List all active sessions managed by this MCP server. |
+| `select_session` | Select the active session for default single-session tool calls. |
+| `delete_session` | Delete the current mobile session and clean up resources. |
+| `create_session_group` | Create or replace a named group of session IDs for broadcast-style operations. |
+| `list_session_groups` | List all saved session groups. |
+| `select_session_group` | Select the active session group for broadcast-oriented workflows. |
+| `delete_session_group` | Delete a saved session group. |
 
 ### Context Management
 
@@ -286,14 +306,15 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 ### App Management
 
-| Tool                  | Description                                                        |
-| --------------------- | ------------------------------------------------------------------ |
-| `appium_activate_app` | Activate (launch/bring to foreground) a specified app by bundle ID |
-| `appium_installApp`   | Install an app on the device from a file path                      |
-| `appium_uninstallApp` | Uninstall an app from the device by bundle ID                      |
-| `appium_terminateApp` | Terminate (close) a specified app                                  |
-| `appium_list_apps`    | List all installed apps on the device (Android and iOS)             |
+| Tool | Description |
+| ---- | ----------- |
+| `appium_activate_app` | Activate a specified app by bundle ID or package ID. Supports targeting the active session, one session, a session group, or all sessions. |
+| `appium_installApp` | Install an app on the device from a file path. |
+| `appium_uninstallApp` | Uninstall an app from the device by bundle ID. |
+| `appium_terminateApp` | Terminate a specified app. |
+| `appium_list_apps` | List all installed apps on the device (Android and iOS). |
 | `appium_is_app_installed` | Check whether an app is installed. Package name for Android, bundle ID for iOS. |
+| `appium_deep_link` | Open a deep link URL on the active session, one session, a session group, or all sessions. |
 
 ### Test Generation & Documentation
 
