@@ -59,6 +59,7 @@
     "langchain": "^1.1.6",
     "lodash": "^4.17.21",
     "node-simctl": "^8.0.4",
+    "playwright": "^1.58.2",
     "rimraf": "^6.0.1",
     "webdriver": "^9.23.0",
     "xpath": "^0.0.34",

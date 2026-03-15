@@ -1,13 +1,15 @@
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
 import type { Client } from 'webdriver';
+import { PlaywrightDriver } from './playwright-adapter.js';
 import log from './logger.js';
 
 // Type aliases for driver variants used throughout the project.
 export type DriverInstance =
   | Client
   | AndroidUiautomator2Driver
-  | XCUITestDriver;
+  | XCUITestDriver
+  | PlaywrightDriver;
 export type NullableDriverInstance = DriverInstance | null;
 export type SessionCapabilities = Record<string, any>;
 
@@ -38,6 +40,7 @@ let activeSessionId: string | null = null;
 export const PLATFORM = {
   android: 'Android',
   ios: 'iOS',
+  web: 'Web',
 };
 
 /**
@@ -49,11 +52,18 @@ export const PLATFORM = {
  * @param driver - The driver instance to inspect (may be a Client, AndroidUiautomator2Driver, XCUITestDriver, or null).
  * @returns `true` if `driver` is non-null and has a string `sessionId`; otherwise `false`.
  */
+export function isPlaywrightDriverSession(
+  driver: NullableDriverInstance
+): driver is PlaywrightDriver {
+  return driver instanceof PlaywrightDriver;
+}
+
 export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
   if (driver) {
     return (
       !(driver instanceof AndroidUiautomator2Driver) &&
-      !(driver instanceof XCUITestDriver)
+      !(driver instanceof XCUITestDriver) &&
+      !(driver instanceof PlaywrightDriver)
     );
   }
   return false;
@@ -287,6 +297,9 @@ export async function safeDeleteAllSessions(): Promise<number> {
 }
 
 export const getPlatformName = (driver: any): string => {
+  if (driver instanceof PlaywrightDriver) {
+    return PLATFORM.web;
+  }
   if (driver instanceof AndroidUiautomator2Driver) {
     return PLATFORM.android;
   }

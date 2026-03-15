@@ -195,23 +195,24 @@ async function handleIOSPlatformSelection(
 export default function selectPlatform(server: any): void {
   server.addTool({
     name: 'select_platform',
-    description: `Select the mobile platform for LOCAL Appium servers ONLY.
+    description: `Select the platform for LOCAL servers ONLY.
       DO NOT use this tool if the user mentions a REMOTE Appium server URL (e.g., http://localhost:4723, http://192.168.1.100:4723, or any other server address).
       WORKFLOW FOR LOCAL SERVERS:
-      1. First, ASK THE USER which mobile platform they want to use (Android or iOS)
-      2. You MUST explicitly prompt the user to choose between Android or iOS
+      1. First, ASK THE USER which platform they want to use (Android, iOS, or Web)
+      2. You MUST explicitly prompt the user to choose between Android, iOS, or Web
       3. DO NOT assume or default to any platform
-      4. After platform selection, available devices will be listed
+      4. For Android/iOS: After platform selection, available devices will be listed
       5. If multiple devices are available, use select_device to let the user choose
       6. After device selection, proceed to create_session
+      7. For Web: No device selection needed, proceed directly to create_session
       WORKFLOW FOR REMOTE SERVERS:
       If user provides a remote server URL, SKIP this tool entirely. Instead, infer the platform and device type from the user's request (e.g., 'ios xcuitest driver with iphone 17 simulator' means platform='ios') and call create_session directly with the remoteServerUrl parameter.
       `,
     parameters: z.object({
       platform: z
-        .enum(['ios', 'android'])
+        .enum(['ios', 'android', 'web'])
         .describe(
-          "REQUIRED: The platform chosen by the user - 'android' for Android devices/emulators or 'ios' for iOS devices/simulators. This must be based on the user's explicit choice, NOT a default assumption."
+          "REQUIRED: The platform chosen by the user - 'android' for Android devices/emulators, 'ios' for iOS devices/simulators, or 'web' for browser automation with Playwright. This must be based on the user's explicit choice, NOT a default assumption."
         ),
       iosDeviceType: z
         .enum(['simulator', 'real'])
@@ -234,9 +235,19 @@ export default function selectPlatform(server: any): void {
         } else if (platform === 'ios') {
           log.info('Platform selected: IOS');
           return await handleIOSPlatformSelection(iosDeviceType);
+        } else if (platform === 'web') {
+          log.info('Platform selected: WEB (Playwright)');
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Web (Playwright) platform selected.\n\nYou can now create a browser session using the create_session tool with platform='web'.\n\nSupported browsers: chromium, firefox, webkit\nDefault: chromium (headless)\n\nReady to create a session? Use the create_session tool with platform='web' and optionally specify browser and headless options.`,
+              },
+            ],
+          };
         } else {
           throw new Error(
-            `Invalid platform: ${platform}. Please choose 'android' or 'ios'.`
+            `Invalid platform: ${platform}. Please choose 'android', 'ios', or 'web'.`
           );
         }
       } catch (error: any) {

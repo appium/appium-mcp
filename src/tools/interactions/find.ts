@@ -13,6 +13,12 @@ export const findElementSchema = z.object({
     '-android uiautomator',
     '-ios predicate string',
     '-ios class chain',
+    'tag name',
+    'text',
+    'data-testid',
+    'test id',
+    'placeholder',
+    'role',
   ]),
   selector: z.string().describe('The selector to find the element'),
 });
@@ -21,7 +27,7 @@ export default function findElement(server: FastMCP): void {
   server.addTool({
     name: 'appium_find_element',
     description:
-      'Find a specific element by strategy and selector which will return a uuid that can be used for interactions. [PRIORITY 2: Use this to search for a target element by xpath, id, accessibility id, etc.]',
+      'Find a specific element by strategy and selector which will return a uuid that can be used for interactions. [PRIORITY 2: Use this to search for a target element by xpath, id, accessibility id, css selector, text, data-testid, etc.] Works with both Appium mobile sessions and Playwright web sessions.',
     parameters: findElementSchema,
     annotations: {
       readOnlyHint: true,
