@@ -42,6 +42,7 @@
   "dependencies": {
     "@appium/support": "^7.0.2",
     "@langchain/classic": "^1.0.10",
+    "@langchain/community": "^1.1.23",
     "@langchain/core": "^1.1.17",
     "@langchain/textsplitters": "^1.0.1",
     "@langfuse/otel": "^4.2.0",
