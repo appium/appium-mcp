@@ -44,8 +44,6 @@
     "@langchain/classic": "^1.0.10",
     "@langchain/core": "^1.1.17",
     "@langchain/textsplitters": "^1.0.1",
-    "@langfuse/otel": "^4.2.0",
-    "@langfuse/tracing": "^4.2.0",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@xenova/transformers": "^2.17.2",
     "@xmldom/xmldom": "^0.9.8",
