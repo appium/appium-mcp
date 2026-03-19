@@ -38,6 +38,7 @@ import scroll from './navigations/scroll.js';
 import scrollToElement from './navigations/scroll-to-element.js';
 import swipe from './navigations/swipe.js';
 import findElement from './interactions/find.js';
+import tap from './interactions/tap.js';
 import clickElement from './interactions/click.js';
 import doubleTap from './interactions/double-tap.js';
 import longPress from './interactions/long-press.js';
@@ -158,6 +159,7 @@ export default function registerTools(server: FastMCP): void {
   // 1. getActiveElement    - Get currently focused element (efficient, instant)
   // 2. findElement         - Find specific element by strategy/selector
   // 3. generateLocators    - Generate all locators (heavyweight, for debugging only)
+  tap(server);
   findElement(server);
   clickElement(server);
   doubleTap(server);
