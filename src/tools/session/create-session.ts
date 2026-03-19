@@ -205,6 +205,37 @@ export function getPortFromUrl(url: URL): number {
 }
 
 /**
+ * Validate the provided remote server URL.
+ *
+ * @param remoteServerUrl - The URL of the remote Appium server to validate.
+ * @param regexRule - Optional regular expression string to further validate the URL format.
+ * If the regexRule is provided, the URL must match the regex pattern to be considered valid.
+ * @throws {Error} If the URL is invalid.
+ */
+export function validateRemoteServerUrl(
+  remoteServerUrl: string,
+  regexRule?: string
+): void {
+  try {
+    if (regexRule) {
+      if (new RegExp(regexRule).test(remoteServerUrl)) {
+        return;
+      }
+    } else {
+      // default
+      if (/^https?:\/\/.+$/.test(remoteServerUrl)) {
+        return;
+      }
+    }
+    throw new Error();
+  } catch (_error) {
+    throw new Error(
+      `Invalid remoteServerUrl: ${remoteServerUrl}. Please provide a valid URL (e.g., http://localhost:4723).`
+    );
+  }
+}
+
+/**
  * Create the appropriate driver instance for the given platform
  */
 function createDriverForPlatform(platform: 'android' | 'ios'): any {
@@ -346,6 +377,11 @@ export default function createSession(server: any): void {
 
         let sessionId;
         if (remoteServerUrl) {
+          validateRemoteServerUrl(
+            remoteServerUrl,
+            process.env.REMOTE_SERVER_URL_ALLOW_REGEX
+          );
+
           const remoteUrl = new URL(remoteServerUrl);
           const protocol = remoteUrl.protocol.replace(':', '');
           const port = getPortFromUrl(remoteUrl);

@@ -32,8 +32,12 @@ await jest.unstable_mockModule('webdriver', () => ({
 }));
 
 const module = await import('../../../tools/session/create-session.js');
-const { buildAndroidCapabilities, buildIOSCapabilities, getPortFromUrl } =
-  module;
+const {
+  buildAndroidCapabilities,
+  buildIOSCapabilities,
+  getPortFromUrl,
+  validateRemoteServerUrl,
+} = module;
 
 describe('capability builders', () => {
   test('buildAndroidCapabilities includes udid for local server and removes empty values', () => {
@@ -102,4 +106,42 @@ describe('remote server URL port handling', () => {
     const url = new URL('https://example.com:8443/path');
     expect(getPortFromUrl(url)).toBe(8443);
   });
+});
+
+describe('validateRemoteServerUrl', () => {
+  test.each(['http://localhost:4723', 'https://example.com'])(
+    'should not throw for valid URL: %s',
+    (url) => {
+      expect(() => validateRemoteServerUrl(url)).not.toThrow();
+    }
+  );
+
+  test.each(['invalid-url', 'ftp://example.com'])(
+    'should throw for invalid URL: %s',
+    (url) => {
+      expect(() => validateRemoteServerUrl(url)).toThrow(
+        `Invalid remoteServerUrl: ${url}. Please provide a valid URL (e.g., http://localhost:4723).`
+      );
+    }
+  );
+
+  test.each(['ftp://localhost:4723', 'http://localhost:4723'])(
+    'should not throw for valid URL: %s with regex rule',
+    (url) => {
+      expect(() =>
+        validateRemoteServerUrl(url, '^.+//localhost:4723(/.*)?$')
+      ).not.toThrow();
+    }
+  );
+
+  test.each(['ftp://localhost:4723', 'http://localhost:5000'])(
+    'should throw for invalid URL: %s with regex rule',
+    (url) => {
+      expect(() =>
+        validateRemoteServerUrl(url, '^https?://localhost:4723(/.*)?$')
+      ).toThrow(
+        `Invalid remoteServerUrl: ${url}. Please provide a valid URL (e.g., http://localhost:4723).`
+      );
+    }
+  );
 });
