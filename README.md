@@ -284,6 +284,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
 | `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
+| `appium_get_battery_info` | Get the current battery level (as a percentage) and charging state of the device. Works on both iOS and Android. |
 
 ### App Management
 
