@@ -216,23 +216,13 @@ export function validateRemoteServerUrl(
   remoteServerUrl: string,
   regexRule?: string
 ): void {
-  try {
-    if (regexRule) {
-      if (new RegExp(regexRule).test(remoteServerUrl)) {
-        return;
-      }
-    } else {
-      // default
-      if (/^https?:\/\/.+$/.test(remoteServerUrl)) {
-        return;
-      }
-    }
-    throw new Error();
-  } catch (_error) {
-    throw new Error(
-      `Invalid remoteServerUrl: ${remoteServerUrl}. Please provide a valid URL (e.g., http://localhost:4723).`
-    );
+  const regexPattern = regexRule ? new RegExp(regexRule) : /^https?:\/\/.+$/;
+  if (regexPattern.test(remoteServerUrl)) {
+    return;
   }
+  throw new Error(
+    `Invalid remoteServerUrl: ${remoteServerUrl}. Please provide a valid URL (e.g., http://localhost:4723).`
+  );
 }
 
 /**
