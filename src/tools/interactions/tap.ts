@@ -1,7 +1,7 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
-import { execute, performActions } from '../../command.js';
+import { getDriver } from '../../session-store.js';
+import { performActions } from '../../command.js';
 
 export default function tap(server: FastMCP): void {
   const tapSchema = z.object({
@@ -10,9 +10,9 @@ export default function tap(server: FastMCP): void {
   });
 
   server.addTool({
-    name: 'appium_tap',
+    name: 'appium_tap_by_coordinates',
     description:
-      'Tap at specific screen coordinates (x, y). Use this when you need to tap a location on screen without finding an element first.',
+      'Tap at specific screen coordinates (x, y). Use this when no element UUID is available or when you need to tap an area with no associated element. For elements returned by appium_find_element, prefer appium_click instead. On iOS, coordinates are in points (logical pixels). On Android, coordinates are in device pixels. Use appium_get_page_source to inspect element bounds for accurate coordinates.',
     parameters: tapSchema,
     annotations: {
       readOnlyHint: false,
@@ -30,30 +30,20 @@ export default function tap(server: FastMCP): void {
       const { x, y } = args;
 
       try {
-        const platform = getPlatformName(driver);
-
-        if (platform === PLATFORM.ios) {
-          await execute(driver, 'mobile: tap', { x, y });
-        } else if (platform === PLATFORM.android) {
-          const operation = [
-            {
-              type: 'pointer',
-              id: 'finger1',
-              parameters: { pointerType: 'touch' },
-              actions: [
-                { type: 'pointerMove', duration: 0, x, y },
-                { type: 'pointerDown', button: 0 },
-                { type: 'pause', duration: 50 },
-                { type: 'pointerUp', button: 0 },
-              ],
-            },
-          ];
-          await performActions(driver, operation);
-        } else {
-          throw new Error(
-            `Unsupported platform: ${platform}. Only Android and iOS are supported.`
-          );
-        }
+        const operation = [
+          {
+            type: 'pointer',
+            id: 'finger1',
+            parameters: { pointerType: 'touch' },
+            actions: [
+              { type: 'pointerMove', duration: 0, x, y },
+              { type: 'pointerDown', button: 0 },
+              { type: 'pause', duration: 50 },
+              { type: 'pointerUp', button: 0 },
+            ],
+          },
+        ];
+        await performActions(driver, operation);
 
         return {
           content: [

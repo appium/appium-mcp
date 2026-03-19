@@ -259,6 +259,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | Tool                  | Description                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------- |
 | `appium_find_element` | Find a specific element using various locator strategies (xpath, id, accessibility id, etc.) |
+| `appium_tap_by_coordinates` | Tap at specific screen coordinates (x, y). On iOS, coordinates are in points. On Android, coordinates are in device pixels. Use `appium_get_page_source` for accurate coordinates. |
 | `appium_click`        | Click on an element                                                                          |
 | `appium_double_tap`   | Perform double tap on an element                                                             |
 | `appium_long_press`   | Perform a long press (press and hold) gesture on an element                                  |
