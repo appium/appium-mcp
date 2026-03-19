@@ -10,7 +10,7 @@ import axios, { AxiosError } from 'axios';
 import crypto from 'node:crypto';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { resolveScreenshotDir } from '../tools/interactions/screenshot.js';
+import { resolveScreenshotDir } from '../utils/paths.js';
 import { LRUCache } from 'lru-cache';
 import type {
   AIVisionConfig,
