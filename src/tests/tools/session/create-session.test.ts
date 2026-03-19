@@ -120,7 +120,7 @@ describe('validateRemoteServerUrl', () => {
     'should throw for invalid URL: %s',
     (url) => {
       expect(() => validateRemoteServerUrl(url)).toThrow(
-        `Invalid remoteServerUrl: ${url}. Please provide a valid URL (e.g., http://localhost:4723).`
+        `Invalid remoteServerUrl: ${url}.`
       );
     }
   );
@@ -139,9 +139,7 @@ describe('validateRemoteServerUrl', () => {
     (url) => {
       expect(() =>
         validateRemoteServerUrl(url, '^https?://localhost:4723(/.*)?$')
-      ).toThrow(
-        `Invalid remoteServerUrl: ${url}. Please provide a valid URL (e.g., http://localhost:4723).`
-      );
+      ).toThrow(`Invalid remoteServerUrl: ${url}.`);
     }
   );
 });

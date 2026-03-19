@@ -218,9 +218,7 @@ export function validateRemoteServerUrl(
 ): void {
   const regexPattern = regexRule ? new RegExp(regexRule) : /^https?:\/\/.+$/;
   if (!regexPattern.test(remoteServerUrl)) {
-    throw new Error(
-      `Invalid remoteServerUrl: ${remoteServerUrl}. Please provide a valid URL (e.g., http://localhost:4723).`
-    );
+    throw new Error(`Invalid remoteServerUrl: ${remoteServerUrl}.`);
   }
 }
 
