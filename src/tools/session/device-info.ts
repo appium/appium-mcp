@@ -5,7 +5,7 @@ import { execute } from '../../command.js';
 
 export default function deviceInfo(server: FastMCP): void {
   server.addTool({
-    name: 'appium_get_device_info',
+    name: 'appium_mobile_get_device_info',
     description:
       'Get device information such as model, manufacturer, OS version, screen density, locale, and more. Works on both iOS and Android.',
     parameters: z.object({}),
