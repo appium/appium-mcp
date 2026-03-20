@@ -1,3 +1,16 @@
+## [1.30.0](https://github.com/appium/appium-mcp/compare/v1.29.0...v1.30.0) (2026-03-20)
+
+### Features
+
+* **ai-finder:** add natural language element finding using vision models ([#200](https://github.com/appium/appium-mcp/issues/200)) ([2b43267](https://github.com/appium/appium-mcp/commit/2b43267b63c936c2e982d36b8e8fed658bd9a51c))
+
+## [1.29.0](https://github.com/appium/appium-mcp/compare/v1.28.0...v1.29.0) (2026-03-20)
+
+### Features
+
+* add `appium_tap_by_coordinates` tool ([#218](https://github.com/appium/appium-mcp/issues/218)) ([11693d3](https://github.com/appium/appium-mcp/commit/11693d3cb81bba25439b3113618981b690470e18))
+* allows users to restrict remoteServerUrl with REMOTE_SERVER_URL_ALLOW_REGEX ([#216](https://github.com/appium/appium-mcp/issues/216)) ([90eee3e](https://github.com/appium/appium-mcp/commit/90eee3e62ea8dea33521e65754e8804e135ed4da))
+
 ## [1.28.0](https://github.com/appium/appium-mcp/compare/v1.27.1...v1.28.0) (2026-03-19)
 
 ### Features

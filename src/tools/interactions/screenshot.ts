@@ -3,8 +3,7 @@ import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { NullableDriverInstance } from '../../session-store.js';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { join, isAbsolute } from 'node:path';
-import * as os from 'node:os';
+import { join } from 'node:path';
 import {
   createUIResource,
   createScreenshotViewerUI,
@@ -13,26 +12,9 @@ import {
 import { getScreenshot } from '../../command.js';
 import z from 'zod';
 import { imageUtil } from '@appium/support';
+import { resolveScreenshotDir } from '../../utils/paths.js';
 
-/**
- * Resolves the screenshot directory path.
- * - If SCREENSHOTS_DIR is not set, returns process.cwd()
- * - If SCREENSHOTS_DIR is absolute, returns it as-is
- * - If SCREENSHOTS_DIR is relative, joins it with process.cwd()
- */
-export function resolveScreenshotDir(): string {
-  const screenshotDir = process.env.SCREENSHOTS_DIR;
-
-  if (!screenshotDir) {
-    return os.tmpdir();
-  }
-
-  if (isAbsolute(screenshotDir)) {
-    return screenshotDir;
-  }
-
-  return join(process.cwd(), screenshotDir);
-}
+export { resolveScreenshotDir };
 
 export interface ScreenshotDeps {
   getDriver: () => NullableDriverInstance;

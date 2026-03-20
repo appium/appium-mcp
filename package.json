@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.28.0",
+  "version": "1.30.0",
   "type": "module",
   "repository": {
     "type": "git",
@@ -24,6 +24,8 @@
     "start:httpStream:port": "node dist/index.js --httpStream --port=",
     "dev": "npx fastmcp dev src/index.js",
     "inspect": "npx fastmcp inspect src/index.js",
+    "dev:built": "node dist/index.js",
+    "inspect:built": "npx @modelcontextprotocol/inspector node dist/index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:locators": "NODE_OPTIONS=--experimental-vm-modules jest src/tests/generate-all-locators.test.ts",
     "lint": "eslint src --ext .ts",
