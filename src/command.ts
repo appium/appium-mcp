@@ -341,7 +341,10 @@ export async function getClipboard(driver: DriverInstance): Promise<string> {
     }
     return Buffer.from(base64Content, 'base64').toString('utf-8');
   }
-  const result = await (driver as Client).executeScript('mobile: getClipboard', [{}]);
+  const result = await (driver as Client).executeScript(
+    'mobile: getClipboard',
+    [{}]
+  );
   const base64Content = String(result ?? '');
   if (!base64Content) {
     return '';
