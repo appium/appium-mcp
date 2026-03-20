@@ -17,11 +17,19 @@ import log from '../logger.js';
 import answerAppium from './documentation/answer-appium.js';
 import createSession from './session/create-session.js';
 import deleteSession from './session/delete-session.js';
+import listSessions from './session/list-sessions.js';
+import selectSession from './session/select-session.js';
 import generateLocators from './test-generation/locators.js';
 import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
 import openNotifications from './session/open-notifications.js';
 import { lockDevice, unlockDevice } from './session/lock.js';
+import {
+  setGeolocation,
+  getGeolocation,
+  resetGeolocation,
+} from './session/geolocation.js';
+import deviceInfo from './session/device-info.js';
 import bootSimulator from './ios/boot-simulator.js';
 import setupWDA from './ios/setup-wda.js';
 import installWDA from './ios/install-wda.js';
@@ -30,10 +38,12 @@ import scroll from './navigations/scroll.js';
 import scrollToElement from './navigations/scroll-to-element.js';
 import swipe from './navigations/swipe.js';
 import findElement from './interactions/find.js';
+import tap from './interactions/tap.js';
 import clickElement from './interactions/click.js';
 import doubleTap from './interactions/double-tap.js';
 import longPress from './interactions/long-press.js';
 import dragAndDrop from './interactions/drag-and-drop.js';
+import pinch from './interactions/pinch.js';
 import pressKey from './interactions/press-key.js';
 import setValue from './interactions/set-value.js';
 import getText from './interactions/get-text.js';
@@ -123,10 +133,16 @@ export default function registerTools(server: FastMCP): void {
   selectPlatform(server);
   selectDevice(server);
   createSession(server);
+  listSessions(server);
+  selectSession(server);
   deleteSession(server);
   openNotifications(server);
   lockDevice(server);
   unlockDevice(server);
+  setGeolocation(server);
+  getGeolocation(server);
+  resetGeolocation(server);
+  deviceInfo(server);
 
   // iOS Setup
   bootSimulator(server);
@@ -143,11 +159,13 @@ export default function registerTools(server: FastMCP): void {
   // 1. getActiveElement    - Get currently focused element (efficient, instant)
   // 2. findElement         - Find specific element by strategy/selector
   // 3. generateLocators    - Generate all locators (heavyweight, for debugging only)
+  tap(server);
   findElement(server);
   clickElement(server);
   doubleTap(server);
   longPress(server);
   dragAndDrop(server);
+  pinch(server);
   pressKey(server);
   setValue(server);
   getText(server);

@@ -1,3 +1,40 @@
+## [1.29.0](https://github.com/appium/appium-mcp/compare/v1.28.0...v1.29.0) (2026-03-20)
+
+### Features
+
+* add `appium_tap_by_coordinates` tool ([#218](https://github.com/appium/appium-mcp/issues/218)) ([11693d3](https://github.com/appium/appium-mcp/commit/11693d3cb81bba25439b3113618981b690470e18))
+* allows users to restrict remoteServerUrl with REMOTE_SERVER_URL_ALLOW_REGEX ([#216](https://github.com/appium/appium-mcp/issues/216)) ([90eee3e](https://github.com/appium/appium-mcp/commit/90eee3e62ea8dea33521e65754e8804e135ed4da))
+
+## [1.28.0](https://github.com/appium/appium-mcp/compare/v1.27.1...v1.28.0) (2026-03-19)
+
+### Features
+
+* add `appium_mobile_get_device_info` tool ([#215](https://github.com/appium/appium-mcp/issues/215)) ([1f42d0b](https://github.com/appium/appium-mcp/commit/1f42d0bf18bb53e4a4d4dad85376258a5026f693))
+
+## [1.27.1](https://github.com/appium/appium-mcp/compare/v1.27.0...v1.27.1) (2026-03-17)
+
+### Miscellaneous Chores
+
+* remove unused deps ([#214](https://github.com/appium/appium-mcp/issues/214)) ([a9215b9](https://github.com/appium/appium-mcp/commit/a9215b90d6e511e2c3a7ad8be646482b1012b8e1))
+
+## [1.27.0](https://github.com/appium/appium-mcp/compare/v1.26.0...v1.27.0) (2026-03-14)
+
+### Features
+
+* add geolocation tools (set, get, reset) ([#206](https://github.com/appium/appium-mcp/issues/206)) ([78bcca7](https://github.com/appium/appium-mcp/commit/78bcca78f2eb6ede8c667e82a2b23a898960f32b))
+
+## [1.26.0](https://github.com/appium/appium-mcp/compare/v1.25.0...v1.26.0) (2026-03-11)
+
+### Features
+
+* handle multiple sessions ([#195](https://github.com/appium/appium-mcp/issues/195)) ([2b967dc](https://github.com/appium/appium-mcp/commit/2b967dc199c1540784e367a63a1540cb0224d57c))
+
+## [1.25.0](https://github.com/appium/appium-mcp/compare/v1.24.2...v1.25.0) (2026-03-11)
+
+### Features
+
+* add `appium_pinch` gesture tool for iOS and Android ([#203](https://github.com/appium/appium-mcp/issues/203)) ([ee0896e](https://github.com/appium/appium-mcp/commit/ee0896eb0d9a5dac6002c59683bee1aeee9d2b82))
+
 ## [1.24.2](https://github.com/appium/appium-mcp/compare/v1.24.1...v1.24.2) (2026-03-10)
 
 ### Bug Fixes

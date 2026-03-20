@@ -7,11 +7,7 @@ import { constants } from 'node:fs';
 import { URL } from 'node:url';
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
-import {
-  setSession,
-  hasActiveSession,
-  safeDeleteSession,
-} from '../../session-store.js';
+import { setSession, listSessions } from '../../session-store.js';
 import {
   getSelectedDevice,
   getSelectedDeviceType,
@@ -96,6 +92,7 @@ export function buildAndroidCapabilities(
     'appium:settings[actionAcknowledgmentTimeout]': 0,
     'appium:settings[waitForIdleTimeout]': 0,
     'appium:settings[waitForSelectorTimeout]': 0,
+    'appium:autoGrantPermissions': true,
     'appium:newCommandTimeout': 300,
   };
 
@@ -208,14 +205,36 @@ export function getPortFromUrl(url: URL): number {
 }
 
 /**
+ * Validate the provided remote server URL.
+ *
+ * @param remoteServerUrl - The URL of the remote Appium server to validate.
+ * @param regexRule - Optional regular expression string to further validate the URL format.
+ * If the regexRule is provided, the URL must match the regex pattern to be considered valid.
+ * @throws {Error} If the URL is invalid.
+ */
+export function validateRemoteServerUrl(
+  remoteServerUrl: string,
+  regexRule?: string
+): void {
+  const regexPattern = regexRule ? new RegExp(regexRule) : /^https?:\/\/.+$/;
+  if (!regexPattern.test(remoteServerUrl)) {
+    throw new Error(`Invalid remoteServerUrl: ${remoteServerUrl}.`);
+  }
+}
+
+/**
  * Create the appropriate driver instance for the given platform
  */
 function createDriverForPlatform(platform: 'android' | 'ios'): any {
   if (platform === 'android') {
-    return new AndroidUiautomator2Driver();
+    const driver = new AndroidUiautomator2Driver({} as any);
+    driver.relaxedSecurityEnabled = true;
+    return driver;
   }
   if (platform === 'ios') {
-    return new XCUITestDriver({} as any);
+    const driver = new XCUITestDriver({} as any);
+    driver.relaxedSecurityEnabled = true;
+    return driver;
   }
   throw new Error(
     `Unsupported platform: ${platform}. Please choose 'android' or 'ios'.`
@@ -311,17 +330,6 @@ export default function createSession(server: any): void {
     },
     execute: async (args: any, _context: any): Promise<any> => {
       try {
-        if (hasActiveSession()) {
-          log.info(
-            'Existing session detected, cleaning up before creating new session...'
-          );
-          try {
-            await safeDeleteSession();
-          } catch {
-            // ok to ignore
-          }
-        }
-
         const {
           platform,
           capabilities: customCapabilities,
@@ -356,6 +364,11 @@ export default function createSession(server: any): void {
 
         let sessionId;
         if (remoteServerUrl) {
+          validateRemoteServerUrl(
+            remoteServerUrl,
+            process.env.REMOTE_SERVER_URL_ALLOW_REGEX
+          );
+
           const remoteUrl = new URL(remoteServerUrl);
           const protocol = remoteUrl.protocol.replace(':', '');
           const port = getPortFromUrl(remoteUrl);
@@ -377,11 +390,12 @@ export default function createSession(server: any): void {
             capabilities: finalCapabilities,
           });
           sessionId = client.sessionId;
-          setSession(client, client.sessionId);
+          setSession(client, client.sessionId, finalCapabilities);
         } else {
           const driver = createDriverForPlatform(platform);
+          log.info(`Sending session with ${driver.constructor.name}`);
           sessionId = await createDriverSession(driver, finalCapabilities);
-          setSession(driver, sessionId);
+          setSession(driver, sessionId, finalCapabilities);
         }
 
         // Safely convert sessionId to string for display
@@ -394,11 +408,13 @@ export default function createSession(server: any): void {
           `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}`
         );
 
+        const totalSessions = listSessions().length;
+
         const textResponse = {
           content: [
             {
               type: 'text',
-              text: `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}`,
+              text: `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`,
             },
           ],
         };

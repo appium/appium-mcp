@@ -297,6 +297,11 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
 | `delete_session` | Delete the current mobile session and clean up resources                                                    |
 
+The remote server URL in `create_session` can be set via the `remoteServerUrl` parameter.
+If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
+This allows you to restrict which remote servers can be used with your MCP Appium instance, preventing unauthorized connections.
+The default regex pattern allows any URL that starts with `http://` or `https://`.
+
 ### Context Management
 
 | Tool                  | Description                                                                                                                              |
@@ -309,10 +314,12 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | Tool                  | Description                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------- |
 | `appium_find_element` | Find a specific element using traditional locator strategies (xpath, id, accessibility id, etc.) **OR** AI-powered natural language descriptions (e.g., "yellow search button at bottom"). Supports both traditional and AI modes. |
+| `appium_tap_by_coordinates` | Tap at specific screen coordinates (x, y). On iOS, coordinates are in points. On Android, coordinates are in device pixels. Use `appium_get_page_source` for accurate coordinates. |
 | `appium_click`        | Click on an element                                                                          |
 | `appium_double_tap`   | Perform double tap on an element                                                             |
 | `appium_long_press`   | Perform a long press (press and hold) gesture on an element                                  |
 | `appium_drag_and_drop` | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates) |
+| `appium_pinch`        | Perform a pinch gesture to zoom in (scale > 1) or zoom out (scale < 1) on an element or the whole screen. Works on both iOS and Android. |
 | `appium_set_value`    | Enter text into an input field                                                               |
 | `appium_get_text`     | Get text content from an element                                                             |
 | `appium_handle_alert` | Accept or dismiss system/permission alerts, or click a dialog button by label |
@@ -329,6 +336,10 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `appium_get_page_source`   | Get the page source (XML) from the current screen       |
 | `appium_get_orientation`   | Get the current device/screen orientation (LANDSCAPE or PORTRAIT). |
 | `appium_set_orientation`   | Set the device/screen orientation to LANDSCAPE or PORTRAIT (rotate screen). |
+| `appium_set_geolocation`   | Set the GPS coordinates (latitude, longitude, altitude) of the device. |
+| `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
+| `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
+| `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
 
 ### App Management
 

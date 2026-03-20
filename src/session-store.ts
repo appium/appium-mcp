@@ -3,16 +3,37 @@ import { XCUITestDriver } from 'appium-xcuitest-driver';
 import type { Client } from 'webdriver';
 import log from './logger.js';
 
-let driver: any = null;
-let sessionId: string | null = null;
-let isDeletingSession = false; // Lock to prevent concurrent deletion
-
 // Type aliases for driver variants used throughout the project.
 export type DriverInstance =
   | Client
   | AndroidUiautomator2Driver
   | XCUITestDriver;
 export type NullableDriverInstance = DriverInstance | null;
+export type SessionCapabilities = Record<string, any>;
+
+interface SessionMetadata {
+  platform: string | null;
+  automationName: string | null;
+  deviceName: string | null;
+  capabilities: SessionCapabilities;
+}
+
+interface SessionInfo {
+  driver: DriverInstance;
+  sessionId: string;
+  currentContext: string | null;
+  isDeletingSession: boolean;
+  metadata: SessionMetadata;
+}
+
+/**
+ * In-memory store for active Appium sessions and their associated drivers.
+ */
+const sessions = new Map<string, SessionInfo>();
+/**
+ * The ID of the currently active session, or `null` if no session is active.
+ */
+let activeSessionId: string | null = null;
 
 export const PLATFORM = {
   android: 'Android',
@@ -73,64 +94,196 @@ export function isXCUITestDriverSession(
   return driver instanceof XCUITestDriver;
 }
 
-export function setSession(d: DriverInstance, id: string | null) {
-  driver = d;
-  sessionId = id;
-  // Reset deletion flag when setting a new session
-  if (d && id) {
-    isDeletingSession = false;
+export function setSession(
+  d: DriverInstance,
+  id: string | null,
+  capabilities: SessionCapabilities = {}
+) {
+  if (!id) {
+    activeSessionId = null;
+    return;
   }
+
+  const metadata: SessionMetadata = {
+    platform:
+      (capabilities.platformName as string | undefined) ??
+      (capabilities['appium:platformName'] as string | undefined) ??
+      null,
+    automationName:
+      (capabilities['appium:automationName'] as string | undefined) ?? null,
+    deviceName:
+      (capabilities['appium:deviceName'] as string | undefined) ??
+      (capabilities.deviceName as string | undefined) ??
+      null,
+    capabilities,
+  };
+
+  sessions.set(id, {
+    driver: d,
+    sessionId: id,
+    currentContext: 'NATIVE_APP',
+    isDeletingSession: false,
+    metadata,
+  });
+  activeSessionId = id;
 }
 
-export function getDriver(): NullableDriverInstance {
-  return driver;
+export function getDriver(sessionId?: string): NullableDriverInstance {
+  const id = sessionId ?? activeSessionId;
+  if (!id) {
+    return null;
+  }
+  return sessions.get(id)?.driver ?? null;
 }
 
 export function getSessionId() {
-  return sessionId;
+  return activeSessionId;
 }
 
-export function isDeletingSessionInProgress() {
-  return isDeletingSession;
+export function listSessions(): Array<{
+  sessionId: string;
+  currentContext: string | null;
+  isActive: boolean;
+  platform: string | null;
+  automationName: string | null;
+  deviceName: string | null;
+  capabilities: SessionCapabilities;
+}> {
+  return Array.from(sessions.values()).map((session) => ({
+    sessionId: session.sessionId,
+    currentContext: session.currentContext,
+    isActive: session.sessionId === activeSessionId,
+    platform: session.metadata.platform,
+    automationName: session.metadata.automationName,
+    deviceName: session.metadata.deviceName,
+    capabilities: session.metadata.capabilities,
+  }));
+}
+
+export function setActiveSession(sessionId: string): boolean {
+  if (!sessions.has(sessionId)) {
+    return false;
+  }
+  activeSessionId = sessionId;
+  return true;
+}
+
+export function setCurrentContext(
+  context: string,
+  sessionId?: string
+): boolean {
+  const id = sessionId ?? activeSessionId;
+  if (!id) {
+    return false;
+  }
+
+  const session = sessions.get(id);
+  if (!session) {
+    return false;
+  }
+
+  session.currentContext = context;
+  return true;
+}
+
+export function getCurrentContext(sessionId?: string): string | null {
+  const id = sessionId ?? activeSessionId;
+  if (!id) {
+    return null;
+  }
+  return sessions.get(id)?.currentContext ?? null;
+}
+
+export function isDeletingSessionInProgress(sessionId?: string) {
+  const id = sessionId ?? activeSessionId;
+  if (!id) {
+    return false;
+  }
+  return sessions.get(id)?.isDeletingSession ?? false;
 }
 
 export function hasActiveSession(): boolean {
-  return driver !== null && sessionId !== null && !isDeletingSession;
+  if (!activeSessionId) {
+    return false;
+  }
+  const session = sessions.get(activeSessionId);
+  return !!session && !session.isDeletingSession;
 }
 
-export async function safeDeleteSession(): Promise<boolean> {
-  // Check if there's no session to delete
-  if (!driver || !sessionId) {
+function selectNextActiveSessionId(deletedSessionId: string): string | null {
+  if (activeSessionId !== deletedSessionId) {
+    return activeSessionId;
+  }
+
+  const nextSession = Array.from(sessions.keys()).find(
+    (id) => id !== deletedSessionId
+  );
+  return nextSession ?? null;
+}
+
+export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
+  const id = sessionId ?? activeSessionId;
+
+  if (!id) {
     log.info('No active session to delete.');
     return false;
   }
 
+  const session = sessions.get(id);
+
+  // Check if there's no session to delete
+  if (!session) {
+    log.info(`Session ${id} not found.`);
+    return false;
+  }
+
   // Check if deletion is already in progress
-  if (isDeletingSession) {
-    log.info('Session deletion already in progress, skipping...');
+  if (session.isDeletingSession) {
+    log.info(`Session ${id} deletion already in progress, skipping...`);
     return false;
   }
 
   // Set lock
-  isDeletingSession = true;
+  session.isDeletingSession = true;
 
   try {
-    log.info('Deleting current session');
-    await driver.deleteSession();
+    log.info(`Deleting session ${id}`);
+    await session.driver.deleteSession();
 
     // Clear the session from store
-    driver = null;
-    sessionId = null;
+    sessions.delete(id);
+    activeSessionId = selectNextActiveSessionId(id);
 
-    log.info('Session deleted successfully.');
+    log.info(`Session ${id} deleted successfully.`);
     return true;
   } catch (error) {
     log.error('Error deleting session:', error);
     throw error;
   } finally {
     // Always release lock
-    isDeletingSession = false;
+    const existingSession = sessions.get(id);
+    if (existingSession) {
+      existingSession.isDeletingSession = false;
+    }
   }
+}
+
+export async function safeDeleteAllSessions(): Promise<number> {
+  let deletedCount = 0;
+  const sessionIds = Array.from(sessions.keys());
+
+  for (const sessionId of sessionIds) {
+    try {
+      const deleted = await safeDeleteSession(sessionId);
+      if (deleted) {
+        deletedCount += 1;
+      }
+    } catch (error) {
+      log.error(`Error deleting session ${sessionId}:`, error);
+    }
+  }
+
+  return deletedCount;
 }
 
 export const getPlatformName = (driver: any): string => {

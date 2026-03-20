@@ -1,6 +1,10 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, isRemoteDriverSession } from '../../session-store.js';
+import {
+  getDriver,
+  isRemoteDriverSession,
+  setCurrentContext,
+} from '../../session-store.js';
 import {
   createUIResource,
   createContextSwitcherUI,
@@ -39,6 +43,10 @@ export default function getContexts(server: FastMCP): void {
           _getContexts(driver).catch(() => []),
         ]);
 
+        if (currentContext) {
+          setCurrentContext(currentContext);
+        }
+
         if (!contexts || contexts.length === 0) {
           return {
             content: [
@@ -54,7 +62,7 @@ export default function getContexts(server: FastMCP): void {
           content: [
             {
               type: 'text',
-              text: `Available contexts: ${JSON.stringify(contexts, null, 2)}\nCurrent context: ${currentContext || 'N/A'}`,
+              text: `Available contexts: ${JSON.stringify(contexts, null, 2)}\nCurrent context: ${currentContext}`,
             },
           ],
         };

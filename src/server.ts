@@ -1,7 +1,7 @@
 import { FastMCP } from 'fastmcp';
 import registerTools from './tools/index.js';
 import registerResources from './resources/index.js';
-import { hasActiveSession, safeDeleteSession } from './session-store.js';
+import { listSessions, safeDeleteAllSessions } from './session-store.js';
 import log from './logger.js';
 
 const server = new FastMCP({
@@ -21,19 +21,21 @@ server.on('connect', (event) => {
 
 server.on('disconnect', async (event) => {
   log.info('Client disconnected:', event.session);
-  // Only try to clean up if there's an active session
-  if (hasActiveSession()) {
+  const sessions = listSessions();
+  if (sessions.length > 0) {
     try {
-      log.info('Active session detected on disconnect, cleaning up...');
-      const deleted = await safeDeleteSession();
-      if (deleted) {
-        log.info('Session cleaned up successfully on disconnect.');
-      }
+      log.info(
+        `${sessions.length} active session(s) detected on disconnect, cleaning up...`
+      );
+      const deletedCount = await safeDeleteAllSessions();
+      log.info(
+        `${deletedCount} session(s) cleaned up successfully on disconnect.`
+      );
     } catch (error) {
       log.error('Error cleaning up session on disconnect:', error);
     }
   } else {
-    log.info('No active session to clean up on disconnect.');
+    log.info('No active sessions to clean up on disconnect.');
   }
 });
 
