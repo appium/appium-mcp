@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
 
-// iOS: state is a number 0=unknown, 1=unplugged, 2=charging, 3=full
+// iOS: maps UIDeviceBatteryState values to human-readable strings
+// @see https://github.com/appium/appium-xcuitest-driver/blob/5bdad71/lib/commands/enum.ts#L91
 const IOS_BATTERY_STATES: Record<number, string> = {
-  0: 'unknown',
-  1: 'unplugged',
-  2: 'charging',
-  3: 'full',
+  0: 'unknown', // UIDeviceBatteryStateUnknown
+  1: 'unplugged', // UIDeviceBatteryStateUnplugged
+  2: 'charging', // UIDeviceBatteryStateCharging
+  3: 'full', // UIDeviceBatteryStateFull
 };
 
 // Android: state matches BatteryManager constants
@@ -20,9 +21,23 @@ const ANDROID_BATTERY_STATES: Record<number, string> = {
   5: 'full',
 };
 
+function formatBatteryInfo(
+  platform: string,
+  raw: { level?: number; state?: number }
+): Record<string, string> {
+  const levelPercent = Math.round((raw.level ?? 0) * 100);
+  const states =
+    platform === PLATFORM.ios ? IOS_BATTERY_STATES : ANDROID_BATTERY_STATES;
+  return {
+    platform: platform === PLATFORM.ios ? 'iOS' : 'Android',
+    level: `${levelPercent}%`,
+    state: states[raw.state ?? -1] ?? 'unknown',
+  };
+}
+
 export default function batteryInfo(server: FastMCP): void {
   server.addTool({
-    name: 'appium_get_battery_info',
+    name: 'appium_mobile_get_battery_info',
     description:
       'Get the current battery level and charging state of the device. Works on both iOS and Android.',
     parameters: z.object({}),
@@ -41,23 +56,8 @@ export default function batteryInfo(server: FastMCP): void {
 
       try {
         const platform = getPlatformName(driver);
-        let formatted: Record<string, string | number>;
-
         const raw = await execute(driver, 'mobile: batteryInfo', {});
-        const levelPercent = Math.round((raw.level ?? 0) * 100);
-        if (platform === PLATFORM.ios) {
-          formatted = {
-            platform: 'iOS',
-            level: `${levelPercent}%`,
-            state: IOS_BATTERY_STATES[raw.state] ?? 'unknown',
-          };
-        } else {
-          formatted = {
-            platform: 'Android',
-            level: `${levelPercent}%`,
-            state: ANDROID_BATTERY_STATES[raw.state] ?? 'unknown',
-          };
-        }
+        const formatted = formatBatteryInfo(platform, raw);
 
         return {
           content: [
