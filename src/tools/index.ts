@@ -61,6 +61,14 @@ import isAppInstalled from './app-management/is-app-installed.js';
 import deepLink from './app-management/deep-link.js';
 import getContexts from './context/get-contexts.js';
 import switchContext from './context/switch-context.js';
+import navigate from './web/navigate.js';
+import { goBack, goForward, reload } from './web/browser-navigation.js';
+import evaluate from './web/evaluate.js';
+import selectOption from './web/select-option.js';
+import hover from './web/hover.js';
+import { newTab, switchTab, listTabs, closeTab } from './web/tabs.js';
+import { type as playwrightType, pressKey as playwrightPressKey } from './web/keyboard.js';
+import getUrl from './web/get-url.js';
 
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
@@ -193,6 +201,22 @@ export default function registerTools(server: FastMCP): void {
   // Test Generation
   generateLocators(server);
   generateTest(server);
+
+  // Web (Playwright) Tools
+  navigate(server);
+  goBack(server);
+  goForward(server);
+  reload(server);
+  evaluate(server);
+  selectOption(server);
+  hover(server);
+  newTab(server);
+  switchTab(server);
+  listTabs(server);
+  closeTab(server);
+  playwrightType(server);
+  playwrightPressKey(server);
+  getUrl(server);
 
   // Documentation
   answerAppium(server);

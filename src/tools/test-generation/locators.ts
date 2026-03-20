@@ -14,6 +14,7 @@ import {
   getDriver,
   isAndroidUiautomator2DriverSession,
   isXCUITestDriverSession,
+  isPlaywrightDriverSession,
 } from '../../session-store.js';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
 import {
@@ -48,7 +49,9 @@ export default function generateLocators(server: any): void {
           // Get the page source from the driver
           const pageSource = await getPageSource(driver);
           let driverName;
-          if (isAndroidUiautomator2DriverSession(driver)) {
+          if (isPlaywrightDriverSession(driver)) {
+            driverName = 'playwright';
+          } else if (isAndroidUiautomator2DriverSession(driver)) {
             driverName = await driver.caps.automationName?.toLowerCase();
           } else if (isXCUITestDriverSession(driver)) {
             driverName = await driver.caps.automationName?.toLowerCase();

@@ -1,5 +1,5 @@
 /**
- * Tool to create a new mobile session (Android or iOS)
+ * Tool to create a new session (Android, iOS, or Web via Playwright)
  */
 import { z } from 'zod';
 import { access, readFile } from 'node:fs/promises';
@@ -15,6 +15,7 @@ import {
   clearSelectedDevice,
 } from './select-device.js';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
+import { PlaywrightDriver } from '../../playwright-adapter.js';
 import log from '../../logger.js';
 import {
   createUIResource,
@@ -290,12 +291,17 @@ async function createDriverSession(
 export default function createSession(server: any): void {
   server.addTool({
     name: 'create_session',
-    description: `Create a new Appium session with Android, iOS or any device/driver Appium supports.
+    description: `Create a new session with Android, iOS, Web (Playwright), or any device/driver Appium supports.
       WORKFLOW FOR LOCAL SERVERS (no remoteServerUrl):
       - Use select_platform tool FIRST to ask the user which platform they want
       - Then optionally use select_device tool if multiple devices are available
       - Finally call create_session with the selected platform and device
       - DO NOT assume or default to any platform
+      WORKFLOW FOR WEB (Playwright):
+      - Use select_platform with platform='web' first
+      - Then call create_session with platform='web'
+      - Optionally specify browser (chromium, firefox, webkit) and headless mode
+      - No remoteServerUrl needed - Playwright launches the browser directly
       WORKFLOW FOR REMOTE SERVERS (remoteServerUrl provided):
       - SKIP select_platform tool entirely
       - Infer the platform from the user's request (e.g., 'ios', 'android', or 'general')
@@ -305,9 +311,10 @@ export default function createSession(server: any): void {
       - Example: User says 'start session with http://localhost:4723 for ios with iphone 17' → infer platform='ios' and call create_session with remoteServerUrl and platform parameters
       `,
     parameters: z.object({
-      platform: z.enum(['ios', 'android', 'general']).describe(
+      platform: z.enum(['ios', 'android', 'general', 'web']).describe(
         `REQUIRED: Platform to use.
-          - For local servers, this must match the platform the user explicitly selected via the select_platform tool ('ios' or 'android').
+          - For local servers, this must match the platform the user explicitly selected via the select_platform tool ('ios', 'android', or 'web').
+          - Use 'web' for browser automation using Playwright (supports chromium, firefox, webkit).
           - Use 'general' when you want the tool to treat capabilities as a pass-through Appium/W3C capability set (recommended for non-Android/iOS drivers such as Windows, macOS, or other custom Appium servers). 'general' will not apply any platform-specific defaults.
           - If remoteServerUrl is provided, the assistant should confirm or infer the platform from the conversation; do not assume a default.`
       ),
@@ -315,13 +322,40 @@ export default function createSession(server: any): void {
         .record(z.string(), z.any())
         .optional()
         .describe(
-          'Optional custom W3C format capabilities for the session. These are applied on top of defaults for ios/android or used as-is for platform="general". Common options include appium:app (app path), appium:deviceName, appium:platformVersion, appium:bundleId, appium:autoGrantPermissions, etc. Custom capabilities override default and config file settings.'
+          'Optional custom W3C format capabilities for the session. These are applied on top of defaults for ios/android or used as-is for platform="general". For web sessions, use browser, headless, and url parameters instead. Custom capabilities override default and config file settings.'
         ),
       remoteServerUrl: z
         .string()
         .optional()
         .describe(
-          'Remote Appium server URL (e.g., http://localhost:4723 or http://192.168.1.100:4723). If not provided, uses local Appium server.'
+          'Remote Appium server URL (e.g., http://localhost:4723 or http://192.168.1.100:4723). If not provided, uses local Appium server. Not used for web/Playwright sessions.'
+        ),
+      browser: z
+        .enum(['chromium', 'firefox', 'webkit'])
+        .optional()
+        .describe(
+          "For web platform only: Browser engine to use. Default is 'chromium'. Options: 'chromium', 'firefox', 'webkit' (Safari engine)."
+        ),
+      headless: z
+        .boolean()
+        .optional()
+        .describe(
+          'For web platform only: Whether to run the browser in headless mode. Default is true.'
+        ),
+      url: z
+        .string()
+        .optional()
+        .describe(
+          'For web platform only: Initial URL to navigate to after launching the browser.'
+        ),
+      viewport: z
+        .object({
+          width: z.number().int().min(1).describe('Viewport width in pixels'),
+          height: z.number().int().min(1).describe('Viewport height in pixels'),
+        })
+        .optional()
+        .describe(
+          'For web platform only: Browser viewport size. Default is 1280x720.'
         ),
     }),
     annotations: {
@@ -335,6 +369,76 @@ export default function createSession(server: any): void {
           capabilities: customCapabilities,
           remoteServerUrl,
         } = args;
+
+        // Handle Playwright web sessions
+        if (platform === 'web') {
+          const browserType = args.browser || 'chromium';
+          const headless = args.headless !== false; // default true
+          const initialUrl = args.url;
+          const viewport = args.viewport || { width: 1920, height: 1080 };
+
+          log.info(
+            `Creating new WEB session with Playwright (${browserType}, headless=${headless})`
+          );
+
+          const { chromium, firefox, webkit } = await import('playwright');
+          const engines = { chromium, firefox, webkit };
+          const engine = engines[browserType as keyof typeof engines];
+          if (!engine) {
+            throw new Error(
+              `Unsupported browser: ${browserType}. Use chromium, firefox, or webkit.`
+            );
+          }
+
+          const browser = await engine.launch({ headless });
+          const context = await browser.newContext({
+            viewport,
+            userAgent:
+              'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+          });
+          const page = await context.newPage();
+
+          if (initialUrl) {
+            await page.goto(initialUrl);
+          }
+
+          const pwDriver = new PlaywrightDriver(browser, context, page);
+          const sessionId = `pw-${Date.now()}`;
+          const webCapabilities = {
+            platformName: 'Web',
+            browserName: browserType,
+            headless,
+            viewport,
+          };
+          setSession(pwDriver, sessionId, webCapabilities);
+
+          log.info(
+            `WEB session created successfully with ID: ${sessionId}`
+          );
+
+          const totalSessions = listSessions().length;
+
+          const textResponse = {
+            content: [
+              {
+                type: 'text',
+                text: `WEB session created successfully with ID: ${sessionId}\nPlatform: Web (Playwright)\nBrowser: ${browserType}\nHeadless: ${headless}\nViewport: ${viewport.width}x${viewport.height}${initialUrl ? `\nURL: ${initialUrl}` : ''}\nActive sessions: ${totalSessions}`,
+              },
+            ],
+          };
+
+          const uiResource = createUIResource(
+            `ui://appium-mcp/session-dashboard/${sessionId}`,
+            createSessionDashboardUI({
+              sessionId,
+              platform: 'Web',
+              automationName: 'Playwright',
+              deviceName: `${browserType}${headless ? ' (headless)' : ''}`,
+            })
+          );
+
+          return addUIResourceToResponse(textResponse, uiResource);
+        }
 
         const configCapabilities = await loadCapabilitiesConfig();
         let finalCapabilities;
