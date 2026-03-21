@@ -11,6 +11,28 @@ export type DriverInstance =
 export type NullableDriverInstance = DriverInstance | null;
 export type SessionCapabilities = Record<string, any>;
 
+export interface SessionSummary {
+  sessionId: string;
+  currentContext: string | null;
+  isActive: boolean;
+  platform: string | null;
+  automationName: string | null;
+  deviceName: string | null;
+  capabilities: SessionCapabilities;
+}
+
+export interface SessionGroupSummary {
+  groupId: string;
+  sessionIds: string[];
+  isActive: boolean;
+}
+
+export type SessionTarget =
+  | { kind: 'active' }
+  | { kind: 'session'; sessionId: string }
+  | { kind: 'group'; groupId: string }
+  | { kind: 'all' };
+
 interface SessionMetadata {
   platform: string | null;
   automationName: string | null;
@@ -18,7 +40,7 @@ interface SessionMetadata {
   capabilities: SessionCapabilities;
 }
 
-interface SessionInfo {
+export interface SessionInfo {
   driver: DriverInstance;
   sessionId: string;
   currentContext: string | null;
@@ -26,14 +48,21 @@ interface SessionInfo {
   metadata: SessionMetadata;
 }
 
+interface SessionGroupInfo {
+  groupId: string;
+  sessionIds: Set<string>;
+}
+
 /**
  * In-memory store for active Appium sessions and their associated drivers.
  */
 const sessions = new Map<string, SessionInfo>();
+const sessionGroups = new Map<string, SessionGroupInfo>();
 /**
  * The ID of the currently active session, or `null` if no session is active.
  */
 let activeSessionId: string | null = null;
+let activeSessionGroupId: string | null = null;
 
 export const PLATFORM = {
   android: 'Android',
@@ -128,28 +157,28 @@ export function setSession(
   activeSessionId = id;
 }
 
-export function getDriver(sessionId?: string): NullableDriverInstance {
+export function getSessionInfo(sessionId?: string): SessionInfo | null {
   const id = sessionId ?? activeSessionId;
   if (!id) {
     return null;
   }
-  return sessions.get(id)?.driver ?? null;
+  return sessions.get(id) ?? null;
+}
+
+export function getDriver(sessionId?: string): NullableDriverInstance {
+  return getSessionInfo(sessionId)?.driver ?? null;
 }
 
 export function getSessionId() {
   return activeSessionId;
 }
 
-export function listSessions(): Array<{
-  sessionId: string;
-  currentContext: string | null;
-  isActive: boolean;
-  platform: string | null;
-  automationName: string | null;
-  deviceName: string | null;
-  capabilities: SessionCapabilities;
-}> {
-  return Array.from(sessions.values()).map((session) => ({
+export function getActiveSessionGroupId() {
+  return activeSessionGroupId;
+}
+
+function toSessionSummary(session: SessionInfo): SessionSummary {
+  return {
     sessionId: session.sessionId,
     currentContext: session.currentContext,
     isActive: session.sessionId === activeSessionId,
@@ -157,7 +186,96 @@ export function listSessions(): Array<{
     automationName: session.metadata.automationName,
     deviceName: session.metadata.deviceName,
     capabilities: session.metadata.capabilities,
-  }));
+  };
+}
+
+function toSessionGroupSummary(group: SessionGroupInfo): SessionGroupSummary {
+  return {
+    groupId: group.groupId,
+    sessionIds: Array.from(group.sessionIds),
+    isActive: group.groupId === activeSessionGroupId,
+  };
+}
+
+export function listSessions(): SessionSummary[] {
+  return Array.from(sessions.values()).map(toSessionSummary);
+}
+
+export function listSessionGroups(): SessionGroupSummary[] {
+  return Array.from(sessionGroups.values()).map(toSessionGroupSummary);
+}
+
+export function setSessionGroup(
+  groupId: string,
+  sessionIds: string[]
+): SessionGroupSummary {
+  const uniqueSessionIds = Array.from(new Set(sessionIds)).filter((sessionId) =>
+    sessions.has(sessionId)
+  );
+
+  if (!uniqueSessionIds.length) {
+    throw new Error(
+      'Cannot create a session group without at least one valid session ID.'
+    );
+  }
+
+  const group: SessionGroupInfo = {
+    groupId,
+    sessionIds: new Set(uniqueSessionIds),
+  };
+
+  sessionGroups.set(groupId, group);
+  return toSessionGroupSummary(group);
+}
+
+export function deleteSessionGroup(groupId: string): boolean {
+  const deleted = sessionGroups.delete(groupId);
+  if (deleted && activeSessionGroupId === groupId) {
+    activeSessionGroupId = null;
+  }
+  return deleted;
+}
+
+export function setActiveSessionGroup(groupId: string): boolean {
+  if (!sessionGroups.has(groupId)) {
+    return false;
+  }
+  activeSessionGroupId = groupId;
+  return true;
+}
+
+function getOperationalSessions(sessionList: SessionInfo[]): SessionInfo[] {
+  return sessionList.filter((session) => !session.isDeletingSession);
+}
+
+export function resolveSessionTarget(
+  target: SessionTarget = { kind: 'active' }
+) {
+  switch (target.kind) {
+    case 'active': {
+      const session = getSessionInfo();
+      return session && !session.isDeletingSession ? [session] : [];
+    }
+    case 'session': {
+      const session = getSessionInfo(target.sessionId);
+      return session && !session.isDeletingSession ? [session] : [];
+    }
+    case 'group': {
+      const group = sessionGroups.get(target.groupId);
+      if (!group) {
+        return [];
+      }
+      return getOperationalSessions(
+        Array.from(group.sessionIds)
+          .map((sessionId) => sessions.get(sessionId) ?? null)
+          .filter((session): session is SessionInfo => session !== null)
+      );
+    }
+    case 'all':
+      return getOperationalSessions(Array.from(sessions.values()));
+    default:
+      return [];
+  }
 }
 
 export function setActiveSession(sessionId: string): boolean {
@@ -210,6 +328,21 @@ export function hasActiveSession(): boolean {
   return !!session && !session.isDeletingSession;
 }
 
+function removeSessionFromGroups(sessionId: string): void {
+  for (const [groupId, group] of sessionGroups.entries()) {
+    if (!group.sessionIds.delete(sessionId)) {
+      continue;
+    }
+
+    if (group.sessionIds.size === 0) {
+      sessionGroups.delete(groupId);
+      if (activeSessionGroupId === groupId) {
+        activeSessionGroupId = null;
+      }
+    }
+  }
+}
+
 function selectNextActiveSessionId(deletedSessionId: string): string | null {
   if (activeSessionId !== deletedSessionId) {
     return activeSessionId;
@@ -252,6 +385,7 @@ export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
 
     // Clear the session from store
     sessions.delete(id);
+    removeSessionFromGroups(id);
     activeSessionId = selectNextActiveSessionId(id);
 
     log.info(`Session ${id} deleted successfully.`);
