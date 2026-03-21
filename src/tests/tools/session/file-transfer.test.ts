@@ -33,7 +33,8 @@ describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
   });
 
   test('push: throws when no driver is active', async () => {
-    const { pushFile } = await import('../../../tools/session/file-transfer.js');
+    const { pushFile } =
+      await import('../../../tools/session/file-transfer.js');
     mockGetDriver.mockReturnValue(null as any);
     pushFile(mockServer);
 
@@ -49,7 +50,8 @@ describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
   });
 
   test('push: Android uses path and data', async () => {
-    const { pushFile } = await import('../../../tools/session/file-transfer.js');
+    const { pushFile } =
+      await import('../../../tools/session/file-transfer.js');
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.android);
     mockExecute.mockResolvedValue(undefined);
@@ -74,7 +76,8 @@ describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
   });
 
   test('push: iOS uses remotePath and payload', async () => {
-    const { pushFile } = await import('../../../tools/session/file-transfer.js');
+    const { pushFile } =
+      await import('../../../tools/session/file-transfer.js');
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.ios);
     mockExecute.mockResolvedValue(undefined);
@@ -102,7 +105,8 @@ describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
   });
 
   test('pull: Android uses path', async () => {
-    const { pullFile } = await import('../../../tools/session/file-transfer.js');
+    const { pullFile } =
+      await import('../../../tools/session/file-transfer.js');
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.android);
     mockExecute.mockResolvedValue('YmJiYg==');
@@ -127,7 +131,8 @@ describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
   });
 
   test('pull: iOS uses remotePath', async () => {
-    const { pullFile } = await import('../../../tools/session/file-transfer.js');
+    const { pullFile } =
+      await import('../../../tools/session/file-transfer.js');
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.ios);
     mockExecute.mockResolvedValue('eHh4');
