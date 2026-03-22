@@ -1,0 +1,53 @@
+name: MCP security scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  mcp-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          check-latest: true
+      - run: npm install
+        name: Install dependencies
+      - run: npm run build
+        name: Build
+      - name: Start Appium MCP
+        run: |
+          npx appium-mcp --httpStream --port=3000
+          sleep 10  # give it time to boot
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install mcp-scan
+        run: pip install mcp-scan
+
+      # Run mcp-scan against local MCP server
+      - name: Run mcp-scan
+        run: |
+          mcp-scan --url http://localhost:3000 --storage-file scan-results.json
+
+      - name: Fail on Highs
+        run: |
+          if [ -f scan-results.json ]; then
+            HIGH=$(python3.11 -c "import json; print(json.load(open('scan-results.json'))['summary']['high'])")
+            if [ "$HIGH" -gt 0 ]; then
+              echo "Found $HIGH high severity MCP issues"
+              exit 1
+            fi
+          fi
+      - name: Upload the result
+        uses: actions/upload-artifact@master
+        with:
+          name: scan-results.json
+          path: scan-results.json
