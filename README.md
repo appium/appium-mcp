@@ -19,6 +19,7 @@ MCP Appium is an intelligent MCP (Model Context Protocol) server designed to emp
 ## 🚀 Features
 
 - **Cross-Platform Support**: Automate tests for both Android (UiAutomator2) and iOS (XCUITest).
+- **AI-Powered Element Finding**: Locate UI elements using natural language descriptions powered by vision models - no need for complex XPath or selectors.
 - **Intelligent Locator Generation**: AI-powered element identification using priority-based strategies.
 - **Interactive Session Management**: Easily create and manage sessions on local mobile devices.
 - **Smart Element Interactions**: Perform actions like clicks, text input, screenshots, and element finding.
@@ -176,6 +177,55 @@ Set the `CAPABILITIES_CONFIG` environment variable to point to your configuratio
 
 Set the `SCREENSHOTS_DIR` environment variable to specify where screenshots are saved. If not set, screenshots are saved to the current working directory. Supports both absolute and relative paths (relative paths are resolved from the current working directory). The directory is created automatically if it doesn't exist.
 
+### AI Vision Element Finding
+
+Configure AI-powered element finding using vision models. This feature allows you to locate UI elements using natural language descriptions instead of traditional XPath or ID selectors.
+
+**Required Environment Variables:**
+
+```json
+{
+  "appium-mcp": {
+    "env": {
+      "ANDROID_HOME": "/path/to/android/sdk",
+      "AI_VISION_API_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "AI_VISION_API_TOKEN": "your_api_key_here"
+    }
+  }
+}
+```
+
+**Optional Environment Variables:**
+
+- `AI_VISION_MODEL`: Model name (default: `Qwen3-VL-235B-A22B-Instruct`)
+- `AI_VISION_COORD_TYPE`: Coordinate type - `normalized` or `absolute` (default: `normalized`)
+- `AI_VISION_IMAGE_MAX_WIDTH`: Max image width for compression in pixels (default: `1080`)
+- `AI_VISION_IMAGE_QUALITY`: JPEG quality 1-100 (default: `80`)
+
+**Supported Vision Model Providers:**
+
+Based on benchmark testing, the following models are recommended:
+
+1. **Qwen3-VL-235B-A22B-Instruct**
+   - Provider: Alibaba Cloud DashScope
+   - Accuracy: 100%
+   - Speed: 12649ms
+   - API: `https://dashscope.aliyuncs.com/compatible-mode/v1`
+
+2. **gemini-3-flash-preview**
+   - Provider: Google AI
+   - Accuracy: 100%
+   - Speed: 17353
+   - API: `https://generativelanguage.googleapis.com/v1beta`
+
+More models benchmarked can be found [here](src/tests/benchmark_model/TEST_REPORT.md).
+
+**Performance Features:**
+
+- **Image Compression**: Automatically compresses screenshots to reduce API latency and token costs (50-80% size reduction)
+- **Result Caching**: Caches results for 5 minutes using a module-level LRU cache (max 50 entries) that persists across tool calls, avoiding redundant API calls for identical screenshot + instruction pairs
+- **Coordinate Handling**: In `normalized` mode (default), the model returns 0–1000 range coordinates that are automatically scaled to absolute pixel coordinates using the original image dimensions — independent of any image compression. In `absolute` mode, image resizing is disabled so the model's returned pixel coordinates always map directly to the original screen dimensions.
+
 ### Performance Optimization
 
 #### NO_UI Mode
@@ -247,6 +297,11 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
 | `delete_session` | Delete the current mobile session and clean up resources                                                    |
 
+The remote server URL in `create_session` can be set via the `remoteServerUrl` parameter.
+If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
+This allows you to restrict which remote servers can be used with your MCP Appium instance, preventing unauthorized connections.
+The default regex pattern allows any URL that starts with `http://` or `https://`.
+
 ### Context Management
 
 | Tool                  | Description                                                                                                                              |
@@ -258,7 +313,8 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 | Tool                  | Description                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------- |
-| `appium_find_element` | Find a specific element using various locator strategies (xpath, id, accessibility id, etc.) |
+| `appium_find_element` | Find a specific element using traditional locator strategies (xpath, id, accessibility id, etc.) **OR** AI-powered natural language descriptions (e.g., "yellow search button at bottom"). Supports both traditional and AI modes. |
+| `appium_tap_by_coordinates` | Tap at specific screen coordinates (x, y). On iOS, coordinates are in points. On Android, coordinates are in device pixels. Use `appium_get_page_source` for accurate coordinates. |
 | `appium_click`        | Click on an element                                                                          |
 | `appium_double_tap`   | Perform double tap on an element                                                             |
 | `appium_long_press`   | Perform a long press (press and hold) gesture on an element                                  |
@@ -266,6 +322,8 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `appium_pinch`        | Perform a pinch gesture to zoom in (scale > 1) or zoom out (scale < 1) on an element or the whole screen. Works on both iOS and Android. |
 | `appium_set_value`    | Enter text into an input field                                                               |
 | `appium_get_text`     | Get text content from an element                                                             |
+| `appium_get_clipboard` | Get the current clipboard content as plain text from the device            |
+| `appium_set_clipboard` | Set the device clipboard to the provided plain text                        |
 | `appium_handle_alert` | Accept or dismiss system/permission alerts, or click a dialog button by label |
 
 ### Screen & Navigation
@@ -283,6 +341,8 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `appium_set_geolocation`   | Set the GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
+| `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
+| `appium_mobile_get_battery_info` | Get the current battery level (as a percentage) and charging state of the device. Works on both iOS and Android. |
 
 ### App Management
 
@@ -318,6 +378,43 @@ Open Amazon mobile app, search for "iPhone 15 Pro", select the first search resu
 ```
 
 This example demonstrates a complete e-commerce checkout flow that can be automated using MCP Appium's intelligent locator generation and test creation capabilities.
+
+### AI-Powered Element Finding Examples
+
+**Traditional Mode (XPath/ID):**
+```json
+{
+  "tool": "appium_find_element",
+  "arguments": {
+    "strategy": "xpath",
+    "selector": "//android.widget.Button[@text='Search']"
+  }
+}
+```
+
+**AI Mode (Natural Language):**
+```json
+{
+  "tool": "appium_find_element",
+  "arguments": {
+    "strategy": "ai_instruction",
+    "ai_instruction": "yellow search button at the bottom of the screen"
+  }
+}
+```
+
+**More AI Mode Examples:**
+- `"username input field at top"`
+- `"settings icon in top-right corner"`
+- `"red delete button next to the item"`
+- `"blue submit button at bottom"`
+- `"profile picture in navigation bar"`
+
+**Benefits of AI Mode:**
+- **No Complex Selectors**: Describe elements in plain language
+- **Resilient to UI Changes**: Semantic understanding adapts to layout changes
+- **Faster Development**: No need to inspect element hierarchies
+- **Works Across Languages**: Describe in any language you're comfortable with
 
 ### Working in Your Native Language
 

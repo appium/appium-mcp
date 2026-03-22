@@ -1,0 +1,158 @@
+import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+
+jest.unstable_mockModule('../../../session-store', () => ({
+  getDriver: jest.fn(),
+  getPlatformName: jest.fn(),
+  PLATFORM: { ios: 'iOS', android: 'Android' },
+}));
+
+jest.unstable_mockModule('../../../command', () => ({
+  execute: jest.fn(),
+}));
+
+jest.unstable_mockModule('../../../logger', () => ({
+  default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
+}));
+
+const { getDriver, getPlatformName, PLATFORM } =
+  await import('../../../session-store.js');
+const { execute } = await import('../../../command.js');
+
+const mockGetDriver = getDriver as jest.MockedFunction<typeof getDriver>;
+const mockGetPlatformName = getPlatformName as jest.MockedFunction<
+  typeof getPlatformName
+>;
+const mockExecute = execute as jest.MockedFunction<typeof execute>;
+
+describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
+  const mockServer = { addTool: jest.fn() } as any;
+
+  beforeEach(() => {
+    (mockServer.addTool as jest.MockedFunction<any>).mockClear();
+    mockExecute.mockReset();
+  });
+
+  test('push: throws when no driver is active', async () => {
+    const { pushFile } =
+      await import('../../../tools/session/file-transfer.js');
+    mockGetDriver.mockReturnValue(null as any);
+    pushFile(mockServer);
+
+    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
+      -1
+    )?.[0];
+    await expect(
+      tool.execute(
+        { remotePath: '/sdcard/x.txt', payloadBase64: 'YQ==' },
+        undefined
+      )
+    ).rejects.toThrow('No driver found');
+  });
+
+  test('push: Android uses path and data', async () => {
+    const { pushFile } =
+      await import('../../../tools/session/file-transfer.js');
+    mockGetDriver.mockReturnValue({} as any);
+    mockGetPlatformName.mockReturnValue(PLATFORM.android);
+    mockExecute.mockResolvedValue(undefined);
+
+    pushFile(mockServer);
+    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
+      -1
+    )?.[0];
+    await tool.execute(
+      { remotePath: '/data/local/tmp/a.txt', payloadBase64: 'SGVsbG8=' },
+      undefined
+    );
+
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.anything(),
+      'mobile: pushFile',
+      expect.objectContaining({
+        path: '/data/local/tmp/a.txt',
+        data: 'SGVsbG8=',
+      })
+    );
+  });
+
+  test('push: iOS uses remotePath and payload', async () => {
+    const { pushFile } =
+      await import('../../../tools/session/file-transfer.js');
+    mockGetDriver.mockReturnValue({} as any);
+    mockGetPlatformName.mockReturnValue(PLATFORM.ios);
+    mockExecute.mockResolvedValue(undefined);
+
+    pushFile(mockServer);
+    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
+      -1
+    )?.[0];
+    await tool.execute(
+      {
+        remotePath: '@com.example.app:documents/x.txt',
+        payloadBase64: 'QQ==',
+      },
+      undefined
+    );
+
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.anything(),
+      'mobile: pushFile',
+      expect.objectContaining({
+        remotePath: '@com.example.app:documents/x.txt',
+        payload: 'QQ==',
+      })
+    );
+  });
+
+  test('pull: Android uses path', async () => {
+    const { pullFile } =
+      await import('../../../tools/session/file-transfer.js');
+    mockGetDriver.mockReturnValue({} as any);
+    mockGetPlatformName.mockReturnValue(PLATFORM.android);
+    mockExecute.mockResolvedValue('YmJiYg==');
+
+    pullFile(mockServer);
+    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
+      -1
+    )?.[0];
+    const result = await tool.execute(
+      { remotePath: '/sdcard/Download/out.bin' },
+      undefined
+    );
+
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.anything(),
+      'mobile: pullFile',
+      expect.objectContaining({ path: '/sdcard/Download/out.bin' })
+    );
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.contentBase64).toBe('YmJiYg==');
+    expect(parsed.platform).toBe('Android');
+  });
+
+  test('pull: iOS uses remotePath', async () => {
+    const { pullFile } =
+      await import('../../../tools/session/file-transfer.js');
+    mockGetDriver.mockReturnValue({} as any);
+    mockGetPlatformName.mockReturnValue(PLATFORM.ios);
+    mockExecute.mockResolvedValue('eHh4');
+
+    pullFile(mockServer);
+    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
+      -1
+    )?.[0];
+    const result = await tool.execute(
+      { remotePath: '@com.app:documents/f.txt' },
+      undefined
+    );
+
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.anything(),
+      'mobile: pullFile',
+      expect.objectContaining({ remotePath: '@com.app:documents/f.txt' })
+    );
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.contentBase64).toBe('eHh4');
+    expect(parsed.platform).toBe('iOS');
+  });
+});

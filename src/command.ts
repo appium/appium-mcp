@@ -330,3 +330,43 @@ export async function setOrientation(
   }
   return await driver.setOrientation(orientation);
 }
+
+/**
+ * Get the current clipboard content as plain text.
+ *
+ * Uses the `mobile: getClipboard` execute command which works uniformly
+ * across Android (UiAutomator2), iOS (XCUITest), and remote WebDriver
+ * clients. The driver returns a base64-encoded string which is decoded
+ * before returning.
+ *
+ * @param driver - The driver instance to query.
+ * @returns The clipboard content as a plain string (may be empty).
+ */
+export async function getClipboard(driver: DriverInstance): Promise<string> {
+  const result = await execute(driver, 'mobile: getClipboard', {});
+  if (!result) {
+    return '';
+  }
+  return Buffer.from(String(result), 'base64').toString('utf-8');
+}
+
+/**
+ * Set the clipboard content to the provided plain text.
+ *
+ * Uses the `mobile: setClipboard` execute command which works uniformly
+ * across Android (UiAutomator2), iOS (XCUITest), and remote WebDriver
+ * clients. The content is base64-encoded before sending.
+ *
+ * @param driver - The driver instance to use.
+ * @param content - Plain text string to write to the clipboard.
+ */
+export async function setClipboard(
+  driver: DriverInstance,
+  content: string
+): Promise<void> {
+  const base64Content = Buffer.from(content, 'utf-8').toString('base64');
+  await execute(driver, 'mobile: setClipboard', {
+    content: base64Content,
+    contentType: 'plaintext',
+  });
+}

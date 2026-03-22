@@ -1,3 +1,50 @@
+## [1.33.0](https://github.com/appium/appium-mcp/compare/v1.32.0...v1.33.0) (2026-03-22)
+
+### Features
+
+* **session:** add appium_mobile_push_file and appium_mobile_pull_file ([#222](https://github.com/appium/appium-mcp/issues/222)) ([8eb1f8d](https://github.com/appium/appium-mcp/commit/8eb1f8dab342b844a54aa90f0744f7586a1d9dc7))
+
+## [1.32.0](https://github.com/appium/appium-mcp/compare/v1.31.0...v1.32.0) (2026-03-21)
+
+### Features
+
+* add clipboard read/write tools (appium_get_clipboard & appium_set_clipboard) ([#220](https://github.com/appium/appium-mcp/issues/220)) ([d6f1e99](https://github.com/appium/appium-mcp/commit/d6f1e99449f0dff957d7a3cd55069e3dff50da6c))
+
+### Miscellaneous Chores
+
+* use xcuitest reference ([#221](https://github.com/appium/appium-mcp/issues/221)) ([010a157](https://github.com/appium/appium-mcp/commit/010a157be1a102fbd22980a10c6b9af6df6a995f))
+
+## [1.31.0](https://github.com/appium/appium-mcp/compare/v1.30.0...v1.31.0) (2026-03-21)
+
+### Features
+
+* **tools:** implement battery info ([#219](https://github.com/appium/appium-mcp/issues/219)) ([f67ea39](https://github.com/appium/appium-mcp/commit/f67ea3989a34dc13ca36bccb915fb87ae8f7304a))
+
+## [1.30.0](https://github.com/appium/appium-mcp/compare/v1.29.0...v1.30.0) (2026-03-20)
+
+### Features
+
+* **ai-finder:** add natural language element finding using vision models ([#200](https://github.com/appium/appium-mcp/issues/200)) ([2b43267](https://github.com/appium/appium-mcp/commit/2b43267b63c936c2e982d36b8e8fed658bd9a51c))
+
+## [1.29.0](https://github.com/appium/appium-mcp/compare/v1.28.0...v1.29.0) (2026-03-20)
+
+### Features
+
+* add `appium_tap_by_coordinates` tool ([#218](https://github.com/appium/appium-mcp/issues/218)) ([11693d3](https://github.com/appium/appium-mcp/commit/11693d3cb81bba25439b3113618981b690470e18))
+* allows users to restrict remoteServerUrl with REMOTE_SERVER_URL_ALLOW_REGEX ([#216](https://github.com/appium/appium-mcp/issues/216)) ([90eee3e](https://github.com/appium/appium-mcp/commit/90eee3e62ea8dea33521e65754e8804e135ed4da))
+
+## [1.28.0](https://github.com/appium/appium-mcp/compare/v1.27.1...v1.28.0) (2026-03-19)
+
+### Features
+
+* add `appium_mobile_get_device_info` tool ([#215](https://github.com/appium/appium-mcp/issues/215)) ([1f42d0b](https://github.com/appium/appium-mcp/commit/1f42d0bf18bb53e4a4d4dad85376258a5026f693))
+
+## [1.27.1](https://github.com/appium/appium-mcp/compare/v1.27.0...v1.27.1) (2026-03-17)
+
+### Miscellaneous Chores
+
+* remove unused deps ([#214](https://github.com/appium/appium-mcp/issues/214)) ([a9215b9](https://github.com/appium/appium-mcp/commit/a9215b90d6e511e2c3a7ad8be646482b1012b8e1))
+
 ## [1.27.0](https://github.com/appium/appium-mcp/compare/v1.26.0...v1.27.0) (2026-03-14)
 
 ### Features

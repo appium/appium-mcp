@@ -29,6 +29,9 @@ import {
   getGeolocation,
   resetGeolocation,
 } from './session/geolocation.js';
+import deviceInfo from './session/device-info.js';
+import batteryInfo from './session/battery-info.js';
+import { pushFile, pullFile } from './session/file-transfer.js';
 import bootSimulator from './ios/boot-simulator.js';
 import setupWDA from './ios/setup-wda.js';
 import installWDA from './ios/install-wda.js';
@@ -37,6 +40,7 @@ import scroll from './navigations/scroll.js';
 import scrollToElement from './navigations/scroll-to-element.js';
 import swipe from './navigations/swipe.js';
 import findElement from './interactions/find.js';
+import tap from './interactions/tap.js';
 import clickElement from './interactions/click.js';
 import doubleTap from './interactions/double-tap.js';
 import longPress from './interactions/long-press.js';
@@ -48,6 +52,7 @@ import getText from './interactions/get-text.js';
 import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
 import { getOrientation, setOrientation } from './interactions/orientation.js';
+import clipboard from './interactions/clipboard.js';
 import handleAlert from './interactions/handle-alert.js';
 import { screenshot, elementScreenshot } from './interactions/screenshot.js';
 import activateApp from './app-management/activate-app.js';
@@ -140,6 +145,10 @@ export default function registerTools(server: FastMCP): void {
   setGeolocation(server);
   getGeolocation(server);
   resetGeolocation(server);
+  deviceInfo(server);
+  batteryInfo(server);
+  pushFile(server);
+  pullFile(server);
 
   // iOS Setup
   bootSimulator(server);
@@ -156,6 +165,7 @@ export default function registerTools(server: FastMCP): void {
   // 1. getActiveElement    - Get currently focused element (efficient, instant)
   // 2. findElement         - Find specific element by strategy/selector
   // 3. generateLocators    - Generate all locators (heavyweight, for debugging only)
+  tap(server);
   findElement(server);
   clickElement(server);
   doubleTap(server);
@@ -165,6 +175,7 @@ export default function registerTools(server: FastMCP): void {
   pressKey(server);
   setValue(server);
   getText(server);
+  clipboard(server);
   getActiveElement(server);
   getPageSource(server);
   getOrientation(server);
