@@ -296,6 +296,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
 | `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
 | `delete_session` | Delete the current mobile session and clean up resources                                                    |
+| `appium_mobile_shake` | Shake gesture (`mobile: shake`) on **iOS Simulator only** (XCUITest). Not supported on Android or physical iOS devices. |
 
 The remote server URL in `create_session` can be set via the `remoteServerUrl` parameter.
 If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
