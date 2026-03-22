@@ -1,10 +1,15 @@
 import type { Client } from 'webdriver';
 import {
+  getPlatformName,
   isAndroidUiautomator2DriverSession,
   isXCUITestDriverSession,
+  PLATFORM,
+  getCurrentContext as getStorecCurrentContext,
 } from './session-store.js';
 import type { DriverInstance } from './session-store.js';
 import type { StringRecord, Element as AppiumElement } from '@appium/types';
+import { util } from '@appium/support';
+import { exec } from 'node:child_process';
 
 /**
  * Execute a driver command.
@@ -134,6 +139,21 @@ export async function elementClick(
   driver: DriverInstance,
   elementUUID: string
 ): Promise<void> {
+  // iOS platform, AND for WebView context
+  // TODO: this should consider nativeWebTap capability and not just platform + context
+  if (
+    getPlatformName(driver.sessionId) === PLATFORM.ios &&
+    getStorecCurrentContext(driver.sessionId as string | undefined)?.startsWith(
+      'WEBVIEW_'
+    )
+  ) {
+    return await execute(
+      driver,
+      'arguments[0].click();',
+      util.wrapElement(elementUUID)
+    );
+  }
+
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.click(elementUUID);
   } else if (isXCUITestDriverSession(driver)) {
