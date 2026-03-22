@@ -22,8 +22,7 @@ export default function backgroundApp(server: FastMCP): void {
 
   server.addTool({
     name: 'appium_background_app',
-    description:
-      `Send the current foreground app to the background for a duration (default ${DEFAULT_BACKGROUND_SECONDS}s if not specified), then return to the foreground unless using driver-specific stay-in-background behavior. Uses the Appium mobile: backgroundApp execute method (UiAutomator2 and XCUITest).`,
+    description: `Send the current foreground app to the background for a duration (default ${DEFAULT_BACKGROUND_SECONDS}s if not specified), then return to the foreground unless using driver-specific stay-in-background behavior. Uses the Appium mobile: backgroundApp execute method (UiAutomator2 and XCUITest).`,
     parameters: schema,
     annotations: {
       readOnlyHint: false,
