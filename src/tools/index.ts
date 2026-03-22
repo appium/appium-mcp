@@ -48,6 +48,7 @@ import dragAndDrop from './interactions/drag-and-drop.js';
 import pinch from './interactions/pinch.js';
 import pressKey from './interactions/press-key.js';
 import setValue from './interactions/set-value.js';
+import keyboard from './interactions/keyboard.js';
 import getText from './interactions/get-text.js';
 import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
@@ -174,6 +175,7 @@ export default function registerTools(server: FastMCP): void {
   pinch(server);
   pressKey(server);
   setValue(server);
+  keyboard(server);
   getText(server);
   clipboard(server);
   getActiveElement(server);
