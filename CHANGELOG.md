@@ -1,3 +1,9 @@
+## [1.33.0](https://github.com/appium/appium-mcp/compare/v1.32.0...v1.33.0) (2026-03-22)
+
+### Features
+
+* **session:** add appium_mobile_push_file and appium_mobile_pull_file ([#222](https://github.com/appium/appium-mcp/issues/222)) ([8eb1f8d](https://github.com/appium/appium-mcp/commit/8eb1f8dab342b844a54aa90f0744f7586a1d9dc7))
+
 ## [1.32.0](https://github.com/appium/appium-mcp/compare/v1.31.0...v1.32.0) (2026-03-21)
 
 ### Features
