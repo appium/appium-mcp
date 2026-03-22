@@ -22,7 +22,7 @@ jobs:
         name: Build
       - name: Start Appium MCP
         run: |
-          npx appium-mcp --httpStream --port=3000
+          nohup npx appium-mcp --httpStream --port=3000 2>&1 > mcp.log &
           sleep 10  # give it time to boot
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -51,3 +51,8 @@ jobs:
         with:
           name: scan-results.json
           path: scan-results.json
+      - name: Upload mcp server log
+        uses: actions/upload-artifact@master
+        with:
+          name: mcp
+          path: mcp.log
