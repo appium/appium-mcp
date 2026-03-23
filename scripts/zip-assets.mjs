@@ -19,7 +19,20 @@ export async function zipAssets() {
   console.log(`Zipped ${ZIP_SOURCE_DIR} -> ${ZIP_OUTPUT_PATH}`);
 }
 
+const fileExists = async (filePath) => {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export async function unzipAssets() {
+  if (!(await fileExists(ZIP_OUTPUT_PATH))) {
+    console.log(`Target directory ${ZIP_OUTPUT_PATH} does not exist. Skipping unzip.`);
+    return;
+  }
   await appiumZip.extractAllTo(ZIP_OUTPUT_PATH, UNZIP_TARGET_DIR);
   console.log(`Unzipped ${ZIP_OUTPUT_PATH} -> ${UNZIP_TARGET_DIR}`);
 }
