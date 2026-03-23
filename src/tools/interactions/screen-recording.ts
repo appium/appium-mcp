@@ -115,33 +115,47 @@ export function startRecordingScreen(server: FastMCP): void {
 
         if (platform === PLATFORM.ios) {
           const iosOptions: IOSRecordingOptions = {};
-          if (args.timeLimit !== undefined)
-            {iosOptions.timeLimit = args.timeLimit;}
-          if (args.forceRestart !== undefined)
-            {iosOptions.forceRestart = args.forceRestart;}
-          if (args.videoQuality !== undefined)
-            {iosOptions.videoQuality = args.videoQuality;}
-          if (args.videoFps !== undefined) {iosOptions.videoFps = args.videoFps;}
+          if (args.timeLimit !== undefined) {
+            iosOptions.timeLimit = args.timeLimit;
+          }
+          if (args.forceRestart !== undefined) {
+            iosOptions.forceRestart = args.forceRestart;
+          }
+          if (args.videoQuality !== undefined) {
+            iosOptions.videoQuality = args.videoQuality;
+          }
+          if (args.videoFps !== undefined) {
+            iosOptions.videoFps = args.videoFps;
+          }
           iosOptions.videoType = args.videoType ?? 'libx264';
           iosOptions.pixelFormat = args.pixelFormat ?? 'yuv420p';
-          if (args.videoFilters !== undefined)
-            {iosOptions.videoFilters = args.videoFilters;}
-          if (args.videoScale !== undefined)
-            {iosOptions.videoScale = args.videoScale;}
-          if (args.hardwareAcceleration !== undefined)
-            {iosOptions.hardwareAcceleration = args.hardwareAcceleration;}
+          if (args.videoFilters !== undefined) {
+            iosOptions.videoFilters = args.videoFilters;
+          }
+          if (args.videoScale !== undefined) {
+            iosOptions.videoScale = args.videoScale;
+          }
+          if (args.hardwareAcceleration !== undefined) {
+            iosOptions.hardwareAcceleration = args.hardwareAcceleration;
+          }
           options = iosOptions;
         } else {
           const androidOptions: AndroidRecordingOptions = {};
-          if (args.timeLimit !== undefined)
-            {androidOptions.timeLimit = args.timeLimit;}
-          if (args.forceRestart !== undefined)
-            {androidOptions.forceRestart = args.forceRestart;}
-          if (args.videoSize !== undefined)
-            {androidOptions.videoSize = args.videoSize;}
-          if (args.bitRate !== undefined) {androidOptions.bitRate = args.bitRate;}
-          if (args.bugReport !== undefined)
-            {androidOptions.bugReport = args.bugReport;}
+          if (args.timeLimit !== undefined) {
+            androidOptions.timeLimit = args.timeLimit;
+          }
+          if (args.forceRestart !== undefined) {
+            androidOptions.forceRestart = args.forceRestart;
+          }
+          if (args.videoSize !== undefined) {
+            androidOptions.videoSize = args.videoSize;
+          }
+          if (args.bitRate !== undefined) {
+            androidOptions.bitRate = args.bitRate;
+          }
+          if (args.bugReport !== undefined) {
+            androidOptions.bugReport = args.bugReport;
+          }
           options = androidOptions;
         }
 
