@@ -36,7 +36,10 @@
     "index-docs": "node dist/scripts/simple-index-documentation.js",
     "query-docs": "node dist/scripts/simple-query-documentation.js",
     "sync-version": "node scripts/sync-version.mjs",
-    "version": "npm run sync-version"
+    "version": "npm run sync-version",
+    "zip-assets": "node scripts/zip-assets.mjs zip",
+    "unzip-assets": "node scripts/zip-assets.mjs unzip",
+    "postinstall": "node scripts/zip-assets.mjs unzip"
   },
   "author": "",
   "license": "Apache-2.0",
