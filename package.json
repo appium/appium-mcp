@@ -85,6 +85,7 @@
   "files": [
     "scripts",
     "src",
+    "!src/tests",
     "dist",
     "CHANGELOG.md",
     "README.md",
