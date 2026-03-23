@@ -1,3 +1,27 @@
+## [1.34.4](https://github.com/appium/appium-mcp/compare/v1.34.3...v1.34.4) (2026-03-23)
+
+### Miscellaneous Chores
+
+* refer to src/resources/dubmodules for the docs search ([aa35115](https://github.com/appium/appium-mcp/commit/aa35115b71e6db35632c580fcea7dc9ad04dbfb4))
+
+## [1.34.3](https://github.com/appium/appium-mcp/compare/v1.34.2...v1.34.3) (2026-03-23)
+
+### Miscellaneous Chores
+
+* remove unnecessary submodules ([76b0254](https://github.com/appium/appium-mcp/commit/76b0254fedc0186ae18d59b6846c31559e5bf85e))
+
+## [1.34.2](https://github.com/appium/appium-mcp/compare/v1.34.1...v1.34.2) (2026-03-23)
+
+### Miscellaneous Chores
+
+* add zip/unzip asserts to distribute them in small size ([#227](https://github.com/appium/appium-mcp/issues/227)) ([126f2dd](https://github.com/appium/appium-mcp/commit/126f2dd7ede8696853eb887d7310d6aa22ea8e68))
+
+## [1.34.1](https://github.com/appium/appium-mcp/compare/v1.34.0...v1.34.1) (2026-03-23)
+
+### Miscellaneous Chores
+
+* exclude src/tests ([#226](https://github.com/appium/appium-mcp/issues/226)) ([0c2a72d](https://github.com/appium/appium-mcp/commit/0c2a72db5bde392891482b9c3849bf9b71b51a87))
+
 ## [1.34.0](https://github.com/appium/appium-mcp/compare/v1.33.0...v1.34.0) (2026-03-22)
 
 ### Features
