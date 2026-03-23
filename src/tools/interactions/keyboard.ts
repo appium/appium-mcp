@@ -3,23 +3,6 @@ import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
 import { execute } from '../../command.js';
 
-/** Normalize `isKeyboardShown` execute result (boolean or wrapped `value`). */
-function normalizeKeyboardShownResult(result: unknown): boolean {
-  if (typeof result === 'boolean') {
-    return result;
-  }
-  if (result && typeof result === 'object' && 'value' in result) {
-    const v = (result as { value: unknown }).value;
-    if (typeof v === 'boolean') {
-      return v;
-    }
-    if (typeof v === 'string') {
-      return v.toLowerCase() === 'true';
-    }
-  }
-  return Boolean(result);
-}
-
 export default function keyboard(server: FastMCP): void {
   const hideKeyboardSchema = z.object({
     keys: z
@@ -98,12 +81,16 @@ export default function keyboard(server: FastMCP): void {
 
       try {
         const raw = await execute(driver, 'mobile: isKeyboardShown', {});
-        const shown = normalizeKeyboardShownResult(raw);
+        if (typeof raw !== 'boolean') {
+          throw new Error(
+            `Unexpected isKeyboardShown result type: ${typeof raw}`
+          );
+        }
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({ keyboardShown: shown }, null, 2),
+              text: JSON.stringify({ keyboardShown: raw }, null, 2),
             },
           ],
         };
