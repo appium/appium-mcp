@@ -12,3 +12,4 @@ src/tools/robot.ts
 package-lock.json
 .idea
 .vscode
+tsconfig.tsbuildinfo

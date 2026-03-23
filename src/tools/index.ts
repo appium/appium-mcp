@@ -55,6 +55,7 @@ import { getOrientation, setOrientation } from './interactions/orientation.js';
 import clipboard from './interactions/clipboard.js';
 import handleAlert from './interactions/handle-alert.js';
 import { screenshot, elementScreenshot } from './interactions/screenshot.js';
+import { startRecordingScreen, stopRecordingScreen } from './interactions/screen-recording.js';
 import activateApp from './app-management/activate-app.js';
 import backgroundApp from './app-management/background-app.js';
 import installApp from './app-management/install-app.js';
@@ -184,6 +185,8 @@ export default function registerTools(server: FastMCP): void {
   handleAlert(server);
   screenshot(server);
   elementScreenshot(server);
+  startRecordingScreen(server);
+  stopRecordingScreen(server);
 
   // App Management
   activateApp(server);
