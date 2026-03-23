@@ -13,7 +13,6 @@ const ZIP_OUTPUT_PATH = path.join(__dirname, '..', 'src', 'resources', 'submodul
 const UNZIP_TARGET_DIR = path.join(__dirname, '..', 'src', 'resources', 'submodules');
 
 export async function zipAssets() {
-  // appium/support exposes toInMemoryZip that returns base64 zip.[web:63]
   const zipBase64 = await appiumZip.toInMemoryZip(ZIP_SOURCE_DIR);
   const zipBuffer = Buffer.from(zipBase64, 'base64');
   await fs.writeFile(ZIP_OUTPUT_PATH, zipBuffer);
@@ -21,12 +20,10 @@ export async function zipAssets() {
 }
 
 export async function unzipAssets() {
-  // appium/support exposes extractAllTo path-based extraction.[web:63]
   await appiumZip.extractAllTo(ZIP_OUTPUT_PATH, UNZIP_TARGET_DIR);
   console.log(`Unzipped ${ZIP_OUTPUT_PATH} -> ${UNZIP_TARGET_DIR}`);
 }
 
-// Allow direct CLI usage: `node zip-assets.mjs zip` / `node zip-assets.mjs unzip`
 if (import.meta.url === `file://${process.argv[1]}`) {
   const cmd = process.argv[2];
   if (cmd === 'zip') {
