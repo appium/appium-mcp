@@ -321,7 +321,9 @@ export async function startRecordingScreen(
   options: IOSRecordingOptions | AndroidRecordingOptions = {}
 ): Promise<string> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.startRecordingScreen(options as AndroidRecordingOptions);
+    return await driver.startRecordingScreen(
+      options as AndroidRecordingOptions
+    );
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.startRecordingScreen(options as IOSRecordingOptions);
   }

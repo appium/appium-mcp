@@ -7,7 +7,10 @@ import {
   startRecordingScreen as cmdStartRecording,
   stopRecordingScreen as cmdStopRecording,
 } from '../../command.js';
-import type { IOSRecordingOptions, AndroidRecordingOptions } from '../../types.js';
+import type {
+  IOSRecordingOptions,
+  AndroidRecordingOptions,
+} from '../../types.js';
 import { resolveScreenshotDir } from '../../utils/paths.js';
 
 export function startRecordingScreen(server: FastMCP): void {
@@ -40,7 +43,9 @@ export function startRecordingScreen(server: FastMCP): void {
     videoType: z
       .string()
       .optional()
-      .describe('iOS only. Video codec to use (e.g. libx264). Run `ffmpeg -codecs` for options. Default: libx264.'),
+      .describe(
+        'iOS only. Video codec to use (e.g. libx264). Run `ffmpeg -codecs` for options. Default: libx264.'
+      ),
     videoFilters: z
       .string()
       .optional()
@@ -75,7 +80,9 @@ export function startRecordingScreen(server: FastMCP): void {
       .number()
       .int()
       .optional()
-      .describe('Android only. Video bit rate in bits per second. Default: 4000000.'),
+      .describe(
+        'Android only. Video bit rate in bits per second. Default: 4000000.'
+      ),
     bugReport: z
       .boolean()
       .optional()
@@ -108,35 +115,52 @@ export function startRecordingScreen(server: FastMCP): void {
 
         if (platform === PLATFORM.ios) {
           const iosOptions: IOSRecordingOptions = {};
-          if (args.timeLimit !== undefined) iosOptions.timeLimit = args.timeLimit;
-          if (args.forceRestart !== undefined) iosOptions.forceRestart = args.forceRestart;
-          if (args.videoQuality !== undefined) iosOptions.videoQuality = args.videoQuality;
-          if (args.videoFps !== undefined) iosOptions.videoFps = args.videoFps;
+          if (args.timeLimit !== undefined)
+            {iosOptions.timeLimit = args.timeLimit;}
+          if (args.forceRestart !== undefined)
+            {iosOptions.forceRestart = args.forceRestart;}
+          if (args.videoQuality !== undefined)
+            {iosOptions.videoQuality = args.videoQuality;}
+          if (args.videoFps !== undefined) {iosOptions.videoFps = args.videoFps;}
           iosOptions.videoType = args.videoType ?? 'libx264';
           iosOptions.pixelFormat = args.pixelFormat ?? 'yuv420p';
-          if (args.videoFilters !== undefined) iosOptions.videoFilters = args.videoFilters;
-          if (args.videoScale !== undefined) iosOptions.videoScale = args.videoScale;
-          if (args.hardwareAcceleration !== undefined) iosOptions.hardwareAcceleration = args.hardwareAcceleration;
+          if (args.videoFilters !== undefined)
+            {iosOptions.videoFilters = args.videoFilters;}
+          if (args.videoScale !== undefined)
+            {iosOptions.videoScale = args.videoScale;}
+          if (args.hardwareAcceleration !== undefined)
+            {iosOptions.hardwareAcceleration = args.hardwareAcceleration;}
           options = iosOptions;
         } else {
           const androidOptions: AndroidRecordingOptions = {};
-          if (args.timeLimit !== undefined) androidOptions.timeLimit = args.timeLimit;
-          if (args.forceRestart !== undefined) androidOptions.forceRestart = args.forceRestart;
-          if (args.videoSize !== undefined) androidOptions.videoSize = args.videoSize;
-          if (args.bitRate !== undefined) androidOptions.bitRate = args.bitRate;
-          if (args.bugReport !== undefined) androidOptions.bugReport = args.bugReport;
+          if (args.timeLimit !== undefined)
+            {androidOptions.timeLimit = args.timeLimit;}
+          if (args.forceRestart !== undefined)
+            {androidOptions.forceRestart = args.forceRestart;}
+          if (args.videoSize !== undefined)
+            {androidOptions.videoSize = args.videoSize;}
+          if (args.bitRate !== undefined) {androidOptions.bitRate = args.bitRate;}
+          if (args.bugReport !== undefined)
+            {androidOptions.bugReport = args.bugReport;}
           options = androidOptions;
         }
 
         await cmdStartRecording(driver, options);
 
         if (args.timeLimit !== undefined) {
-          await new Promise((resolve) => setTimeout(resolve, args.timeLimit! * 1000));
+          await new Promise((resolve) =>
+            setTimeout(resolve, args.timeLimit! * 1000)
+          );
 
           const base64Video = await cmdStopRecording(driver);
           if (!base64Video) {
             return {
-              content: [{ type: 'text', text: 'Recording finished but no video data was returned.' }],
+              content: [
+                {
+                  type: 'text',
+                  text: 'Recording finished but no video data was returned.',
+                },
+              ],
             };
           }
 
@@ -147,7 +171,12 @@ export function startRecordingScreen(server: FastMCP): void {
           await writeFile(filepath, Buffer.from(base64Video, 'base64'));
 
           return {
-            content: [{ type: 'text', text: `Screen recording finished. Saved to: ${filepath}` }],
+            content: [
+              {
+                type: 'text',
+                text: `Screen recording finished. Saved to: ${filepath}`,
+              },
+            ],
           };
         }
 
@@ -157,7 +186,12 @@ export function startRecordingScreen(server: FastMCP): void {
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         return {
-          content: [{ type: 'text', text: `Failed to start screen recording. Error: ${message}` }],
+          content: [
+            {
+              type: 'text',
+              text: `Failed to start screen recording. Error: ${message}`,
+            },
+          ],
         };
       }
     },
@@ -188,7 +222,9 @@ export function stopRecordingScreen(server: FastMCP): void {
 
         if (!base64Video) {
           return {
-            content: [{ type: 'text', text: 'No active screen recording to stop.' }],
+            content: [
+              { type: 'text', text: 'No active screen recording to stop.' },
+            ],
           };
         }
 
@@ -199,12 +235,19 @@ export function stopRecordingScreen(server: FastMCP): void {
         await writeFile(filepath, Buffer.from(base64Video, 'base64'));
 
         return {
-          content: [{ type: 'text', text: `Screen recording saved to: ${filepath}` }],
+          content: [
+            { type: 'text', text: `Screen recording saved to: ${filepath}` },
+          ],
         };
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         return {
-          content: [{ type: 'text', text: `Failed to stop screen recording. Error: ${message}` }],
+          content: [
+            {
+              type: 'text',
+              text: `Failed to stop screen recording. Error: ${message}`,
+            },
+          ],
         };
       }
     },
