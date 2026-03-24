@@ -13,6 +13,15 @@ import type {
 } from '../../types.js';
 import { resolveScreenshotDir } from '../../utils/paths.js';
 
+async function saveRecording(base64Video: string): Promise<string> {
+  const videoDir = resolveScreenshotDir();
+  await mkdir(videoDir, { recursive: true });
+  const filename = `recording_${Date.now()}_${crypto.randomUUID()}.mp4`;
+  const filepath = join(videoDir, filename);
+  await writeFile(filepath, Buffer.from(base64Video, 'base64'));
+  return filepath;
+}
+
 export function startRecordingScreen(server: FastMCP): void {
   const schema = z.object({
     timeLimit: z
@@ -178,11 +187,7 @@ export function startRecordingScreen(server: FastMCP): void {
             };
           }
 
-          const videoDir = resolveScreenshotDir();
-          await mkdir(videoDir, { recursive: true });
-          const filename = `recording_${Date.now()}.mp4`;
-          const filepath = join(videoDir, filename);
-          await writeFile(filepath, Buffer.from(base64Video, 'base64'));
+          const filepath = await saveRecording(base64Video);
 
           return {
             content: [
@@ -242,11 +247,7 @@ export function stopRecordingScreen(server: FastMCP): void {
           };
         }
 
-        const videoDir = resolveScreenshotDir();
-        await mkdir(videoDir, { recursive: true });
-        const filename = `recording_${Date.now()}.mp4`;
-        const filepath = join(videoDir, filename);
-        await writeFile(filepath, Buffer.from(base64Video, 'base64'));
+        const filepath = await saveRecording(base64Video);
 
         return {
           content: [
