@@ -23,6 +23,7 @@ import generateLocators from './test-generation/locators.js';
 import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
 import openNotifications from './session/open-notifications.js';
+import shakeDevice from './session/shake.js';
 import { lockDevice, unlockDevice } from './session/lock.js';
 import {
   setGeolocation,
@@ -142,6 +143,7 @@ export default function registerTools(server: FastMCP): void {
   selectSession(server);
   deleteSession(server);
   openNotifications(server);
+  shakeDevice(server);
   lockDevice(server);
   unlockDevice(server);
   setGeolocation(server);
