@@ -9,6 +9,7 @@ This directory contains all MCP tools available in MCP Appium.
 - `create-session.ts` - Create mobile automation sessions
 - `delete-session.ts` - Clean up sessions
 - `open-notifications.ts` - Open notifications panel (Android only)
+- `shake.ts` - iOS Simulator shake via `mobile: shake` (`appium_mobile_shake`; not Android, not physical iOS)
 - `lock.ts` - Lock device (`appium_mobile_lock`); optionally lock for N seconds (Android & iOS)
 - `lock.ts` - Unlock device (`appium_mobile_unlock`)
 - `select-platform.ts` - Choose Android or iOS
@@ -36,6 +37,7 @@ This directory contains all MCP tools available in MCP Appium.
 - `drag-and-drop.ts` - Drag and drop elements or coordinates
 - `press-key.ts` - Press navigation keys or physical buttons
 - `set-value.ts` - Enter text
+- `keyboard.ts` - Soft keyboard: `appium_mobile_hide_keyboard` / `appium_mobile_is_keyboard_shown`
 - `get-text.ts` - Get element text
 - `get-page-source.ts` - Get page source (XML) from current screen
 - `screenshot.ts` - Capture screenshots
