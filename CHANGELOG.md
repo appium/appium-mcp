@@ -1,3 +1,10 @@
+## [1.35.0](https://github.com/appium/appium-mcp/compare/v1.34.4...v1.35.0) (2026-03-24)
+
+### Features
+
+* **interactions:** add appium_mobile_hide_keyboard and appium_mobile_is_keyboard_shown ([#224](https://github.com/appium/appium-mcp/issues/224)) ([6cf9a4c](https://github.com/appium/appium-mcp/commit/6cf9a4c732bcabe4436f1465bc97f1b748511e11))
+* **session:** add appium_shake tool ([#187](https://github.com/appium/appium-mcp/issues/187)) ([2368faf](https://github.com/appium/appium-mcp/commit/2368faffa4acbb580f240836752b433baaef9113))
+
 ## [1.34.4](https://github.com/appium/appium-mcp/compare/v1.34.3...v1.34.4) (2026-03-23)
 
 ### Miscellaneous Chores
