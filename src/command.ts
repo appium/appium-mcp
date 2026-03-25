@@ -5,7 +5,10 @@ import {
 } from './session-store.js';
 import type { DriverInstance } from './session-store.js';
 import type { StringRecord, Element as AppiumElement } from '@appium/types';
-import type { IOSRecordingOptions, AndroidRecordingOptions } from './types.js';
+import type {
+  IOSRecordingOptions,
+  AndroidRecordingOptions,
+} from './tools/interactions/screen-recording.js';
 
 /**
  * Execute a driver command.
@@ -313,7 +316,7 @@ export async function setOrientation(
  * Start recording the device screen.
  *
  * @param driver - The driver instance to use.
- * @param options - Platform-specific recording options. Pass {@link IOSRecordingOptions} for iOS or {@link AndroidRecordingOptions} for Android.
+ * @param options - Platform-specific recording options.
  * @returns Base64-encoded video of any previously active recording, or empty string.
  */
 export async function startRecordingScreen(

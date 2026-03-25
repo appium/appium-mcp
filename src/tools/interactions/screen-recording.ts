@@ -7,11 +7,49 @@ import {
   startRecordingScreen as cmdStartRecording,
   stopRecordingScreen as cmdStopRecording,
 } from '../../command.js';
-import type {
-  IOSRecordingOptions,
-  AndroidRecordingOptions,
-} from '../../types.js';
 import { resolveScreenshotDir } from '../../utils/paths.js';
+
+/**
+ * iOS-specific options for startRecordingScreen.
+ * @see https://github.com/appium/appium-xcuitest-driver/blob/5bdad71/lib/commands/types.ts
+ */
+export interface IOSRecordingOptions {
+  /** Video codec. Run `ffmpeg -codecs` for options. Default: mjpeg. */
+  videoType?: string;
+  /** Quality preset. Default: medium. */
+  videoQuality?: 'low' | 'medium' | 'high' | 'photo' | number;
+  /** Frames per second. Default: 10. */
+  videoFps?: number;
+  /** FFMPEG video filters. Takes precedence over videoScale. @see https://ffmpeg.org/ffmpeg-filters.html */
+  videoFilters?: string;
+  /** Scaling value (e.g. 1280:720). Ignored if videoFilters is set. @see https://trac.ffmpeg.org/wiki/Scaling */
+  videoScale?: string;
+  /** Output pixel format. Run `ffmpeg -pix_fmts` for options. Use yuv420p with videoType=libx264 for QuickTime compatibility. */
+  pixelFormat?: string;
+  /** Maximum duration in seconds. Default: 180, max: 4200. */
+  timeLimit?: number;
+  /** If true, discard any active recording and start fresh. Default: false. */
+  forceRestart?: boolean;
+  /** FFMPEG hardware acceleration backend. */
+  hardwareAcceleration?: 'videoToolbox' | 'cuda' | 'amf_dx11' | 'qsv' | 'vaapi';
+}
+
+/**
+ * Android-specific options for startRecordingScreen.
+ * @see https://github.com/appium/appium-xcuitest-driver/blob/5bdad71/lib/commands/types.ts
+ */
+export interface AndroidRecordingOptions {
+  /** Frame size in WIDTHxHEIGHT format (e.g. 1280x720). Defaults to native display resolution. */
+  videoSize?: string;
+  /** Maximum duration in seconds. Default: 180, max: 1800. Values >180 require ffmpeg for chunk merging. */
+  timeLimit?: number;
+  /** Video bit rate in bits per second. Default: 4000000. */
+  bitRate?: number;
+  /** Show timestamp overlay. Requires API level 27+. */
+  bugReport?: boolean;
+  /** If true, discard any active recording and start fresh. Default: false. */
+  forceRestart?: boolean;
+}
 
 async function saveRecording(base64Video: string): Promise<string> {
   const videoDir = resolveScreenshotDir();
@@ -136,6 +174,7 @@ export function startRecordingScreen(server: FastMCP): void {
           if (args.videoFps !== undefined) {
             iosOptions.videoFps = args.videoFps;
           }
+          // Default videoType is libx264 and pixelFormat is yuv420p for Quicktime compatability
           iosOptions.videoType = args.videoType ?? 'libx264';
           iosOptions.pixelFormat = args.pixelFormat ?? 'yuv420p';
           if (args.videoFilters !== undefined) {
@@ -169,36 +208,6 @@ export function startRecordingScreen(server: FastMCP): void {
         }
 
         await cmdStartRecording(driver, options);
-
-        if (args.timeLimit !== undefined) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, args.timeLimit! * 1000)
-          );
-
-          const base64Video = await cmdStopRecording(driver);
-          if (!base64Video) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Recording finished but no video data was returned.',
-                },
-              ],
-            };
-          }
-
-          const filepath = await saveRecording(base64Video);
-
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Screen recording finished. Saved to: ${filepath}`,
-              },
-            ],
-          };
-        }
-
         return {
           content: [{ type: 'text', text: 'Screen recording started.' }],
         };

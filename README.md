@@ -353,7 +353,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_set_geolocation`   | Set the GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
-| `appium_start_recording_screen` | Start recording the device screen. Works on iOS (XCUITest, requires ffmpeg) and Android (UiAutomator2). If `timeLimit` is provided, automatically stops after the duration and saves the video. Otherwise returns immediately and requires a separate `appium_stop_recording_screen` call. |
+| `appium_start_recording_screen` | Start recording the device screen. Works on iOS (XCUITest, requires ffmpeg) and Android (UiAutomator2). |
 | `appium_stop_recording_screen` | Stop the active screen recording and save the video to disk as an MP4 file. Returns the path to the saved file. |
 | `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
 | `appium_mobile_get_battery_info` | Get the current battery level (as a percentage) and charging state of the device. Works on both iOS and Android. |
