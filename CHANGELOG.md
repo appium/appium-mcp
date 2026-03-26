@@ -1,3 +1,46 @@
+## [1.36.0](https://github.com/appium/appium-mcp/compare/v1.35.0...v1.36.0) (2026-03-26)
+
+### Features
+
+* **interactions:** implement screen recording ([#228](https://github.com/appium/appium-mcp/issues/228)) ([a04c1d2](https://github.com/appium/appium-mcp/commit/a04c1d235326a4e934b2920434ee82818109b364))
+
+## [1.35.0](https://github.com/appium/appium-mcp/compare/v1.34.4...v1.35.0) (2026-03-24)
+
+### Features
+
+* **interactions:** add appium_mobile_hide_keyboard and appium_mobile_is_keyboard_shown ([#224](https://github.com/appium/appium-mcp/issues/224)) ([6cf9a4c](https://github.com/appium/appium-mcp/commit/6cf9a4c732bcabe4436f1465bc97f1b748511e11))
+* **session:** add appium_shake tool ([#187](https://github.com/appium/appium-mcp/issues/187)) ([2368faf](https://github.com/appium/appium-mcp/commit/2368faffa4acbb580f240836752b433baaef9113))
+
+## [1.34.4](https://github.com/appium/appium-mcp/compare/v1.34.3...v1.34.4) (2026-03-23)
+
+### Miscellaneous Chores
+
+* refer to src/resources/dubmodules for the docs search ([aa35115](https://github.com/appium/appium-mcp/commit/aa35115b71e6db35632c580fcea7dc9ad04dbfb4))
+
+## [1.34.3](https://github.com/appium/appium-mcp/compare/v1.34.2...v1.34.3) (2026-03-23)
+
+### Miscellaneous Chores
+
+* remove unnecessary submodules ([76b0254](https://github.com/appium/appium-mcp/commit/76b0254fedc0186ae18d59b6846c31559e5bf85e))
+
+## [1.34.2](https://github.com/appium/appium-mcp/compare/v1.34.1...v1.34.2) (2026-03-23)
+
+### Miscellaneous Chores
+
+* add zip/unzip asserts to distribute them in small size ([#227](https://github.com/appium/appium-mcp/issues/227)) ([126f2dd](https://github.com/appium/appium-mcp/commit/126f2dd7ede8696853eb887d7310d6aa22ea8e68))
+
+## [1.34.1](https://github.com/appium/appium-mcp/compare/v1.34.0...v1.34.1) (2026-03-23)
+
+### Miscellaneous Chores
+
+* exclude src/tests ([#226](https://github.com/appium/appium-mcp/issues/226)) ([0c2a72d](https://github.com/appium/appium-mcp/commit/0c2a72db5bde392891482b9c3849bf9b71b51a87))
+
+## [1.34.0](https://github.com/appium/appium-mcp/compare/v1.33.0...v1.34.0) (2026-03-22)
+
+### Features
+
+* **app:** add appium_background_app via mobile: backgroundApp ([#223](https://github.com/appium/appium-mcp/issues/223)) ([f26cbe6](https://github.com/appium/appium-mcp/commit/f26cbe6ebcd47a22da34863fb9728f5b724d80d4))
+
 ## [1.33.0](https://github.com/appium/appium-mcp/compare/v1.32.0...v1.33.0) (2026-03-22)
 
 ### Features

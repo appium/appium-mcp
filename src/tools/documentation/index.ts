@@ -31,7 +31,12 @@ export async function initializeAppiumDocumentation(
   try {
     // Default to submodules directory if not specified
     const docsPath =
-      resourcesPath || path.resolve(__dirname, '../../resources/submodules');
+      // Refer to the /src/resources/submodules directory where the markdown files are located.
+      resourcesPath ||
+      path.resolve(
+        __dirname,
+        path.join('..', '..', '..', 'src', 'resources', 'submodules')
+      );
     log.info(`Initializing Appium documentation from: ${docsPath}`);
     await indexAllMarkdownFiles(docsPath);
     log.info('Appium documentation indexing completed');

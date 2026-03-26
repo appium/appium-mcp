@@ -9,7 +9,10 @@ import {
 import type { DriverInstance } from './session-store.js';
 import type { StringRecord, Element as AppiumElement } from '@appium/types';
 import { util } from '@appium/support';
-import { exec } from 'node:child_process';
+import type {
+  IOSRecordingOptions,
+  AndroidRecordingOptions,
+} from './tools/interactions/screen-recording.js';
 
 /**
  * Execute a driver command.
@@ -326,6 +329,44 @@ export async function setOrientation(
     return await driver.proxyCommand('/orientation', 'POST', { orientation });
   }
   return await driver.setOrientation(orientation);
+}
+
+/**
+ * Start recording the device screen.
+ *
+ * @param driver - The driver instance to use.
+ * @param options - Platform-specific recording options.
+ * @returns Base64-encoded video of any previously active recording, or empty string.
+ */
+export async function startRecordingScreen(
+  driver: DriverInstance,
+  options: IOSRecordingOptions | AndroidRecordingOptions = {}
+): Promise<string> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.startRecordingScreen(
+      options as AndroidRecordingOptions
+    );
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.startRecordingScreen(options as IOSRecordingOptions);
+  }
+  throw new Error('startRecordingScreen is not supported for this driver');
+}
+
+/**
+ * Stop an active screen recording and return the video.
+ *
+ * @param driver - The driver instance to use.
+ * @returns Base64-encoded MP4 video content.
+ */
+export async function stopRecordingScreen(
+  driver: DriverInstance
+): Promise<string> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.stopRecordingScreen({});
+  } else if (isXCUITestDriverSession(driver)) {
+    return (await driver.stopRecordingScreen({})) ?? '';
+  }
+  throw new Error('stopRecordingScreen is not supported for this driver');
 }
 
 /**

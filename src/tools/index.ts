@@ -23,6 +23,7 @@ import generateLocators from './test-generation/locators.js';
 import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
 import openNotifications from './session/open-notifications.js';
+import shakeDevice from './session/shake.js';
 import { lockDevice, unlockDevice } from './session/lock.js';
 import {
   setGeolocation,
@@ -48,6 +49,7 @@ import dragAndDrop from './interactions/drag-and-drop.js';
 import pinch from './interactions/pinch.js';
 import pressKey from './interactions/press-key.js';
 import setValue from './interactions/set-value.js';
+import keyboard from './interactions/keyboard.js';
 import getText from './interactions/get-text.js';
 import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
@@ -55,7 +57,12 @@ import { getOrientation, setOrientation } from './interactions/orientation.js';
 import clipboard from './interactions/clipboard.js';
 import handleAlert from './interactions/handle-alert.js';
 import { screenshot, elementScreenshot } from './interactions/screenshot.js';
+import {
+  startRecordingScreen,
+  stopRecordingScreen,
+} from './interactions/screen-recording.js';
 import activateApp from './app-management/activate-app.js';
+import backgroundApp from './app-management/background-app.js';
 import installApp from './app-management/install-app.js';
 import uninstallApp from './app-management/uninstall-app.js';
 import terminateApp from './app-management/terminate-app.js';
@@ -140,6 +147,7 @@ export default function registerTools(server: FastMCP): void {
   selectSession(server);
   deleteSession(server);
   openNotifications(server);
+  shakeDevice(server);
   lockDevice(server);
   unlockDevice(server);
   setGeolocation(server);
@@ -174,6 +182,7 @@ export default function registerTools(server: FastMCP): void {
   pinch(server);
   pressKey(server);
   setValue(server);
+  keyboard(server);
   getText(server);
   clipboard(server);
   getActiveElement(server);
@@ -183,9 +192,12 @@ export default function registerTools(server: FastMCP): void {
   handleAlert(server);
   screenshot(server);
   elementScreenshot(server);
+  startRecordingScreen(server);
+  stopRecordingScreen(server);
 
   // App Management
   activateApp(server);
+  backgroundApp(server);
   installApp(server);
   uninstallApp(server);
   terminateApp(server);

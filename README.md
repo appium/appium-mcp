@@ -177,6 +177,15 @@ Set the `CAPABILITIES_CONFIG` environment variable to point to your configuratio
 
 Set the `SCREENSHOTS_DIR` environment variable to specify where screenshots are saved. If not set, screenshots are saved to the current working directory. Supports both absolute and relative paths (relative paths are resolved from the current working directory). The directory is created automatically if it doesn't exist.
 
+### Screen Recording
+
+Screen recordings are saved as MP4 files to the same directory as screenshots (`SCREENSHOTS_DIR`, or `os.tmpdir()` if not set).
+
+- **iOS**: Requires [ffmpeg](https://ffmpeg.org/download.html) to be installed and available on `PATH`. The default codec is `libx264` with `yuv420p` pixel format for QuickTime compatibility.
+- **Android**: Uses the built-in `screenrecord` command via UiAutomator2. No additional dependencies required.
+
+To record a fixed-duration clip, pass `timeLimit` (in seconds) to `appium_start_recording_screen` — the tool will wait, stop, and return the saved file path automatically. For manual control, call `appium_start_recording_screen` without `timeLimit`, then `appium_stop_recording_screen` when done.
+
 ### AI Vision Element Finding
 
 Configure AI-powered element finding using vision models. This feature allows you to locate UI elements using natural language descriptions instead of traditional XPath or ID selectors.
@@ -296,6 +305,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
 | `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
 | `delete_session` | Delete the current mobile session and clean up resources                                                    |
+| `appium_mobile_shake` | Shake gesture (`mobile: shake`) on **iOS Simulator only** (XCUITest). Not supported on Android or physical iOS devices. |
 
 The remote server URL in `create_session` can be set via the `remoteServerUrl` parameter.
 If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
@@ -321,6 +331,8 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_drag_and_drop` | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates) |
 | `appium_pinch`        | Perform a pinch gesture to zoom in (scale > 1) or zoom out (scale < 1) on an element or the whole screen. Works on both iOS and Android. |
 | `appium_set_value`    | Enter text into an input field                                                               |
+| `appium_mobile_hide_keyboard` | Dismiss the on-screen keyboard (`mobile: hideKeyboard`) |
+| `appium_mobile_is_keyboard_shown` | Whether the on-screen keyboard is visible (`mobile: isKeyboardShown`) |
 | `appium_get_text`     | Get text content from an element                                                             |
 | `appium_get_clipboard` | Get the current clipboard content as plain text from the device            |
 | `appium_set_clipboard` | Set the device clipboard to the provided plain text                        |
@@ -341,6 +353,8 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_set_geolocation`   | Set the GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
+| `appium_start_recording_screen` | Start recording the device screen. Works on iOS (XCUITest, requires ffmpeg) and Android (UiAutomator2). |
+| `appium_stop_recording_screen` | Stop the active screen recording and save the video to disk as an MP4 file. Returns the path to the saved file. |
 | `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
 | `appium_mobile_get_battery_info` | Get the current battery level (as a percentage) and charging state of the device. Works on both iOS and Android. |
 
@@ -349,6 +363,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | Tool                  | Description                                                        |
 | --------------------- | ------------------------------------------------------------------ |
 | `appium_activate_app` | Activate (launch/bring to foreground) a specified app by bundle ID |
+| `appium_mobile_background_app` | Background the current app for a duration (optional; defaults to 5 seconds) |
 | `appium_installApp`   | Install an app on the device from a file path                      |
 | `appium_uninstallApp` | Uninstall an app from the device by bundle ID                      |
 | `appium_terminateApp` | Terminate (close) a specified app                                  |
