@@ -110,6 +110,52 @@ async function handleiOSAlert(
   await execute(driver, 'mobile: alert', params);
 }
 
+export function getAlertText(server: FastMCP): void {
+  server.addTool({
+    name: 'appium_get_alert_text',
+    description:
+      'Get the text content of the currently displayed alert or dialog. Use this to read what an alert says before deciding how to handle it with appium_handle_alert. Works on both iOS and Android.',
+    parameters: z.object({}),
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: false,
+    },
+    execute: async (
+      _args: Record<string, never>,
+      _context: Record<string, unknown> | undefined
+    ): Promise<ContentResult> => {
+      const driver = getDriver();
+      if (!driver) {
+        throw new Error('No driver found');
+      }
+
+      try {
+        const text = await (driver as any).getAlertText();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: text
+                ? `Alert text: "${text}"`
+                : 'Alert is present but has no text.',
+            },
+          ],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Failed to get alert text. Error: ${message}`,
+            },
+          ],
+        };
+      }
+    },
+  });
+}
+
 export default function handleAlert(server: FastMCP): void {
   server.addTool({
     name: 'appium_handle_alert',
