@@ -337,6 +337,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_get_clipboard` | Get the current clipboard content as plain text from the device            |
 | `appium_set_clipboard` | Set the device clipboard to the provided plain text                        |
 | `appium_handle_alert` | Accept or dismiss system/permission alerts, or click a dialog button by label |
+| `appium_get_alert_text` | Get the text content of the currently displayed alert or dialog |
 
 ### Screen & Navigation
 

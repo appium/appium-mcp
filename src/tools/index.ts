@@ -55,7 +55,7 @@ import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
 import { getOrientation, setOrientation } from './interactions/orientation.js';
 import clipboard from './interactions/clipboard.js';
-import handleAlert from './interactions/handle-alert.js';
+import handleAlert, { getAlertText } from './interactions/handle-alert.js';
 import { screenshot, elementScreenshot } from './interactions/screenshot.js';
 import {
   startRecordingScreen,
@@ -190,6 +190,7 @@ export default function registerTools(server: FastMCP): void {
   getOrientation(server);
   setOrientation(server);
   handleAlert(server);
+  getAlertText(server);
   screenshot(server);
   elementScreenshot(server);
   startRecordingScreen(server);
