@@ -51,7 +51,9 @@ async function listAppsFromDevice(): Promise<
     if (xcuiDriver.isSimulator()) {
       const udid = xcuiDriver.caps?.udid;
       if (!udid) {
-        throw new Error('Could not determine simulator UDID from session capabilities');
+        throw new Error(
+          'Could not determine simulator UDID from session capabilities'
+        );
       }
       const { stdout } = await execAsync(
         `xcrun simctl listapps "${udid}" | plutil -convert json -o - -`
