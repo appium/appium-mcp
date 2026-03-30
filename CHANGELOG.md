@@ -1,3 +1,9 @@
+## [1.38.0](https://github.com/appium/appium-mcp/compare/v1.37.0...v1.38.0) (2026-03-30)
+
+### Features
+
+* **session:** implement get device time ([#231](https://github.com/appium/appium-mcp/issues/231)) ([3a219ad](https://github.com/appium/appium-mcp/commit/3a219ad537e1b83fbe93b304eaf3b11967fd836c))
+
 ## [1.37.0](https://github.com/appium/appium-mcp/compare/v1.36.0...v1.37.0) (2026-03-27)
 
 ### Features
