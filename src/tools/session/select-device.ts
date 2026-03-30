@@ -299,7 +299,14 @@ export default function selectDevice(server: any): void {
         .describe(
           'The UDID of the device selected by the user. If not provided, this tool will list available devices for the user to choose from.'
         ),
-    }),
+    }).refine(
+      (data) => data.platform !== 'ios' || data.iosDeviceType !== undefined,
+      {
+        message:
+          "iosDeviceType ('simulator' or 'real') is required when platform is 'ios'",
+        path: ['iosDeviceType'],
+      }
+    ),
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
