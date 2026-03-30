@@ -33,6 +33,7 @@ import {
 import deviceInfo from './session/device-info.js';
 import batteryInfo from './session/battery-info.js';
 import { pushFile, pullFile } from './session/file-transfer.js';
+import deviceTime from './session/device-time.js';
 import bootSimulator from './ios/boot-simulator.js';
 import setupWDA from './ios/setup-wda.js';
 import installWDA from './ios/install-wda.js';
@@ -157,6 +158,7 @@ export default function registerTools(server: FastMCP): void {
   batteryInfo(server);
   pushFile(server);
   pullFile(server);
+  deviceTime(server);
 
   // iOS Setup
   bootSimulator(server);
