@@ -1,5 +1,7 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import {
   getDriver,
   getPlatformName,
@@ -15,6 +17,8 @@ import {
 } from '../../ui/mcp-ui-utils.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+
+const execAsync = promisify(exec);
 
 function normalizeListAppsResult(
   result: Record<string, Record<string, unknown> | undefined>
@@ -43,6 +47,18 @@ async function listAppsFromDevice(): Promise<
   const platform = getPlatformName(driver);
 
   if (platform === PLATFORM.ios && isXCUITestDriverSession(driver)) {
+    const xcuiDriver = driver as XCUITestDriver;
+    if (xcuiDriver.isSimulator()) {
+      const udid = xcuiDriver.caps?.udid;
+      if (!udid) {
+        throw new Error('Could not determine simulator UDID from session capabilities');
+      }
+      const { stdout } = await execAsync(
+        `xcrun simctl listapps "${udid}" | plutil -convert json -o - -`
+      );
+      const result = JSON.parse(stdout);
+      return normalizeListAppsResult(result || {});
+    }
     const result = await (driver as XCUITestDriver).mobileListApps();
     return normalizeListAppsResult(result || {});
   }
