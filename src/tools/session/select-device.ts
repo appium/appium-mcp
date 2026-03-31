@@ -281,32 +281,34 @@ export default function selectDevice(server: any): void {
       - Device selection should be handled via capabilities in create_session (e.g., appium:deviceName, appium:udid)
       - The remote Appium server is already configured for specific device(s)
       `,
-    parameters: z.object({
-      platform: z
-        .enum(['ios', 'android'])
-        .describe(
-          'The platform to list devices for (must match previously selected platform)'
-        ),
-      iosDeviceType: z
-        .enum(['simulator', 'real'])
-        .optional()
-        .describe(
-          "For iOS only: Specify whether to use 'simulator' or 'real' device. REQUIRED when platform is 'ios'."
-        ),
-      deviceUdid: z
-        .string()
-        .optional()
-        .describe(
-          'The UDID of the device selected by the user. If not provided, this tool will list available devices for the user to choose from.'
-        ),
-    }).refine(
-      (data) => data.platform !== 'ios' || data.iosDeviceType !== undefined,
-      {
-        message:
-          "iosDeviceType ('simulator' or 'real') is required when platform is 'ios'",
-        path: ['iosDeviceType'],
-      }
-    ),
+    parameters: z
+      .object({
+        platform: z
+          .enum(['ios', 'android'])
+          .describe(
+            'The platform to list devices for (must match previously selected platform)'
+          ),
+        iosDeviceType: z
+          .enum(['simulator', 'real'])
+          .optional()
+          .describe(
+            "For iOS only: Specify whether to use 'simulator' or 'real' device. REQUIRED when platform is 'ios'."
+          ),
+        deviceUdid: z
+          .string()
+          .optional()
+          .describe(
+            'The UDID of the device selected by the user. If not provided, this tool will list available devices for the user to choose from.'
+          ),
+      })
+      .refine(
+        (data) => data.platform !== 'ios' || data.iosDeviceType !== undefined,
+        {
+          message:
+            "iosDeviceType ('simulator' or 'real') is required when platform is 'ios'",
+          path: ['iosDeviceType'],
+        }
+      ),
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
