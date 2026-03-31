@@ -351,6 +351,24 @@ export async function stopRecordingScreen(
 }
 
 /**
+ * Get the current window size of the device screen.
+ *
+ * @param driver - The driver instance to query.
+ * @returns An object with `width` and `height` in pixels.
+ */
+export async function getWindowSize(
+  driver: DriverInstance
+): Promise<{ width: number; height: number }> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getWindowSize();
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.getWindowSize();
+  }
+  const { width, height } = await (driver as Client).getWindowRect();
+  return { width, height };
+}
+
+/**
  * Get the current clipboard content as plain text.
  *
  * Uses the `mobile: getClipboard` execute command which works uniformly
