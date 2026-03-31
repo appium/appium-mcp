@@ -1,3 +1,9 @@
+## [1.38.1](https://github.com/appium/appium-mcp/compare/v1.38.0...v1.38.1) (2026-03-31)
+
+### Bug Fixes
+
+* iosDeviceType required when platform is ios ([#234](https://github.com/appium/appium-mcp/issues/234)) ([d44ea2d](https://github.com/appium/appium-mcp/commit/d44ea2ddf22ac2a77df799cc162b2b6da28db55f))
+
 ## [1.38.0](https://github.com/appium/appium-mcp/compare/v1.37.0...v1.38.0) (2026-03-30)
 
 ### Features
