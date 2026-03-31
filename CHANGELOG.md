@@ -1,3 +1,9 @@
+## [1.38.2](https://github.com/appium/appium-mcp/compare/v1.38.1...v1.38.2) (2026-03-31)
+
+### Bug Fixes
+
+* support fetching apps from simulator ([#232](https://github.com/appium/appium-mcp/issues/232)) ([12b13ab](https://github.com/appium/appium-mcp/commit/12b13ab60a2067bea7786d675178b37d8fc0b1be))
+
 ## [1.38.1](https://github.com/appium/appium-mcp/compare/v1.38.0...v1.38.1) (2026-03-31)
 
 ### Bug Fixes
