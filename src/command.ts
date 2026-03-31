@@ -360,9 +360,11 @@ export async function getWindowSize(
   driver: DriverInstance
 ): Promise<{ width: number; height: number }> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.getWindowSize();
+    const { width, height } = await driver.getWindowRect();
+    return { width, height };
   } else if (isXCUITestDriverSession(driver)) {
-    return await driver.getWindowSize();
+    const { width, height } = await driver.getWindowRect();
+    return { width, height };
   }
   const { width, height } = await (driver as Client).getWindowRect();
   return { width, height };
