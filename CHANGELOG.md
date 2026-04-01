@@ -1,3 +1,13 @@
+## [1.40.0](https://github.com/appium/appium-mcp/compare/v1.39.0...v1.40.0) (2026-04-01)
+
+### Features
+
+* use fetch in node to remove unnecessary deps ([#237](https://github.com/appium/appium-mcp/issues/237)) ([aa5d4a0](https://github.com/appium/appium-mcp/commit/aa5d4a06eb1a6f7d40e0bf2ee52851d68a2c2aa7))
+
+### Miscellaneous Chores
+
+* use preinstall ([9f73e5a](https://github.com/appium/appium-mcp/commit/9f73e5a45eaa9a7d716de2ad4435c6929b3b9bbf))
+
 ## [1.39.0](https://github.com/appium/appium-mcp/compare/v1.38.2...v1.39.0) (2026-04-01)
 
 ### Features
