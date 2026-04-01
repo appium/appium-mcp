@@ -345,6 +345,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | -------------------------- | ------------------------------------------------------- |
 | `appium_screenshot`        | Take a screenshot of the current screen and save as PNG |
 | `appium_element_screenshot` | Take a screenshot of a specific element by its UUID and save as PNG |
+| `appium_get_window_size`   | Get the width and height of the device screen in pixels |
 | `appium_scroll`            | Scroll the screen vertically (up or down)               |
 | `appium_scroll_to_element` | Scroll until a specific element becomes visible         |
 | `appium_swipe`             | Swipe the screen in a direction (left, right, up, down) or between custom coordinates |

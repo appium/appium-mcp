@@ -58,6 +58,7 @@ import { getOrientation, setOrientation } from './interactions/orientation.js';
 import clipboard from './interactions/clipboard.js';
 import handleAlert, { getAlertText } from './interactions/handle-alert.js';
 import { screenshot, elementScreenshot } from './interactions/screenshot.js';
+import getWindowSize from './interactions/window-size.js';
 import {
   startRecordingScreen,
   stopRecordingScreen,
@@ -195,6 +196,7 @@ export default function registerTools(server: FastMCP): void {
   getAlertText(server);
   screenshot(server);
   elementScreenshot(server);
+  getWindowSize(server);
   startRecordingScreen(server);
   stopRecordingScreen(server);
 
