@@ -7,9 +7,10 @@ import { promisify } from 'node:util';
 import path from 'node:path';
 import { access, mkdir, unlink } from 'node:fs/promises';
 import { constants, createWriteStream } from 'node:fs';
+import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { pipeline } from 'node:stream/promises';
 import os from 'node:os';
-import axios from 'axios';
 import log from '../../logger.js';
 
 const execAsync = promisify(exec);
@@ -19,31 +20,28 @@ function cachePath(folder: string): string {
 }
 
 async function getLatestWDAVersion(): Promise<string> {
-  try {
-    const response = await axios.get(
-      'https://api.github.com/repos/appium/WebDriverAgent/releases/latest',
-      {
-        headers: {
-          'User-Agent': 'mcp-appium',
-          Accept: 'application/vnd.github.v3+json',
-        },
-      }
-    );
+  const response = await fetch(
+    'https://api.github.com/repos/appium/WebDriverAgent/releases/latest',
+    {
+      headers: {
+        'User-Agent': 'mcp-appium',
+        Accept: 'application/vnd.github.v3+json',
+      },
+    }
+  );
 
-    const release = response.data;
-    if (release.tag_name) {
-      return release.tag_name.replace(/^v/, '');
-    } else {
-      throw new Error('No tag_name found in release data');
-    }
-  } catch (error: any) {
-    if (error.response) {
-      throw new Error(
-        `Failed to fetch WDA version: ${error.response.status} ${error.response.statusText}`
-      );
-    }
-    throw error;
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch WDA version: ${response.status} ${response.statusText}`
+    );
   }
+
+  const release = (await response.json()) as { tag_name?: string };
+  if (release.tag_name) {
+    return release.tag_name.replace(/^v/, '');
+  }
+
+  throw new Error('No tag_name found in release data');
 }
 
 async function cleanupFile(path: string): Promise<void> {
@@ -57,17 +55,24 @@ async function cleanupFile(path: string): Promise<void> {
 
 async function downloadFile(url: string, destPath: string): Promise<void> {
   try {
-    const response = await axios({
-      url,
+    const response = await fetch(url, {
       method: 'GET',
-      responseType: 'stream',
-      maxRedirects: 5,
+      redirect: 'follow',
     });
 
+    if (!response.ok || !response.body) {
+      throw new Error(
+        `Failed to download: ${response.status} ${response.statusText}`
+      );
+    }
+
     const writer = createWriteStream(destPath);
+    const stream = Readable.fromWeb(
+      response.body as unknown as NodeReadableStream<Uint8Array>
+    );
 
     try {
-      await pipeline(response.data, writer);
+      await pipeline(stream, writer);
     } catch (streamError: any) {
       writer.close();
       await cleanupFile(destPath);
@@ -76,12 +81,6 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
   } catch (error: any) {
     // Clean up partial file on error
     await cleanupFile(destPath);
-
-    if (error.response) {
-      throw new Error(
-        `Failed to download: ${error.response.status} ${error.response.statusText}`
-      );
-    }
     throw error;
   }
 }
