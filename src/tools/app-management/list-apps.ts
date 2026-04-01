@@ -32,9 +32,9 @@ function normalizeListAppsResult(
   }));
 }
 
-async function listAppsFromDevice(): Promise<
-  { packageName: string; appName: string }[]
-> {
+async function listAppsFromDevice(
+  applicationType: 'User' | 'System' = 'User'
+): Promise<{ packageName: string; appName: string }[]> {
   const driver = await getDriver();
   if (!driver) {
     throw new Error('No driver found');
@@ -61,7 +61,9 @@ async function listAppsFromDevice(): Promise<
       const result = JSON.parse(stdout);
       return normalizeListAppsResult(result || {});
     }
-    const result = await (driver as XCUITestDriver).mobileListApps();
+    const result = await (driver as XCUITestDriver).mobileListApps(
+      applicationType
+    );
     return normalizeListAppsResult(result || {});
   }
 
@@ -78,16 +80,23 @@ async function listAppsFromDevice(): Promise<
 }
 
 export default function listApps(server: FastMCP): void {
-  const schema = z.object({});
+  const schema = z.object({
+    applicationType: z
+      .enum(['User', 'System'])
+      .optional()
+      .describe(
+        'iOS only: filter apps by type. "User" returns user-installed apps, "System" returns system apps. Defaults to "User".'
+      ),
+  });
 
   server.addTool({
     name: 'appium_list_apps',
     description:
-      'List all installed apps on the device. On Android, only package IDs are returned (no display names); on iOS, bundle IDs and display names are returned.',
+      'List all installed apps on the device. On Android, only package IDs are returned (no display names); on iOS, bundle IDs and display names are returned. On iOS, use applicationType to filter by "User" (default) or "System" apps.',
     parameters: schema,
-    execute: async () => {
+    execute: async (args) => {
       try {
-        const apps = await listAppsFromDevice();
+        const apps = await listAppsFromDevice(args.applicationType);
         const textResponse = {
           content: [
             {
