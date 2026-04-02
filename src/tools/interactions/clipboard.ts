@@ -22,16 +22,18 @@ export default function clipboard(server: FastMCP): void {
       'Get the current clipboard content as plain text from the device. ' +
       'Works on Android (UiAutomator2) and iOS (XCUITest). ' +
       'Returns an empty string if the clipboard is empty.',
-    parameters: z.object({}),
+    parameters: z.object({
+      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    }),
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
     execute: async (
-      _args: Record<string, never>,
+      args: { sessionId?: string },
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -70,6 +72,7 @@ export default function clipboard(server: FastMCP): void {
     content: z
       .string()
       .describe('The plain text content to write to the device clipboard'),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -88,7 +91,7 @@ export default function clipboard(server: FastMCP): void {
       args: z.infer<typeof setClipboardSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

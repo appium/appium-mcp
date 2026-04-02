@@ -6,6 +6,7 @@ import { execute } from '../../command.js';
 export default function installApp(server: FastMCP): void {
   const schema = z.object({
     path: z.string().describe('Path to the app file to install'),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -14,7 +15,7 @@ export default function installApp(server: FastMCP): void {
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
       const { path } = args;
-      const driver = await getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

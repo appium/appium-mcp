@@ -13,6 +13,7 @@ export const handleAlertSchema = z.object({
   action: z
     .enum(['accept', 'dismiss'])
     .describe('Action to perform on the alert: accept or dismiss'),
+  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   buttonLabel: z
     .string()
     .optional()
@@ -115,16 +116,18 @@ export function getAlertText(server: FastMCP): void {
     name: 'appium_get_alert_text',
     description:
       'Get the text content of the currently displayed alert or dialog. Use this to read what an alert says before deciding how to handle it with appium_handle_alert. Works on both iOS and Android.',
-    parameters: z.object({}),
+    parameters: z.object({
+      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    }),
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
     execute: async (
-      _args: Record<string, never>,
+      args: { sessionId?: string },
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -177,7 +180,7 @@ To discover button labels and screen structure first, use appium_get_page_source
       args: z.infer<typeof handleAlertSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

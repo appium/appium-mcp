@@ -11,7 +11,9 @@ import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 
 export default function openNotifications(server: FastMCP): void {
-  const schema = z.object({});
+  const schema = z.object({
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  });
 
   server.addTool({
     name: 'appium_mobile_open_notifications',
@@ -23,10 +25,10 @@ export default function openNotifications(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (
-      _args: z.infer<typeof schema>,
+      args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

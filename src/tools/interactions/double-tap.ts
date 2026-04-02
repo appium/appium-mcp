@@ -7,6 +7,7 @@ import { execute, getElementRect, performActions } from '../../command.js';
 export default function doubleTap(server: FastMCP): void {
   const doubleTapActionSchema = z.object({
     elementUUID: elementUUIDScheme,
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -21,7 +22,7 @@ export default function doubleTap(server: FastMCP): void {
       args: z.infer<typeof doubleTapActionSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

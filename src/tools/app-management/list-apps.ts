@@ -33,9 +33,10 @@ function normalizeListAppsResult(
 }
 
 async function listAppsFromDevice(
-  applicationType: 'User' | 'System' = 'User'
+  applicationType: 'User' | 'System' = 'User',
+  sessionId?: string
 ): Promise<{ packageName: string; appName: string }[]> {
-  const driver = await getDriver();
+  const driver = getDriver(sessionId);
   if (!driver) {
     throw new Error('No driver found');
   }
@@ -87,6 +88,7 @@ export default function listApps(server: FastMCP): void {
       .describe(
         'iOS only: filter apps by type. "User" returns user-installed apps, "System" returns system apps. Defaults to "User".'
       ),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -96,7 +98,7 @@ export default function listApps(server: FastMCP): void {
     parameters: schema,
     execute: async (args) => {
       try {
-        const apps = await listAppsFromDevice(args.applicationType);
+        const apps = await listAppsFromDevice(args.applicationType, args.sessionId);
         const textResponse = {
           content: [
             {

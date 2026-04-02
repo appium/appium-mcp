@@ -9,7 +9,9 @@ import {
 import { getPageSource as _getPageSource } from '../../command.js';
 
 export default function getPageSource(server: FastMCP): void {
-  const pageSourceSchema = z.object({});
+  const pageSourceSchema = z.object({
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  });
   server.addTool({
     name: 'appium_get_page_source',
     description: 'Get the page source (XML) from the current screen',
@@ -19,10 +21,10 @@ export default function getPageSource(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (
-      _args: z.infer<typeof pageSourceSchema>,
+      args: z.infer<typeof pageSourceSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found. Please create a session first.');
       }

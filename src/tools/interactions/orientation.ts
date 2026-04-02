@@ -7,7 +7,9 @@ import {
 } from '../../command.js';
 
 export function getOrientation(server: FastMCP): void {
-  const orientationScheme = z.object({});
+  const orientationScheme = z.object({
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  });
   server.addTool({
     name: 'appium_get_orientation',
     description:
@@ -18,10 +20,10 @@ export function getOrientation(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (
-      _args: z.infer<typeof orientationScheme>,
+      args: z.infer<typeof orientationScheme>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -54,6 +56,7 @@ const setOrientationSchema = z.object({
   orientation: z
     .enum(['LANDSCAPE', 'PORTRAIT'])
     .describe('Target orientation: LANDSCAPE or PORTRAIT'),
+  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 export function setOrientation(server: FastMCP): void {
@@ -70,7 +73,7 @@ export function setOrientation(server: FastMCP): void {
       args: z.infer<typeof setOrientationSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

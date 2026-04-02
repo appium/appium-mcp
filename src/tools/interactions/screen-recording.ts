@@ -136,6 +136,7 @@ export function startRecordingScreen(server: FastMCP): void {
       .describe(
         'Android only. Set to true to display a timestamp overlay on the video, useful for bug reporting. Requires API level 27 (Android P) or higher.'
       ),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -151,7 +152,7 @@ export function startRecordingScreen(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -231,16 +232,18 @@ export function stopRecordingScreen(server: FastMCP): void {
     name: 'appium_stop_recording_screen',
     description:
       'Stop the active screen recording and save the video to disk. Returns the path to the saved MP4 file. Works on both iOS (XCUITest) and Android (UiAutomator2).',
-    parameters: z.object({}),
+    parameters: z.object({
+      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    }),
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
     },
     execute: async (
-      _args: Record<string, never>,
+      args: { sessionId?: string },
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

@@ -8,6 +8,7 @@ export default function uninstallApp(server: FastMCP): void {
     id: z
       .string()
       .describe('App identifier (package name for Android, bundle ID for iOS)'),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -16,7 +17,7 @@ export default function uninstallApp(server: FastMCP): void {
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
       const { id } = args;
-      const driver = await getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

@@ -17,7 +17,7 @@ import { resolveScreenshotDir } from '../../utils/paths.js';
 export { resolveScreenshotDir };
 
 export interface ScreenshotDeps {
-  getDriver: () => NullableDriverInstance;
+  getDriver: (sessionId?: string) => NullableDriverInstance;
   writeFile: typeof writeFile;
   mkdir: typeof mkdir;
   resolveScreenshotDir: typeof resolveScreenshotDir;
@@ -36,10 +36,11 @@ export async function executeScreenshot(opts: {
   deps?: ScreenshotDeps;
   elementId?;
   maxWidth?: number;
+  sessionId?: string;
 }): Promise<any> {
-  const { deps = defaultDeps, elementId, maxWidth } = opts;
+  const { deps = defaultDeps, elementId, maxWidth, sessionId } = opts;
 
-  const driver = deps.getDriver();
+  const driver = deps.getDriver(sessionId);
   if (!driver) {
     throw new Error('No driver found');
   }
@@ -117,6 +118,7 @@ const maxWidthSchema = z
 export function screenshot(server: FastMCP): void {
   const screenshotSchema = z.object({
     maxWidth: maxWidthSchema,
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -129,7 +131,7 @@ export function screenshot(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (args: any, _context: any): Promise<any> =>
-      executeScreenshot({ maxWidth: args.maxWidth }),
+      executeScreenshot({ maxWidth: args.maxWidth, sessionId: args.sessionId }),
   });
 }
 
@@ -137,6 +139,7 @@ export function elementScreenshot(server: FastMCP): void {
   const elementScreenshotSchema = z.object({
     elementUUID: elementUUIDScheme,
     maxWidth: maxWidthSchema,
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -152,6 +155,7 @@ export function elementScreenshot(server: FastMCP): void {
       executeScreenshot({
         elementId: args.elementUUID,
         maxWidth: args.maxWidth,
+        sessionId: args.sessionId,
       }),
   });
 }

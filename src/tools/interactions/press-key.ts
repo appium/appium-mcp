@@ -36,6 +36,7 @@ const IOS_BUTTONS_DESCRIPTION = Object.keys(IOS_BUTTON_MAP).join(', ');
 export default function pressKey(server: FastMCP): void {
   const pressKeySchema = z
     .object({
+      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
       key: z
         .enum([
           'BACK',
@@ -87,7 +88,7 @@ export default function pressKey(server: FastMCP): void {
       args: z.infer<typeof pressKeySchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

@@ -34,6 +34,7 @@ export default function pinch(server: FastMCP): void {
       .describe(
         'The velocity of the pinch in scale factor per second. Used natively by iOS for zoom in, and controls gesture speed for zoom out on both platforms. Default is 2.2.'
       ),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -49,7 +50,7 @@ export default function pinch(server: FastMCP): void {
       args: z.infer<typeof pinchSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
