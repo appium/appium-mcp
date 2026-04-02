@@ -9,7 +9,10 @@ export default function getWindowSize(server: FastMCP): void {
     description:
       'Get the width and height of the device screen in pixels. Useful for calculating coordinates for swipes, taps, and scrolls.',
     parameters: z.object({
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
     }),
     annotations: {
       readOnlyHint: true,

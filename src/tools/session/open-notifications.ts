@@ -12,7 +12,10 @@ import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 
 export default function openNotifications(server: FastMCP): void {
   const schema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

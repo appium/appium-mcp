@@ -14,7 +14,10 @@ export default function switchContext(server: FastMCP): void {
       .describe(
         'The name of the context to switch to. Common values: "NATIVE_APP" for native context, or "WEBVIEW_<id>" / "WEBVIEW_<package>" for webview contexts.'
       ),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

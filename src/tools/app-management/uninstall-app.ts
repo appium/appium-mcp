@@ -8,7 +8,10 @@ export default function uninstallApp(server: FastMCP): void {
     id: z
       .string()
       .describe('App identifier (package name for Android, bundle ID for iOS)'),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

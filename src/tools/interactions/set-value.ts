@@ -8,7 +8,10 @@ export default function setValue(server: FastMCP): void {
   const setValueSchema = z.object({
     elementUUID: elementUUIDScheme,
     text: z.string().describe('The text to enter'),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

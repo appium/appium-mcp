@@ -11,7 +11,10 @@ import log from '../../logger.js';
 export default function generateTest(server: FastMCP): void {
   const clickActionSchema = z.object({
     elementUUID: elementUUIDScheme,
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

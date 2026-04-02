@@ -29,7 +29,10 @@ export default function deepLink(server: FastMCP): void {
       .describe(
         'Android only. If false, ADB does not wait for the activity to return control. Defaults to true.'
       ),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

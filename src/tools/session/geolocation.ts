@@ -5,7 +5,10 @@ import { execute } from '../../command.js';
 
 export function setGeolocation(server: FastMCP): void {
   const setGeolocationSchema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
     latitude: z
       .number()
       .min(-90)
@@ -89,7 +92,10 @@ export function setGeolocation(server: FastMCP): void {
 
 export function getGeolocation(server: FastMCP): void {
   const getGeolocationSchema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -148,7 +154,10 @@ export function getGeolocation(server: FastMCP): void {
 
 export function resetGeolocation(server: FastMCP): void {
   const resetGeolocationSchema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

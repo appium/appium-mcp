@@ -5,7 +5,10 @@ import { execute } from '../../command.js';
 
 export function lockDevice(server: FastMCP): void {
   const lockSchema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
     seconds: z
       .number()
       .int()
@@ -64,7 +67,10 @@ export function lockDevice(server: FastMCP): void {
 
 export function unlockDevice(server: FastMCP): void {
   const unlockSchema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

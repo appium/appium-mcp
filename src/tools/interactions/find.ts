@@ -43,7 +43,10 @@ export const findElementSchema = z.object({
     .describe(
       'Natural language instruction for AI-based element finding (required when strategy is ai_instruction)'
     ),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 export default function findElement(server: FastMCP): void {

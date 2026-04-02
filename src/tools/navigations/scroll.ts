@@ -12,7 +12,10 @@ export default function scroll(server: any): void {
         .enum(['up', 'down'])
         .default('down')
         .describe('Scroll direction'),
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
     }),
     annotations: {
       readOnlyHint: false,

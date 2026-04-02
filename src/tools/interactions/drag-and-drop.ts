@@ -100,7 +100,10 @@ export default function dragAndDrop(server: FastMCP): void {
       .describe(
         'Duration of the long press before dragging in milliseconds. Default is 600ms.'
       ),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

@@ -7,7 +7,10 @@ import { execute, getElementRect, performActions } from '../../command.js';
 export default function longPress(server: FastMCP): void {
   const longPressSchema = z.object({
     elementUUID: elementUUIDScheme,
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
     duration: z
       .number()
       .int()

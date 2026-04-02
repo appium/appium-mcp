@@ -23,7 +23,10 @@ export default function clipboard(server: FastMCP): void {
       'Works on Android (UiAutomator2) and iOS (XCUITest). ' +
       'Returns an empty string if the clipboard is empty.',
     parameters: z.object({
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
     }),
     annotations: {
       readOnlyHint: true,
@@ -72,7 +75,10 @@ export default function clipboard(server: FastMCP): void {
     content: z
       .string()
       .describe('The plain text content to write to the device clipboard'),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

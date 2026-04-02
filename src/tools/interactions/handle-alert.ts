@@ -13,7 +13,10 @@ export const handleAlertSchema = z.object({
   action: z
     .enum(['accept', 'dismiss'])
     .describe('Action to perform on the alert: accept or dismiss'),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
   buttonLabel: z
     .string()
     .optional()
@@ -117,7 +120,10 @@ export function getAlertText(server: FastMCP): void {
     description:
       'Get the text content of the currently displayed alert or dialog. Use this to read what an alert says before deciding how to handle it with appium_handle_alert. Works on both iOS and Android.',
     parameters: z.object({
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
     }),
     annotations: {
       readOnlyHint: true,

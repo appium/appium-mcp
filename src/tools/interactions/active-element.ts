@@ -5,7 +5,10 @@ import { getActiveElement as _getActiveElement } from '../../command.js';
 
 export default function getActiveElement(server: FastMCP): void {
   const schema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

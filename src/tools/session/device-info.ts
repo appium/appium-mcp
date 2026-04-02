@@ -9,7 +9,10 @@ export default function deviceInfo(server: FastMCP): void {
     description:
       'Get device information such as model, manufacturer, OS version, screen density, locale, and more. Works on both iOS and Android.',
     parameters: z.object({
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
     }),
     annotations: {
       readOnlyHint: true,

@@ -18,7 +18,10 @@ export default function backgroundApp(server: FastMCP): void {
           `Defaults to ${DEFAULT_BACKGROUND_SECONDS} if omitted. ` +
           `Larger values make the transition easier to see. Use -1 to leave the app in the background without auto-resuming (driver-specific).`
       ),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

@@ -41,7 +41,10 @@ export function pushFile(server: FastMCP): void {
   const schema = z.object({
     remotePath: z.string().min(1).describe(remotePathDescription),
     payloadBase64: z.string().min(1).describe(payloadDescription),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -112,7 +115,10 @@ export function pushFile(server: FastMCP): void {
 export function pullFile(server: FastMCP): void {
   const pullSchema = z.object({
     remotePath: z.string().min(1).describe(remotePathDescription),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

@@ -136,7 +136,10 @@ export function startRecordingScreen(server: FastMCP): void {
       .describe(
         'Android only. Set to true to display a timestamp overlay on the video, useful for bug reporting. Requires API level 27 (Android P) or higher.'
       ),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -233,7 +236,10 @@ export function stopRecordingScreen(server: FastMCP): void {
     description:
       'Stop the active screen recording and save the video to disk. Returns the path to the saved MP4 file. Works on both iOS (XCUITest) and Android (UiAutomator2).',
     parameters: z.object({
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
     }),
     annotations: {
       readOnlyHint: false,

@@ -7,7 +7,10 @@ export default function tap(server: FastMCP): void {
   const tapSchema = z.object({
     x: z.number().describe('X coordinate to tap on the screen'),
     y: z.number().describe('Y coordinate to tap on the screen'),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

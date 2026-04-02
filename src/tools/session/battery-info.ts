@@ -42,7 +42,10 @@ export default function batteryInfo(server: FastMCP): void {
     description:
       'Get the current battery level and charging state of the device. Works on both iOS and Android.',
     parameters: z.object({
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
     }),
     annotations: {
       readOnlyHint: true,

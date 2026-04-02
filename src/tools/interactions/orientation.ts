@@ -8,7 +8,10 @@ import {
 
 export function getOrientation(server: FastMCP): void {
   const orientationScheme = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
   server.addTool({
     name: 'appium_get_orientation',
@@ -56,7 +59,10 @@ const setOrientationSchema = z.object({
   orientation: z
     .enum(['LANDSCAPE', 'PORTRAIT'])
     .describe('Target orientation: LANDSCAPE or PORTRAIT'),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 export function setOrientation(server: FastMCP): void {

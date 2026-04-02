@@ -118,7 +118,10 @@ const maxWidthSchema = z
 export function screenshot(server: FastMCP): void {
   const screenshotSchema = z.object({
     maxWidth: maxWidthSchema,
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -139,7 +142,10 @@ export function elementScreenshot(server: FastMCP): void {
   const elementScreenshotSchema = z.object({
     elementUUID: elementUUIDScheme,
     maxWidth: maxWidthSchema,
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

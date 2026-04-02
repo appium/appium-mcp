@@ -174,7 +174,10 @@ export default function swipe(server: any): void {
         .describe(
           'Duration of the swipe gesture in milliseconds. Default is 600ms. Higher values create slower swipes.'
         ),
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
     }),
     annotations: {
       readOnlyHint: false,

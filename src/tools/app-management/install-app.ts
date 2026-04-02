@@ -6,7 +6,10 @@ import { execute } from '../../command.js';
 export default function installApp(server: FastMCP): void {
   const schema = z.object({
     path: z.string().describe('Path to the app file to install'),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({

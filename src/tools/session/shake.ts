@@ -4,7 +4,10 @@ import { getDriver, isXCUITestDriverSession } from '../../session-store.js';
 
 export default function shakeDevice(server: FastMCP): void {
   const shakeSchema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
