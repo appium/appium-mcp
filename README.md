@@ -363,15 +363,16 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 
 ### App Management
 
-| Tool                  | Description                                                        |
-| --------------------- | ------------------------------------------------------------------ |
-| `appium_activate_app` | Activate (launch/bring to foreground) a specified app by bundle ID |
-| `appium_mobile_background_app` | Background the current app for a duration (optional; defaults to 5 seconds) |
-| `appium_installApp`   | Install an app on the device from a file path                      |
-| `appium_uninstallApp` | Uninstall an app from the device by bundle ID                      |
-| `appium_terminateApp` | Terminate (close) a specified app                                  |
-| `appium_list_apps`    | List all installed apps on the device (Android and iOS)             |
-| `appium_is_app_installed` | Check whether an app is installed. Package name for Android, bundle ID for iOS. |
+| Tool                           | Description                                                                     |
+|--------------------------------|---------------------------------------------------------------------------------|
+| `appium_activate_app`          | Activate (launch/bring to foreground) a specified app by bundle ID              |
+| `appium_mobile_background_app` | Background the current app for a duration (optional; defaults to 5 seconds)     |
+| `appium_installApp`            | Install an app on the device from a file path                                   |
+| `appium_uninstallApp`          | Uninstall an app from the device by bundle ID                                   |
+| `appium_terminateApp`          | Terminate (close) a specified app                                               |
+| `appium_list_apps`             | List all installed apps on the device (Android and iOS)                         |
+| `appium_is_app_installed`      | Check whether an app is installed. Package name for Android, bundle ID for iOS. |
+| `appium_query_app_state`       | Query the current state of an app. Package name for Android, bundle ID for iOS. |
 
 ### Test Generation & Documentation
 

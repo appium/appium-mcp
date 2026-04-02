@@ -37,6 +37,33 @@ export async function execute(
 }
 
 /**
+ * Query the current state of an application.
+ *
+ * Returns a numeric value:
+ *   0 = not installed, 1 = not running, 2 = background (suspended),
+ *   3 = background, 4 = foreground
+ *
+ * @param driver - The driver instance to use.
+ * @param appId - Application identifier to query.
+ * @returns Numeric app state.
+ */
+export async function queryAppState(
+  driver: DriverInstance,
+  appId: string
+): Promise<number> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.queryAppState(appId);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.queryAppState(appId);
+  }
+  return Number(
+    await (driver as Client).executeScript('mobile: queryAppState', [
+      { bundleId: appId },
+    ])
+  );
+}
+
+/**
  * Activate an application by its bundle/package id on the device.
  *
  * Works across Android and iOS driver implementations as well as remote
