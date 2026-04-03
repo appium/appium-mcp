@@ -16,6 +16,10 @@ export default function queryAppState(server: FastMCP): void {
     id: z
       .string()
       .describe('App identifier (package name for Android, bundle ID for iOS)'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -28,8 +32,8 @@ export default function queryAppState(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (args: z.infer<typeof schema>) => {
-      const { id } = args;
-      const driver = getDriver();
+      const { id, sessionId } = args;
+      const driver = getDriver(sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

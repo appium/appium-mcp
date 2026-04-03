@@ -61,6 +61,9 @@ export async function queryAppState(
       { bundleId: appId },
     ])
   );
+}
+
+/**
  * Read current Appium driver session settings (embedded drivers or remote
  * WebDriver `GET /session/:id/appium/settings`).
  */
