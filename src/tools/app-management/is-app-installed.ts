@@ -17,6 +17,10 @@ export default function isAppInstalled(server: FastMCP): void {
     id: z
       .string()
       .describe('App identifier (package name for Android, bundle ID for iOS)'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -33,7 +37,7 @@ export default function isAppInstalled(server: FastMCP): void {
       _context: Record<string, unknown> | undefined
     ) => {
       const { id } = args;
-      const driver = await getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

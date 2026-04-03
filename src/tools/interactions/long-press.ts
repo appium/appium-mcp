@@ -7,6 +7,10 @@ import { execute, getElementRect, performActions } from '../../command.js';
 export default function longPress(server: FastMCP): void {
   const longPressSchema = z.object({
     elementUUID: elementUUIDScheme,
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
     duration: z
       .number()
       .int()
@@ -31,7 +35,7 @@ export default function longPress(server: FastMCP): void {
       args: z.infer<typeof longPressSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

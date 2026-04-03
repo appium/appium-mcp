@@ -61,6 +61,37 @@ export async function queryAppState(
       { bundleId: appId },
     ])
   );
+ * Read current Appium driver session settings (embedded drivers or remote
+ * WebDriver `GET /session/:id/appium/settings`).
+ */
+export async function getSessionDriverSettings(
+  driver: DriverInstance
+): Promise<Record<string, unknown>> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return (await driver.getSettings()) as Record<string, unknown>;
+  } else if (isXCUITestDriverSession(driver)) {
+    return (await driver.getSettings()) as Record<string, unknown>;
+  } else {
+    const raw = await (driver as Client).getSettings();
+    return raw as Record<string, unknown>;
+  }
+}
+
+/**
+ * Update Appium driver session settings (embedded drivers or remote WebDriver
+ * `POST /session/:id/appium/settings`).
+ */
+export async function updateSessionDriverSettings(
+  driver: DriverInstance,
+  settings: Record<string, unknown>
+): Promise<void> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    await driver.updateSettings(settings as never);
+  } else if (isXCUITestDriverSession(driver)) {
+    await driver.updateSettings(settings as never);
+  } else {
+    await (driver as Client).updateSettings(settings);
+  }
 }
 
 /**

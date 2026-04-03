@@ -1,3 +1,15 @@
+## [1.43.0](https://github.com/appium/appium-mcp/compare/v1.42.0...v1.43.0) (2026-04-03)
+
+### Features
+
+* add appium_get_settings and appium_update_settings tools ([#239](https://github.com/appium/appium-mcp/issues/239)) ([39e1665](https://github.com/appium/appium-mcp/commit/39e1665fc575288147394eb79213c39e2215cf16))
+
+## [1.42.0](https://github.com/appium/appium-mcp/compare/v1.41.0...v1.42.0) (2026-04-03)
+
+### Features
+
+* add optional sessionId parameter to all tools for multi-session routing ([#240](https://github.com/appium/appium-mcp/issues/240)) ([93347a7](https://github.com/appium/appium-mcp/commit/93347a725e9928fcb1f0906bcd150ff2233ddcf8))
+
 ## [1.41.0](https://github.com/appium/appium-mcp/compare/v1.40.0...v1.41.0) (2026-04-02)
 
 ### Features

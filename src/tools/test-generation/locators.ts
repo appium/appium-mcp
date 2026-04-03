@@ -27,17 +27,25 @@ export default function generateLocators(server: any): void {
   server.addTool({
     name: 'generate_locators',
     description: `Generate locators for all interactable elements on the current page. [PRIORITY 3: Use this for debugging/inspection or when you need comprehensive element info with locator suggestions]`,
-    parameters: z.object({}),
+    parameters: z.object({
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
+    }),
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (_args: any, { log }: any): Promise<any> => {
+    execute: async (
+      args: { sessionId?: string },
+      { log }: any
+    ): Promise<any> => {
       log.info('Getting page source');
       try {
         // Check for active driver session
 
-        const driver = getDriver();
+        const driver = getDriver(args.sessionId);
         if (!driver) {
           throw new Error(
             'No active driver session. Please create a session first.'

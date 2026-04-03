@@ -5,6 +5,10 @@ import { execute } from '../../command.js';
 
 export function lockDevice(server: FastMCP): void {
   const lockSchema = z.object({
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
     seconds: z
       .number()
       .int()
@@ -28,7 +32,7 @@ export function lockDevice(server: FastMCP): void {
       args: z.infer<typeof lockSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -62,7 +66,12 @@ export function lockDevice(server: FastMCP): void {
 }
 
 export function unlockDevice(server: FastMCP): void {
-  const unlockSchema = z.object({});
+  const unlockSchema = z.object({
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
+  });
 
   server.addTool({
     name: 'appium_mobile_unlock',
@@ -74,10 +83,10 @@ export function unlockDevice(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (
-      _args: z.infer<typeof unlockSchema>,
+      args: z.infer<typeof unlockSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

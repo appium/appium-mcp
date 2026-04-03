@@ -6,6 +6,10 @@ import { activateApp as _activateApp } from '../../command.js';
 export default function activateApp(server: FastMCP): void {
   const activateAppSchema = z.object({
     id: z.string().describe('The app id'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -16,8 +20,11 @@ export default function activateApp(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: { id: string }, _context: any): Promise<any> => {
-      const driver = getDriver();
+    execute: async (
+      args: { id: string; sessionId?: string },
+      _context: any
+    ): Promise<any> => {
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

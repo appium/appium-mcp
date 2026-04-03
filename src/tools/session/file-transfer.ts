@@ -41,6 +41,10 @@ export function pushFile(server: FastMCP): void {
   const schema = z.object({
     remotePath: z.string().min(1).describe(remotePathDescription),
     payloadBase64: z.string().min(1).describe(payloadDescription),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -59,7 +63,7 @@ export function pushFile(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -109,8 +113,12 @@ export function pushFile(server: FastMCP): void {
  * Pull a file from the device via `mobile: pullFile`. Returns Base64-encoded content in the response text.
  */
 export function pullFile(server: FastMCP): void {
-  const schema = z.object({
+  const pullSchema = z.object({
     remotePath: z.string().min(1).describe(remotePathDescription),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -120,16 +128,16 @@ export function pullFile(server: FastMCP): void {
       'Returns Base64-encoded file content in the response text. ' +
       'Android uses parameter `path`; iOS uses `remotePath` with the same path formats as push. ' +
       'Very large files may produce very large responses; prefer downloading or streaming outside MCP for big binaries.',
-    parameters: schema,
+    parameters: pullSchema,
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
     execute: async (
-      args: z.infer<typeof schema>,
+      args: z.infer<typeof pullSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

@@ -41,16 +41,21 @@ export default function batteryInfo(server: FastMCP): void {
     name: 'appium_mobile_get_battery_info',
     description:
       'Get the current battery level and charging state of the device. Works on both iOS and Android.',
-    parameters: z.object({}),
+    parameters: z.object({
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
+    }),
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
     execute: async (
-      _args: Record<string, never>,
+      args: { sessionId?: string },
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

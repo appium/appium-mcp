@@ -2,6 +2,10 @@ import { getDriver, getPlatformName } from '../../session-store.js';
 import { z } from 'zod';
 
 const scrollToElementSchema = z.object({
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
   strategy: z.enum([
     'xpath',
     'id',
@@ -131,7 +135,7 @@ export default function scrollToElement(server: any): void {
       openWorldHint: false,
     },
     execute: async (args: any, _context: any): Promise<any> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error(
           'No active driver session. Please create a session first.'

@@ -43,6 +43,10 @@ export const findElementSchema = z.object({
     .describe(
       'Natural language instruction for AI-based element finding (required when strategy is ai_instruction)'
     ),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 export default function findElement(server: FastMCP): void {
@@ -74,7 +78,7 @@ export default function findElement(server: FastMCP): void {
       args: z.infer<typeof findElementSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

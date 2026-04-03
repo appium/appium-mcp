@@ -12,6 +12,10 @@ export default function keyboard(server: FastMCP): void {
         'Optional key names used to dismiss the keyboard (e.g. "done" on tablets). ' +
           'Maps to the `keys` argument of mobile: hideKeyboard. Omit for default behavior.'
       ),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -29,7 +33,7 @@ export default function keyboard(server: FastMCP): void {
       args: z.infer<typeof hideKeyboardSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -65,16 +69,21 @@ export default function keyboard(server: FastMCP): void {
     description:
       'Return whether the system on-screen keyboard is visible using Appium `mobile: isKeyboardShown`. ' +
       'Supports Android (UiAutomator2) and iOS (XCUITest). Response is JSON: `{ "keyboardShown": true|false }`.',
-    parameters: z.object({}),
+    parameters: z.object({
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
+    }),
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
     execute: async (
-      _args: Record<string, never>,
+      args: { sessionId?: string },
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

@@ -8,16 +8,21 @@ export default function getWindowSize(server: FastMCP): void {
     name: 'appium_get_window_size',
     description:
       'Get the width and height of the device screen in pixels. Useful for calculating coordinates for swipes, taps, and scrolls.',
-    parameters: z.object({}),
+    parameters: z.object({
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
+    }),
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
     execute: async (
-      _args: Record<string, never>,
+      args: { sessionId?: string },
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

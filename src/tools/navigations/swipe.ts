@@ -174,13 +174,17 @@ export default function swipe(server: any): void {
         .describe(
           'Duration of the swipe gesture in milliseconds. Default is 600ms. Higher values create slower swipes.'
         ),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
     }),
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
     },
     execute: async (args: any, _context: any): Promise<any> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error(
           'No active driver session. Please create a session first.'

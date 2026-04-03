@@ -361,7 +361,6 @@ export default function createSession(server: any): void {
           `Creating new ${platform.toUpperCase()} session with capabilities:`,
           JSON.stringify(finalCapabilities, null, 2)
         );
-
         let sessionId;
         if (remoteServerUrl) {
           validateRemoteServerUrl(

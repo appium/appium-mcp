@@ -5,6 +5,10 @@ import { execute } from '../../command.js';
 
 export function setGeolocation(server: FastMCP): void {
   const setGeolocationSchema = z.object({
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
     latitude: z
       .number()
       .min(-90)
@@ -38,7 +42,7 @@ export function setGeolocation(server: FastMCP): void {
       args: z.infer<typeof setGeolocationSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -87,7 +91,12 @@ export function setGeolocation(server: FastMCP): void {
 }
 
 export function getGeolocation(server: FastMCP): void {
-  const getGeolocationSchema = z.object({});
+  const getGeolocationSchema = z.object({
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
+  });
 
   server.addTool({
     name: 'appium_get_geolocation',
@@ -99,10 +108,10 @@ export function getGeolocation(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (
-      _args: z.infer<typeof getGeolocationSchema>,
+      args: z.infer<typeof getGeolocationSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -144,7 +153,12 @@ export function getGeolocation(server: FastMCP): void {
 }
 
 export function resetGeolocation(server: FastMCP): void {
-  const resetGeolocationSchema = z.object({});
+  const resetGeolocationSchema = z.object({
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
+  });
 
   server.addTool({
     name: 'appium_reset_geolocation',
@@ -156,10 +170,10 @@ export function resetGeolocation(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (
-      _args: z.infer<typeof resetGeolocationSchema>,
+      args: z.infer<typeof resetGeolocationSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

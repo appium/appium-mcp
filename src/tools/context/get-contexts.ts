@@ -20,13 +20,21 @@ export default function getContexts(server: FastMCP): void {
     name: 'appium_get_contexts',
     description:
       'Get all available contexts in the current Appium session. Returns a list of context names including NATIVE_APP and any webview contexts (e.g., WEBVIEW_<id> or WEBVIEW_<package>).',
-    parameters: z.object({}),
+    parameters: z.object({
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
+    }),
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (_args: any, _context: any): Promise<any> => {
-      const driver = getDriver();
+    execute: async (
+      args: { sessionId?: string },
+      _context: any
+    ): Promise<any> => {
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found. Please create a session first.');
       }

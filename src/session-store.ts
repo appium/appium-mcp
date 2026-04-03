@@ -136,6 +136,23 @@ export function getDriver(sessionId?: string): NullableDriverInstance {
   return sessions.get(id)?.driver ?? null;
 }
 
+/**
+ * Get a driver instance or throw if none is available.
+ * Accepts an optional sessionId to target a specific session
+ * instead of the currently active one.
+ */
+export function getDriverOrThrow(sessionId?: string): DriverInstance {
+  const driver = getDriver(sessionId);
+  if (!driver) {
+    throw new Error(
+      sessionId
+        ? `No driver found for session ${sessionId}`
+        : 'No active session. Call create_session first.'
+    );
+  }
+  return driver;
+}
+
 export function getSessionId() {
   return activeSessionId;
 }
