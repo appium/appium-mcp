@@ -42,15 +42,13 @@ export async function execute(
  */
 export async function getSessionDriverSettings(
   driver: DriverInstance
-): Promise<Record<string, unknown>> {
+): Promise<StringRecord<unknown>> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return (await driver.getSettings()) as Record<string, unknown>;
+    return await driver.getSettings();
   } else if (isXCUITestDriverSession(driver)) {
-    return (await driver.getSettings()) as Record<string, unknown>;
-  } else {
-    const raw = await (driver as Client).getSettings();
-    return raw as Record<string, unknown>;
+    return await driver.getSettings();
   }
+  return await (driver as Client).getSettings();
 }
 
 /**
