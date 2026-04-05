@@ -70,6 +70,7 @@ When searching for elements, follow this priority order for efficiency:
 - `terminate-app.ts` - Terminate apps
 - `install-app.ts` - Install apps
 - `uninstall-app.ts` - Uninstall apps
+- `clear-app.ts` - Clear app data / cache without uninstall (`appium_clear_app`)
 - `list-apps.ts` - List installed apps
 
 ### Test Generation (`test-generation/`)

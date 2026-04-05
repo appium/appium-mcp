@@ -375,6 +375,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_list_apps`             | List all installed apps on the device (Android and iOS)                         |
 | `appium_is_app_installed`      | Check whether an app is installed. Package name for Android, bundle ID for iOS. |
 | `appium_query_app_state`       | Query the current state of an app. Package name for Android, bundle ID for iOS. |
+| `appium_clear_app`             | Clear app data and cache without uninstalling (`mobile: clearApp`). Android: stop the app first when possible; iOS: bundle ID. |
 
 ### Test Generation & Documentation
 

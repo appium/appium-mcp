@@ -1,0 +1,55 @@
+import { FastMCP } from 'fastmcp';
+import { z } from 'zod';
+import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { execute } from '../../command.js';
+
+export default function clearApp(server: FastMCP): void {
+  const schema = z.object({
+    id: z
+      .string()
+      .describe('App identifier (package name for Android, bundle ID for iOS)'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
+  });
+
+  server.addTool({
+    name: 'appium_clear_app',
+    description:
+      'Clear all user data and cache for an installed app without uninstalling it (Appium `mobile: clearApp`). ' +
+      'Android uses `pm clear` under the hood; the app should be stopped first for reliable results. ' +
+      'iOS clears the app data container (bundle ID required).',
+    parameters: schema,
+    execute: async (args: z.infer<typeof schema>) => {
+      const { id } = args;
+      const driver = getDriver(args.sessionId);
+      if (!driver) {
+        throw new Error('No driver found');
+      }
+      try {
+        const platform = getPlatformName(driver);
+        const params =
+          platform === PLATFORM.android ? { appId: id } : { bundleId: id };
+        await execute(driver, 'mobile: clearApp', params);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'App data cleared successfully',
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Failed to clear app data. err: ${err.toString()}`,
+            },
+          ],
+        };
+      }
+    },
+  });
+}
