@@ -12,6 +12,12 @@ export default function uninstallApp(server: FastMCP): void {
       .string()
       .optional()
       .describe('Session ID to target. If omitted, uses the active session.'),
+    keepData: z
+      .boolean()
+      .optional()
+      .describe(
+        'Keep the application data and cache folders after uninstall. Android only.'
+      ),
   });
 
   server.addTool({
@@ -19,7 +25,7 @@ export default function uninstallApp(server: FastMCP): void {
     description: 'Uninstall an app from the device.',
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
-      const { id } = args;
+      const { id, keepData } = args;
       const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
@@ -27,7 +33,9 @@ export default function uninstallApp(server: FastMCP): void {
       try {
         const platform = getPlatformName(driver);
         const params =
-          platform === PLATFORM.android ? { appId: id } : { bundleId: id };
+          platform === PLATFORM.android
+            ? { appId: id, keepData: keepData ?? false }
+            : { bundleId: id };
         await execute(driver, 'mobile: removeApp', params);
         return {
           content: [
