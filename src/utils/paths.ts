@@ -1,5 +1,9 @@
-import { isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import * as os from 'node:os';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Resolves the screenshot directory path.
@@ -19,4 +23,8 @@ export function resolveScreenshotDir(): string {
   }
 
   return join(process.cwd(), screenshotDir);
+}
+
+export function resolveAppiumResourcesPath(...segments: string[]): string {
+  return resolve(__dirname, '..', 'resources', ...segments);
 }

@@ -1,24 +1,15 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import log from '../../logger.js';
+import { resolveAppiumResourcesPath } from '../../utils/paths.js';
 
 type Platform = 'android' | 'ios';
 type Driver = 'uiautomator2' | 'espresso' | 'xcuitest';
 type Mode = 'setup' | 'troubleshoot';
 type OptionalSkill = 'ffmpeg' | 'bundletool';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const ROOT = path.resolve(
-  __dirname,
-  '..',
-  '..',
-  'resources',
-  'submodules',
-  'appium-skills'
-);
+const ROOT = resolveAppiumResourcesPath('submodules', 'appium-skills');
 const AGENTS_PATH = path.join(ROOT, 'AGENTS.md');
 const SKILL_PATH = (name: string) =>
   path.join(ROOT, 'skills', name, 'SKILL.md');
