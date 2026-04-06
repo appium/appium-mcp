@@ -19,7 +19,7 @@ export default function clearApp(server: FastMCP): void {
     description:
       'Clear all user data and cache for an installed app without uninstalling it (Appium `mobile: clearApp`). ' +
       'Android: uses `pm clear` (package name); stop the app first for reliable results on devices and emulators. ' +
-      'iOS: only supported on Simulator—`mobile: clearApp` is not available for resetting app data on physical devices without uninstalling; pass the bundle ID.',
+      'iOS: Simulator only (bundle ID); `mobile: clearApp` is not supported on real devices.',
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
       const { id } = args;
