@@ -332,11 +332,11 @@ After adding a new tool:
 
 ## Pre-Release Checklist
 
-Before releasing a new version, ensure documentation submodules are up to date:
+Before releasing a new version, ensure documentation and skills submodules are up to date:
 
-### Updating Documentation Submodules
+### Updating Documentation And Skills Submodules
 
-This project uses Git submodules to automatically sync documentation from the official Appium repositories. Before each release, you must update the submodules to ensure you have the latest documentation files (.md and image files).
+This project uses Git submodules to automatically sync documentation and agent skill content from the official Appium repositories. Before each release, you must update the submodules to ensure you have the latest markdown and image assets.
 
 **Required steps before each release:**
 
@@ -349,8 +349,8 @@ This project uses Git submodules to automatically sync documentation from the of
    This script will:
 
    - Update all Git submodules to their latest commits
-   - Reapply sparse-checkout to only fetch `.md` and image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`)
-   - Ensure you have the latest documentation without downloading entire repositories
+  - Reapply sparse-checkout to only fetch `.md` and image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`)
+  - Ensure you have the latest documentation and Appium skills without downloading entire repositories
 
 2. **Re-index the documentation (if needed):**
 
@@ -368,6 +368,7 @@ This project uses Git submodules to automatically sync documentation from the of
 ### Why This Is Important
 
 - **Fresh Documentation**: Ensures RAG indexing uses the latest Appium documentation
+- **Fresh Skills**: Ensures environment-setup guidance stays aligned with upstream Appium agent workflows
 - **Smaller Repository**: Sparse-checkout keeps repository size manageable by only fetching documentation files
 - **Automatic Sync**: Submodules automatically track upstream repository commits
 - **Reproducibility**: Submodule commits are tracked, ensuring consistent documentation across environments

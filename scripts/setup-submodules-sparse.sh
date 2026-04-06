@@ -5,6 +5,7 @@ set -e
 
 SUBMODULES=(
   "src/resources/submodules/appium"
+  "src/resources/submodules/appium-skills"
   "src/resources/submodules/appium-uiautomator2-driver"
   "src/resources/submodules/appium-xcuitest-driver"
 )
