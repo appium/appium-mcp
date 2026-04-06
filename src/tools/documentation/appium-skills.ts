@@ -41,6 +41,12 @@ const TEMPLATE_HEADINGS: Record<string, string> = {
   'troubleshoot:xcuitest': 'Troubleshooting',
 };
 
+/**
+ * Get the list of skill names to return based on the input arguments,
+ * and determine which optional skills were ignored.
+ * @param args
+ * @returns
+ */
 function getSkillNames(args: {
   platform: Platform;
   driver: Driver;
