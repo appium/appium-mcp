@@ -177,12 +177,21 @@ export default function appiumSkills(server: any): void {
       openWorldHint: false,
     },
     execute: async (rawArgs: any): Promise<any> => {
-      const args = rawArgs as {
+      const parsed = (rawArgs ?? {}) as Partial<{
         platform: Platform;
         driver: Driver;
         mode: Mode;
         realDevice: boolean;
         includeOptional: OptionalSkill[];
+      }>;
+      const args = {
+        platform: parsed.platform as Platform,
+        driver: parsed.driver as Driver,
+        mode: parsed.mode ?? 'setup',
+        realDevice: parsed.realDevice ?? false,
+        includeOptional: Array.isArray(parsed.includeOptional)
+          ? parsed.includeOptional
+          : [],
       };
       const { skillNames, ignoredOptional } = getSkillNames(args);
 
