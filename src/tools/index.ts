@@ -53,6 +53,7 @@ import pressKey from './interactions/press-key.js';
 import setValue from './interactions/set-value.js';
 import keyboard from './interactions/keyboard.js';
 import getText from './interactions/get-text.js';
+import getElementAttribute from './interactions/get-element-attribute.js';
 import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
 import { getOrientation, setOrientation } from './interactions/orientation.js';
@@ -191,6 +192,7 @@ export default function registerTools(server: FastMCP): void {
   setValue(server);
   keyboard(server);
   getText(server);
+  getElementAttribute(server);
   clipboard(server);
   getActiveElement(server);
   getPageSource(server);

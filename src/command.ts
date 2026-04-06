@@ -322,6 +322,27 @@ export async function getElementText(
   return await driver.getElementText(elementUUID);
 }
 
+/**
+ * Get the value of an element's attribute.
+ *
+ * @param driver - The driver instance to query.
+ * @param elementUUID - Identifier of the element.
+ * @param attribute - Name of the attribute to retrieve.
+ * @returns The attribute value as a string, or null if not set.
+ */
+export async function getElementAttribute(
+  driver: DriverInstance,
+  elementUUID: string,
+  attribute: string
+): Promise<string | null> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getAttribute(attribute, elementUUID);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.getAttribute(attribute, elementUUID);
+  }
+  return await driver.getElementAttribute(elementUUID, attribute);
+}
+
 export async function getActiveElement(
   driver: DriverInstance
 ): Promise<AppiumElement> {
