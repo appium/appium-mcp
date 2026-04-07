@@ -8,6 +8,7 @@ import {
   stopRecordingScreen as cmdStopRecording,
 } from '../../command.js';
 import { resolveScreenshotDir } from '../../utils/paths.js';
+import crypto from 'node:crypto';
 
 /**
  * iOS-specific options for startRecordingScreen.
