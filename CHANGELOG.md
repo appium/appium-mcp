@@ -1,3 +1,9 @@
+## [1.48.0](https://github.com/appium/appium-mcp/compare/v1.47.0...v1.48.0) (2026-04-07)
+
+### Features
+
+* merge some similar tools to reduce the amount of tools ([#249](https://github.com/appium/appium-mcp/issues/249)) ([7fa60f2](https://github.com/appium/appium-mcp/commit/7fa60f2ad74cbdfa99d9057380f32ec17716c8d0))
+
 ## [1.47.0](https://github.com/appium/appium-mcp/compare/v1.46.0...v1.47.0) (2026-04-07)
 
 ### Features

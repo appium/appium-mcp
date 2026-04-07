@@ -184,7 +184,7 @@ Screen recordings are saved as MP4 files to the same directory as screenshots (`
 - **iOS**: Requires [ffmpeg](https://ffmpeg.org/download.html) to be installed and available on `PATH`. The default codec is `libx264` with `yuv420p` pixel format for QuickTime compatibility.
 - **Android**: Uses the built-in `screenrecord` command via UiAutomator2. No additional dependencies required.
 
-To record a fixed-duration clip, pass `timeLimit` (in seconds) to `appium_start_recording_screen` — the tool will wait, stop, and return the saved file path automatically. For manual control, call `appium_start_recording_screen` without `timeLimit`, then `appium_stop_recording_screen` when done.
+To start recording, call `appium_screen_recording` with `action="start"`. You may provide `timeLimit` in seconds to limit the maximum recording duration, but the start call still returns immediately. To finalize the recording, save the video, and receive the file path, call `appium_screen_recording` again with `action="stop"`.
 
 ### AI Vision Element Finding
 
@@ -338,27 +338,23 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_get_text`     | Get text content from an element                                                             |
 | `appium_get_clipboard` | Get the current clipboard content as plain text from the device            |
 | `appium_set_clipboard` | Set the device clipboard to the provided plain text                        |
-| `appium_handle_alert` | Accept or dismiss system/permission alerts, or click a dialog button by label |
-| `appium_get_alert_text` | Get the text content of the currently displayed alert or dialog |
+| `appium_alert` | Handle alerts with `action` = `accept`, `dismiss`, or `get_text` (optional `buttonLabel`) |
 
 ### Screen & Navigation
 
 | Tool                       | Description                                             |
 | -------------------------- | ------------------------------------------------------- |
-| `appium_screenshot`        | Take a screenshot of the current screen and save as PNG |
-| `appium_element_screenshot` | Take a screenshot of a specific element by its UUID and save as PNG |
+| `appium_screenshot`        | Take a screenshot and save as PNG. Optionally provide `elementUUID` to capture a specific element. |
 | `appium_get_window_size`   | Get the width and height of the device screen in pixels |
 | `appium_scroll`            | Scroll the screen vertically (up or down)               |
 | `appium_scroll_to_element` | Scroll until a specific element becomes visible         |
 | `appium_swipe`             | Swipe the screen in a direction (left, right, up, down) or between custom coordinates |
 | `appium_get_page_source`   | Get the page source (XML) from the current screen       |
-| `appium_get_orientation`   | Get the current device/screen orientation (LANDSCAPE or PORTRAIT). |
-| `appium_set_orientation`   | Set the device/screen orientation to LANDSCAPE or PORTRAIT (rotate screen). |
+| `appium_orientation`   | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set). |
 | `appium_set_geolocation`   | Set the GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
-| `appium_start_recording_screen` | Start recording the device screen. Works on iOS (XCUITest, requires ffmpeg) and Android (UiAutomator2). |
-| `appium_stop_recording_screen` | Stop the active screen recording and save the video to disk as an MP4 file. Returns the path to the saved file. |
+| `appium_screen_recording` | Start or stop screen recording with `action` = `start` or `stop`. On stop, returns the saved MP4 path. |
 | `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
 | `appium_mobile_get_battery_info` | Get the current battery level (as a percentage) and charging state of the device. Works on both iOS and Android. |
 | `appium_mobile_get_device_time` | Get the current time on the device. Accepts an optional `format` parameter (moment.js format string); defaults to ISO 8601. Works on both iOS and Android. |
