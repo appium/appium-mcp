@@ -1,14 +1,20 @@
 import { describe, expect, test } from '@jest/globals';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   resolveAppiumResourcesPath,
   resolveScreenshotDir,
 } from '../../utils/paths.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+// Walk up from src/tests/utils to the package root
+const packageRoot = resolve(__dirname, '..', '..', '..');
+
 describe('paths utilities', () => {
   test('resolveAppiumResourcesPath returns src/resources root with no segments', () => {
     expect(resolveAppiumResourcesPath()).toBe(
-      resolve(process.cwd(), 'src', 'resources')
+      resolve(packageRoot, 'src', 'resources')
     );
   });
 
@@ -17,7 +23,7 @@ describe('paths utilities', () => {
       resolveAppiumResourcesPath('submodules', 'appium-skills', 'AGENTS.md')
     ).toBe(
       resolve(
-        process.cwd(),
+        packageRoot,
         'src',
         'resources',
         'submodules',

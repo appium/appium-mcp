@@ -26,5 +26,6 @@ export function resolveScreenshotDir(): string {
 }
 
 export function resolveAppiumResourcesPath(...segments: string[]): string {
-  return resolve(__dirname, '..', 'resources', ...segments);
+  const packageRoot = resolve(__dirname, '..', '..');
+  return resolve(packageRoot, 'src', 'resources', ...segments);
 }
