@@ -36,7 +36,7 @@ import batteryInfo from './session/battery-info.js';
 import { pushFile, pullFile } from './session/file-transfer.js';
 import deviceTime from './session/device-time.js';
 import driverSettings from './session/driver-settings.js';
-import iosSimulatorSetup from './ios/prepare-ios-simulator.js';
+import prepareIosSimulator from './ios/prepare-ios-simulator.js';
 import generateTest from './test-generation/generate-tests.js';
 import scroll from './navigations/scroll.js';
 import scrollToElement from './navigations/scroll-to-element.js';
@@ -166,7 +166,7 @@ export default function registerTools(server: FastMCP): void {
   driverSettings(server);
 
   // iOS Setup
-  iosSimulatorSetup(server);
+  prepareIosSimulator(server);
 
   // Navigation
   scroll(server);
