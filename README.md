@@ -184,7 +184,7 @@ Screen recordings are saved as MP4 files to the same directory as screenshots (`
 - **iOS**: Requires [ffmpeg](https://ffmpeg.org/download.html) to be installed and available on `PATH`. The default codec is `libx264` with `yuv420p` pixel format for QuickTime compatibility.
 - **Android**: Uses the built-in `screenrecord` command via UiAutomator2. No additional dependencies required.
 
-To record a fixed-duration clip, call `appium_screen_recording` with `action="start"` and `timeLimit` in seconds. For manual control, call `appium_screen_recording` with `action="start"`, then call it again with `action="stop"` to save and return the file path.
+To start recording, call `appium_screen_recording` with `action="start"`. You may provide `timeLimit` in seconds to limit the maximum recording duration, but the start call still returns immediately. To finalize the recording, save the video, and receive the file path, call `appium_screen_recording` again with `action="stop"`.
 
 ### AI Vision Element Finding
 
