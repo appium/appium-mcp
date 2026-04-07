@@ -384,6 +384,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `generate_locators`          | Generate intelligent locators for all interactive elements on the current screen |
 | `appium_generate_tests`      | Generate automated test code from natural language scenarios                     |
 | `appium_documentation_query` | Query Appium documentation using RAG for help and guidance                       |
+| `appium_skills` | Return ordered setup or troubleshooting skills from `appium/skills` for local Appium environments |
 
 ## 🤖 Client Support
 

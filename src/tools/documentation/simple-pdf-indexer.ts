@@ -54,6 +54,10 @@ const DOCUMENTS_PATH = path.join(__dirname, './uploads/documents.json');
 
 // Global variable to store the in-memory vector store
 let memoryVectorStore: MemoryVectorStore | null = null;
+/**
+ * Exclude certain directories from being indexed to avoid irrelevant content and reduce noise in the vector store.
+ */
+const EXCLUDED_MARKDOWN_DIRECTORIES = new Set(['appium-skills']);
 
 /**
  * Save the documents to a file
@@ -257,6 +261,10 @@ export async function getMarkdownFilesInDirectory(
         const stats = await stat(filePath);
 
         if (stats.isDirectory()) {
+          if (EXCLUDED_MARKDOWN_DIRECTORIES.has(file)) {
+            continue;
+          }
+
           // Recursively scan subdirectories
           await scanDirectory(filePath);
         } else if (

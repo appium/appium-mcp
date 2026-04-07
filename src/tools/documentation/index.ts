@@ -9,8 +9,8 @@ import {
   queryVectorStore,
   indexAllMarkdownFiles,
 } from './simple-pdf-indexer.js';
-import * as path from 'node:path';
 import log from '../../logger.js';
+import { resolveAppiumResourcesPath } from '../../utils/paths.js';
 
 /**
  * Interface for the query response
@@ -32,11 +32,7 @@ export async function initializeAppiumDocumentation(
     // Default to submodules directory if not specified
     const docsPath =
       // Refer to the /src/resources/submodules directory where the markdown files are located.
-      resourcesPath ||
-      path.resolve(
-        __dirname,
-        path.join('..', '..', '..', 'src', 'resources', 'submodules')
-      );
+      resourcesPath || resolveAppiumResourcesPath('submodules');
     log.info(`Initializing Appium documentation from: ${docsPath}`);
     await indexAllMarkdownFiles(docsPath);
     log.info('Appium documentation indexing completed');

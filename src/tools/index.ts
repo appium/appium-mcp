@@ -15,6 +15,7 @@
 import { FastMCP } from 'fastmcp';
 import log from '../logger.js';
 import answerAppium from './documentation/answer-appium.js';
+import appiumSkills from './documentation/appium-skills.js';
 import createSession from './session/create-session.js';
 import deleteSession from './session/delete-session.js';
 import listSessions from './session/list-sessions.js';
@@ -228,5 +229,6 @@ export default function registerTools(server: FastMCP): void {
 
   // Documentation
   answerAppium(server);
+  appiumSkills(server);
   log.info('All tools registered');
 }

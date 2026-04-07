@@ -81,6 +81,7 @@ When searching for elements, follow this priority order for efficiency:
 ### Documentation (`documentation/`)
 
 - `answer-appium.ts` - Answer Appium questions using RAG
+- `appium-skills.ts` - Return ordered Appium environment setup or troubleshooting skills from the vendored appium/skills repository
 
 ## Adding a New Tool
 
