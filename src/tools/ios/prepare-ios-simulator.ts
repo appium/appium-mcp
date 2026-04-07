@@ -230,7 +230,7 @@ async function resolveWdaAppPath(
     const cachedVersion = await getLatestWDAVersionFromCache();
     if (cachedVersion) {
       const cachedAppPath = path.join(
-        cachePath(`wda/${cachedVersion}/extracted`),
+        cachePath(`wda/${cachedVersion}/extracted-${platform}`),
         `${artifactPrefix}-Runner.app`
       );
       if (await fileExists(cachedAppPath)) {
@@ -246,7 +246,7 @@ async function resolveWdaAppPath(
   // Download from GitHub
   const wdaVersion = await getLatestWDAVersionFromGitHub();
   const versionCacheDir = cachePath(`wda/${wdaVersion}`);
-  const extractDir = path.join(versionCacheDir, 'extracted');
+  const extractDir = path.join(versionCacheDir, `extracted-${platform}`);
   const zipPath = path.join(
     versionCacheDir,
     `${artifactPrefix}-Build-Sim-${archStr}.zip`
