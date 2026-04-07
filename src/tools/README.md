@@ -14,7 +14,7 @@ This directory contains all MCP tools available in MCP Appium.
 - `lock.ts` - Unlock device (`appium_mobile_unlock`)
 - `select-platform.ts` - Choose Android or iOS
 - `select-device.ts` - Choose specific device
-- `file-transfer.ts` - Push/pull files on device (`appium_mobile_push_file`, `appium_mobile_pull_file`)
+- `file-transfer.ts` - Push/pull files on device (`appium_mobile_file` with `action=push|pull`)
 - `driver-settings.ts` - Read/update Appium driver session settings (`appium_get_settings`, `appium_update_settings`)
 
 ### iOS Setup (`ios/`)

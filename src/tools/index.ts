@@ -33,7 +33,7 @@ import {
 } from './session/geolocation.js';
 import deviceInfo from './session/device-info.js';
 import batteryInfo from './session/battery-info.js';
-import { pushFile, pullFile } from './session/file-transfer.js';
+import fileTransfer from './session/file-transfer.js';
 import deviceTime from './session/device-time.js';
 import driverSettings from './session/driver-settings.js';
 import bootSimulator from './ios/boot-simulator.js';
@@ -57,15 +57,12 @@ import getText from './interactions/get-text.js';
 import getElementAttribute from './interactions/get-element-attribute.js';
 import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
-import { getOrientation, setOrientation } from './interactions/orientation.js';
+import orientation from './interactions/orientation.js';
 import clipboard from './interactions/clipboard.js';
-import handleAlert, { getAlertText } from './interactions/handle-alert.js';
-import { screenshot, elementScreenshot } from './interactions/screenshot.js';
+import alert from './interactions/handle-alert.js';
+import screenshot from './interactions/screenshot.js';
 import getWindowSize from './interactions/window-size.js';
-import {
-  startRecordingScreen,
-  stopRecordingScreen,
-} from './interactions/screen-recording.js';
+import screenRecording from './interactions/screen-recording.js';
 import activateApp from './app-management/activate-app.js';
 import backgroundApp from './app-management/background-app.js';
 import installApp from './app-management/install-app.js';
@@ -162,8 +159,7 @@ export default function registerTools(server: FastMCP): void {
   resetGeolocation(server);
   deviceInfo(server);
   batteryInfo(server);
-  pushFile(server);
-  pullFile(server);
+  fileTransfer(server);
   deviceTime(server);
   driverSettings(server);
 
@@ -197,15 +193,11 @@ export default function registerTools(server: FastMCP): void {
   clipboard(server);
   getActiveElement(server);
   getPageSource(server);
-  getOrientation(server);
-  setOrientation(server);
-  handleAlert(server);
-  getAlertText(server);
+  orientation(server);
+  alert(server);
   screenshot(server);
-  elementScreenshot(server);
   getWindowSize(server);
-  startRecordingScreen(server);
-  stopRecordingScreen(server);
+  screenRecording(server);
 
   // App Management
   activateApp(server);
