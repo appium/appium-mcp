@@ -173,6 +173,12 @@ export default function screenRecording(server: FastMCP): void {
         }
 
         const platform = getPlatformName(driver);
+        if (![PLATFORM.ios, PLATFORM.android].includes(platform)) {
+          throw new Error(
+            `Unsupported platform: ${platform}. Only Android and iOS are supported.`
+          );
+        }
+
         let options: IOSRecordingOptions | AndroidRecordingOptions;
 
         if (platform === PLATFORM.ios) {
