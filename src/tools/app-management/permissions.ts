@@ -5,10 +5,6 @@ import { execute } from '../../command.js';
 
 const iosPermissionStateSchema = z.enum(['yes', 'no', 'unset', 'limited']);
 
-/**
- * One MCP tool for app/runtime permissions: read, change, or (iOS) reset.
- * Dispatches to the right `mobile:*` execute script per platform and action.
- */
 export default function mobilePermissions(server: FastMCP): void {
   const schema = z.object({
     action: z
@@ -22,7 +18,6 @@ export default function mobilePermissions(server: FastMCP): void {
       .string()
       .optional()
       .describe('Session ID to target. If omitted, uses the active session.'),
-    // --- get (Android): optional filters for mobile: getPermissions
     permissionFilter: z
       .enum(['denied', 'granted', 'requested'])
       .optional()
@@ -35,7 +30,6 @@ export default function mobilePermissions(server: FastMCP): void {
       .describe(
         'Android get/update: package to target. Defaults to the app under test.'
       ),
-    // --- get (iOS): mobile: getPermission
     bundleId: z
       .string()
       .optional()
@@ -49,7 +43,6 @@ export default function mobilePermissions(server: FastMCP): void {
         'iOS get: privacy service name (e.g. camera, microphone, photos). ' +
           'iOS reset: service name or numeric XCUIProtectedResource id.'
       ),
-    // --- update (Android): mobile: changePermissions
     permissions: z
       .union([z.string(), z.array(z.string())])
       .optional()
@@ -66,7 +59,6 @@ export default function mobilePermissions(server: FastMCP): void {
       .enum(['pm', 'appops'])
       .optional()
       .describe('Android update: pm (default) or appops.'),
-    // --- update (iOS): mobile: setPermission
     access: z
       .record(z.string(), iosPermissionStateSchema)
       .optional()
@@ -93,13 +85,9 @@ export default function mobilePermissions(server: FastMCP): void {
         throw new Error('No driver found');
       }
 
-      const platform = getPlatformName(driver);
-
-      const fail = (text: string): ContentResult => ({
-        content: [{ type: 'text', text }],
-      });
-
       try {
+        const platform = getPlatformName(driver);
+
         if (args.action === 'get') {
           if (platform === PLATFORM.android) {
             const params: Record<string, unknown> = {};
@@ -116,13 +104,15 @@ export default function mobilePermissions(server: FastMCP): void {
           }
           if (platform === PLATFORM.ios) {
             if (!args.bundleId) {
-              return fail('iOS get requires bundleId and service (string).');
+              throw new Error(
+                'iOS get requires bundleId and service (string).'
+              );
             }
             if (
               args.service === undefined ||
               typeof args.service === 'number'
             ) {
-              return fail(
+              throw new Error(
                 'iOS get requires service as a string name (e.g. camera, photos).'
               );
             }
@@ -134,13 +124,15 @@ export default function mobilePermissions(server: FastMCP): void {
               content: [{ type: 'text', text: String(raw) }],
             };
           }
-          return fail(`Unsupported platform: ${platform}.`);
+          throw new Error(
+            `Unsupported platform: ${platform}. Only Android and iOS are supported.`
+          );
         }
 
         if (args.action === 'update') {
           if (platform === PLATFORM.android) {
             if (args.permissions === undefined) {
-              return fail('Android update requires permissions.');
+              throw new Error('Android update requires permissions.');
             }
             const params: Record<string, unknown> = {
               permissions: args.permissions,
@@ -163,7 +155,7 @@ export default function mobilePermissions(server: FastMCP): void {
           }
           if (platform === PLATFORM.ios) {
             if (!args.bundleId || !args.access) {
-              return fail('iOS update requires bundleId and access map.');
+              throw new Error('iOS update requires bundleId and access map.');
             }
             await execute(driver, 'mobile: setPermission', {
               bundleId: args.bundleId,
@@ -178,17 +170,18 @@ export default function mobilePermissions(server: FastMCP): void {
               ],
             };
           }
-          return fail(`Unsupported platform: ${platform}.`);
+          throw new Error(
+            `Unsupported platform: ${platform}. Only Android and iOS are supported.`
+          );
         }
 
-        // reset
         if (platform !== PLATFORM.ios) {
-          return fail(
+          throw new Error(
             'action=reset is only supported on iOS (mobile: resetPermission for the AUT).'
           );
         }
         if (args.service === undefined) {
-          return fail('iOS reset requires service (name or numeric id).');
+          throw new Error('iOS reset requires service (name or numeric id).');
         }
         await execute(driver, 'mobile: resetPermission', {
           service: args.service,
