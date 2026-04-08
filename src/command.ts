@@ -167,18 +167,45 @@ export async function setContext(
 }
 
 /**
+ * Build a W3C Actions API key sequence for the given text.
+ * Each character is emitted as a keyDown+keyUp pair so it works
+ * on both Android and iOS without relying on driver-specific setValue.
+ *
+ * @param text - The text to type.
+ * @returns A W3C `key` action sequence object.
+ */
+export function buildW3cKeyActions(text: string): StringRecord<any> {
+  const actions = text.split('').flatMap((char) => [
+    { type: 'keyDown', value: char },
+    { type: 'keyUp', value: char },
+  ]);
+
+  return {
+    type: 'key',
+    id: 'keyboard',
+    actions,
+  };
+}
+
+/**
  * Set the value of an element.
  *
  * @param driver - The driver instance to use.
  * @param elementUUID - Element identifier.
  * @param text - Text to set into the element.
+ * @param w3cActions - When true, use the W3C Actions API (performActions) instead
+ *   of the driver-specific setValue. Works on both Android and iOS.
  * @returns Driver-specific result (often void or element value).
  */
 export async function setValue(
   driver: DriverInstance,
   elementUUID: string,
-  text: string
+  text: string,
+  w3cActions = false
 ) {
+  if (w3cActions) {
+    return await performActions(driver, [buildW3cKeyActions(text)]);
+  }
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.setValue(text, elementUUID);
   } else if (isXCUITestDriverSession(driver)) {
