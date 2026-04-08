@@ -108,56 +108,35 @@ export async function executeScreenshot(opts: {
   }
 }
 
-const maxWidthSchema = z
-  .number()
-  .optional()
-  .describe(
-    'Optional maximum width in pixels to resize the screenshot. The aspect ratio is preserved. Useful for reducing token usage when sending screenshots to LLMs.'
-  );
+const screenshotSchema = z.object({
+  elementUUID: elementUUIDScheme
+    .optional()
+    .describe(
+      'Optional element UUID. If provided, captures only this element. If omitted, captures full screen.'
+    ),
+  maxWidth: z
+    .number()
+    .optional()
+    .describe(
+      'Optional maximum width in pixels to resize the screenshot. The aspect ratio is preserved. Useful for reducing token usage when sending screenshots to LLMs.'
+    ),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
+});
 
-export function screenshot(server: FastMCP): void {
-  const screenshotSchema = z.object({
-    maxWidth: maxWidthSchema,
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-  });
-
+export default function screenshot(server: FastMCP): void {
   server.addTool({
     name: 'appium_screenshot',
     description:
-      'Take a screenshot of the current screen and return as PNG image',
+      'Take a screenshot and save as PNG. Optionally provide elementUUID to capture only that element.',
     parameters: screenshotSchema,
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, _context: any): Promise<any> =>
-      executeScreenshot({ maxWidth: args.maxWidth, sessionId: args.sessionId }),
-  });
-}
-
-export function elementScreenshot(server: FastMCP): void {
-  const elementScreenshotSchema = z.object({
-    elementUUID: elementUUIDScheme,
-    maxWidth: maxWidthSchema,
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-  });
-
-  server.addTool({
-    name: 'appium_element_screenshot',
-    description:
-      'Take a screenshot of the given element uuid and return as PNG image',
-    parameters: elementScreenshotSchema,
-    annotations: {
-      readOnlyHint: false,
-      openWorldHint: false,
-    },
-    execute: async (args: any, _context: any): Promise<any> =>
+    execute: async (args: z.infer<typeof screenshotSchema>, _context: any) =>
       executeScreenshot({
         elementId: args.elementUUID,
         maxWidth: args.maxWidth,
