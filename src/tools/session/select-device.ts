@@ -187,7 +187,7 @@ function formatIOSSelectionResponse(
           {
             message: `✅ Device selected: ${deviceName} (${deviceUdid})`,
             instructions:
-              '🚀 You can now call the setup_wda tool to setup WDA on the simulator.',
+              '🚀 You can now call the prepare_ios_simulator tool to boot and setup WDA on the simulator.',
             platform: 'ios',
             capabilities: {
               'appium:udid': deviceUdid,
@@ -274,7 +274,7 @@ export default function selectDevice(server: any): void {
       WORKFLOW FOR LOCAL SERVERS:
       - Use this tool ONLY when select_platform returns multiple devices
       - For Android: Use before calling create_session if multiple devices are found
-      - For iOS: Use before calling boot_simulator or create_session if multiple simulators/devices are found
+      - For iOS: Use before calling prepare_ios_simulator or create_session if multiple simulators/devices are found
       - Ask the user which device they want to use from the list provided
       WORKFLOW FOR REMOTE SERVERS:
       - SKIP this tool entirely

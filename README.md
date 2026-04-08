@@ -295,9 +295,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | ----------------- | ------------------------------------------------------------------------ |
 | `select_platform` | **REQUIRED FIRST**: Ask user to choose between Android or iOS platform   |
 | `select_device`   | Select a specific device when multiple devices are available             |
-| `boot_simulator`  | Boot an iOS simulator and wait for it to be ready (iOS only)             |
-| `setup_wda`       | Download and setup prebuilt WebDriverAgent for iOS simulators (iOS only) |
-| `install_wda`     | Install and launch WebDriverAgent on a booted iOS simulator (iOS only)   |
+| `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only) |
 
 ### Session Management
 
