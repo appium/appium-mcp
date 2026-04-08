@@ -1,3 +1,9 @@
+## [1.49.0](https://github.com/appium/appium-mcp/compare/v1.48.0...v1.49.0) (2026-04-08)
+
+### Features
+
+* consolidate simulator preparation into single `prepare_ios_simulator` tool ([#250](https://github.com/appium/appium-mcp/issues/250)) ([68cfc91](https://github.com/appium/appium-mcp/commit/68cfc9142857d346f3eacf36fff9ba7456724096))
+
 ## [1.48.0](https://github.com/appium/appium-mcp/compare/v1.47.0...v1.48.0) (2026-04-07)
 
 ### Features
