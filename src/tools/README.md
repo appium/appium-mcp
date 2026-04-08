@@ -19,9 +19,7 @@ This directory contains all MCP tools available in MCP Appium.
 
 ### iOS Setup (`ios/`)
 
-- `boot-simulator.ts` - Boot iOS simulators
-- `setup-wda.ts` - Setup WebDriverAgent
-- `install-wda.ts` - Install WebDriverAgent
+- `prepare-ios-simulator.ts` - Boot simulator, download, install and launch WebDriverAgent in a single call
 
 ### Navigation (`navigations/`)
 

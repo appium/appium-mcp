@@ -241,7 +241,7 @@ export default function registerResources(server: any) {
 
 ### 1. File Naming
 
-- Tools: `kebab-case.ts` (e.g., `boot-simulator.ts`)
+- Tools: `kebab-case.ts` (e.g., `prepare-ios-simulator.ts`)
 - Resources: `kebab-case.ts` (e.g., `java-template.ts`)
 
 ### 2. Function Exports
