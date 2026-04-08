@@ -1,3 +1,9 @@
+## [1.49.1](https://github.com/appium/appium-mcp/compare/v1.49.0...v1.49.1) (2026-04-08)
+
+### Bug Fixes
+
+* support typings with w3c actions ([#253](https://github.com/appium/appium-mcp/issues/253)) ([9cfd464](https://github.com/appium/appium-mcp/commit/9cfd4641e7263cf3b7d1e71f3c580b1dfbd57a58))
+
 ## [1.49.0](https://github.com/appium/appium-mcp/compare/v1.48.0...v1.49.0) (2026-04-08)
 
 ### Features
