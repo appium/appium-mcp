@@ -14,6 +14,7 @@ import { Readable } from 'node:stream';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { pipeline } from 'node:stream/promises';
 import os from 'node:os';
+import { zip } from '@appium/support';
 import { Simctl } from 'node-simctl';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
@@ -120,8 +121,7 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
 }
 
 async function unzipFile(zipPath: string, destDir: string): Promise<void> {
-  // Both paths are internally constructed from os.homedir() + constants, safe from injection
-  await execAsync(`unzip -o -q "${zipPath}" -d "${destDir}"`);
+  await zip.extractAllTo(zipPath, destDir, { useSystemUnzip: true });
 }
 
 async function getLatestWDAVersionFromCache(): Promise<string | null> {
