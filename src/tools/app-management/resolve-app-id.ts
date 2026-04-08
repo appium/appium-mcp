@@ -20,6 +20,10 @@ function getCacheKey(sessionId?: string): string {
   return sessionId ?? getSessionId() ?? '__default__';
 }
 
+export function invalidateAppListCache(sessionId?: string): void {
+  appListCache.delete(getCacheKey(sessionId));
+}
+
 async function getInstalledApps(
   sessionId?: string
 ): Promise<{ packageName: string; appName: string }[]> {
@@ -77,12 +81,32 @@ async function getInstalledApps(
  *
  * Throws if no match is found.
  */
+export async function resolveId(
+  id: string | undefined,
+  name: string | undefined,
+  sessionId?: string
+): Promise<string> {
+  if (id !== undefined) {
+    if (!id.trim()) {
+      throw new Error('App id must not be empty or whitespace.');
+    }
+    return id;
+  }
+  if (name) {
+    return resolveAppId(name, sessionId);
+  }
+  throw new Error('Either id or name must be provided');
+}
+
 export async function resolveAppId(
   name: string,
   sessionId?: string
 ): Promise<string> {
-  const apps = await getInstalledApps(sessionId);
   const query = name.toLowerCase().trim();
+  if (!query) {
+    throw new Error('App name must not be empty or whitespace.');
+  }
+  const apps = await getInstalledApps(sessionId);
 
   type ScoredApp = { packageName: string; score: number };
   const scored: ScoredApp[] = [];

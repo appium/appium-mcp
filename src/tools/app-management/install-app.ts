@@ -2,6 +2,7 @@ import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
+import { invalidateAppListCache } from './resolve-app-id.js';
 
 export default function installApp(server: FastMCP): void {
   const schema = z.object({
@@ -27,6 +28,7 @@ export default function installApp(server: FastMCP): void {
         const params =
           platform === PLATFORM.android ? { appPath: path } : { app: path };
         await execute(driver, 'mobile: installApp', params);
+        invalidateAppListCache(args.sessionId);
         return {
           content: [
             {

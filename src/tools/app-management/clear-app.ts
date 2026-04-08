@@ -2,32 +2,36 @@ import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
-import { resolveAppId } from './resolve-app-id.js';
+import { resolveId } from './resolve-app-id.js';
 
 export default function clearApp(server: FastMCP): void {
-  const schema = z.object({
-    id: z
-      .string()
-      .optional()
-      .describe(
-        'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name.'
-      ),
-    name: z
-      .string()
-      .optional()
-      .describe(
-        'Human-readable app name (e.g. "Spotify"). Used to resolve the app id when id is not provided.'
-      ),
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-  });
+  const schema = z
+    .object({
+      id: z
+        .string()
+        .optional()
+        .describe(
+          'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. Required if name is not provided.'
+        ),
+      name: z
+        .string()
+        .optional()
+        .describe(
+          'Human-readable app name (e.g. "Spotify"). Used to resolve the app id when id is not provided. Required if id is not provided.'
+        ),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
+    })
+    .refine((args) => args.id || args.name, {
+      message: 'Either id or name must be provided',
+    });
 
   server.addTool({
     name: 'appium_mobile_clear_app',
     description:
-      'Clear all user data and cache for an installed app without uninstalling it (Appium `mobile: clearApp`). ' +
+      'Clear all user data and cache for an installed app without uninstalling it (Appium `mobile: clearApp`). Either id or name must be provided. ' +
       'Android: uses `pm clear` (package name); stop the app first for reliable results on devices and emulators. ' +
       'iOS: Simulator only (bundle ID); `mobile: clearApp` is not supported on real devices.',
     parameters: schema,
@@ -36,13 +40,7 @@ export default function clearApp(server: FastMCP): void {
       if (!driver) {
         throw new Error('No driver found');
       }
-      let id = args.id;
-      if (!id) {
-        if (!args.name) {
-          throw new Error('Either id or name must be provided');
-        }
-        id = await resolveAppId(args.name, args.sessionId);
-      }
+      const id = await resolveId(args.id, args.name, args.sessionId);
       try {
         const platform = getPlatformName(driver);
         const params =

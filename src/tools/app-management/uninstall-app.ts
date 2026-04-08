@@ -2,37 +2,42 @@ import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
-import { resolveAppId } from './resolve-app-id.js';
+import { resolveId, invalidateAppListCache } from './resolve-app-id.js';
 
 export default function uninstallApp(server: FastMCP): void {
-  const schema = z.object({
-    id: z
-      .string()
-      .optional()
-      .describe(
-        'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name.'
-      ),
-    name: z
-      .string()
-      .optional()
-      .describe(
-        'Human-readable app name (e.g. "Spotify"). Used to resolve the app id when id is not provided.'
-      ),
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-    keepData: z
-      .boolean()
-      .optional()
-      .describe(
-        'Keep the application data and cache folders after uninstall. Android only.'
-      ),
-  });
+  const schema = z
+    .object({
+      id: z
+        .string()
+        .optional()
+        .describe(
+          'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. Required if name is not provided.'
+        ),
+      name: z
+        .string()
+        .optional()
+        .describe(
+          'Human-readable app name (e.g. "Spotify"). Used to resolve the app id when id is not provided. Required if id is not provided.'
+        ),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
+      keepData: z
+        .boolean()
+        .optional()
+        .describe(
+          'Keep the application data and cache folders after uninstall. Android only.'
+        ),
+    })
+    .refine((args) => args.id || args.name, {
+      message: 'Either id or name must be provided',
+    });
 
   server.addTool({
     name: 'appium_uninstall_app',
-    description: 'Uninstall an app from the device.',
+    description:
+      'Uninstall an app from the device. Either id or name must be provided.',
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
       const { keepData } = args;
@@ -40,13 +45,7 @@ export default function uninstallApp(server: FastMCP): void {
       if (!driver) {
         throw new Error('No driver found');
       }
-      let id = args.id;
-      if (!id) {
-        if (!args.name) {
-          throw new Error('Either id or name must be provided');
-        }
-        id = await resolveAppId(args.name, args.sessionId);
-      }
+      const id = await resolveId(args.id, args.name, args.sessionId);
       try {
         const platform = getPlatformName(driver);
         const params =
@@ -54,6 +53,9 @@ export default function uninstallApp(server: FastMCP): void {
             ? { appId: id, keepData: keepData ?? false }
             : { bundleId: id };
         const removed = await execute(driver, 'mobile: removeApp', params);
+        if (removed) {
+          invalidateAppListCache(args.sessionId);
+        }
         return {
           content: [
             {

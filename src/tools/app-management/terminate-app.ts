@@ -2,44 +2,43 @@ import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
-import { resolveAppId } from './resolve-app-id.js';
+import { resolveId } from './resolve-app-id.js';
 
 export default function terminateApp(server: FastMCP): void {
-  const schema = z.object({
-    id: z
-      .string()
-      .optional()
-      .describe(
-        'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name.'
-      ),
-    name: z
-      .string()
-      .optional()
-      .describe(
-        'Human-readable app name (e.g. "Spotify"). Used to resolve the app id when id is not provided.'
-      ),
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-  });
+  const schema = z
+    .object({
+      id: z
+        .string()
+        .optional()
+        .describe(
+          'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. Required if name is not provided.'
+        ),
+      name: z
+        .string()
+        .optional()
+        .describe(
+          'Human-readable app name (e.g. "Spotify"). Used to resolve the app id when id is not provided. Required if id is not provided.'
+        ),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
+    })
+    .refine((args) => args.id || args.name, {
+      message: 'Either id or name must be provided',
+    });
 
   server.addTool({
     name: 'appium_terminate_app',
-    description: 'Terminate an app on the device.',
+    description:
+      'Terminate an app on the device. Either id or name must be provided.',
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
       const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
-      let id = args.id;
-      if (!id) {
-        if (!args.name) {
-          throw new Error('Either id or name must be provided');
-        }
-        id = await resolveAppId(args.name, args.sessionId);
-      }
+      const id = await resolveId(args.id, args.name, args.sessionId);
       try {
         const platform = getPlatformName(driver);
         const params =
