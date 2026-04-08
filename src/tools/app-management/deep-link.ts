@@ -11,6 +11,7 @@ import {
 import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import { resolveAppId } from './resolve-app-id.js';
 
 export default function deepLink(server: FastMCP): void {
   const schema = z.object({
@@ -22,7 +23,15 @@ export default function deepLink(server: FastMCP): void {
     appId: z
       .string()
       .optional()
-      .describe('App identifier: bundleId (iOS) or package (Android)'),
+      .describe(
+        'App identifier: bundleId (iOS) or package (Android). Takes precedence over appName.'
+      ),
+    appName: z
+      .string()
+      .optional()
+      .describe(
+        'Human-readable app name (e.g. "Spotify"). Used to resolve the app id when appId is not provided.'
+      ),
     waitForLaunch: z
       .boolean()
       .optional()
@@ -41,10 +50,14 @@ export default function deepLink(server: FastMCP): void {
       'Open a deep link URL with the default or specified app. Supported on Android and iOS.',
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
-      const { url, appId, waitForLaunch } = args;
+      const { url, waitForLaunch } = args;
       const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
+      }
+      let appId = args.appId;
+      if (!appId && args.appName) {
+        appId = await resolveAppId(args.appName, args.sessionId);
       }
       try {
         if (isRemoteDriverSession(driver)) {

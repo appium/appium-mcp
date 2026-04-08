@@ -32,7 +32,7 @@ function normalizeListAppsResult(
   }));
 }
 
-async function listAppsFromDevice(
+export async function listAppsFromDevice(
   applicationType: 'User' | 'System' = 'User',
   sessionId?: string
 ): Promise<{ packageName: string; appName: string }[]> {

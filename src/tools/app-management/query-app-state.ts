@@ -2,6 +2,7 @@ import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
 import { queryAppState as _queryAppState } from '../../command.js';
+import { resolveAppId } from './resolve-app-id.js';
 
 const APP_STATE_LABELS: Record<number, string> = {
   0: 'not installed',
@@ -15,7 +16,16 @@ export default function queryAppState(server: FastMCP): void {
   const schema = z.object({
     id: z
       .string()
-      .describe('App identifier (package name for Android, bundle ID for iOS)'),
+      .optional()
+      .describe(
+        'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name.'
+      ),
+    name: z
+      .string()
+      .optional()
+      .describe(
+        'Human-readable app name (e.g. "Spotify"). Used to resolve the app id when id is not provided.'
+      ),
     sessionId: z
       .string()
       .optional()
@@ -32,10 +42,28 @@ export default function queryAppState(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (args: z.infer<typeof schema>) => {
-      const { id, sessionId } = args;
+      const { sessionId } = args;
       const driver = getDriver(sessionId);
       if (!driver) {
         throw new Error('No driver found');
+      }
+      let id = args.id;
+      if (!id) {
+        if (!args.name) {
+          throw new Error('Either id or name must be provided');
+        }
+        try {
+          id = await resolveAppId(args.name, sessionId);
+        } catch {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `App "${args.name}" state: 0 (not installed)`,
+              },
+            ],
+          };
+        }
       }
       try {
         const state = await _queryAppState(driver, id);
