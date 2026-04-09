@@ -1,5 +1,4 @@
-import { FastMCP } from 'fastmcp';
-import { z } from 'zod';
+import type { ContentResult } from 'fastmcp';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
@@ -80,56 +79,30 @@ export async function listAppsFromDevice(
   throw new Error(`listApps is not implemented for platform: ${platform}`);
 }
 
-export default function listApps(server: FastMCP): void {
-  const schema = z.object({
-    applicationType: z
-      .enum(['User', 'System'])
-      .optional()
-      .describe(
-        'iOS only: filter apps by type. "User" returns user-installed apps, "System" returns system apps. Defaults to "User".'
-      ),
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-  });
-
-  server.addTool({
-    name: 'appium_list_apps',
-    description:
-      'List all installed apps on the device. On Android, only package IDs are returned (no display names); on iOS, bundle IDs and display names are returned. On iOS, use applicationType to filter by "User" (default) or "System" apps.',
-    parameters: schema,
-    execute: async (args) => {
-      try {
-        const apps = await listAppsFromDevice(
-          args.applicationType,
-          args.sessionId
-        );
-        const textResponse = {
-          content: [
-            {
-              type: 'text',
-              text: `Installed apps: ${JSON.stringify(apps, null, 2)}`,
-            },
-          ],
-        };
-
-        const uiResource = createUIResource(
-          `ui://appium-mcp/app-list/${Date.now()}`,
-          createAppListUI(apps)
-        );
-
-        return addUIResourceToResponse(textResponse, uiResource);
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to list apps. err: ${err.toString()}`,
-            },
-          ],
-        };
-      }
-    },
-  });
+export async function list(
+  applicationType?: 'User' | 'System',
+  sessionId?: string
+): Promise<ContentResult> {
+  try {
+    const apps = await listAppsFromDevice(applicationType, sessionId);
+    const textResponse = {
+      content: [
+        {
+          type: 'text' as const,
+          text: `Installed apps: ${JSON.stringify(apps, null, 2)}`,
+        },
+      ],
+    };
+    const uiResource = createUIResource(
+      `ui://appium-mcp/app-list/${Date.now()}`,
+      createAppListUI(apps)
+    );
+    return addUIResourceToResponse(textResponse, uiResource);
+  } catch (err: any) {
+    return {
+      content: [
+        { type: 'text', text: `Failed to list apps. err: ${err.toString()}` },
+      ],
+    };
+  }
 }
