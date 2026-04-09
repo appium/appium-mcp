@@ -59,11 +59,15 @@ const schema = z.object({
   keepData: z
     .boolean()
     .optional()
-    .describe('Keep app data and cache after uninstall. Android only. Used with: uninstall.'),
+    .describe(
+      'Keep app data and cache after uninstall. Android only. Used with: uninstall.'
+    ),
   applicationType: z
     .enum(['User', 'System'])
     .optional()
-    .describe('iOS only: filter by "User" (default) or "System" apps. Used with: list.'),
+    .describe(
+      'iOS only: filter by "User" (default) or "System" apps. Used with: list.'
+    ),
   seconds: z
     .number()
     .min(-1)
@@ -75,11 +79,15 @@ const schema = z.object({
   url: z
     .string()
     .optional()
-    .describe('Deep link URL to open (e.g. https://example.com, myapp://path). Required for: deep_link.'),
+    .describe(
+      'Deep link URL to open (e.g. https://example.com, myapp://path). Required for: deep_link.'
+    ),
   waitForLaunch: z
     .boolean()
     .optional()
-    .describe('Android only. If false, ADB does not wait for the activity to return. Defaults to true. Used with: deep_link.'),
+    .describe(
+      'Android only. If false, ADB does not wait for the activity to return. Defaults to true. Used with: deep_link.'
+    ),
   sessionId: z
     .string()
     .optional()
@@ -116,24 +124,36 @@ export default function app(server: FastMCP): void {
       }
 
       if (action === 'install') {
-        if (!args.path) {throw new Error('path is required for install');}
+        if (!args.path) {
+          throw new Error('path is required for install');
+        }
         const driver = getDriver(sessionId);
-        if (!driver) {throw new Error('No driver found');}
+        if (!driver) {
+          throw new Error('No driver found');
+        }
         return install(driver, args.path, sessionId);
       }
 
       if (action === 'deep_link') {
-        if (!args.url) {throw new Error('url is required for deep_link');}
+        if (!args.url) {
+          throw new Error('url is required for deep_link');
+        }
         const driver = getDriver(sessionId);
-        if (!driver) {throw new Error('No driver found');}
+        if (!driver) {
+          throw new Error('No driver found');
+        }
         let appId = args.id;
-        if (!appId && args.name) {appId = await resolveAppId(args.name, sessionId);}
+        if (!appId && args.name) {
+          appId = await resolveAppId(args.name, sessionId);
+        }
         return deepLink(driver, args.url, appId, args.waitForLaunch);
       }
 
       // activate, terminate, uninstall, is_installed, query_state, clear — all require id or name
       const driver = getDriver(sessionId);
-      if (!driver) {throw new Error('No driver found');}
+      if (!driver) {
+        throw new Error('No driver found');
+      }
       const id = await resolveId(args.id, args.name, sessionId);
 
       if (action === 'activate') {
