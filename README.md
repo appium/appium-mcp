@@ -293,8 +293,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 | Tool              | Description                                                              |
 | ----------------- | ------------------------------------------------------------------------ |
-| `select_platform` | **REQUIRED FIRST**: Ask user to choose between Android or iOS platform   |
-| `select_device`   | Select a specific device when multiple devices are available             |
+| `select_device`   | **REQUIRED FIRST**: Discover available devices and select one. Auto-selects if only one device found |
 | `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only) |
 
 ### Session Management
