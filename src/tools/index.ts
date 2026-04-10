@@ -69,6 +69,7 @@ import listApps from './app-management/list-apps.js';
 import isAppInstalled from './app-management/is-app-installed.js';
 import queryAppState from './app-management/query-app-state.js';
 import clearApp from './app-management/clear-app.js';
+import mobilePermissions from './app-management/permissions.js';
 import deepLink from './app-management/deep-link.js';
 import context from './context/context.js';
 
@@ -202,6 +203,7 @@ export default function registerTools(server: FastMCP): void {
   isAppInstalled(server);
   queryAppState(server);
   clearApp(server);
+  mobilePermissions(server);
   deepLink(server);
 
   // Context Management

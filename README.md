@@ -368,6 +368,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_is_app_installed`      | Check whether an app is installed. Package name for Android, bundle ID for iOS. |
 | `appium_query_app_state`       | Query the current state of an app. Package name for Android, bundle ID for iOS. |
 | `appium_mobile_clear_app`      | Clear app data and cache without uninstalling (`mobile: clearApp`). Android: package name; stop the app first when possible. iOS: **Simulator only** (bundle ID); not supported for app data reset on real devices without uninstall. |
+| `appium_mobile_permissions`    | Get, update, or reset app permissions in one tool (`action`: get / update / reset). Android: list or change runtime permissions. iOS Simulator: get/set privacy via bundle id; reset (`action=reset`) applies to the AUT on sim and device. |
 
 ### Test Generation & Documentation
 
