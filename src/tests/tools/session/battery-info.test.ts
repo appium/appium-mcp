@@ -24,35 +24,33 @@ const mockGetPlatformName = getPlatformName as jest.MockedFunction<
 >;
 const mockExecute = execute as jest.MockedFunction<typeof execute>;
 
-describe('appium_mobile_get_battery_info tool', () => {
+describe('appium_mobile_device_info tool - battery action', () => {
   const mockServer = { addTool: jest.fn() } as any;
 
-  test('throws when no driver is active', async () => {
-    const { default: batteryInfo } =
-      await import('../../../tools/session/battery-info.js');
-    mockGetDriver.mockReturnValue(null as any);
-    batteryInfo(mockServer);
-
-    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
+  async function getToolExecute() {
+    const { default: deviceInfo } =
+      await import('../../../tools/session/device-info.js');
+    deviceInfo(mockServer);
+    return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
       -1
     )?.[0];
-    await expect(tool.execute({}, undefined)).rejects.toThrow(
-      'No driver found'
-    );
+  }
+
+  test('throws when no driver is active', async () => {
+    const tool = await getToolExecute();
+    mockGetDriver.mockReturnValue(null as any);
+    await expect(
+      tool.execute({ action: 'battery' }, undefined)
+    ).rejects.toThrow('No driver found');
   });
 
   test('returns formatted iOS battery info', async () => {
-    const { default: batteryInfo } =
-      await import('../../../tools/session/battery-info.js');
+    const tool = await getToolExecute();
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.ios);
     mockExecute.mockResolvedValue({ level: 0.75, state: 2 } as any);
 
-    batteryInfo(mockServer);
-    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-      -1
-    )?.[0];
-    const result = await tool.execute({}, undefined);
+    const result = await tool.execute({ action: 'battery' }, undefined);
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed).toEqual({
@@ -63,17 +61,12 @@ describe('appium_mobile_get_battery_info tool', () => {
   });
 
   test('returns formatted Android battery info', async () => {
-    const { default: batteryInfo } =
-      await import('../../../tools/session/battery-info.js');
+    const tool = await getToolExecute();
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.android);
     mockExecute.mockResolvedValue({ level: 0.3, state: 3 } as any);
 
-    batteryInfo(mockServer);
-    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-      -1
-    )?.[0];
-    const result = await tool.execute({}, undefined);
+    const result = await tool.execute({ action: 'battery' }, undefined);
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed).toEqual({
@@ -83,20 +76,14 @@ describe('appium_mobile_get_battery_info tool', () => {
     });
   });
 
-  test('returns error message when execute throws', async () => {
-    const { default: batteryInfo } =
-      await import('../../../tools/session/battery-info.js');
+  test('throws when execute rejects', async () => {
+    const tool = await getToolExecute();
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.ios);
     mockExecute.mockRejectedValue(new Error('driver error'));
 
-    batteryInfo(mockServer);
-    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-      -1
-    )?.[0];
-    const result = await tool.execute({}, undefined);
-
-    expect(result.content[0].text).toContain('Failed to get battery info');
-    expect(result.content[0].text).toContain('driver error');
+    await expect(
+      tool.execute({ action: 'battery' }, undefined)
+    ).rejects.toThrow('Failed to get battery info: driver error');
   });
 });
