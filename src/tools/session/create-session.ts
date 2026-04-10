@@ -267,12 +267,12 @@ async function createDriverSession(
  *
  * @tool create_session
  * @description Creates a new mobile session with Android or iOS device. Requires prior
- * platform selection via the select_platform tool. Supports both local and remote
+ * platform selection via the select_device tool. Supports both local and remote
  * Appium server connections.
  *
  * @param {Object} args - Tool execution arguments
  * @param {'ios' | 'android'} args.platform - REQUIRED. The target platform, must match
- * the platform explicitly selected via select_platform tool
+ * the platform explicitly selected via select_device tool
  * @param {Object} [args.capabilities] - Optional custom W3C format capabilities
  * @param {string} [args.remoteServerUrl] - Optional remote Appium server URL
  * (e.g., http://localhost:4723). If not provided, uses local Appium server
@@ -292,12 +292,12 @@ export default function createSession(server: any): void {
     name: 'create_session',
     description: `Create a new Appium session with Android, iOS or any device/driver Appium supports.
       WORKFLOW FOR LOCAL SERVERS (no remoteServerUrl):
-      - Use select_platform tool FIRST to ask the user which platform they want
-      - Then optionally use select_device tool if multiple devices are available
-      - Finally call create_session with the selected platform and device
+      - Use select_device tool FIRST to discover devices and let the user choose platform and device
+      - Then call create_session with the selected platform
+      - For iOS simulators, call prepare_ios_simulator before create_session
       - DO NOT assume or default to any platform
       WORKFLOW FOR REMOTE SERVERS (remoteServerUrl provided):
-      - SKIP select_platform tool entirely
+      - SKIP select_device tool entirely
       - Infer the platform from the user's request (e.g., 'ios', 'android', or 'general')
       - If platform is 'general', treat the provided capabilities as a pass-through W3C/Appium capability set (useful for non-Android/iOS drivers like Windows, macOS, or custom drivers)
       - Infer device type from context when possible (e.g., 'simulator', 'real device')
@@ -307,7 +307,7 @@ export default function createSession(server: any): void {
     parameters: z.object({
       platform: z.enum(['ios', 'android', 'general']).describe(
         `REQUIRED: Platform to use.
-          - For local servers, this must match the platform the user explicitly selected via the select_platform tool ('ios' or 'android').
+          - For local servers, this must match the platform the user explicitly selected via the select_device tool ('ios' or 'android').
           - Use 'general' when you want the tool to treat capabilities as a pass-through Appium/W3C capability set (recommended for non-Android/iOS drivers such as Windows, macOS, or other custom Appium servers). 'general' will not apply any platform-specific defaults.
           - If remoteServerUrl is provided, the assistant should confirm or infer the platform from the conversation; do not assume a default.`
       ),
