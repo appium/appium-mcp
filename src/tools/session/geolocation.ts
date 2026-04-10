@@ -31,6 +31,7 @@ const schema = z.object({
   altitude: z.coerce
     .number()
     .optional()
+    .refine((v) => v === undefined || !isNaN(v), 'altitude must be a valid number')
     .describe(
       'Altitude value in meters. Android only, defaults to 0. Ignored on iOS. Used with: set.'
     ),
