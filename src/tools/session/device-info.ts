@@ -77,7 +77,9 @@ export default function deviceInfo(server: FastMCP): void {
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
           };
         } catch (err: unknown) {
-          throw new Error(`Failed to get device info: ${err instanceof Error ? err.message : String(err)}`);
+          throw new Error(
+            `Failed to get device info: ${err instanceof Error ? err.message : String(err)}`
+          );
         }
       }
 
@@ -92,7 +94,9 @@ export default function deviceInfo(server: FastMCP): void {
             ],
           };
         } catch (err: unknown) {
-          throw new Error(`Failed to get battery info: ${err instanceof Error ? err.message : String(err)}`);
+          throw new Error(
+            `Failed to get battery info: ${err instanceof Error ? err.message : String(err)}`
+          );
         }
       }
 
@@ -107,7 +111,9 @@ export default function deviceInfo(server: FastMCP): void {
             content: [{ type: 'text', text: String(time) }],
           };
         } catch (err: unknown) {
-          throw new Error(`Failed to get device time: ${err instanceof Error ? err.message : String(err)}`);
+          throw new Error(
+            `Failed to get device time: ${err instanceof Error ? err.message : String(err)}`
+          );
         }
       }
 
