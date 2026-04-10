@@ -408,7 +408,7 @@ For long parameter descriptions, also use template literals:
 ```typescript
 parameters: z.object({
   platform: z.enum(['ios', 'android']).describe(
-    `REQUIRED: Must match the platform the user explicitly selected via the select_platform tool.
+    `REQUIRED: Must match the platform the user explicitly selected via the select_device tool.
       DO NOT default to Android or iOS without asking the user first.`
   ),
 });

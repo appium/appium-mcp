@@ -349,7 +349,7 @@ async function prepareSimulator(
     if (!simulator) {
       result.boot = {
         status: 'failed',
-        detail: `Simulator with UDID "${udid}" not found. Use select_platform and select_device to get a valid UDID.`,
+        detail: `Simulator with UDID "${udid}" not found. Use select_device to get a valid UDID.`,
       };
       return result;
     }
@@ -420,7 +420,7 @@ const prepareIosSimulatorSchema = z.object({
   udid: z
     .string()
     .describe(
-      'The UDID of the iOS simulator to prepare. Use select_platform and select_device to get this.'
+      'The UDID of the iOS simulator to prepare. Use select_device to get this.'
     ),
   platform: z
     .enum(['ios', 'tvos'])

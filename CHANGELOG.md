@@ -1,3 +1,9 @@
+## [1.51.0](https://github.com/appium/appium-mcp/compare/v1.50.0...v1.51.0) (2026-04-10)
+
+### Features
+
+* consolidate `select_platform` into `select_device` ([#254](https://github.com/appium/appium-mcp/issues/254)) ([96d7303](https://github.com/appium/appium-mcp/commit/96d730302df4ad64e6e946a663416ebbdf925eb3))
+
 ## [1.50.0](https://github.com/appium/appium-mcp/compare/v1.49.1...v1.50.0) (2026-04-08)
 
 ### Features

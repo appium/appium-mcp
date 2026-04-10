@@ -244,6 +244,12 @@ async function handleAndroidDeviceSelection(deviceUdid?: string): Promise<any> {
     return formatAndroidSelectionResponse(deviceUdid);
   }
 
+  // Auto-select when only one device is available
+  if (devices.length === 1) {
+    selectAndroidDevice(devices[0].udid, devices);
+    return formatAndroidSelectionResponse(devices[0].udid);
+  }
+
   return formatAndroidListResponse(devices);
 }
 
@@ -254,6 +260,11 @@ async function handleIOSDeviceSelection(
   iosDeviceType: 'simulator' | 'real' | undefined,
   deviceUdid?: string
 ): Promise<any> {
+  const iosManager = IOSManager.getInstance();
+  if (!iosManager.isMac()) {
+    throw new Error('iOS testing is only available on macOS');
+  }
+
   validateIOSDeviceType(iosDeviceType);
 
   const devices = await getIOSDevices(iosDeviceType!);
@@ -263,19 +274,30 @@ async function handleIOSDeviceSelection(
     return formatIOSSelectionResponse(selectedDevice.name, deviceUdid);
   }
 
+  // Auto-select when only one device is available
+  if (devices.length === 1) {
+    const selectedDevice = selectIOSDevice(
+      devices[0].udid,
+      devices,
+      iosDeviceType!
+    );
+    return formatIOSSelectionResponse(selectedDevice.name, devices[0].udid);
+  }
+
   return formatIOSListResponse(devices, iosDeviceType!);
 }
 
 export default function selectDevice(server: any): void {
   server.addTool({
     name: 'select_device',
-    description: `Select a specific device from available LOCAL devices. For LOCAL Appium servers ONLY.
+    description: `Discover and select a device for LOCAL Appium servers ONLY.
       DO NOT use this tool for REMOTE Appium servers - remoteServerUrl indicates a remote server.
       WORKFLOW FOR LOCAL SERVERS:
-      - Use this tool ONLY when select_platform returns multiple devices
-      - For Android: Use before calling create_session if multiple devices are found
-      - For iOS: Use before calling prepare_ios_simulator or create_session if multiple simulators/devices are found
-      - Ask the user which device they want to use from the list provided
+      1. ASK THE USER which platform they want (Android or iOS) - do not assume
+      2. Call this tool with the chosen platform (and iosDeviceType for iOS)
+      3. If only one device is found, it is auto-selected - proceed to create_session (or prepare_ios_simulator for iOS simulators)
+      4. If multiple devices are found, ask the user which one they want, then call this tool again with deviceUdid
+      5. After selection, proceed to create_session (or prepare_ios_simulator for iOS simulators, then create_session)
       WORKFLOW FOR REMOTE SERVERS:
       - SKIP this tool entirely
       - Device selection should be handled via capabilities in create_session (e.g., appium:deviceName, appium:udid)

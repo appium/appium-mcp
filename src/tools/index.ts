@@ -21,7 +21,6 @@ import deleteSession from './session/delete-session.js';
 import listSessions from './session/list-sessions.js';
 import selectSession from './session/select-session.js';
 import generateLocators from './test-generation/locators.js';
-import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
 import openNotifications from './session/open-notifications.js';
 import shakeDevice from './session/shake.js';
@@ -133,7 +132,6 @@ export default function registerTools(server: FastMCP): void {
   };
 
   // Session Management
-  selectPlatform(server);
   selectDevice(server);
   createSession(server);
   listSessions(server);
