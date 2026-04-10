@@ -273,7 +273,7 @@ The following tools return lightweight text-only responses when NO_UI is enabled
 - `generate_locators` - Returns locator data as JSON without interactive UI
 - `select_device` - Returns device list as text without picker UI
 - `create_session` - Returns session info as text without dashboard UI
-- `appium_get_contexts` - Returns context list as text without switcher UI
+- `appium_context` - Returns context list as text with `action=list` without switcher UI
 - `appium_list_apps` - Returns app list as JSON without interactive UI
 
 **When to Enable NO_UI:**
@@ -315,8 +315,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 
 | Tool                  | Description                                                                                                                              |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `appium_get_contexts` | Get all available contexts in the current Appium session. Returns a list of context names including NATIVE_APP and any webview contexts (e.g., WEBVIEW_<id> or WEBVIEW_<package>). |
-| `appium_switch_context` | Switch to a specific context in the Appium session. Use this to switch between native app context (NATIVE_APP) and webview contexts (WEBVIEW_<id> or WEBVIEW_<package>). Use appium_get_contexts to see available contexts first. |
+| `appium_context` | Manage contexts in one tool. `action=list` gets all available contexts including NATIVE_APP and WEBVIEW_* entries. `action=switch` switches to a target context (`context` required). |
 
 ### Element Discovery & Interaction
 

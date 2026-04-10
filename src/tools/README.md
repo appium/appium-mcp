@@ -70,6 +70,10 @@ When searching for elements, follow this priority order for efficiency:
 - `clear-app.ts` - Clear app data / cache without uninstall (`appium_mobile_clear_app`; iOS Simulator only, Android broadly)
 - `list-apps.ts` - List installed apps
 
+### Context Management (`context/`)
+
+- `context.ts` - Unified context operations (`appium_context`; `action=list|switch`)
+
 ### Test Generation (`test-generation/`)
 
 - `locators.ts` - Generate page locators
