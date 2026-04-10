@@ -61,8 +61,7 @@ import screenshot from './interactions/screenshot.js';
 import getWindowSize from './interactions/window-size.js';
 import screenRecording from './interactions/screen-recording.js';
 import app from './app-management/app.js';
-import getContexts from './context/get-contexts.js';
-import switchContext from './context/switch-context.js';
+import context from './context/context.js';
 
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
@@ -188,8 +187,7 @@ export default function registerTools(server: FastMCP): void {
   app(server);
 
   // Context Management
-  getContexts(server);
-  switchContext(server);
+  context(server);
 
   // Test Generation
   generateLocators(server);

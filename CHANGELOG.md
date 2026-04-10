@@ -1,3 +1,15 @@
+## [1.53.0](https://github.com/appium/appium-mcp/compare/v1.52.0...v1.53.0) (2026-04-10)
+
+### Features
+
+* **context:** consolidate context operations into appium_context ([#258](https://github.com/appium/appium-mcp/issues/258)) ([4beb583](https://github.com/appium/appium-mcp/commit/4beb583b69f05030993902c867047c0f47a80837))
+
+## [1.52.0](https://github.com/appium/appium-mcp/compare/v1.51.0...v1.52.0) (2026-04-10)
+
+### Features
+
+* **app-management:** add mobile permission tools ([#248](https://github.com/appium/appium-mcp/issues/248)) ([d5a5b5a](https://github.com/appium/appium-mcp/commit/d5a5b5a6c2394ae49e30efb0fc4175a780257715))
+
 ## [1.51.0](https://github.com/appium/appium-mcp/compare/v1.50.0...v1.51.0) (2026-04-10)
 
 ### Features
