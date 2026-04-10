@@ -303,6 +303,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
 | `delete_session` | Delete the current mobile session and clean up resources                                                    |
 | `appium_mobile_shake` | Shake gesture (`mobile: shake`) on **iOS Simulator only** (XCUITest). Not supported on Android or physical iOS devices. |
+| `appium_mobile_device_lock` | Lock or unlock the device in one tool (`action`: `lock` or `unlock`). Optional `seconds` for timed lock (`mobile: lock` / `mobile: unlock`). Android and iOS. |
 | `appium_get_settings` | Read current Appium driver session settings (idle timeouts, animation-related flags, selector waits, etc.). Helps diagnose and tune flaky automation. |
 | `appium_update_settings` | Merge key-value updates into driver session settings (driver-specific keys; use `appium_get_settings` to inspect). |
 

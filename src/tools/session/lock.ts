@@ -3,41 +3,56 @@ import { z } from 'zod';
 import { getDriver } from '../../session-store.js';
 import { execute } from '../../command.js';
 
-export function lockDevice(server: FastMCP): void {
-  const lockSchema = z.object({
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-    seconds: z
-      .number()
-      .int()
-      .min(1)
-      .optional()
-      .describe(
-        'How long to lock the screen in seconds before it is automatically unlocked. Supported on both Android (UiAutomator2) and iOS (XCUITest). If omitted, the device stays locked until appium_mobile_unlock is called.'
-      ),
-  });
+const deviceLockSchema = z.object({
+  action: z
+    .enum(['lock', 'unlock'])
+    .describe(
+      'lock: call mobile: lock (optional seconds for auto-unlock). unlock: call mobile: unlock.'
+    ),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
+  seconds: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      'Only for action=lock: lock duration in seconds before auto-unlock (Android UiAutomator2 and iOS XCUITest). Omit to stay locked until unlock.'
+    ),
+});
 
+export default function mobileDeviceLock(server: FastMCP): void {
   server.addTool({
-    name: 'appium_mobile_lock',
+    name: 'appium_mobile_device_lock',
     description:
-      'Lock the device. Optionally lock for a given number of seconds (both Android and iOS support automatic unlock after the timeout). If no timeout is provided, the device stays locked until appium_mobile_unlock is called. Supported on Android (UiAutomator2) and iOS (XCUITest).',
-    parameters: lockSchema,
+      'Lock or unlock the device in one tool. action=lock uses mobile: lock (optional seconds for timed lock). action=unlock uses mobile: unlock. Supported on Android (UiAutomator2) and iOS (XCUITest).',
+    parameters: deviceLockSchema,
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
     },
     execute: async (
-      args: z.infer<typeof lockSchema>,
+      args: z.infer<typeof deviceLockSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
-      }
-
       try {
+        const driver = getDriver(args.sessionId);
+        if (!driver) {
+          throw new Error('No driver found');
+        }
+
+        if (args.action === 'unlock') {
+          if (args.seconds !== undefined) {
+            throw new Error('seconds is only valid when action is lock');
+          }
+          await execute(driver, 'mobile: unlock', {});
+          return {
+            content: [{ type: 'text', text: 'Device unlocked.' }],
+          };
+        }
+
         const params: { seconds?: number } = {};
         if (args.seconds !== undefined) {
           params.seconds = args.seconds;
@@ -56,55 +71,10 @@ export function lockDevice(server: FastMCP): void {
           content: [
             {
               type: 'text',
-              text: `Failed to lock device. err: ${message}`,
+              text: `Failed device lock action ${args.action}. err: ${message}`,
             },
           ],
-        };
-      }
-    },
-  });
-}
-
-export function unlockDevice(server: FastMCP): void {
-  const unlockSchema = z.object({
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-  });
-
-  server.addTool({
-    name: 'appium_mobile_unlock',
-    description:
-      'Unlock the device if it is locked. No-op if already unlocked. Supported on Android (UiAutomator2) and iOS (XCUITest).',
-    parameters: unlockSchema,
-    annotations: {
-      readOnlyHint: false,
-      openWorldHint: false,
-    },
-    execute: async (
-      args: z.infer<typeof unlockSchema>,
-      _context: Record<string, unknown> | undefined
-    ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
-      }
-
-      try {
-        await execute(driver, 'mobile: unlock', {});
-        return {
-          content: [{ type: 'text', text: 'Device unlocked.' }],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to unlock device. err: ${message}`,
-            },
-          ],
+          isError: true,
         };
       }
     },
