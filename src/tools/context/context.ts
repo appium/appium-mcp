@@ -42,18 +42,18 @@ export default function context(server: FastMCP): void {
       args: z.infer<typeof contextSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found. Please create a session first.');
-      }
-
-      if (isRemoteDriverSession(driver)) {
-        throw new Error(
-          'Context management is not yet implemented for the remote driver'
-        );
-      }
-
       try {
+        const driver = getDriver(args.sessionId);
+        if (!driver) {
+          throw new Error('No driver found. Please create a session first.');
+        }
+
+        if (isRemoteDriverSession(driver)) {
+          throw new Error(
+            'Context management is not yet implemented for the remote driver'
+          );
+        }
+
         const [currentContext, availableContexts] = await Promise.all([
           getCurrentContext(driver).catch(() => null),
           getContexts(driver).catch(() => [] as string[]),
