@@ -47,7 +47,7 @@ export default function deviceInfo(server: FastMCP): void {
       .string()
       .optional()
       .describe(
-        'moment.js format string for the returned time (only used when action is "time"). Defaults to ISO 8601 (YYYY-MM-DDTHH:mm:ssZ).'
+        'Only used when action is "time". moment.js format string for the returned time. Defaults to ISO 8601 (YYYY-MM-DDTHH:mm:ssZ).'
       ),
     sessionId: z
       .string()
@@ -67,7 +67,10 @@ export default function deviceInfo(server: FastMCP): void {
     execute: async (args: z.infer<typeof schema>): Promise<ContentResult> => {
       const driver = getDriver(args.sessionId);
       if (!driver) {
-        throw new Error('No driver found');
+        return {
+          content: [{ type: 'text', text: 'No driver found' }],
+          isError: true,
+        };
       }
 
       if (args.action === 'info') {
@@ -77,9 +80,15 @@ export default function deviceInfo(server: FastMCP): void {
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
           };
         } catch (err: unknown) {
-          throw new Error(
-            `Failed to get device info: ${err instanceof Error ? err.message : String(err)}`
-          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Failed to get device info: ${err instanceof Error ? err.message : String(err)}`,
+              },
+            ],
+            isError: true,
+          };
         }
       }
 
@@ -94,9 +103,15 @@ export default function deviceInfo(server: FastMCP): void {
             ],
           };
         } catch (err: unknown) {
-          throw new Error(
-            `Failed to get battery info: ${err instanceof Error ? err.message : String(err)}`
-          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Failed to get battery info: ${err instanceof Error ? err.message : String(err)}`,
+              },
+            ],
+            isError: true,
+          };
         }
       }
 
@@ -111,13 +126,22 @@ export default function deviceInfo(server: FastMCP): void {
             content: [{ type: 'text', text: String(time) }],
           };
         } catch (err: unknown) {
-          throw new Error(
-            `Failed to get device time: ${err instanceof Error ? err.message : String(err)}`
-          );
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Failed to get device time: ${err instanceof Error ? err.message : String(err)}`,
+              },
+            ],
+            isError: true,
+          };
         }
       }
 
-      throw new Error(`Unknown action: ${args.action}`);
+      return {
+        content: [{ type: 'text', text: `Unknown action: ${args.action}` }],
+        isError: true,
+      };
     },
   });
 }
