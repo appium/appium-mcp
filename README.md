@@ -348,9 +348,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_swipe`             | Swipe the screen in a direction (left, right, up, down) or between custom coordinates |
 | `appium_get_page_source`   | Get the page source (XML) from the current screen       |
 | `appium_orientation`   | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set). |
-| `appium_set_geolocation`   | Set the GPS coordinates (latitude, longitude, altitude) of the device. |
-| `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
-| `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
+| `appium_geolocation`       | Get, set, or reset the device GPS coordinates with `action` = `get`, `set`, or `reset`. For `set`, provide `latitude` and `longitude` (and optional `altitude` on Android). Not supported on Android emulators for `reset`. |
 | `appium_screen_recording` | Start or stop screen recording with `action` = `start` or `stop`. On stop, returns the saved MP4 path. |
 | `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
 | `appium_mobile_get_battery_info` | Get the current battery level (as a percentage) and charging state of the device. Works on both iOS and Android. |
