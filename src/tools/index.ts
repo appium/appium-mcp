@@ -67,9 +67,9 @@ import listApps from './app-management/list-apps.js';
 import isAppInstalled from './app-management/is-app-installed.js';
 import queryAppState from './app-management/query-app-state.js';
 import clearApp from './app-management/clear-app.js';
+import mobilePermissions from './app-management/permissions.js';
 import deepLink from './app-management/deep-link.js';
-import getContexts from './context/get-contexts.js';
-import switchContext from './context/switch-context.js';
+import context from './context/context.js';
 
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
@@ -199,11 +199,11 @@ export default function registerTools(server: FastMCP): void {
   isAppInstalled(server);
   queryAppState(server);
   clearApp(server);
+  mobilePermissions(server);
   deepLink(server);
 
   // Context Management
-  getContexts(server);
-  switchContext(server);
+  context(server);
 
   // Test Generation
   generateLocators(server);

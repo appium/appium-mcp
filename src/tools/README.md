@@ -68,7 +68,12 @@ When searching for elements, follow this priority order for efficiency:
 - `install-app.ts` - Install apps
 - `uninstall-app.ts` - Uninstall apps
 - `clear-app.ts` - Clear app data / cache without uninstall (`appium_mobile_clear_app`; iOS Simulator only, Android broadly)
+- `permissions.ts` - Unified mobile permissions (`appium_mobile_permissions`; action get / update / reset, platform-specific fields)
 - `list-apps.ts` - List installed apps
+
+### Context Management (`context/`)
+
+- `context.ts` - Unified context operations (`appium_context`; `action=list|switch`)
 
 ### Test Generation (`test-generation/`)
 
