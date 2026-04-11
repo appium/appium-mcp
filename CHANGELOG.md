@@ -1,3 +1,9 @@
+## [1.53.1](https://github.com/appium/appium-mcp/compare/v1.53.0...v1.53.1) (2026-04-11)
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump typescript from 5.9.3 to 6.0.2 ([#229](https://github.com/appium/appium-mcp/issues/229)) ([c81bcd3](https://github.com/appium/appium-mcp/commit/c81bcd384f373f0c29603b316db71e2baca743ba))
+
 ## [1.53.0](https://github.com/appium/appium-mcp/compare/v1.52.0...v1.53.0) (2026-04-10)
 
 ### Features
