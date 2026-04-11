@@ -10,8 +10,7 @@ This directory contains all MCP tools available in MCP Appium.
 - `delete-session.ts` - Clean up sessions
 - `open-notifications.ts` - Open notifications panel (Android only)
 - `shake.ts` - iOS Simulator shake via `mobile: shake` (`appium_mobile_shake`; not Android, not physical iOS)
-- `lock.ts` - Lock device (`appium_mobile_lock`); optionally lock for N seconds (Android & iOS)
-- `lock.ts` - Unlock device (`appium_mobile_unlock`)
+- `lock.ts` - Lock or unlock device (`appium_mobile_device_lock`; `action=lock|unlock`, optional `seconds` for timed lock)
 - `select-device.ts` - Discover devices and select one (auto-selects if only one found)
 - `file-transfer.ts` - Push/pull files on device (`appium_mobile_file` with `action=push|pull`)
 - `driver-settings.ts` - Read/update Appium driver session settings (`appium_get_settings`, `appium_update_settings`)
