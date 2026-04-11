@@ -349,9 +349,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_orientation`   | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set). |
 | `appium_geolocation`       | Get, set, or reset the device GPS coordinates with `action` = `get`, `set`, or `reset`. For `set`, provide `latitude` and `longitude` (and optional `altitude` on Android). Not supported on Android emulators for `reset`. |
 | `appium_screen_recording` | Start or stop screen recording with `action` = `start` or `stop`. On stop, returns the saved MP4 path. |
-| `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
-| `appium_mobile_get_battery_info` | Get the current battery level (as a percentage) and charging state of the device. Works on both iOS and Android. |
-| `appium_mobile_get_device_time` | Get the current time on the device. Accepts an optional `format` parameter (moment.js format string); defaults to ISO 8601. Works on both iOS and Android. |
+| `appium_mobile_device_info` | Get device information, battery status, or current device time. Use `action` = `info` (model, OS version, locale, timezone, screen density, etc.), `battery` (level as percentage and charging state), or `time` (current device time; accepts an optional `format` moment.js string, defaults to ISO 8601). Works on both iOS and Android. |
 
 ### App Management
 
