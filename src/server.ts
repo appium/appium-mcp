@@ -8,7 +8,7 @@ const server = new FastMCP({
   name: 'MCP Appium',
   version: '1.0.0',
   instructions:
-    'Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation',
+    'Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation. For local Appium environment setup or troubleshooting, use appium_skills before running installation, doctor, or smoke-test steps.',
 });
 
 registerResources(server);

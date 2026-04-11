@@ -12,24 +12,24 @@ SUBMODULES=(
 configure_sparse_checkout() {
   local submodule_path=$1
   echo "Configuring sparse-checkout for $submodule_path..."
-  
+
   cd "$submodule_path"
-  
+
   # Initialize sparse-checkout in non-cone mode
   git sparse-checkout init --no-cone
-  
+
   # Get the actual git directory path (handles submodules correctly)
   GIT_DIR=$(git rev-parse --git-dir)
-  
+
   # Add patterns for markdown and image files
   echo -e "/*.md\n/**/*.md\n/*.png\n/**/*.png\n/*.jpg\n/**/*.jpg\n/*.jpeg\n/**/*.jpeg\n/*.gif\n/**/*.gif\n/*.svg\n/**/*.svg" > "$GIT_DIR/info/sparse-checkout"
-  
+
   # Reapply sparse-checkout
   git sparse-checkout reapply
-  
+
   # Update the working directory
   git checkout
-  
+
   cd - > /dev/null
   echo "✓ Configured sparse-checkout for $submodule_path"
 }

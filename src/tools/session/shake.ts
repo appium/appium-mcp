@@ -3,7 +3,12 @@ import { z } from 'zod';
 import { getDriver, isXCUITestDriverSession } from '../../session-store.js';
 
 export default function shakeDevice(server: FastMCP): void {
-  const shakeSchema = z.object({});
+  const shakeSchema = z.object({
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
+  });
 
   server.addTool({
     name: 'appium_mobile_shake',
@@ -16,10 +21,10 @@ export default function shakeDevice(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (
-      _args: z.infer<typeof shakeSchema>,
+      args: z.infer<typeof shakeSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }

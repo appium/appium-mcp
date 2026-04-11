@@ -2,10 +2,15 @@ import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
+import { invalidateAppListCache } from './resolve-app-id.js';
 
 export default function installApp(server: FastMCP): void {
   const schema = z.object({
     path: z.string().describe('Path to the app file to install'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -14,7 +19,7 @@ export default function installApp(server: FastMCP): void {
     parameters: schema,
     execute: async (args: z.infer<typeof schema>) => {
       const { path } = args;
-      const driver = await getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
@@ -23,6 +28,7 @@ export default function installApp(server: FastMCP): void {
         const params =
           platform === PLATFORM.android ? { appPath: path } : { app: path };
         await execute(driver, 'mobile: installApp', params);
+        invalidateAppListCache(args.sessionId);
         return {
           content: [
             {

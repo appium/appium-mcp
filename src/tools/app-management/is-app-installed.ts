@@ -11,18 +11,36 @@ import {
 import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import { resolveId } from './resolve-app-id.js';
 
 export default function isAppInstalled(server: FastMCP): void {
-  const schema = z.object({
-    id: z
-      .string()
-      .describe('App identifier (package name for Android, bundle ID for iOS)'),
-  });
+  const schema = z
+    .object({
+      id: z
+        .string()
+        .optional()
+        .describe(
+          'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. Required if name is not provided.'
+        ),
+      name: z
+        .string()
+        .optional()
+        .describe(
+          'Human-readable app name (e.g. "Spotify"). Used to resolve the app id when id is not provided. Required if id is not provided.'
+        ),
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
+    })
+    .refine((args) => args.id || args.name, {
+      message: 'Either id or name must be provided',
+    });
 
   server.addTool({
     name: 'appium_is_app_installed',
     description:
-      'Check whether an app is installed. Package name for Android, bundle ID for iOS.',
+      'Check whether an app is installed. Either id or name must be provided. Package name for Android, bundle ID for iOS.',
     parameters: schema,
     annotations: {
       readOnlyHint: true,
@@ -32,11 +50,11 @@ export default function isAppInstalled(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ) => {
-      const { id } = args;
-      const driver = await getDriver();
+      const driver = getDriver(args.sessionId);
       if (!driver) {
         throw new Error('No driver found');
       }
+      const id = await resolveId(args.id, args.name, args.sessionId);
       try {
         let result: boolean;
         if (isRemoteDriverSession(driver)) {

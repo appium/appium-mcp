@@ -24,7 +24,7 @@ const mockGetPlatformName = getPlatformName as jest.MockedFunction<
 >;
 const mockExecute = execute as jest.MockedFunction<typeof execute>;
 
-describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
+describe('appium_mobile_file', () => {
   const mockServer = { addTool: jest.fn() } as any;
 
   beforeEach(() => {
@@ -32,36 +32,39 @@ describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
     mockExecute.mockReset();
   });
 
-  test('push: throws when no driver is active', async () => {
-    const { pushFile } =
+  async function registerTool() {
+    const { default: fileTransfer } =
       await import('../../../tools/session/file-transfer.js');
-    mockGetDriver.mockReturnValue(null as any);
-    pushFile(mockServer);
-
-    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
+    fileTransfer(mockServer);
+    return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
       -1
     )?.[0];
+  }
+
+  test('throws when no driver is active', async () => {
+    const tool = await registerTool();
+    mockGetDriver.mockReturnValue(null as any);
+
     await expect(
       tool.execute(
-        { remotePath: '/sdcard/x.txt', payloadBase64: 'YQ==' },
+        { action: 'push', remotePath: '/sdcard/x.txt', payloadBase64: 'YQ==' },
         undefined
       )
     ).rejects.toThrow('No driver found');
   });
 
   test('push: Android uses path and data', async () => {
-    const { pushFile } =
-      await import('../../../tools/session/file-transfer.js');
+    const tool = await registerTool();
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.android);
     mockExecute.mockResolvedValue(undefined);
 
-    pushFile(mockServer);
-    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-      -1
-    )?.[0];
     await tool.execute(
-      { remotePath: '/data/local/tmp/a.txt', payloadBase64: 'SGVsbG8=' },
+      {
+        action: 'push',
+        remotePath: '/data/local/tmp/a.txt',
+        payloadBase64: 'SGVsbG8=',
+      },
       undefined
     );
 
@@ -76,18 +79,14 @@ describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
   });
 
   test('push: iOS uses remotePath and payload', async () => {
-    const { pushFile } =
-      await import('../../../tools/session/file-transfer.js');
+    const tool = await registerTool();
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.ios);
     mockExecute.mockResolvedValue(undefined);
 
-    pushFile(mockServer);
-    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-      -1
-    )?.[0];
     await tool.execute(
       {
+        action: 'push',
         remotePath: '@com.example.app:documents/x.txt',
         payloadBase64: 'QQ==',
       },
@@ -105,18 +104,13 @@ describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
   });
 
   test('pull: Android uses path', async () => {
-    const { pullFile } =
-      await import('../../../tools/session/file-transfer.js');
+    const tool = await registerTool();
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.android);
     mockExecute.mockResolvedValue('YmJiYg==');
 
-    pullFile(mockServer);
-    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-      -1
-    )?.[0];
     const result = await tool.execute(
-      { remotePath: '/sdcard/Download/out.bin' },
+      { action: 'pull', remotePath: '/sdcard/Download/out.bin' },
       undefined
     );
 
@@ -131,18 +125,13 @@ describe('appium_mobile_push_file / appium_mobile_pull_file', () => {
   });
 
   test('pull: iOS uses remotePath', async () => {
-    const { pullFile } =
-      await import('../../../tools/session/file-transfer.js');
+    const tool = await registerTool();
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.ios);
     mockExecute.mockResolvedValue('eHh4');
 
-    pullFile(mockServer);
-    const tool = (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-      -1
-    )?.[0];
     const result = await tool.execute(
-      { remotePath: '@com.app:documents/f.txt' },
+      { action: 'pull', remotePath: '@com.app:documents/f.txt' },
       undefined
     );
 

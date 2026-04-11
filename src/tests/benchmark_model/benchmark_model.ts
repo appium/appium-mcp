@@ -3,7 +3,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import axios, { AxiosError } from 'axios';
 import { imageUtil } from '@appium/support';
 
 const sharp = imageUtil.requireSharp();
@@ -136,6 +135,50 @@ function getMimeType(imagePath: string): string {
   return mimeTypes[ext] || 'image/png';
 }
 
+async function postChatCompletions(
+  baseUrl: string,
+  token: string,
+  body: unknown,
+  timeoutMs: number
+): Promise<{ choices?: Array<{ message?: { content?: string } }> }> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(async () => ({ message: await response.text() }));
+      const errorDetail =
+        errorData?.error?.message ||
+        errorData?.message ||
+        `HTTP ${response.status}`;
+      throw new Error(`HTTP ${response.status}: ${errorDetail}`);
+    }
+
+    return (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`HTTP timeout after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 /**
  * Call unified model API
  */
@@ -158,8 +201,9 @@ async function callModelAPI(
     throw new Error('API_TOKEN environment variable not set');
   }
 
-  const response = await axios.post(
-    `${baseUrl}/chat/completions`,
+  const response = await postChatCompletions(
+    baseUrl,
+    token,
     {
       model: model.name,
       messages: [
@@ -184,16 +228,14 @@ async function callModelAPI(
       ],
       max_tokens: 4096,
     },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      timeout: 120000,
-    }
+    120000
   );
 
-  return response.data.choices[0].message.content;
+  const content = response.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error('Model response missing choices[0].message.content');
+  }
+  return content;
 }
 
 /**
@@ -234,8 +276,13 @@ Reason: The red box completely contains the yellow search button with slight mar
     const token = process.env.API_TOKEN;
 
     // judge model
-    const response = await axios.post(
-      `${baseUrl}/chat/completions`,
+    if (!baseUrl || !token) {
+      throw new Error('API_BASE_URL or API_TOKEN environment variable not set');
+    }
+
+    const response = await postChatCompletions(
+      baseUrl,
+      token,
       {
         model: 'qwen3-vl-plus',
         messages: [
@@ -257,16 +304,10 @@ Reason: The red box completely contains the yellow search button with slight mar
         ],
         max_tokens: 1024,
       },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        timeout: 60000,
-      }
+      60000
     );
 
-    const judgeResponse = response.data.choices[0].message.content;
+    const judgeResponse = response.choices?.[0]?.message?.content ?? '';
     console.log(`  Judge response: ${judgeResponse}`);
 
     // Parse accuracy score
@@ -631,22 +672,7 @@ async function testModel(
     const duration = Date.now() - startTime;
     let errorMessage = 'Unknown error';
 
-    if (error instanceof AxiosError) {
-      const status = error.response?.status || 'N/A';
-      const errorData = error.response?.data;
-      const errorDetail =
-        errorData?.error?.message || errorData?.message || error.message;
-      errorMessage = `HTTP ${status}: ${errorDetail}`;
-
-      // Log detailed error information
-      console.error(`✗ Failed (${model.name}): ${errorMessage}`);
-      if (error.response?.data) {
-        console.error(
-          'Response data:',
-          JSON.stringify(error.response.data, null, 2)
-        );
-      }
-    } else if (error instanceof Error) {
+    if (error instanceof Error) {
       errorMessage = error.message;
       console.error(`✗ Failed (${model.name}): ${errorMessage}`);
     }

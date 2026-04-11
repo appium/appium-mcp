@@ -177,6 +177,15 @@ Set the `CAPABILITIES_CONFIG` environment variable to point to your configuratio
 
 Set the `SCREENSHOTS_DIR` environment variable to specify where screenshots are saved. If not set, screenshots are saved to the current working directory. Supports both absolute and relative paths (relative paths are resolved from the current working directory). The directory is created automatically if it doesn't exist.
 
+### Screen Recording
+
+Screen recordings are saved as MP4 files to the same directory as screenshots (`SCREENSHOTS_DIR`, or `os.tmpdir()` if not set).
+
+- **iOS**: Requires [ffmpeg](https://ffmpeg.org/download.html) to be installed and available on `PATH`. The default codec is `libx264` with `yuv420p` pixel format for QuickTime compatibility.
+- **Android**: Uses the built-in `screenrecord` command via UiAutomator2. No additional dependencies required.
+
+To start recording, call `appium_screen_recording` with `action="start"`. You may provide `timeLimit` in seconds to limit the maximum recording duration, but the start call still returns immediately. To finalize the recording, save the video, and receive the file path, call `appium_screen_recording` again with `action="stop"`.
+
 ### AI Vision Element Finding
 
 Configure AI-powered element finding using vision models. This feature allows you to locate UI elements using natural language descriptions instead of traditional XPath or ID selectors.
@@ -264,7 +273,7 @@ The following tools return lightweight text-only responses when NO_UI is enabled
 - `generate_locators` - Returns locator data as JSON without interactive UI
 - `select_device` - Returns device list as text without picker UI
 - `create_session` - Returns session info as text without dashboard UI
-- `appium_get_contexts` - Returns context list as text without switcher UI
+- `appium_context` - Returns context list as text with `action=list` without switcher UI
 - `appium_list_apps` - Returns app list as JSON without interactive UI
 
 **When to Enable NO_UI:**
@@ -284,11 +293,8 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 | Tool              | Description                                                              |
 | ----------------- | ------------------------------------------------------------------------ |
-| `select_platform` | **REQUIRED FIRST**: Ask user to choose between Android or iOS platform   |
-| `select_device`   | Select a specific device when multiple devices are available             |
-| `boot_simulator`  | Boot an iOS simulator and wait for it to be ready (iOS only)             |
-| `setup_wda`       | Download and setup prebuilt WebDriverAgent for iOS simulators (iOS only) |
-| `install_wda`     | Install and launch WebDriverAgent on a booted iOS simulator (iOS only)   |
+| `select_device`   | **REQUIRED FIRST**: Discover available devices and select one. Auto-selects if only one device found |
+| `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only) |
 
 ### Session Management
 
@@ -297,6 +303,8 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
 | `delete_session` | Delete the current mobile session and clean up resources                                                    |
 | `appium_mobile_shake` | Shake gesture (`mobile: shake`) on **iOS Simulator only** (XCUITest). Not supported on Android or physical iOS devices. |
+| `appium_get_settings` | Read current Appium driver session settings (idle timeouts, animation-related flags, selector waits, etc.). Helps diagnose and tune flaky automation. |
+| `appium_update_settings` | Merge key-value updates into driver session settings (driver-specific keys; use `appium_get_settings` to inspect). |
 
 The remote server URL in `create_session` can be set via the `remoteServerUrl` parameter.
 If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
@@ -307,8 +315,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 
 | Tool                  | Description                                                                                                                              |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `appium_get_contexts` | Get all available contexts in the current Appium session. Returns a list of context names including NATIVE_APP and any webview contexts (e.g., WEBVIEW_<id> or WEBVIEW_<package>). |
-| `appium_switch_context` | Switch to a specific context in the Appium session. Use this to switch between native app context (NATIVE_APP) and webview contexts (WEBVIEW_<id> or WEBVIEW_<package>). Use appium_get_contexts to see available contexts first. |
+| `appium_context` | Manage contexts in one tool. `action=list` gets all available contexts including NATIVE_APP and WEBVIEW_* entries. `action=switch` switches to a target context (`context` required). |
 
 ### Element Discovery & Interaction
 
@@ -327,37 +334,41 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_get_text`     | Get text content from an element                                                             |
 | `appium_get_clipboard` | Get the current clipboard content as plain text from the device            |
 | `appium_set_clipboard` | Set the device clipboard to the provided plain text                        |
-| `appium_handle_alert` | Accept or dismiss system/permission alerts, or click a dialog button by label |
+| `appium_alert` | Handle alerts with `action` = `accept`, `dismiss`, or `get_text` (optional `buttonLabel`) |
 
 ### Screen & Navigation
 
 | Tool                       | Description                                             |
 | -------------------------- | ------------------------------------------------------- |
-| `appium_screenshot`        | Take a screenshot of the current screen and save as PNG |
-| `appium_element_screenshot` | Take a screenshot of a specific element by its UUID and save as PNG |
+| `appium_screenshot`        | Take a screenshot and save as PNG. Optionally provide `elementUUID` to capture a specific element. |
+| `appium_get_window_size`   | Get the width and height of the device screen in pixels |
 | `appium_scroll`            | Scroll the screen vertically (up or down)               |
 | `appium_scroll_to_element` | Scroll until a specific element becomes visible         |
 | `appium_swipe`             | Swipe the screen in a direction (left, right, up, down) or between custom coordinates |
 | `appium_get_page_source`   | Get the page source (XML) from the current screen       |
-| `appium_get_orientation`   | Get the current device/screen orientation (LANDSCAPE or PORTRAIT). |
-| `appium_set_orientation`   | Set the device/screen orientation to LANDSCAPE or PORTRAIT (rotate screen). |
+| `appium_orientation`   | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set). |
 | `appium_set_geolocation`   | Set the GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
 | `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
+| `appium_screen_recording` | Start or stop screen recording with `action` = `start` or `stop`. On stop, returns the saved MP4 path. |
 | `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
 | `appium_mobile_get_battery_info` | Get the current battery level (as a percentage) and charging state of the device. Works on both iOS and Android. |
+| `appium_mobile_get_device_time` | Get the current time on the device. Accepts an optional `format` parameter (moment.js format string); defaults to ISO 8601. Works on both iOS and Android. |
 
 ### App Management
 
-| Tool                  | Description                                                        |
-| --------------------- | ------------------------------------------------------------------ |
-| `appium_activate_app` | Activate (launch/bring to foreground) a specified app by bundle ID |
-| `appium_mobile_background_app` | Background the current app for a duration (optional; defaults to 5 seconds) |
-| `appium_installApp`   | Install an app on the device from a file path                      |
-| `appium_uninstallApp` | Uninstall an app from the device by bundle ID                      |
-| `appium_terminateApp` | Terminate (close) a specified app                                  |
-| `appium_list_apps`    | List all installed apps on the device (Android and iOS)             |
-| `appium_is_app_installed` | Check whether an app is installed. Package name for Android, bundle ID for iOS. |
+| Tool                           | Description                                                                     |
+|--------------------------------|---------------------------------------------------------------------------------|
+| `appium_activate_app`          | Activate (launch/bring to foreground) a specified app by bundle ID              |
+| `appium_mobile_background_app` | Background the current app for a duration (optional; defaults to 5 seconds)     |
+| `appium_installApp`            | Install an app on the device from a file path                                   |
+| `appium_uninstallApp`          | Uninstall an app from the device by bundle ID                                   |
+| `appium_terminateApp`          | Terminate (close) a specified app                                               |
+| `appium_list_apps`             | List all installed apps on the device (Android and iOS)                         |
+| `appium_is_app_installed`      | Check whether an app is installed. Package name for Android, bundle ID for iOS. |
+| `appium_query_app_state`       | Query the current state of an app. Package name for Android, bundle ID for iOS. |
+| `appium_mobile_clear_app`      | Clear app data and cache without uninstalling (`mobile: clearApp`). Android: package name; stop the app first when possible. iOS: **Simulator only** (bundle ID); not supported for app data reset on real devices without uninstall. |
+| `appium_mobile_permissions`    | Get, update, or reset app permissions in one tool (`action`: get / update / reset). Android: list or change runtime permissions. iOS Simulator: get/set privacy via bundle id; reset (`action=reset`) applies to the AUT on sim and device. |
 
 ### Test Generation & Documentation
 
@@ -366,6 +377,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `generate_locators`          | Generate intelligent locators for all interactive elements on the current screen |
 | `appium_generate_tests`      | Generate automated test code from natural language scenarios                     |
 | `appium_documentation_query` | Query Appium documentation using RAG for help and guidance                       |
+| `appium_skills` | Return ordered setup or troubleshooting skills from `appium/skills` for local Appium environments |
 
 ## 🤖 Client Support
 

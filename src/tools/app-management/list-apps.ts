@@ -1,5 +1,7 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import {
   getDriver,
   getPlatformName,
@@ -16,6 +18,8 @@ import {
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
 
+const execAsync = promisify(exec);
+
 function normalizeListAppsResult(
   result: Record<string, Record<string, unknown> | undefined>
 ): { packageName: string; appName: string }[] {
@@ -28,10 +32,11 @@ function normalizeListAppsResult(
   }));
 }
 
-async function listAppsFromDevice(): Promise<
-  { packageName: string; appName: string }[]
-> {
-  const driver = await getDriver();
+export async function listAppsFromDevice(
+  applicationType: 'User' | 'System' = 'User',
+  sessionId?: string
+): Promise<{ packageName: string; appName: string }[]> {
+  const driver = getDriver(sessionId);
   if (!driver) {
     throw new Error('No driver found');
   }
@@ -43,7 +48,23 @@ async function listAppsFromDevice(): Promise<
   const platform = getPlatformName(driver);
 
   if (platform === PLATFORM.ios && isXCUITestDriverSession(driver)) {
-    const result = await (driver as XCUITestDriver).mobileListApps();
+    const xcuiDriver = driver as XCUITestDriver;
+    if (xcuiDriver.isSimulator()) {
+      const udid = xcuiDriver.caps?.udid;
+      if (!udid) {
+        throw new Error(
+          'Could not determine simulator UDID from session capabilities'
+        );
+      }
+      const { stdout } = await execAsync(
+        `xcrun simctl listapps "${udid}" | plutil -convert json -o - -`
+      );
+      const result = JSON.parse(stdout);
+      return normalizeListAppsResult(result || {});
+    }
+    const result = await (driver as XCUITestDriver).mobileListApps(
+      applicationType
+    );
     return normalizeListAppsResult(result || {});
   }
 
@@ -60,16 +81,30 @@ async function listAppsFromDevice(): Promise<
 }
 
 export default function listApps(server: FastMCP): void {
-  const schema = z.object({});
+  const schema = z.object({
+    applicationType: z
+      .enum(['User', 'System'])
+      .optional()
+      .describe(
+        'iOS only: filter apps by type. "User" returns user-installed apps, "System" returns system apps. Defaults to "User".'
+      ),
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
+  });
 
   server.addTool({
     name: 'appium_list_apps',
     description:
-      'List all installed apps on the device. On Android, only package IDs are returned (no display names); on iOS, bundle IDs and display names are returned.',
+      'List all installed apps on the device. On Android, only package IDs are returned (no display names); on iOS, bundle IDs and display names are returned. On iOS, use applicationType to filter by "User" (default) or "System" apps.',
     parameters: schema,
-    execute: async () => {
+    execute: async (args) => {
       try {
-        const apps = await listAppsFromDevice();
+        const apps = await listAppsFromDevice(
+          args.applicationType,
+          args.sessionId
+        );
         const textResponse = {
           content: [
             {

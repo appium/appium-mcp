@@ -15,12 +15,12 @@
 import { FastMCP } from 'fastmcp';
 import log from '../logger.js';
 import answerAppium from './documentation/answer-appium.js';
+import appiumSkills from './documentation/appium-skills.js';
 import createSession from './session/create-session.js';
 import deleteSession from './session/delete-session.js';
 import listSessions from './session/list-sessions.js';
 import selectSession from './session/select-session.js';
 import generateLocators from './test-generation/locators.js';
-import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
 import openNotifications from './session/open-notifications.js';
 import shakeDevice from './session/shake.js';
@@ -32,10 +32,10 @@ import {
 } from './session/geolocation.js';
 import deviceInfo from './session/device-info.js';
 import batteryInfo from './session/battery-info.js';
-import { pushFile, pullFile } from './session/file-transfer.js';
-import bootSimulator from './ios/boot-simulator.js';
-import setupWDA from './ios/setup-wda.js';
-import installWDA from './ios/install-wda.js';
+import fileTransfer from './session/file-transfer.js';
+import deviceTime from './session/device-time.js';
+import driverSettings from './session/driver-settings.js';
+import prepareIosSimulator from './ios/prepare-ios-simulator.js';
 import generateTest from './test-generation/generate-tests.js';
 import scroll from './navigations/scroll.js';
 import scrollToElement from './navigations/scroll-to-element.js';
@@ -51,12 +51,15 @@ import pressKey from './interactions/press-key.js';
 import setValue from './interactions/set-value.js';
 import keyboard from './interactions/keyboard.js';
 import getText from './interactions/get-text.js';
+import getElementAttribute from './interactions/get-element-attribute.js';
 import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
-import { getOrientation, setOrientation } from './interactions/orientation.js';
+import orientation from './interactions/orientation.js';
 import clipboard from './interactions/clipboard.js';
-import handleAlert from './interactions/handle-alert.js';
-import { screenshot, elementScreenshot } from './interactions/screenshot.js';
+import alert from './interactions/handle-alert.js';
+import screenshot from './interactions/screenshot.js';
+import getWindowSize from './interactions/window-size.js';
+import screenRecording from './interactions/screen-recording.js';
 import activateApp from './app-management/activate-app.js';
 import backgroundApp from './app-management/background-app.js';
 import installApp from './app-management/install-app.js';
@@ -64,9 +67,11 @@ import uninstallApp from './app-management/uninstall-app.js';
 import terminateApp from './app-management/terminate-app.js';
 import listApps from './app-management/list-apps.js';
 import isAppInstalled from './app-management/is-app-installed.js';
+import queryAppState from './app-management/query-app-state.js';
+import clearApp from './app-management/clear-app.js';
+import mobilePermissions from './app-management/permissions.js';
 import deepLink from './app-management/deep-link.js';
-import getContexts from './context/get-contexts.js';
-import switchContext from './context/switch-context.js';
+import context from './context/context.js';
 
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
@@ -136,7 +141,6 @@ export default function registerTools(server: FastMCP): void {
   };
 
   // Session Management
-  selectPlatform(server);
   selectDevice(server);
   createSession(server);
   listSessions(server);
@@ -151,13 +155,12 @@ export default function registerTools(server: FastMCP): void {
   resetGeolocation(server);
   deviceInfo(server);
   batteryInfo(server);
-  pushFile(server);
-  pullFile(server);
+  fileTransfer(server);
+  deviceTime(server);
+  driverSettings(server);
 
   // iOS Setup
-  bootSimulator(server);
-  setupWDA(server);
-  installWDA(server);
+  prepareIosSimulator(server);
 
   // Navigation
   scroll(server);
@@ -180,14 +183,15 @@ export default function registerTools(server: FastMCP): void {
   setValue(server);
   keyboard(server);
   getText(server);
+  getElementAttribute(server);
   clipboard(server);
   getActiveElement(server);
   getPageSource(server);
-  getOrientation(server);
-  setOrientation(server);
-  handleAlert(server);
+  orientation(server);
+  alert(server);
   screenshot(server);
-  elementScreenshot(server);
+  getWindowSize(server);
+  screenRecording(server);
 
   // App Management
   activateApp(server);
@@ -197,11 +201,13 @@ export default function registerTools(server: FastMCP): void {
   terminateApp(server);
   listApps(server);
   isAppInstalled(server);
+  queryAppState(server);
+  clearApp(server);
+  mobilePermissions(server);
   deepLink(server);
 
   // Context Management
-  getContexts(server);
-  switchContext(server);
+  context(server);
 
   // Test Generation
   generateLocators(server);
@@ -209,5 +215,6 @@ export default function registerTools(server: FastMCP): void {
 
   // Documentation
   answerAppium(server);
+  appiumSkills(server);
   log.info('All tools registered');
 }
