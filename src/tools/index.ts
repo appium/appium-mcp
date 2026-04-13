@@ -25,15 +25,9 @@ import selectDevice from './session/select-device.js';
 import openNotifications from './session/open-notifications.js';
 import shakeDevice from './session/shake.js';
 import { lockDevice, unlockDevice } from './session/lock.js';
-import {
-  setGeolocation,
-  getGeolocation,
-  resetGeolocation,
-} from './session/geolocation.js';
+import geolocation from './session/geolocation.js';
 import deviceInfo from './session/device-info.js';
-import batteryInfo from './session/battery-info.js';
 import fileTransfer from './session/file-transfer.js';
-import deviceTime from './session/device-time.js';
 import driverSettings from './session/driver-settings.js';
 import prepareIosSimulator from './ios/prepare-ios-simulator.js';
 import generateTest from './test-generation/generate-tests.js';
@@ -140,13 +134,9 @@ export default function registerTools(server: FastMCP): void {
   shakeDevice(server);
   lockDevice(server);
   unlockDevice(server);
-  setGeolocation(server);
-  getGeolocation(server);
-  resetGeolocation(server);
+  geolocation(server);
   deviceInfo(server);
-  batteryInfo(server);
   fileTransfer(server);
-  deviceTime(server);
   driverSettings(server);
 
   // iOS Setup

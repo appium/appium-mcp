@@ -1,3 +1,21 @@
+## [1.55.0](https://github.com/appium/appium-mcp/compare/v1.54.0...v1.55.0) (2026-04-13)
+
+### Features
+
+* consolidate geolocation functionality into a single tool ([#256](https://github.com/appium/appium-mcp/issues/256)) ([9cdedbd](https://github.com/appium/appium-mcp/commit/9cdedbd876ee70e85be17a786cb22069af65f9c0))
+
+## [1.54.0](https://github.com/appium/appium-mcp/compare/v1.53.1...v1.54.0) (2026-04-11)
+
+### Features
+
+* **device-info:** consolidate device info commands ([#257](https://github.com/appium/appium-mcp/issues/257)) ([29e2f17](https://github.com/appium/appium-mcp/commit/29e2f1713e8fbef860dfede31e05b2f013533cbb))
+
+## [1.53.1](https://github.com/appium/appium-mcp/compare/v1.53.0...v1.53.1) (2026-04-11)
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump typescript from 5.9.3 to 6.0.2 ([#229](https://github.com/appium/appium-mcp/issues/229)) ([c81bcd3](https://github.com/appium/appium-mcp/commit/c81bcd384f373f0c29603b316db71e2baca743ba))
+
 ## [1.53.0](https://github.com/appium/appium-mcp/compare/v1.52.0...v1.53.0) (2026-04-10)
 
 ### Features
