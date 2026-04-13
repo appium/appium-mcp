@@ -1,3 +1,9 @@
+## [1.56.0](https://github.com/appium/appium-mcp/compare/v1.55.0...v1.56.0) (2026-04-13)
+
+### Features
+
+* **app:** consolidate app commands  ([#255](https://github.com/appium/appium-mcp/issues/255)) ([bad8cdc](https://github.com/appium/appium-mcp/commit/bad8cdc266b1646f8748bd73e5a6102689e03b7b))
+
 ## [1.55.0](https://github.com/appium/appium-mcp/compare/v1.54.0...v1.55.0) (2026-04-13)
 
 ### Features
