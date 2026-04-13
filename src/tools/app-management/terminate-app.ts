@@ -1,16 +1,16 @@
 import type { ContentResult } from 'fastmcp';
-import {
-  getPlatformName,
-  PLATFORM,
-  type DriverInstance,
-} from '../../session-store.js';
+import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
 
 export async function terminate(
-  driver: DriverInstance,
-  id: string
+  id: string,
+  sessionId?: string
 ): Promise<ContentResult> {
   try {
+    const driver = getDriver(sessionId);
+    if (!driver) {
+      return { content: [{ type: 'text', text: 'No driver found' }] };
+    }
     const platform = getPlatformName(driver);
     const params =
       platform === PLATFORM.android ? { appId: id } : { bundleId: id };

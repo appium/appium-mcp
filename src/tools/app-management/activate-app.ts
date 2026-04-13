@@ -1,12 +1,16 @@
 import type { ContentResult } from 'fastmcp';
-import type { DriverInstance } from '../../session-store.js';
+import { getDriver } from '../../session-store.js';
 import { activateApp as _activateApp } from '../../command.js';
 
 export async function activate(
-  driver: DriverInstance,
-  id: string
+  id: string,
+  sessionId?: string
 ): Promise<ContentResult> {
   try {
+    const driver = getDriver(sessionId);
+    if (!driver) {
+      return { content: [{ type: 'text', text: 'No driver found' }] };
+    }
     await _activateApp(driver, id);
     return {
       content: [{ type: 'text', text: `App ${id} activated correctly.` }],

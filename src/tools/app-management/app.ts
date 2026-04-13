@@ -1,6 +1,5 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { resolveAppId, resolveId } from './resolve-app-id.js';
 import { activate } from './activate-app.js';
 import { terminate } from './terminate-app.js';
@@ -13,20 +12,24 @@ import { background, DEFAULT_BACKGROUND_SECONDS } from './background-app.js';
 import { clear } from './clear-app.js';
 import { deepLink } from './deep-link.js';
 
+const APP_ACTIONS = [
+  'activate',
+  'terminate',
+  'install',
+  'uninstall',
+  'list',
+  'is_installed',
+  'query_state',
+  'background',
+  'clear',
+  'deep_link',
+] as const;
+
+export type AppAction = (typeof APP_ACTIONS)[number];
+
 const schema = z.object({
   action: z
-    .enum([
-      'activate',
-      'terminate',
-      'install',
-      'uninstall',
-      'list',
-      'is_installed',
-      'query_state',
-      'background',
-      'clear',
-      'deep_link',
-    ])
+    .enum(APP_ACTIONS)
     .describe(
       'Action to perform. ' +
         'activate: bring app to foreground (requires id or name). ' +
@@ -97,9 +100,7 @@ const schema = z.object({
 export default function app(server: FastMCP): void {
   server.addTool({
     name: 'appium_app',
-    description:
-      'Manage apps on the device. Use the action parameter to choose what to do: ' +
-      'activate, terminate, install, uninstall, list, is_installed, query_state, background, clear, deep_link.',
+    description: `Manage apps on the device. Use the action parameter to choose what to do: ${APP_ACTIONS.join(', ')}.`,
     parameters: schema,
     annotations: {
       readOnlyHint: false,
@@ -114,67 +115,57 @@ export default function app(server: FastMCP): void {
       if (action === 'list') {
         return list(args.applicationType, sessionId);
       }
-
       if (action === 'background') {
-        const driver = getDriver(sessionId);
-        if (!driver) {
-          throw new Error('No driver found');
-        }
-        return background(driver, args.seconds ?? DEFAULT_BACKGROUND_SECONDS);
+        return background(
+          args.seconds ?? DEFAULT_BACKGROUND_SECONDS,
+          sessionId
+        );
       }
-
       if (action === 'install') {
         if (!args.path) {
-          throw new Error('path is required for install');
+          return {
+            content: [{ type: 'text', text: 'path is required for install' }],
+          };
         }
-        const driver = getDriver(sessionId);
-        if (!driver) {
-          throw new Error('No driver found');
-        }
-        return install(driver, args.path, sessionId);
+        return install(args.path, sessionId);
       }
 
       if (action === 'deep_link') {
         if (!args.url) {
-          throw new Error('url is required for deep_link');
+          return {
+            content: [{ type: 'text', text: 'url is required for deep_link' }],
+          };
         }
-        const driver = getDriver(sessionId);
-        if (!driver) {
-          throw new Error('No driver found');
-        }
-        let appId = args.id;
-        if (!appId && args.name) {
-          appId = await resolveAppId(args.name, sessionId);
-        }
-        return deepLink(driver, args.url, appId, args.waitForLaunch);
+        const appId =
+          args.id ??
+          (args.name ? await resolveAppId(args.name, sessionId) : undefined);
+        return deepLink(args.url, appId, args.waitForLaunch, sessionId);
       }
 
       // activate, terminate, uninstall, is_installed, query_state, clear — all require id or name
-      const driver = getDriver(sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
-      }
       const id = await resolveId(args.id, args.name, sessionId);
 
       if (action === 'activate') {
-        return activate(driver, id);
+        return activate(id, sessionId);
       }
       if (action === 'terminate') {
-        return terminate(driver, id);
+        return terminate(id, sessionId);
       }
       if (action === 'uninstall') {
-        return uninstall(driver, id, args.keepData, sessionId);
+        return uninstall(id, args.keepData, sessionId);
       }
       if (action === 'is_installed') {
-        return isInstalled(driver, id);
+        return isInstalled(id, sessionId);
       }
       if (action === 'query_state') {
-        return queryState(driver, id);
+        return queryState(id, sessionId);
       }
       if (action === 'clear') {
-        return clear(driver, id);
+        return clear(id, sessionId);
       }
-      throw new Error(`Unknown action: ${action}`);
+      return {
+        content: [{ type: 'text', text: `Unknown action: ${action}` }],
+      };
     },
   });
 }

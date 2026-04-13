@@ -1,23 +1,28 @@
 import type { ContentResult } from 'fastmcp';
 import {
+  getDriver,
   getPlatformName,
   isRemoteDriverSession,
   isAndroidUiautomator2DriverSession,
   isXCUITestDriverSession,
   PLATFORM,
-  type DriverInstance,
 } from '../../session-store.js';
 import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
 
 export async function deepLink(
-  driver: DriverInstance,
   url: string,
   appId?: string,
-  waitForLaunch?: boolean
+  waitForLaunch?: boolean,
+  sessionId?: string
 ): Promise<ContentResult> {
   try {
+    const driver = getDriver(sessionId);
+    if (!driver) {
+      return { content: [{ type: 'text', text: 'No driver found' }] };
+    }
+
     if (isRemoteDriverSession(driver)) {
       const platform = getPlatformName(driver);
       if (platform === PLATFORM.android) {
@@ -51,6 +56,7 @@ export async function deepLink(
     } else {
       throw new Error('Unsupported driver for deep link');
     }
+
     return {
       content: [
         {

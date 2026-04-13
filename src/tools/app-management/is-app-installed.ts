@@ -1,21 +1,26 @@
 import type { ContentResult } from 'fastmcp';
 import {
+  getDriver,
   getPlatformName,
   isRemoteDriverSession,
   isAndroidUiautomator2DriverSession,
   isXCUITestDriverSession,
   PLATFORM,
-  type DriverInstance,
 } from '../../session-store.js';
 import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
 
 export async function isInstalled(
-  driver: DriverInstance,
-  id: string
+  id: string,
+  sessionId?: string
 ): Promise<ContentResult> {
   try {
+    const driver = getDriver(sessionId);
+    if (!driver) {
+      return { content: [{ type: 'text', text: 'No driver found' }] };
+    }
+
     let result: boolean;
     if (isRemoteDriverSession(driver)) {
       const platform = getPlatformName(driver);
@@ -32,6 +37,7 @@ export async function isInstalled(
     } else {
       throw new Error('Unsupported driver for is_installed');
     }
+
     return {
       content: [
         {

@@ -1,14 +1,18 @@
 import type { ContentResult } from 'fastmcp';
-import type { DriverInstance } from '../../session-store.js';
+import { getDriver } from '../../session-store.js';
 import { execute } from '../../command.js';
 
 export const DEFAULT_BACKGROUND_SECONDS = 5;
 
 export async function background(
-  driver: DriverInstance,
-  seconds: number
+  seconds: number,
+  sessionId?: string
 ): Promise<ContentResult> {
   try {
+    const driver = getDriver(sessionId);
+    if (!driver) {
+      return { content: [{ type: 'text', text: 'No driver found' }] };
+    }
     await execute(driver, 'mobile: backgroundApp', { seconds });
     const resumeHint =
       seconds < 0

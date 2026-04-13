@@ -1,5 +1,5 @@
 import type { ContentResult } from 'fastmcp';
-import type { DriverInstance } from '../../session-store.js';
+import { getDriver } from '../../session-store.js';
 import { queryAppState as _queryAppState } from '../../command.js';
 
 const APP_STATE_LABELS: Record<number, string> = {
@@ -11,10 +11,14 @@ const APP_STATE_LABELS: Record<number, string> = {
 };
 
 export async function queryState(
-  driver: DriverInstance,
-  id: string
+  id: string,
+  sessionId?: string
 ): Promise<ContentResult> {
   try {
+    const driver = getDriver(sessionId);
+    if (!driver) {
+      return { content: [{ type: 'text', text: 'No driver found' }] };
+    }
     const state = await _queryAppState(driver, id);
     const label = APP_STATE_LABELS[state] ?? 'unknown';
     return {
