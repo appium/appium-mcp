@@ -22,11 +22,8 @@ import listSessions from './session/list-sessions.js';
 import selectSession from './session/select-session.js';
 import generateLocators from './test-generation/locators.js';
 import selectDevice from './session/select-device.js';
-import openNotifications from './session/open-notifications.js';
-import shakeDevice from './session/shake.js';
-import { lockDevice, unlockDevice } from './session/lock.js';
 import geolocation from './session/geolocation.js';
-import deviceInfo from './session/device-info.js';
+import device from './session/device.js';
 import fileTransfer from './session/file-transfer.js';
 import driverSettings from './session/driver-settings.js';
 import prepareIosSimulator from './ios/prepare-ios-simulator.js';
@@ -140,12 +137,8 @@ export default function registerTools(server: FastMCP): void {
   listSessions(server);
   selectSession(server);
   deleteSession(server);
-  openNotifications(server);
-  shakeDevice(server);
-  lockDevice(server);
-  unlockDevice(server);
   geolocation(server);
-  deviceInfo(server);
+  device(server);
   fileTransfer(server);
   driverSettings(server);
 
