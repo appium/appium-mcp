@@ -131,7 +131,7 @@ export async function resolveAppId(
 
   if (scored.length === 0) {
     throw new Error(
-      `No installed app matched the name "${name}". Use appium_list_apps to see available apps.`
+      `No installed app matched the name "${name}". Use appium_app with action=list" action to see available apps.`
     );
   }
 

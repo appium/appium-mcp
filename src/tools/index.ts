@@ -54,17 +54,7 @@ import alert from './interactions/handle-alert.js';
 import screenshot from './interactions/screenshot.js';
 import getWindowSize from './interactions/window-size.js';
 import screenRecording from './interactions/screen-recording.js';
-import activateApp from './app-management/activate-app.js';
-import backgroundApp from './app-management/background-app.js';
-import installApp from './app-management/install-app.js';
-import uninstallApp from './app-management/uninstall-app.js';
-import terminateApp from './app-management/terminate-app.js';
-import listApps from './app-management/list-apps.js';
-import isAppInstalled from './app-management/is-app-installed.js';
-import queryAppState from './app-management/query-app-state.js';
-import clearApp from './app-management/clear-app.js';
-import mobilePermissions from './app-management/permissions.js';
-import deepLink from './app-management/deep-link.js';
+import app from './app-management/app.js';
 import context from './context/context.js';
 
 export default function registerTools(server: FastMCP): void {
@@ -184,17 +174,7 @@ export default function registerTools(server: FastMCP): void {
   screenRecording(server);
 
   // App Management
-  activateApp(server);
-  backgroundApp(server);
-  installApp(server);
-  uninstallApp(server);
-  terminateApp(server);
-  listApps(server);
-  isAppInstalled(server);
-  queryAppState(server);
-  clearApp(server);
-  mobilePermissions(server);
-  deepLink(server);
+  app(server);
 
   // Context Management
   context(server);
