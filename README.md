@@ -302,7 +302,6 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
 | `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
 | `delete_session` | Delete the current mobile session and clean up resources                                                    |
-| `appium_mobile_shake` | Shake gesture (`mobile: shake`) on **iOS Simulator only** (XCUITest). Not supported on Android or physical iOS devices. |
 | `appium_get_settings` | Read current Appium driver session settings (idle timeouts, animation-related flags, selector waits, etc.). Helps diagnose and tune flaky automation. |
 | `appium_update_settings` | Merge key-value updates into driver session settings (driver-specific keys; use `appium_get_settings` to inspect). |
 
@@ -349,7 +348,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_orientation`   | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set). |
 | `appium_geolocation`       | Get, set, or reset the device GPS coordinates with `action` = `get`, `set`, or `reset`. For `set`, provide `latitude` and `longitude` (and optional `altitude` on Android). Not supported on Android emulators for `reset`. |
 | `appium_screen_recording` | Start or stop screen recording with `action` = `start` or `stop`. On stop, returns the saved MP4 path. |
-| `appium_mobile_device_info` | Get device information, battery status, or current device time. Use `action` = `info` (model, OS version, locale, timezone, screen density, etc.), `battery` (level as percentage and charging state), or `time` (current device time; accepts an optional `format` moment.js string, defaults to ISO 8601). Works on both iOS and Android. |
+| `appium_device` | Device management in one tool. Use `action` = `info` (model/OS/locale/etc.), `battery` (level + charging state), `time` (device time, optional `format`), `shake` (iOS XCUITest only), `lock` (optional `seconds` for auto-unlock), `unlock`, or `notifications` (open Android notifications panel). |
 
 ### App Management
 

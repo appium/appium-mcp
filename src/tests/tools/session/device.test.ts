@@ -3,6 +3,9 @@ import { describe, test, expect, jest } from '@jest/globals';
 jest.unstable_mockModule('../../../session-store', () => ({
   getDriver: jest.fn(),
   getPlatformName: jest.fn(),
+  isXCUITestDriverSession: jest.fn(),
+  isAndroidUiautomator2DriverSession: jest.fn(),
+  isRemoteDriverSession: jest.fn(),
   PLATFORM: { ios: 'iOS', android: 'Android' },
 }));
 
@@ -24,13 +27,13 @@ const mockGetPlatformName = getPlatformName as jest.MockedFunction<
 >;
 const mockExecute = execute as jest.MockedFunction<typeof execute>;
 
-describe('appium_mobile_device_info tool', () => {
+describe('appium_device tool', () => {
   const mockServer = { addTool: jest.fn() } as any;
 
   async function getToolExecute() {
-    const { default: deviceInfo } =
-      await import('../../../tools/session/device-info.js');
-    deviceInfo(mockServer);
+    const { default: device } =
+      await import('../../../tools/session/device.js');
+    device(mockServer);
     return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
       -1
     )?.[0];
@@ -86,7 +89,7 @@ describe('appium_mobile_device_info tool', () => {
       const result = await tool.execute({ action: 'battery' }, undefined);
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toBe(
-        'Failed to get battery info: driver error'
+        'Failed to perform battery. err: driver error'
       );
     });
   });
@@ -125,7 +128,7 @@ describe('appium_mobile_device_info tool', () => {
       const result = await tool.execute({ action: 'info' }, undefined);
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toBe(
-        'Failed to get device info: device unavailable'
+        'Failed to perform info. err: device unavailable'
       );
     });
   });
@@ -176,7 +179,9 @@ describe('appium_mobile_device_info tool', () => {
 
       const result = await tool.execute({ action: 'time' }, undefined);
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe('Failed to get device time: timeout');
+      expect(result.content[0].text).toBe(
+        'Failed to perform time. err: timeout'
+      );
     });
   });
 });
