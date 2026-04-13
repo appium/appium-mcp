@@ -1,3 +1,9 @@
+## [1.55.0](https://github.com/appium/appium-mcp/compare/v1.54.0...v1.55.0) (2026-04-13)
+
+### Features
+
+* consolidate geolocation functionality into a single tool ([#256](https://github.com/appium/appium-mcp/issues/256)) ([9cdedbd](https://github.com/appium/appium-mcp/commit/9cdedbd876ee70e85be17a786cb22069af65f9c0))
+
 ## [1.54.0](https://github.com/appium/appium-mcp/compare/v1.53.1...v1.54.0) (2026-04-11)
 
 ### Features
