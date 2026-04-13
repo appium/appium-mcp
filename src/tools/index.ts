@@ -25,11 +25,7 @@ import selectDevice from './session/select-device.js';
 import openNotifications from './session/open-notifications.js';
 import shakeDevice from './session/shake.js';
 import { lockDevice, unlockDevice } from './session/lock.js';
-import {
-  setGeolocation,
-  getGeolocation,
-  resetGeolocation,
-} from './session/geolocation.js';
+import geolocation from './session/geolocation.js';
 import deviceInfo from './session/device-info.js';
 import fileTransfer from './session/file-transfer.js';
 import driverSettings from './session/driver-settings.js';
@@ -148,9 +144,7 @@ export default function registerTools(server: FastMCP): void {
   shakeDevice(server);
   lockDevice(server);
   unlockDevice(server);
-  setGeolocation(server);
-  getGeolocation(server);
-  resetGeolocation(server);
+  geolocation(server);
   deviceInfo(server);
   fileTransfer(server);
   driverSettings(server);
