@@ -41,13 +41,12 @@ export const PLATFORM = {
 };
 
 /**
- * Determine whether the provided driver represents a remote driver session.
+ * Determine whether the provided driver represents a remote Appium session
+ * (i.e. a `Client` obtained via `WebDriver.newSession`) rather than an
+ * in-process `AndroidUiautomator2Driver` or `XCUITestDriver`.
  *
- * This checks for the presence of a string-valued `sessionId` property on the
- * driver object, which indicates a remote/WebDriver session.
- *
- * @param driver - The driver instance to inspect (may be a Client, AndroidUiautomator2Driver, XCUITestDriver, or null).
- * @returns `true` if `driver` is non-null and has a string `sessionId`; otherwise `false`.
+ * @param driver - The driver instance to inspect.
+ * @returns `true` if `driver` is non-null and not an embedded Appium driver.
  */
 export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
   if (driver) {
@@ -303,6 +302,32 @@ export async function safeDeleteAllSessions(): Promise<number> {
   return deletedCount;
 }
 
+function findSessionByDriver(driver: DriverInstance): SessionInfo | undefined {
+  for (const session of sessions.values()) {
+    if (session.driver === driver) {
+      return session;
+    }
+  }
+  return undefined;
+}
+
+/** Resolve a capability platform string to the corresponding `PLATFORM` constant. */
+function platformFromCapabilityString(
+  raw: string | null | undefined
+): string | null {
+  if (raw == null || raw === '') {
+    return null;
+  }
+  const p = raw.trim().toLowerCase();
+  if (p === 'android') {
+    return PLATFORM.android;
+  }
+  if (p === 'ios' || p === 'tvos') {
+    return PLATFORM.ios;
+  }
+  return null;
+}
+
 export const getPlatformName = (driver: any): string => {
   if (driver instanceof AndroidUiautomator2Driver) {
     return PLATFORM.android;
@@ -311,10 +336,26 @@ export const getPlatformName = (driver: any): string => {
     return PLATFORM.ios;
   }
 
-  if ((driver as Client).isAndroid) {
+  const client = driver as Client;
+  if (client.isAndroid) {
     return PLATFORM.android;
-  } else if ((driver as Client).isIOS) {
+  }
+  if (client.isIOS) {
     return PLATFORM.ios;
+  }
+
+  const session = findSessionByDriver(driver);
+  if (session) {
+    let resolved = platformFromCapabilityString(session.metadata.platform);
+    if (!resolved) {
+      const caps = session.metadata.capabilities;
+      resolved =
+        platformFromCapabilityString(caps?.platformName) ??
+        platformFromCapabilityString(caps?.['appium:platformName']);
+    }
+    if (resolved) {
+      return resolved;
+    }
   }
 
   throw new Error('Unknown driver type');

@@ -1,10 +1,6 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import {
-  getDriver,
-  isRemoteDriverSession,
-  setCurrentContext,
-} from '../../session-store.js';
+import { getDriver, setCurrentContext } from '../../session-store.js';
 import { getContexts, getCurrentContext, setContext } from '../../command.js';
 import {
   createUIResource,
@@ -46,12 +42,6 @@ export default function context(server: FastMCP): void {
         const driver = getDriver(args.sessionId);
         if (!driver) {
           throw new Error('No driver found. Please create a session first.');
-        }
-
-        if (isRemoteDriverSession(driver)) {
-          throw new Error(
-            'Context management is not yet implemented for the remote driver'
-          );
         }
 
         const [currentContext, availableContexts] = await Promise.all([
