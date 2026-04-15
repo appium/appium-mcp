@@ -6,6 +6,17 @@ updates:
     interval: daily
     time: "11:00"
   open-pull-requests-limit: 10
+  groups:
+    # jest and ts-jest must be upgraded together — ts-jest's major version
+    # matches jest's (ts-jest@29 = jest@29, ts-jest@30 = jest@30).
+    # Grouping prevents Dependabot from bumping jest alone when the
+    # matching ts-jest major has not been released yet.
+    jest-ecosystem:
+      patterns:
+        - "jest"
+        - "@jest/globals"
+        - "@types/jest"
+        - "ts-jest"
 - package-ecosystem: "github-actions"
   directory: "/"
   schedule:
