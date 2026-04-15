@@ -318,9 +318,7 @@ export const getPlatformName = (driver: any): string => {
     return PLATFORM.ios;
   }
 
-  const session = listSessions().find(
-    (s) => s.sessionId === client.sessionId
-  );
+  const session = listSessions().find((s) => s.sessionId === client.sessionId);
   if (session && session.platform) {
     return session.platform;
   }
