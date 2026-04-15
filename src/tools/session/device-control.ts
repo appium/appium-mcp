@@ -8,6 +8,7 @@ import {
   isRemoteDriverSession,
   isXCUITestDriverSession,
   PLATFORM,
+  type DriverInstance,
 } from '../../session-store.js';
 import { execute } from '../../command.js';
 
@@ -15,7 +16,11 @@ const deviceControlSchema = z.object({
   action: z
     .enum(['lock', 'unlock', 'shake', 'open_notifications'])
     .describe(
-      'Action to perform: lock/unlock device, shake (iOS XCUITest only), or open notifications (Android only).'
+      'Action to perform. ' +
+        'lock: lock the device (optional seconds for timed lock). ' +
+        'unlock: unlock the device. ' +
+        'shake: perform shake gesture (iOS only). ' +
+        'open_notifications: open notifications panel (Android only).'
     ),
   sessionId: z
     .string()
@@ -31,11 +36,65 @@ const deviceControlSchema = z.object({
     ),
 });
 
+async function handleLock(
+  driver: DriverInstance,
+  seconds?: number
+): Promise<ContentResult> {
+  const params: { seconds?: number } = {};
+  if (seconds !== undefined) {
+    params.seconds = seconds;
+  }
+  await execute(driver, 'mobile: lock', params);
+  const msg =
+    seconds !== undefined
+      ? `Device locked for ${seconds} second(s).`
+      : 'Device locked.';
+  return { content: [{ type: 'text', text: msg }] };
+}
+
+async function handleUnlock(driver: DriverInstance): Promise<ContentResult> {
+  await execute(driver, 'mobile: unlock', {});
+  return { content: [{ type: 'text', text: 'Device unlocked.' }] };
+}
+
+async function handleShake(driver: DriverInstance): Promise<ContentResult> {
+  if (!isXCUITestDriverSession(driver)) {
+    throw new Error('Shake is supported only with XCUITest driver sessions.');
+  }
+  await (driver as any).mobileShake();
+  return { content: [{ type: 'text', text: 'Shake action performed.' }] };
+}
+
+async function handleOpenNotifications(
+  driver: DriverInstance
+): Promise<ContentResult> {
+  const platform = getPlatformName(driver);
+  if (platform !== PLATFORM.android) {
+    throw new Error(
+      `Unsupported platform: ${platform}. Open notifications is supported on Android only.`
+    );
+  }
+
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    await (driver as AndroidUiautomator2Driver).openNotifications();
+  } else if (isRemoteDriverSession(driver)) {
+    await execute(driver, 'mobile: openNotifications', {});
+  } else {
+    throw new Error('Unsupported Android driver for open notifications');
+  }
+
+  return {
+    content: [
+      { type: 'text', text: 'Successfully opened notifications panel.' },
+    ],
+  };
+}
+
 export default function mobileDeviceControl(server: FastMCP): void {
   server.addTool({
     name: 'appium_mobile_device_control',
     description:
-      'Control device-level actions in one tool. action=lock|unlock uses mobile: lock/unlock, action=shake performs iOS XCUITest shake, action=open_notifications opens Android notifications panel.',
+      'Control device behavior: lock/unlock the screen, shake the device, or open the notifications panel. Use the action parameter to choose what to do.',
     parameters: deviceControlSchema,
     annotations: {
       readOnlyHint: false,
@@ -55,63 +114,16 @@ export default function mobileDeviceControl(server: FastMCP): void {
           throw new Error('seconds is only valid when action is lock');
         }
 
-        if (args.action === 'lock') {
-          const params: { seconds?: number } = {};
-          if (args.seconds !== undefined) {
-            params.seconds = args.seconds;
-          }
-          await execute(driver, 'mobile: lock', params);
-          const msg =
-            args.seconds !== undefined
-              ? `Device locked for ${args.seconds} second(s).`
-              : 'Device locked.';
-          return {
-            content: [{ type: 'text', text: msg }],
-          };
+        switch (args.action) {
+          case 'lock':
+            return await handleLock(driver, args.seconds);
+          case 'unlock':
+            return await handleUnlock(driver);
+          case 'shake':
+            return await handleShake(driver);
+          case 'open_notifications':
+            return await handleOpenNotifications(driver);
         }
-
-        if (args.action === 'unlock') {
-          await execute(driver, 'mobile: unlock', {});
-          return {
-            content: [{ type: 'text', text: 'Device unlocked.' }],
-          };
-        }
-
-        if (args.action === 'shake') {
-          if (!isXCUITestDriverSession(driver)) {
-            throw new Error(
-              'Shake is supported only with XCUITest driver sessions.'
-            );
-          }
-          await (driver as any).mobileShake();
-          return {
-            content: [{ type: 'text', text: 'Shake action performed.' }],
-          };
-        }
-
-        const platform = getPlatformName(driver);
-        if (platform !== PLATFORM.android) {
-          throw new Error(
-            `Unsupported platform: ${platform}. Open notifications is supported on Android only.`
-          );
-        }
-
-        if (isAndroidUiautomator2DriverSession(driver)) {
-          await (driver as AndroidUiautomator2Driver).openNotifications();
-        } else if (isRemoteDriverSession(driver)) {
-          await execute(driver, 'mobile: openNotifications', {});
-        } else {
-          throw new Error('Unsupported Android driver for open notifications');
-        }
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Successfully opened notifications panel.',
-            },
-          ],
-        };
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         return {
