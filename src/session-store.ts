@@ -302,32 +302,6 @@ export async function safeDeleteAllSessions(): Promise<number> {
   return deletedCount;
 }
 
-function findSessionByDriver(driver: DriverInstance): SessionInfo | undefined {
-  for (const session of sessions.values()) {
-    if (session.driver === driver) {
-      return session;
-    }
-  }
-  return undefined;
-}
-
-/** Resolve a capability platform string to the corresponding `PLATFORM` constant. */
-function platformFromCapabilityString(
-  raw: string | null | undefined
-): string | null {
-  if (raw == null || raw === '') {
-    return null;
-  }
-  const p = raw.trim().toLowerCase();
-  if (p === 'android') {
-    return PLATFORM.android;
-  }
-  if (p === 'ios' || p === 'tvos') {
-    return PLATFORM.ios;
-  }
-  return null;
-}
-
 export const getPlatformName = (driver: any): string => {
   if (driver instanceof AndroidUiautomator2Driver) {
     return PLATFORM.android;
@@ -344,18 +318,11 @@ export const getPlatformName = (driver: any): string => {
     return PLATFORM.ios;
   }
 
-  const session = findSessionByDriver(driver);
-  if (session) {
-    let resolved = platformFromCapabilityString(session.metadata.platform);
-    if (!resolved) {
-      const caps = session.metadata.capabilities;
-      resolved =
-        platformFromCapabilityString(caps?.platformName) ??
-        platformFromCapabilityString(caps?.['appium:platformName']);
-    }
-    if (resolved) {
-      return resolved;
-    }
+  const session = listSessions().find(
+    (s) => s.sessionId === client.sessionId
+  );
+  if (session && session.platform) {
+    return session.platform;
   }
 
   throw new Error('Unknown driver type');

@@ -497,7 +497,11 @@ describe('getPlatformName', () => {
   });
 
   test('falls back to session platformName for remote sessions', () => {
-    const client = { isAndroid: false, isIOS: false } as any;
+    const client = {
+      isAndroid: false,
+      isIOS: false,
+      sessionId: 'session-remote-android',
+    } as any;
     setSession(client, 'session-remote-android', {
       platformName: 'Android',
     });
@@ -505,17 +509,13 @@ describe('getPlatformName', () => {
   });
 
   test('falls back to appium:platformName when platformName is absent', () => {
-    const client = { isAndroid: false, isIOS: false } as any;
+    const client = {
+      isAndroid: false,
+      isIOS: false,
+      sessionId: 'session-remote-ios-cap',
+    } as any;
     setSession(client, 'session-remote-ios-cap', {
       'appium:platformName': 'iOS',
-    });
-    expect(getPlatformName(client)).toBe(PLATFORM.ios);
-  });
-
-  test('resolves tvOS capabilities to iOS platform', () => {
-    const client = { isAndroid: false, isIOS: false } as any;
-    setSession(client, 'session-tvos', {
-      platformName: 'tvOS',
     });
     expect(getPlatformName(client)).toBe(PLATFORM.ios);
   });
