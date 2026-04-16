@@ -30,7 +30,9 @@ These principles are grounded in the MCP specification (<https://modelcontextpro
 
 ## Tool Response Contract
 
-All tools in this repo follow a single response contract. It aligns with the MCP spec's distinction between **tool-execution errors** (the tool ran but the outcome is a failure) and **protocol errors** (malformed request, unknown tool).
+This section describes the **target** response contract for all tools in this repo. The shared helpers in `src/tools/tool-response.ts` land via PR #263; until the full migration completes, some existing tools still use older patterns (`throw new Error('No driver found')`, hand-built `{ content: [...] }` objects). **New tools and edits to existing tools should use this contract.** Do not copy older patterns.
+
+The contract aligns with the MCP spec's distinction between **tool-execution errors** (the tool ran but the outcome is a failure) and **protocol errors** (malformed request, unknown tool).
 
 ### The rule
 
@@ -531,16 +533,14 @@ Specifically:
 
 ## Examples
 
-See these existing tools for reference:
+The tools below are useful structural references — how a tool is wired up, schema shape, `action` dispatch, platform branching, annotations, registration. **Most of them still use the pre-migration error pattern** (`throw new Error('No driver found')` or hand-built `{ content: [...] }` objects) and will be updated as the migration described in [`docs/tool-response-contract-plan.md`](./tool-response-contract-plan.md) progresses. When in doubt, follow the [Tool Response Contract](#tool-response-contract) rules above and the Quick Start template — not the current body of a sample tool.
 
-- **Simple tool using the contract**: `src/tools/session/driver-settings.ts` — `resolveDriver` + `errorResult`, typed args.
-- **Consolidated tool (`action` enum)**: `src/tools/app-management/app.ts` — multiple actions behind one tool, shared `id`/`name`, dispatched via switch.
-- **Platform-gated tool**: `src/tools/session/shake.ts` — iOS-only via `platformMismatch`.
+- **Consolidated tool (`action` enum)**: `src/tools/app-management/app.ts` — multiple actions behind one tool, shared `id`/`name`, dispatched via switch. Good reference for schema + dispatch structure.
+- **Platform-gated tool**: `src/tools/session/shake.ts` — iOS-only gating, sessionId handling.
 - **Complex session tool**: `src/tools/session/create-session.ts` — session creation with multiple capabilities.
-- **Element interaction**: `src/tools/interactions/click.ts`.
-- **Prompt-based tool**: `src/tools/test-generation/generate-tests.ts`.
-
-> Prefer referencing tools that already use the helpers in `src/tools/tool-response.ts`. Older tools that still call `getDriver()` directly or `throw new Error('No driver found')` are migration targets — don't copy their patterns.
+- **Element interaction**: `src/tools/interactions/click.ts` — selector handling and element-level error cases.
+- **Prompt-based tool**: `src/tools/test-generation/generate-tests.ts` — returning AI instructions as tool output.
+- **Local `textResult` pattern (pre-shared helpers)**: `src/tools/session/geolocation.ts` — uses a private local `textResult` helper. This predates the shared helpers; it demonstrates the target *shape* but imports from a local file. Once `src/tools/tool-response.ts` lands, this should migrate to the shared helper.
 
 ---
 
@@ -705,7 +705,7 @@ parameters: z.object({
 
 ## Need Help?
 
-- Check existing tools in `src/tools/` (prefer the ones listed under [Examples](#examples) — they follow the current contract).
+- For structural reference (schema shape, registration, dispatch), see the files listed under [Examples](#examples). Note that most existing tools still use pre-migration error patterns — follow the [Tool Response Contract](#tool-response-contract) rules, not the body of a sample tool.
 - See examples in `examples/`.
 - Open an issue for questions.
 
