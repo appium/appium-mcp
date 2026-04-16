@@ -1,3 +1,15 @@
+## [1.57.0](https://github.com/appium/appium-mcp/compare/v1.56.3...v1.57.0) (2026-04-16)
+
+### Features
+
+* **session:** consolidate device actions into appium_mobile_device_control ([#259](https://github.com/appium/appium-mcp/issues/259)) ([b500d0a](https://github.com/appium/appium-mcp/commit/b500d0aa5a198ffcea8c97bafcd165d09c1905d9))
+
+## [1.56.3](https://github.com/appium/appium-mcp/compare/v1.56.2...v1.56.3) (2026-04-16)
+
+### Miscellaneous Chores
+
+* remove ts jest ([#269](https://github.com/appium/appium-mcp/issues/269)) ([7f5f0ac](https://github.com/appium/appium-mcp/commit/7f5f0ac4ced328d0ad768a6829b9f62572f83567))
+
 ## [1.56.2](https://github.com/appium/appium-mcp/compare/v1.56.1...v1.56.2) (2026-04-16)
 
 ### Miscellaneous Chores
