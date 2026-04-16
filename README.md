@@ -364,8 +364,8 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_app`  | `query_state`    | Query the current state of an app: 0=not installed, 1=not running, 2=background suspended, 3=background, 4=foreground                                                                      |
 | `appium_app`  | `background`     | Background the current app for a duration (optional; defaults to 5 seconds)                                                                                                                |
 | `appium_app`  | `clear`          | Clear app data and cache without uninstalling (`mobile: clearApp`). Android: stop the app first when possible. iOS: **Simulator only**; not supported on real devices.                     |
-| `appium_app`  | `deep_link`      | Open a deep link URL with the default or a specified app
-| `appium_mobile_permissions`| Get, update, or reset app permissions in one tool (`action`: get / update / reset) |  Android: list or change runtime permissions. iOS Simulator: get/set privacy via bundle id; reset (`action=reset`) applies to the AUT on sim and device. |
+| `appium_app`  | `deep_link`          | Open a deep link URL with the default or a specified app                                                                                                                                     |
+| `appium_app`  | `permissions`        | Manage app permissions via `permissionAction`: `get` (list/read), `update` (grant/revoke or set privacy map), `reset` (iOS only — restore a privacy prompt for the AUT).                     |
 
 ### Test Generation & Documentation
 
