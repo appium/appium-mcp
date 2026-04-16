@@ -1,3 +1,9 @@
+## [1.56.2](https://github.com/appium/appium-mcp/compare/v1.56.1...v1.56.2) (2026-04-16)
+
+### Miscellaneous Chores
+
+* **deps:** bump appium-xcuitest-driver from 10.43.1 to 11.0.0 ([#266](https://github.com/appium/appium-mcp/issues/266)) ([0e6593c](https://github.com/appium/appium-mcp/commit/0e6593c3334993ab88fb617f86bf80e199d95ac0))
+
 ## [1.56.1](https://github.com/appium/appium-mcp/compare/v1.56.0...v1.56.1) (2026-04-14)
 
 ### Miscellaneous Chores

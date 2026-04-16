@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.56.1",
+  "version": "1.56.2",
   "type": "module",
   "repository": {
     "type": "git",
@@ -55,7 +55,7 @@
     "appium-adb": "^14.1.8",
     "appium-ios-device": "^3.1.0",
     "appium-uiautomator2-driver": "^7.0.0",
-    "appium-xcuitest-driver": "^10.23.1",
+    "appium-xcuitest-driver": "^11.0.0",
     "fast-xml-parser": "^5.2.3",
     "fastmcp": "^4.0.0",
     "langchain": "^1.1.6",
