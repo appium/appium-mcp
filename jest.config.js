@@ -1,5 +1,6 @@
-export default {
-  preset: 'ts-jest/presets/js-with-ts-esm',
+import ts from 'typescript';
+
+const config = {
   testEnvironment: 'node',
   // Restrict Jest to the source tree to avoid discovering compiled tests under dist/
   roots: ['<rootDir>/src'],
@@ -14,10 +15,7 @@ export default {
   testPathIgnorePatterns: ['/dist/', '/node_modules/', '/src/resources/submodules'],
   transform: {
     '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        useESM: true,
-      },
+      '<rootDir>/jest.config.js',
     ],
   },
   // Add this to ensure Jest can handle ESM
@@ -26,3 +24,26 @@ export default {
     'node_modules/(?!(@xmldom|fast-xml-parser|xpath|uuid)/)',
   ],
 };
+
+Object.defineProperty(config, 'process', {
+  enumerable: false,
+  value(sourceText, sourcePath) {
+    const { outputText } = ts.transpileModule(sourceText, {
+      fileName: sourcePath,
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        target: ts.ScriptTarget.ES2022,
+        inlineSourceMap: true,
+        inlineSources: true,
+        esModuleInterop: true,
+      },
+    });
+
+    return {
+      code: outputText,
+    };
+  },
+});
+
+export default config;

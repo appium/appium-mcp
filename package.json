@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.56.2",
+  "version": "1.57.0",
   "type": "module",
   "repository": {
     "type": "git",
@@ -80,7 +80,6 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.5.3",
     "semantic-release": "^25.0.2",
-    "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.2"
   },
