@@ -55,13 +55,13 @@ const schema = z.object({
     .string()
     .optional()
     .describe(
-      'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. Required for: activate, terminate, uninstall, is_installed, query_state, clear. Used with: permissions.'
+      'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. Required for: activate, terminate, uninstall, is_installed, query_state, clear, and permissions.'
     ),
   name: z
     .string()
     .optional()
     .describe(
-      'Human-readable app name (e.g. "Spotify"). Used to resolve the app id. Required (as alternative to id) for: activate, terminate, uninstall, is_installed, query_state, clear. Used with: permissions.'
+      'Human-readable app name (e.g. "Spotify"). Used to resolve the app id. Required (as alternative to id) for: activate, terminate, uninstall, is_installed, query_state, clear. and permissions.'
     ),
   path: z
     .string()
