@@ -11,12 +11,6 @@ import { queryState } from './query-app-state.js';
 import { background, DEFAULT_BACKGROUND_SECONDS } from './background-app.js';
 import { clear } from './clear-app.js';
 import { deepLink } from './deep-link.js';
-import {
-  iosPermissionStateSchema,
-  getPermissions,
-  updatePermissions,
-  resetPermissions,
-} from './permissions.js';
 
 const APP_ACTIONS = [
   'activate',
@@ -29,7 +23,6 @@ const APP_ACTIONS = [
   'background',
   'clear',
   'deep_link',
-  'permissions',
 ] as const;
 
 export type AppAction = (typeof APP_ACTIONS)[number];
@@ -48,20 +41,19 @@ const schema = z.object({
         'query_state: get state 0=not installed,1=not running,2=background suspended,3=background,4=foreground (requires id or name). ' +
         'background: send foreground app to background (optional seconds, default 5). ' +
         'clear: clear app data without uninstalling (requires id or name). ' +
-        'deep_link: open a URL with an app (requires url; optional id or name). ' +
-        'permissions: manage app permissions — use permissionAction (get/update/reset) to select the operation.'
+        'deep_link: open a URL with an app (requires url; optional id or name).'
     ),
   id: z
     .string()
     .optional()
     .describe(
-      'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. Required for: activate, terminate, uninstall, is_installed, query_state, clear, and permissions.'
+      'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. Required for: activate, terminate, uninstall, is_installed, query_state, clear.'
     ),
   name: z
     .string()
     .optional()
     .describe(
-      'Human-readable app name (e.g. "Spotify"). Used to resolve the app id. Required (as alternative to id) for: activate, terminate, uninstall, is_installed, query_state, clear. and permissions.'
+      'Human-readable app name (e.g. "Spotify"). Used to resolve the app id. Required (as alternative to id) for: activate, terminate, uninstall, is_installed, query_state, clear.'
     ),
   path: z
     .string()
@@ -98,50 +90,6 @@ const schema = z.object({
     .optional()
     .describe(
       'Android only. If false, ADB does not wait for the activity to return. Defaults to true. Used with: deep_link.'
-    ),
-  permissionAction: z
-    .enum(['get', 'update', 'reset'])
-    .optional()
-    .describe(
-      'Used with action=permissions. ' +
-        'get: Android lists runtime permissions (optional id or name); iOS reads one service state (requires id or name + service string). ' +
-        'update: Android grant/revoke permissions (requires permissions; optional id or name); iOS sets privacy access map (requires id or name + access). ' +
-        'reset: iOS only — resets a privacy service for the app under test (requires service).'
-    ),
-  permissionFilter: z
-    .enum(['denied', 'granted', 'requested'])
-    .optional()
-    .describe(
-      'Android only permissions get: which bucket to return. Defaults to requested per UiAutomator2.'
-    ),
-  service: z
-    .union([z.string(), z.number()])
-    .optional()
-    .describe(
-      'iOS only. Permissions get: privacy service name (e.g. camera, microphone, photos). ' +
-        'iOS only. Permissions reset: service name or numeric XCUIProtectedResource id.'
-    ),
-  permissions: z
-    .union([z.string(), z.array(z.string())])
-    .optional()
-    .describe(
-      'Android only. Permissions update: permission name(s), `all` (with pm target), or appops names. Required for Android update.'
-    ),
-  permissionChangeAction: z
-    .string()
-    .optional()
-    .describe(
-      'Android only. Permissions update: for pm target grant (default) or revoke; for appops allow, deny, ignore, default.'
-    ),
-  target: z
-    .enum(['pm', 'appops'])
-    .optional()
-    .describe('Android only. Permissions update: pm (default) or appops.'),
-  access: z
-    .record(z.string(), iosPermissionStateSchema)
-    .optional()
-    .describe(
-      'iOS only. Permissions update: map of access rule → yes|no|unset|limited. Required for iOS update.'
     ),
   sessionId: z
     .string()
@@ -192,45 +140,6 @@ export default function app(server: FastMCP): void {
           args.id ??
           (args.name ? await resolveAppId(args.name, sessionId) : undefined);
         return deepLink(args.url, appId, args.waitForLaunch, sessionId);
-      }
-
-      if (action === 'permissions') {
-        const appId =
-          args.id ??
-          (args.name ? await resolveAppId(args.name, sessionId) : undefined);
-        if (args.permissionAction === 'get') {
-          return getPermissions(
-            {
-              appId,
-              permissionFilter: args.permissionFilter,
-              service: args.service,
-            },
-            sessionId
-          );
-        }
-        if (args.permissionAction === 'update') {
-          return updatePermissions(
-            {
-              appId,
-              permissions: args.permissions,
-              permissionChangeAction: args.permissionChangeAction,
-              target: args.target,
-              access: args.access,
-            },
-            sessionId
-          );
-        }
-        if (args.permissionAction === 'reset') {
-          return resetPermissions({ service: args.service }, sessionId);
-        }
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'permissionAction (get/update/reset) is required for action=permissions',
-            },
-          ],
-        };
       }
 
       // activate, terminate, uninstall, is_installed, query_state, clear — all require id or name

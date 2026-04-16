@@ -55,6 +55,7 @@ import screenshot from './interactions/screenshot.js';
 import getWindowSize from './interactions/window-size.js';
 import screenRecording from './interactions/screen-recording.js';
 import app from './app-management/app.js';
+import mobilePermissions from './app-management/permissions.js';
 import context from './context/context.js';
 
 export default function registerTools(server: FastMCP): void {
@@ -175,6 +176,7 @@ export default function registerTools(server: FastMCP): void {
 
   // App Management
   app(server);
+  mobilePermissions(server);
 
   // Context Management
   context(server);
