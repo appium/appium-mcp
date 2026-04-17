@@ -274,7 +274,7 @@ The following tools return lightweight text-only responses when NO_UI is enabled
 - `select_device` - Returns device list as text without picker UI
 - `create_session` - Returns session info as text without dashboard UI
 - `appium_context` - Returns context list as text with `action=list` without switcher UI
-- `appium_app` (action=`list`) - Returns app list as JSON without interactive UI
+- `appium_app_lifecycle` (action=`list`) - Returns app list as JSON without interactive UI
 
 **When to Enable NO_UI:**
 
@@ -355,16 +355,16 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 
 | Tool          | Action           | Description                                                                                                                                                                                |
 |---------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `appium_app`  | `activate`       | Activate (launch/bring to foreground) a specified app by bundle ID or name                                                                                                                 |
-| `appium_app`  | `terminate`      | Terminate (close) a specified app                                                                                                                                                          |
-| `appium_app`  | `install`        | Install an app on the device from a file path                                                                                                                                              |
-| `appium_app`  | `uninstall`      | Uninstall an app from the device by bundle ID or name                                                                                                                                      |
-| `appium_app`  | `list`           | List all installed apps on the device (Android and iOS)                                                                                                                                    |
-| `appium_app`  | `is_installed`   | Check whether an app is installed. Package name for Android, bundle ID for iOS.                                                                                                            |
-| `appium_app`  | `query_state`    | Query the current state of an app: 0=not installed, 1=not running, 2=background suspended, 3=background, 4=foreground                                                                      |
-| `appium_app`  | `background`     | Background the current app for a duration (optional; defaults to 5 seconds)                                                                                                                |
-| `appium_app`  | `clear`          | Clear app data and cache without uninstalling (`mobile: clearApp`). Android: stop the app first when possible. iOS: **Simulator only**; not supported on real devices.                     |
-| `appium_app`  | `deep_link`      | Open a deep link URL with the default or a specified app
+| `appium_app_lifecycle`  | `activate`       | Activate (launch/bring to foreground) a specified app by bundle ID or name                                                                                                                 |
+| `appium_app_lifecycle`  | `terminate`      | Terminate (close) a specified app                                                                                                                                                          |
+| `appium_app_lifecycle`  | `install`        | Install an app on the device from a file path                                                                                                                                              |
+| `appium_app_lifecycle`  | `uninstall`      | Uninstall an app from the device by bundle ID or name                                                                                                                                      |
+| `appium_app_lifecycle`  | `list`           | List all installed apps on the device (Android and iOS)                                                                                                                                    |
+| `appium_app_lifecycle`  | `is_installed`   | Check whether an app is installed. Package name for Android, bundle ID for iOS.                                                                                                            |
+| `appium_app_lifecycle`  | `query_state`    | Query the current state of an app: 0=not installed, 1=not running, 2=background suspended, 3=background, 4=foreground                                                                      |
+| `appium_app_lifecycle`  | `background`     | Background the current app for a duration (optional; defaults to 5 seconds)                                                                                                                |
+| `appium_app_lifecycle`  | `clear`          | Clear app data and cache without uninstalling (`mobile: clearApp`). Android: stop the app first when possible. iOS: **Simulator only**; not supported on real devices.                     |
+| `appium_app_lifecycle`  | `deep_link`      | Open a deep link URL with the default or a specified app
 | `appium_mobile_permissions`| Get, update, or reset app permissions in one tool (`action`: get / update / reset) |  Android: list or change runtime permissions. iOS Simulator: get/set privacy via bundle id; reset (`action=reset`) applies to the AUT on sim and device. |
 
 ### Test Generation & Documentation

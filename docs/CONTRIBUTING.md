@@ -97,7 +97,7 @@ execute: async (args, _context): Promise<ContentResult> => {
 
 ## When to Create a New Tool vs. Consolidate
 
-This is the most common design question in this repo. The project favors **consolidation of shared intents** (e.g. `appium_app` = app lifecycle with `action=activate|install|terminate|...`) but **separation of different intents** (e.g. `appium_mobile_device_control` ≠ `appium_mobile_device_info`).
+This is the most common design question in this repo. The project favors **consolidation of shared intents** (e.g. `appium_app_lifecycle` = app lifecycle with `action=activate|install|terminate|...`) but **separation of different intents** (e.g. `appium_mobile_device_control` ≠ `appium_mobile_device_info`).
 
 ### Decision rubric
 
@@ -117,9 +117,9 @@ Keep tools separate when **any** of these hold:
 
 ### Worked examples (from this repo)
 
-- **`appium_app`** consolidates `activate / terminate / install / uninstall / list / is_installed / query_state / background / clear / deep_link`. All "app lifecycle", almost all share `id`/`name`. Good consolidation.
+- **`appium_app_lifecycle`** consolidates `activate / terminate / install / uninstall / list / is_installed / query_state / background / clear / deep_link`. All "app lifecycle", almost all share `id`/`name`. Good consolidation.
 - **`appium_mobile_device_control`** (PR #259) consolidates `lock / unlock / shake / open_notifications` — all "control the physical device". Kept separate from `appium_mobile_device_info` (battery/model/time) which is "query device state" — different intent.
-- **`appium_mobile_permissions`** should stay separate from `appium_app` (refer PR #270). Permissions is a distinct intent ("authorize app access") from lifecycle, and consolidation would add 7 permission-only fields, pushing `appium_app` past the rubric thresholds.
+- **`appium_mobile_permissions`** should stay separate from `appium_app_lifecycle` (refer PR #270). Permissions is a distinct intent ("authorize app access") from lifecycle, and consolidation would add 7 permission-only fields, pushing `appium_app_lifecycle` past the rubric thresholds.
 
 ### When in doubt
 

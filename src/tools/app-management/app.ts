@@ -99,7 +99,7 @@ const schema = z.object({
 
 export default function app(server: FastMCP): void {
   server.addTool({
-    name: 'appium_app',
+    name: 'appium_app_lifecycle',
     description: `Manage apps on the device. Use the action parameter to choose what to do: ${APP_ACTIONS.join(', ')}.`,
     parameters: schema,
     annotations: {
