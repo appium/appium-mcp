@@ -1,6 +1,7 @@
 import type { Client } from 'webdriver';
 import {
   isAndroidUiautomator2DriverSession,
+  isRemoteDriverSession,
   isXCUITestDriverSession,
 } from './session-store.js';
 import type { DriverInstance } from './session-store.js';
@@ -129,6 +130,8 @@ export async function getCurrentContext(
     return await driver.getCurrentContext();
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.getCurrentContext();
+  } else if (isRemoteDriverSession(driver)) {
+    return String(await (driver as Client).getAppiumContext());
   }
   throw new Error('getCurrentContext is not supported');
 }
@@ -144,6 +147,9 @@ export async function getContexts(driver: DriverInstance): Promise<string[]> {
     return await driver.getContexts();
   } else if (isXCUITestDriverSession(driver)) {
     return (await driver.getContexts()) as string[];
+  } else if (isRemoteDriverSession(driver)) {
+    const contexts = await (driver as Client).getAppiumContexts();
+    return contexts.map((c) => (typeof c === 'string' ? c : String(c)));
   }
   throw new Error('getContexts is not supported');
 }
@@ -162,6 +168,11 @@ export async function setContext(
     return await driver.setContext(name);
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.setContext(name || null);
+  } else if (isRemoteDriverSession(driver)) {
+    if (name == null || name === '') {
+      throw new Error('Context name is required');
+    }
+    return await (driver as Client).switchAppiumContext(name);
   }
   throw new Error('setContext is not supported');
 }
