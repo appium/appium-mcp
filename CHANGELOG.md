@@ -1,3 +1,9 @@
+## [1.58.0](https://github.com/appium/appium-mcp/compare/v1.57.0...v1.58.0) (2026-04-17)
+
+### Features
+
+* support remote sessions for context management and app listing ([#265](https://github.com/appium/appium-mcp/issues/265)) ([1abe075](https://github.com/appium/appium-mcp/commit/1abe07510ef7241f91a6f7a09fb06760922cd5c7))
+
 ## [1.57.0](https://github.com/appium/appium-mcp/compare/v1.56.3...v1.57.0) (2026-04-16)
 
 ### Features
