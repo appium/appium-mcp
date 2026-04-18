@@ -1,12 +1,18 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, setCurrentContext } from '../../session-store.js';
+import { setCurrentContext } from '../../session-store.js';
 import { getContexts, getCurrentContext, setContext } from '../../command.js';
 import {
   createUIResource,
   createContextSwitcherUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const contextSchema = z.object({
   action: z
@@ -38,12 +44,13 @@ export default function context(server: FastMCP): void {
       args: z.infer<typeof contextSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      try {
-        const driver = getDriver(args.sessionId);
-        if (!driver) {
-          throw new Error('No driver found. Please create a session first.');
-        }
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
+      }
+      const { driver } = resolved;
 
+      try {
         const [currentContext, availableContexts] = await Promise.all([
           getCurrentContext(driver).catch(() => null),
           getContexts(driver).catch(() => [] as string[]),
@@ -55,24 +62,12 @@ export default function context(server: FastMCP): void {
 
         if (args.action === 'list') {
           if (!availableContexts || availableContexts.length === 0) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'No contexts available.',
-                },
-              ],
-            };
+            return textResult('No contexts available.');
           }
 
-          const textResponse = {
-            content: [
-              {
-                type: 'text',
-                text: `Available contexts: ${JSON.stringify(availableContexts, null, 2)}\nCurrent context: ${currentContext}`,
-              },
-            ],
-          };
+          const textResponse = textResult(
+            `Available contexts: ${JSON.stringify(availableContexts, null, 2)}\nCurrent context: ${currentContext}`
+          );
 
           const uiResource = createUIResource(
             `ui://appium-mcp/context-switcher/${Date.now()}`,
@@ -87,63 +82,30 @@ export default function context(server: FastMCP): void {
         }
 
         if (currentContext === args.context) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Already on context "${args.context}".`,
-              },
-            ],
-          };
+          return textResult(`Already on context "${args.context}".`);
         }
 
         if (!availableContexts || availableContexts.length === 0) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: 'No contexts available. Cannot switch context.',
-              },
-            ],
-            isError: true,
-          };
+          return errorResult('No contexts available. Cannot switch context.');
         }
 
         if (!availableContexts.includes(args.context)) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Context "${args.context}" not found. Available contexts: ${JSON.stringify(availableContexts, null, 2)}`,
-              },
-            ],
-            isError: true,
-          };
+          return errorResult(
+            `Context "${args.context}" not found. Available contexts: ${JSON.stringify(availableContexts, null, 2)}`
+          );
         }
 
         await setContext(driver, args.context);
         const newContext = await getCurrentContext(driver);
         setCurrentContext(newContext);
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully switched context from "${currentContext}" to "${newContext}".`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully switched context from "${currentContext}" to "${newContext}".`
+        );
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed context action ${args.action}. err: ${message}`,
-            },
-          ],
-          isError: true,
-        };
+        return errorResult(
+          `Failed context action ${args.action}. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

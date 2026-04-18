@@ -1,6 +1,5 @@
 import type { ContentResult } from 'fastmcp';
 import {
-  getDriver,
   getPlatformName,
   isRemoteDriverSession,
   isAndroidUiautomator2DriverSession,
@@ -10,17 +9,24 @@ import {
 import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export async function isInstalled(
   id: string,
   sessionId?: string
 ): Promise<ContentResult> {
-  try {
-    const driver = getDriver(sessionId);
-    if (!driver) {
-      return { content: [{ type: 'text', text: 'No driver found' }] };
-    }
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
 
+  try {
     let result: boolean;
     if (isRemoteDriverSession(driver)) {
       const platform = getPlatformName(driver);
@@ -38,24 +44,12 @@ export async function isInstalled(
       throw new Error('Unsupported driver for is_installed');
     }
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: result
-            ? `App "${id}" is installed.`
-            : `App "${id}" is not installed.`,
-        },
-      ],
-    };
-  } catch (err: any) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to check if app is installed. err: ${err.toString()}`,
-        },
-      ],
-    };
+    return textResult(
+      result ? `App "${id}" is installed.` : `App "${id}" is not installed.`
+    );
+  } catch (err: unknown) {
+    return errorResult(
+      `Failed to check if app is installed. err: ${toolErrorMessage(err)}`
+    );
   }
 }

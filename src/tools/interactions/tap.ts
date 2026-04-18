@@ -1,7 +1,12 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { performActions } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function tap(server: FastMCP): void {
   const tapSchema = z.object({
@@ -26,10 +31,11 @@ export default function tap(server: FastMCP): void {
       args: z.infer<typeof tapSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       const { x, y } = args;
 
@@ -49,23 +55,11 @@ export default function tap(server: FastMCP): void {
         ];
         await performActions(driver, operation);
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully tapped at coordinates (${x}, ${y})`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to tap at coordinates (${x}, ${y}). Error: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(`Successfully tapped at coordinates (${x}, ${y})`);
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to tap at coordinates (${x}, ${y}). Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

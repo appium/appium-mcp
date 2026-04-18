@@ -17,6 +17,7 @@ import {
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
 import { execute } from '../../command.js';
+import { textResult, errorResult, toolErrorMessage } from '../tool-response.js';
 
 const execAsync = promisify(exec);
 
@@ -109,24 +110,15 @@ export async function list(
 ): Promise<ContentResult> {
   try {
     const apps = await listAppsFromDevice(applicationType, sessionId);
-    const textResponse = {
-      content: [
-        {
-          type: 'text' as const,
-          text: `Installed apps: ${JSON.stringify(apps, null, 2)}`,
-        },
-      ],
-    };
+    const textResponse = textResult(
+      `Installed apps: ${JSON.stringify(apps, null, 2)}`
+    );
     const uiResource = createUIResource(
       `ui://appium-mcp/app-list/${Date.now()}`,
       createAppListUI(apps)
     );
     return addUIResourceToResponse(textResponse, uiResource);
-  } catch (err: any) {
-    return {
-      content: [
-        { type: 'text', text: `Failed to list apps. err: ${err.toString()}` },
-      ],
-    };
+  } catch (err: unknown) {
+    return errorResult(`Failed to list apps. err: ${toolErrorMessage(err)}`);
   }
 }

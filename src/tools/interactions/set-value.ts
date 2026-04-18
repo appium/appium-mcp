@@ -1,8 +1,13 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import { setValue as _setValue } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function setValue(server: FastMCP): void {
   const setValueSchema = z
@@ -38,10 +43,11 @@ export default function setValue(server: FastMCP): void {
       args: z.infer<typeof setValueSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         await _setValue(
@@ -50,23 +56,13 @@ export default function setValue(server: FastMCP): void {
           args.text,
           args.w3cActions
         );
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully set value ${args.text} into element ${args.elementUUID}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to set value ${args.text} into element ${args.elementUUID}. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully set value ${args.text} into element ${args.elementUUID}`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to set value ${args.text} into element ${args.elementUUID}. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

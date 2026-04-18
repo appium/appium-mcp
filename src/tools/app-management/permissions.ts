@@ -1,7 +1,13 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const iosPermissionStateSchema = z.enum(['yes', 'no', 'unset', 'limited']);
 
@@ -80,10 +86,11 @@ export default function mobilePermissions(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const platform = getPlatformName(driver);
@@ -98,9 +105,7 @@ export default function mobilePermissions(server: FastMCP): void {
               params.appPackage = args.appPackage;
             }
             const raw = await execute(driver, 'mobile: getPermissions', params);
-            return {
-              content: [{ type: 'text', text: JSON.stringify(raw, null, 2) }],
-            };
+            return textResult(JSON.stringify(raw, null, 2));
           }
           if (platform === PLATFORM.ios) {
             if (!args.bundleId) {
@@ -120,9 +125,7 @@ export default function mobilePermissions(server: FastMCP): void {
               bundleId: args.bundleId,
               service: args.service,
             });
-            return {
-              content: [{ type: 'text', text: String(raw) }],
-            };
+            return textResult(String(raw));
           }
           throw new Error(
             `Unsupported platform: ${platform}. Only Android and iOS are supported.`
@@ -147,11 +150,7 @@ export default function mobilePermissions(server: FastMCP): void {
               params.target = args.target;
             }
             await execute(driver, 'mobile: changePermissions', params);
-            return {
-              content: [
-                { type: 'text', text: 'Permissions updated successfully.' },
-              ],
-            };
+            return textResult('Permissions updated successfully.');
           }
           if (platform === PLATFORM.ios) {
             if (!args.bundleId || !args.access) {
@@ -161,14 +160,7 @@ export default function mobilePermissions(server: FastMCP): void {
               bundleId: args.bundleId,
               access: args.access,
             });
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Permission settings updated successfully.',
-                },
-              ],
-            };
+            return textResult('Permission settings updated successfully.');
           }
           throw new Error(
             `Unsupported platform: ${platform}. Only Android and iOS are supported.`
@@ -186,19 +178,11 @@ export default function mobilePermissions(server: FastMCP): void {
         await execute(driver, 'mobile: resetPermission', {
           service: args.service,
         });
-        return {
-          content: [{ type: 'text', text: 'Permission reset successfully.' }],
-        };
+        return textResult('Permission reset successfully.');
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed permissions action ${args.action}. err: ${message}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed permissions action ${args.action}. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

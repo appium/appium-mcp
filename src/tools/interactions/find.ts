@@ -1,10 +1,15 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { getScreenshot } from '../../command.js';
 import { imageUtil } from '@appium/support';
 import { AIVisionFinder } from '../../ai-finder/vision-finder.js';
 import log from '../../logger.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 // Module-level singleton: ensures the LRU cache persists across tool calls.
 // Creating a new AIVisionFinder() on every call would reset the cache each time.
@@ -78,10 +83,11 @@ export default function findElement(server: FastMCP): void {
       args: z.infer<typeof findElementSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         // Route 1: Traditional locator strategy
@@ -95,14 +101,9 @@ export default function findElement(server: FastMCP): void {
             args.strategy,
             args.selector
           );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${element['element-6066-11e4-a52e-4f735466cecf']}`,
-              },
-            ],
-          };
+          return textResult(
+            `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${element['element-6066-11e4-a52e-4f735466cecf']}`
+          );
         }
 
         // Route 2: AI vision-based finding
@@ -151,25 +152,11 @@ export default function findElement(server: FastMCP): void {
           responseText += `; vision image: ${result.annotatedImagePath}`;
         }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: responseText,
-            },
-          ],
-        };
-      } catch (err: any) {
-        const errorMessage = err.message || err.toString();
+        return textResult(responseText);
+      } catch (err: unknown) {
+        const errorMessage = toolErrorMessage(err);
         log.error('Failed to find element:', errorMessage);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to find element. Error: ${errorMessage}`,
-            },
-          ],
-        };
+        return errorResult(`Failed to find element. Error: ${errorMessage}`);
       }
     },
   });

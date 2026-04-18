@@ -1,29 +1,32 @@
 import type { ContentResult } from 'fastmcp';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export async function terminate(
   id: string,
   sessionId?: string
 ): Promise<ContentResult> {
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
+
   try {
-    const driver = getDriver(sessionId);
-    if (!driver) {
-      return { content: [{ type: 'text', text: 'No driver found' }] };
-    }
     const platform = getPlatformName(driver);
     const params =
       platform === PLATFORM.android ? { appId: id } : { bundleId: id };
     await execute(driver, 'mobile: terminateApp', params);
-    return { content: [{ type: 'text', text: 'App terminated successfully' }] };
-  } catch (err: any) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to terminate app. err: ${err.toString()}`,
-        },
-      ],
-    };
+    return textResult('App terminated successfully');
+  } catch (err: unknown) {
+    return errorResult(
+      `Failed to terminate app. err: ${toolErrorMessage(err)}`
+    );
   }
 }

@@ -1,8 +1,14 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName } from '../../session-store.js';
+import { getPlatformName } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import { getElementRect, getWindowRect } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const DROP_PAUSE_DURATION_MS = 150;
 
@@ -130,10 +136,11 @@ export default function dragAndDrop(server: FastMCP): void {
       args: z.infer<typeof dragAndDropSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const platform = getPlatformName(driver);
@@ -213,23 +220,13 @@ export default function dragAndDrop(server: FastMCP): void {
           ? `element ${args.targetElementUUID}`
           : `coordinates (${endX}, ${endY})`;
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully performed drag and drop from ${sourceDesc} to ${targetDesc}.`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to perform drag and drop. Error: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully performed drag and drop from ${sourceDesc} to ${targetDesc}.`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to perform drag and drop. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

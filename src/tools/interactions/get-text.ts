@@ -1,8 +1,13 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import { getElementText } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function getText(server: FastMCP): void {
   const getTextSchema = z.object({
@@ -25,30 +30,21 @@ export default function getText(server: FastMCP): void {
       args: z.infer<typeof getTextSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const text = await getElementText(driver, args.elementUUID);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully got text ${text} from element ${args.elementUUID}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to get text from element ${args.elementUUID}. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully got text ${text} from element ${args.elementUUID}`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to get text from element ${args.elementUUID}. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

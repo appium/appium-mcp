@@ -2,13 +2,19 @@ import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import {
   startRecordingScreen as cmdStartRecording,
   stopRecordingScreen as cmdStopRecording,
 } from '../../command.js';
 import { resolveScreenshotDir } from '../../utils/paths.js';
 import crypto from 'node:crypto';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 /**
  * iOS-specific options for startRecordingScreen.
@@ -151,28 +157,21 @@ export default function screenRecording(server: FastMCP): void {
       args: z.infer<typeof screenRecordingSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         if (args.action === 'stop') {
           const base64Video = await cmdStopRecording(driver);
           if (!base64Video) {
-            return {
-              content: [
-                { type: 'text', text: 'No active screen recording to stop.' },
-              ],
-            };
+            return textResult('No active screen recording to stop.');
           }
 
           const filepath = await saveRecording(base64Video);
-          return {
-            content: [
-              { type: 'text', text: `Screen recording saved to: ${filepath}` },
-            ],
-          };
+          return textResult(`Screen recording saved to: ${filepath}`);
         }
 
         const platform = getPlatformName(driver);
@@ -231,19 +230,11 @@ export default function screenRecording(server: FastMCP): void {
         }
 
         await cmdStartRecording(driver, options);
-        return {
-          content: [{ type: 'text', text: 'Screen recording started.' }],
-        };
+        return textResult('Screen recording started.');
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed screen recording action ${args.action}. Error: ${message}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed screen recording action ${args.action}. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

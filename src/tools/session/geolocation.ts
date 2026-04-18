@@ -1,7 +1,13 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const schema = z.object({
   action: z
@@ -46,15 +52,12 @@ const schema = z.object({
 
 type GeolocationArgs = z.infer<typeof schema>;
 
-function textResult(text: string): ContentResult {
-  return { content: [{ type: 'text', text }] };
-}
-
 async function handleGet(args: GeolocationArgs): Promise<ContentResult> {
-  const driver = getDriver(args.sessionId);
-  if (!driver) {
-    throw new Error('No driver found');
+  const resolved = resolveDriver(args.sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
   }
+  const { driver } = resolved;
 
   const platform = getPlatformName(driver);
   let result: Record<string, any>;
@@ -81,10 +84,11 @@ async function handleSet(args: GeolocationArgs): Promise<ContentResult> {
     throw new Error('latitude and longitude are required for action=set');
   }
 
-  const driver = getDriver(args.sessionId);
-  if (!driver) {
-    throw new Error('No driver found');
+  const resolved = resolveDriver(args.sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
   }
+  const { driver } = resolved;
 
   const platform = getPlatformName(driver);
   const { latitude, longitude, altitude } = args;
@@ -113,10 +117,11 @@ async function handleSet(args: GeolocationArgs): Promise<ContentResult> {
 }
 
 async function handleReset(args: GeolocationArgs): Promise<ContentResult> {
-  const driver = getDriver(args.sessionId);
-  if (!driver) {
-    throw new Error('No driver found');
+  const resolved = resolveDriver(args.sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
   }
+  const { driver } = resolved;
 
   const platform = getPlatformName(driver);
 
@@ -158,9 +163,9 @@ export default function geolocation(server: FastMCP): void {
           case 'reset':
             return await handleReset(args);
         }
-      } catch (err: any) {
-        return textResult(
-          `Failed to ${args.action} geolocation. Error: ${err.toString()}`
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to ${args.action} geolocation. Error: ${toolErrorMessage(err)}`
         );
       }
     },

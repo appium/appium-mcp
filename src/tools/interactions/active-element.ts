@@ -1,7 +1,12 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { getActiveElement as _getActiveElement } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function getActiveElement(server: FastMCP): void {
   const schema = z.object({
@@ -21,10 +26,11 @@ export default function getActiveElement(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (args: z.infer<typeof schema>): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const element = await _getActiveElement(driver);
@@ -38,23 +44,13 @@ export default function getActiveElement(server: FastMCP): void {
           );
         }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully found an active element. Element id: ${elementId}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to find an active element. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully found an active element. Element id: ${elementId}`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to find an active element. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });
