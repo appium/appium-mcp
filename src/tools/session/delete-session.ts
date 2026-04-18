@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import { safeDeleteSession } from '../../session-store.js';
 import log from '../../logger.js';
+import { textResult, errorResult } from '../tool-response.js';
 
 export default function deleteSession(server: any): void {
   server.addTool({
@@ -28,40 +29,22 @@ export default function deleteSession(server: any): void {
         const deleted = await safeDeleteSession(args.sessionId);
 
         if (deleted) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: args.sessionId
-                  ? `Session ${args.sessionId} deleted successfully.`
-                  : 'Active session deleted successfully.',
-              },
-            ],
-          };
+          return textResult(
+            args.sessionId
+              ? `Session ${args.sessionId} deleted successfully.`
+              : 'Active session deleted successfully.'
+          );
         } else {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: args.sessionId
-                  ? `Session ${args.sessionId} not found or deletion already in progress.`
-                  : 'No active session found or deletion already in progress.',
-              },
-            ],
-          };
+          return textResult(
+            args.sessionId
+              ? `Session ${args.sessionId} not found or deletion already in progress.`
+              : 'No active session found or deletion already in progress.'
+          );
         }
       } catch (error: any) {
         log.error(`Error deleting session`, error);
-        // don't need to raise an error since session end means anyway we should create a new session
-        // to proceed further requests.
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Session delete might fail as error ${error}`,
-            },
-          ],
-        };
+        // don't raise an error — a failed deletion still means a new session is needed
+        return errorResult(`Session delete might fail as error ${error}`);
       }
     },
   });

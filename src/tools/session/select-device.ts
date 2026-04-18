@@ -10,6 +10,7 @@ import {
   createDevicePickerUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import { textResult } from '../tool-response.js';
 
 // Store selected device globally
 let selectedDeviceUdid: string | null = null;
@@ -67,26 +68,21 @@ function selectAndroidDevice(deviceUdid: string, devices: any[]): void {
  * Format device selection response for Android
  */
 function formatAndroidSelectionResponse(deviceUdid: string): any {
-  return {
-    content: [
+  return textResult(
+    JSON.stringify(
       {
-        type: 'text',
-        text: JSON.stringify(
-          {
-            message: `✅ Device selected: ${deviceUdid}`,
-            instructions:
-              '🚀 You can now create a session using the create_session tool with:',
-            platform: 'android',
-            capabilities: {
-              'appium:udid': deviceUdid,
-            },
-          },
-          null,
-          2
-        ),
+        message: `✅ Device selected: ${deviceUdid}`,
+        instructions:
+          '🚀 You can now create a session using the create_session tool with:',
+        platform: 'android',
+        capabilities: {
+          'appium:udid': deviceUdid,
+        },
       },
-    ],
-  };
+      null,
+      2
+    )
+  );
 }
 
 /**
@@ -97,14 +93,9 @@ function formatAndroidListResponse(devices: any[]): any {
     .map((device, index) => `  ${index + 1}. ${device.udid}`)
     .join('\n');
 
-  const textResponse = {
-    content: [
-      {
-        type: 'text',
-        text: `📱 Available Android devices/emulators (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`,
-      },
-    ],
-  };
+  const textResponse = textResult(
+    `📱 Available Android devices/emulators (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`
+  );
 
   // Add interactive UI picker
   const uiResource = createUIResource(
@@ -179,26 +170,21 @@ function formatIOSSelectionResponse(
   deviceName: string,
   deviceUdid: string
 ): any {
-  return {
-    content: [
+  return textResult(
+    JSON.stringify(
       {
-        type: 'text',
-        text: JSON.stringify(
-          {
-            message: `✅ Device selected: ${deviceName} (${deviceUdid})`,
-            instructions:
-              '🚀 You can now call the prepare_ios_simulator tool to boot and setup WDA on the simulator.',
-            platform: 'ios',
-            capabilities: {
-              'appium:udid': deviceUdid,
-            },
-          },
-          null,
-          2
-        ),
+        message: `✅ Device selected: ${deviceName} (${deviceUdid})`,
+        instructions:
+          '🚀 You can now call the prepare_ios_simulator tool to boot and setup WDA on the simulator.',
+        platform: 'ios',
+        capabilities: {
+          'appium:udid': deviceUdid,
+        },
       },
-    ],
-  };
+      null,
+      2
+    )
+  );
 }
 
 /**
@@ -215,14 +201,9 @@ function formatIOSListResponse(
     )
     .join('\n');
 
-  const textResponse = {
-    content: [
-      {
-        type: 'text',
-        text: `📱 Available iOS ${iosDeviceType === 'simulator' ? 'simulators' : 'devices'} (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`,
-      },
-    ],
-  };
+  const textResponse = textResult(
+    `📱 Available iOS ${iosDeviceType === 'simulator' ? 'simulators' : 'devices'} (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`
+  );
 
   // Add interactive UI picker
   const uiResource = createUIResource(

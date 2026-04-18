@@ -18,6 +18,7 @@ import { zip } from '@appium/support';
 import { Simctl } from 'node-simctl';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
+import { textResult } from '../tool-response.js';
 
 const execAsync = promisify(exec);
 
@@ -478,14 +479,7 @@ export default function prepareIosSimulator(server: FastMCP): void {
         platform
       );
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result),
-          },
-        ],
-      };
+      return textResult(JSON.stringify(result));
     },
   });
 }

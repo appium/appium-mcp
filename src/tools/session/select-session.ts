@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { setActiveSession } from '../../session-store.js';
+import { textResult, errorResult } from '../tool-response.js';
 
 export default function selectSession(server: any): void {
   server.addTool({
@@ -17,25 +18,12 @@ export default function selectSession(server: any): void {
       const updated = setActiveSession(args.sessionId);
 
       if (!updated) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Session ${args.sessionId} was not found. Use list_sessions to see available IDs.`,
-            },
-          ],
-          isError: true,
-        };
+        return errorResult(
+          `Session ${args.sessionId} was not found. Use list_sessions to see available IDs.`
+        );
       }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Session ${args.sessionId} is now active.`,
-          },
-        ],
-      };
+      return textResult(`Session ${args.sessionId} is now active.`);
     },
   });
 }
