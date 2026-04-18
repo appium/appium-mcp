@@ -1,3 +1,9 @@
+## [1.59.1](https://github.com/appium/appium-mcp/compare/v1.59.0...v1.59.1) (2026-04-18)
+
+### Miscellaneous Chores
+
+* **tools:** unify tool text results and driver resolution helpers ([#263](https://github.com/appium/appium-mcp/issues/263)) ([f9084ec](https://github.com/appium/appium-mcp/commit/f9084ec82169660a6cb2a3c12e0714706b8a1c7c))
+
 ## [1.59.0](https://github.com/appium/appium-mcp/compare/v1.58.0...v1.59.0) (2026-04-17)
 
 ### Features
