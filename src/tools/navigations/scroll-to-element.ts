@@ -179,7 +179,7 @@ export default function scrollToElement(server: any): void {
             args.selector
           );
           return textResult(
-            `Successfully scrolled found element ${args.selector} after initial scroll.`
+            `Successfully scrolled and found element ${args.selector}.`
           );
         }
       } catch (err: unknown) {

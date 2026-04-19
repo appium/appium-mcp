@@ -80,7 +80,7 @@ export default function generateLocators(server: any): void {
           JSON.stringify({
             interactableElements,
             message: 'Page source retrieved successfully',
-            instruction: `This the locators for the current page. Use this to generate code for the current page.
+            instruction: `These are the locators for the current page. Use this to generate code for the current page.
                      Using the template provided by generate://code-with-locators resource.`,
           })
         );

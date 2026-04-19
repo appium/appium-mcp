@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { safeDeleteSession } from '../../session-store.js';
 import log from '../../logger.js';
-import { textResult, errorResult } from '../tool-response.js';
+import { textResult, toolErrorMessage } from '../tool-response.js';
 
 export default function deleteSession(server: any): void {
   server.addTool({
@@ -41,10 +41,13 @@ export default function deleteSession(server: any): void {
               : 'No active session found or deletion already in progress.'
           );
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         log.error(`Error deleting session`, error);
-        // don't raise an error — a failed deletion still means a new session is needed
-        return errorResult(`Session delete might fail as error ${error}`);
+        // return a non-fatal success-shaped result — a failed deletion still means
+        // a new session is needed, so we don't want isError:true blocking the LLM
+        return textResult(
+          `Session delete may not have completed cleanly: ${toolErrorMessage(error)}`
+        );
       }
     },
   });
