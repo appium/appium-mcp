@@ -1,9 +1,10 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getScreenshot } from '../../command.js';
+import { getScreenshot, getPageSource } from '../../command.js';
 import { imageUtil } from '@appium/support';
 import { AIVisionFinder } from '../../ai-finder/vision-finder.js';
 import log from '../../logger.js';
+import { performVerticalScroll } from '../navigations/scroll.js';
 import {
   resolveDriver,
   textResult,
@@ -52,6 +53,39 @@ export const findElementSchema = z.object({
     .string()
     .optional()
     .describe('Session ID to target. If omitted, uses the active session.'),
+  scrollUntilFound: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      'Traditional strategies only: if true, scroll and retry until the element is found, scrolling no longer changes the page (end of list), or maxScrollAttempts is reached.'
+    ),
+  scrollDirection: z
+    .enum(['up', 'down'])
+    .optional()
+    .default('down')
+    .describe(
+      'Used with scrollUntilFound: which way to swipe between find attempts.'
+    ),
+  scrollDistance: z
+    .number()
+    .min(0.05)
+    .max(1)
+    .optional()
+    .default(0.45)
+    .describe(
+      'Used with scrollUntilFound: same meaning as appium_scroll distance (0.05–1).'
+    ),
+  maxScrollAttempts: z
+    .number()
+    .int()
+    .min(1)
+    .max(80)
+    .optional()
+    .default(40)
+    .describe(
+      'Used with scrollUntilFound: maximum scroll attempts after a failed find.'
+    ),
 });
 
 export default function findElement(server: FastMCP): void {
@@ -73,7 +107,11 @@ export default function findElement(server: FastMCP): void {
 - AI_VISION_API_BASE_URL: Vision model API endpoint (required)
 - AI_VISION_API_KEY: API authentication key (required)
 - AI_VISION_MODEL: Model name (optional, defaults to Qwen3-VL-235B-A22B-Instruct)
-- AI_VISION_COORD_TYPE: Coordinate type (optional, defaults to normalized)`,
+- AI_VISION_COORD_TYPE: Coordinate type (optional, defaults to normalized)
+
+**Scroll until found (traditional strategies only)**:
+- Set scrollUntilFound=true to scroll the screen after each failed find until the element appears, the page stops changing (end of scrollable content), or maxScrollAttempts is reached.
+- Not supported with strategy ai_instruction.`,
     parameters: findElementSchema,
     annotations: {
       readOnlyHint: true,
@@ -97,12 +135,65 @@ export default function findElement(server: FastMCP): void {
               'selector is required for traditional locator strategies'
             );
           }
-          const element = await driver.findElement(
-            args.strategy,
-            args.selector
-          );
-          return textResult(
-            `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${element['element-6066-11e4-a52e-4f735466cecf']}`
+
+          const idKey = 'element-6066-11e4-a52e-4f735466cecf';
+
+          if (!args.scrollUntilFound) {
+            const element = await driver.findElement(
+              args.strategy,
+              args.selector
+            );
+            return textResult(
+              `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${(element as Record<string, string>)[idKey]}`
+            );
+          }
+
+          let scrollsDone = 0;
+          const maxScroll = args.maxScrollAttempts;
+
+          while (true) {
+            try {
+              const element = await driver.findElement(
+                args.strategy,
+                args.selector
+              );
+              const elId = (element as Record<string, string>)[idKey];
+              const afterScroll =
+                scrollsDone > 0 ? ` after ${scrollsDone} scroll(s)` : '';
+              return textResult(
+                `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${elId}${afterScroll}.`
+              );
+            } catch (findErr) {
+              if (scrollsDone >= maxScroll) {
+                return errorResult(
+                  `Failed to find element after ${scrollsDone} scroll attempt(s). ${toolErrorMessage(findErr)}`
+                );
+              }
+              const xmlBefore = await getPageSource(driver);
+              try {
+                await performVerticalScroll(driver, {
+                  direction: args.scrollDirection,
+                  distance: args.scrollDistance,
+                });
+              } catch (scrollErr: unknown) {
+                return errorResult(
+                  `Scroll failed while searching for element: ${toolErrorMessage(scrollErr)}. Last find error: ${toolErrorMessage(findErr)}`
+                );
+              }
+              const xmlAfter = await getPageSource(driver);
+              scrollsDone++;
+              if (xmlBefore === xmlAfter) {
+                return errorResult(
+                  `Element not found; page source did not change after scroll (likely end of scrollable content). selector=${args.selector}. Last find error: ${toolErrorMessage(findErr)}`
+                );
+              }
+            }
+          }
+        }
+
+        if (args.scrollUntilFound) {
+          return errorResult(
+            'scrollUntilFound is only supported for traditional locator strategies, not ai_instruction.'
           );
         }
 
