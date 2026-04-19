@@ -1,3 +1,9 @@
+## [1.60.0](https://github.com/appium/appium-mcp/compare/v1.59.1...v1.60.0) (2026-04-19)
+
+### Features
+
+* **tools:** complete migration of all tools to textResult/errorResult/resolveDriver ([#275](https://github.com/appium/appium-mcp/issues/275)) ([2b3c190](https://github.com/appium/appium-mcp/commit/2b3c19094e1cbafb237b5cbefa600fbf1a0dd890))
+
 ## [1.59.1](https://github.com/appium/appium-mcp/compare/v1.59.0...v1.59.1) (2026-04-18)
 
 ### Miscellaneous Chores
