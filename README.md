@@ -322,12 +322,9 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | Tool                  | Description                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------- |
 | `appium_find_element` | Find a specific element using traditional locator strategies (xpath, id, accessibility id, etc.) **OR** AI-powered natural language descriptions (e.g., "yellow search button at bottom"). Supports both traditional and AI modes. |
-| `appium_tap_by_coordinates` | Tap at specific screen coordinates (x, y). On iOS, coordinates are in points. On Android, coordinates are in device pixels. Use `appium_get_page_source` for accurate coordinates. |
-| `appium_click`        | Click on an element                                                                          |
-| `appium_double_tap`   | Perform double tap on an element                                                             |
-| `appium_long_press`   | Perform a long press (press and hold) gesture on an element                                  |
+| `appium_gesture`      | Perform a touch gesture. `action` = `tap`, `double_tap`, `long_press`, `scroll`, `swipe`, `pinch_zoom`, or `scroll_to_element`. Supports element UUIDs (including AI-found `ai-element:` UUIDs) and raw coordinates. For swipe, use `speed` = `slow` \| `normal` \| `fast` (fast for pull-to-refresh). |
 | `appium_drag_and_drop` | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates) |
-| `appium_pinch`        | Perform a pinch gesture to zoom in (scale > 1) or zoom out (scale < 1) on an element or the whole screen. Works on both iOS and Android. |
+| `appium_perform_actions` | Execute raw W3C Actions API sequences for custom multi-touch gestures (rotate, three-finger swipe, edge swipes, precise timing). Prefer `appium_gesture` for standard gestures. |
 | `appium_set_value`    | Enter text into an input field                                                               |
 | `appium_mobile_hide_keyboard` | Dismiss the on-screen keyboard (`mobile: hideKeyboard`) |
 | `appium_mobile_is_keyboard_shown` | Whether the on-screen keyboard is visible (`mobile: isKeyboardShown`) |
@@ -342,9 +339,6 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | -------------------------- | ------------------------------------------------------- |
 | `appium_screenshot`        | Take a screenshot and save as PNG. Optionally provide `elementUUID` to capture a specific element. |
 | `appium_get_window_size`   | Get the width and height of the device screen in pixels |
-| `appium_scroll`            | Scroll the screen vertically (up or down)               |
-| `appium_scroll_to_element` | Scroll until a specific element becomes visible         |
-| `appium_swipe`             | Swipe the screen in a direction (left, right, up, down) or between custom coordinates |
 | `appium_get_page_source`   | Get the page source (XML) from the current screen       |
 | `appium_orientation`   | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set). |
 | `appium_geolocation`       | Get, set, or reset the device GPS coordinates with `action` = `get`, `set`, or `reset`. For `set`, provide `latitude` and `longitude` (and optional `altitude` on Android). Not supported on Android emulators for `reset`. |
