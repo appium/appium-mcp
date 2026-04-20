@@ -41,16 +41,18 @@ describe('appium_mobile_file', () => {
     )?.[0];
   }
 
-  test('throws when no driver is active', async () => {
+  test('returns error when no driver is active', async () => {
     const tool = await registerTool();
     mockGetDriver.mockReturnValue(null as any);
 
-    await expect(
-      tool.execute(
-        { action: 'push', remotePath: '/sdcard/x.txt', payloadBase64: 'YQ==' },
-        undefined
-      )
-    ).rejects.toThrow('No driver found');
+    const result = await tool.execute(
+      { action: 'push', remotePath: '/sdcard/x.txt', payloadBase64: 'YQ==' },
+      undefined
+    );
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toBe(
+      'No active driver session. Call create_session first or pass a valid sessionId.'
+    );
   });
 
   test('push: Android uses path and data', async () => {

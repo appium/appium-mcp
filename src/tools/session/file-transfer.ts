@@ -1,7 +1,13 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 /**
  * Normalize the return value of mobile: pullFile (driver may return a string
@@ -57,10 +63,11 @@ export default function fileTransfer(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const platform = getPlatformName(driver);
@@ -86,14 +93,9 @@ export default function fileTransfer(server: FastMCP): void {
             );
           }
 
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Successfully pushed file to device path: ${args.remotePath}`,
-              },
-            ],
-          };
+          return textResult(
+            `Successfully pushed file to device path: ${args.remotePath}`
+          );
         }
 
         let raw: unknown;
@@ -112,28 +114,17 @@ export default function fileTransfer(server: FastMCP): void {
         }
 
         const base64 = normalizePullResult(raw);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                remotePath: args.remotePath,
-                platform,
-                contentBase64: base64,
-              }),
-            },
-          ],
-        };
+        return textResult(
+          JSON.stringify({
+            remotePath: args.remotePath,
+            platform,
+            contentBase64: base64,
+          })
+        );
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed file action ${args.action}. err: ${message}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed file action ${args.action}. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

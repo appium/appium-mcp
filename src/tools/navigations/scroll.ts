@@ -1,7 +1,13 @@
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import log from '../../logger.js';
 import { execute, getWindowRect, performActions } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function scroll(server: any): void {
   server.addTool({
@@ -22,12 +28,11 @@ export default function scroll(server: any): void {
       openWorldHint: false,
     },
     execute: async (args: any, _context: any): Promise<any> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error(
-          'No active driver session. Please create a session first.'
-        );
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const rect = await getWindowRect(driver);
@@ -82,23 +87,11 @@ export default function scroll(server: any): void {
             `Unsupported platform: ${getPlatformName(driver)}. Only Android and iOS are supported.`
           );
         }
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Scrolled ${args.direction} successfully.`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to scroll ${args.direction}. Error: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(`Scrolled ${args.direction} successfully.`);
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to scroll ${args.direction}. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

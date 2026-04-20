@@ -13,6 +13,7 @@ import { getScreenshot } from '../../command.js';
 import z from 'zod';
 import { imageUtil } from '@appium/support';
 import { resolveScreenshotDir } from '../../utils/paths.js';
+import { textResult, errorResult, toolErrorMessage } from '../tool-response.js';
 
 export { resolveScreenshotDir };
 
@@ -42,7 +43,9 @@ export async function executeScreenshot(opts: {
 
   const driver = deps.getDriver(sessionId);
   if (!driver) {
-    throw new Error('No driver found');
+    return errorResult(
+      `No active driver session. Call create_session first or pass a valid sessionId.`
+    );
   }
 
   try {
@@ -80,14 +83,9 @@ export async function executeScreenshot(opts: {
     // Save screenshot to disk
     await deps.writeFile(filepath, screenshotBuffer);
 
-    const textResponse = {
-      content: [
-        {
-          type: 'text',
-          text: `Screenshot saved successfully to: ${filepath}`,
-        },
-      ],
-    };
+    const textResponse = textResult(
+      `Screenshot saved successfully to: ${filepath}`
+    );
 
     // Add interactive screenshot viewer UI
     const uiResource = createUIResource(
@@ -96,15 +94,10 @@ export async function executeScreenshot(opts: {
     );
 
     return addUIResourceToResponse(textResponse, uiResource);
-  } catch (err: any) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to take screenshot. err: ${err.toString()}`,
-        },
-      ],
-    };
+  } catch (err: unknown) {
+    return errorResult(
+      `Failed to take screenshot. err: ${toolErrorMessage(err)}`
+    );
   }
 }
 

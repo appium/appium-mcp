@@ -1,10 +1,15 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import {
   getSessionDriverSettings,
   updateSessionDriverSettings,
 } from '../../command.js';
+import {
+  errorResult,
+  resolveDriver,
+  textResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const updateSettingsSchema = z.object({
   settings: z
@@ -33,31 +38,19 @@ export default function driverSettings(server: FastMCP): void {
       _args: Record<string, never>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver();
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const settings = await getSessionDriverSettings(driver);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(settings, null, 2),
-            },
-          ],
-        };
+        return textResult(JSON.stringify(settings, null, 2));
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to get driver settings. Error: ${message}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed to get driver settings. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });
@@ -78,31 +71,19 @@ export default function driverSettings(server: FastMCP): void {
       args: z.infer<typeof updateSettingsSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver();
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         await updateSessionDriverSettings(driver, args.settings);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Successfully updated driver settings.',
-            },
-          ],
-        };
+        return textResult('Successfully updated driver settings.');
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to update driver settings. Error: ${message}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed to update driver settings. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

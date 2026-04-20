@@ -1,6 +1,5 @@
 import type { ContentResult } from 'fastmcp';
 import {
-  getDriver,
   getPlatformName,
   isRemoteDriverSession,
   isAndroidUiautomator2DriverSession,
@@ -10,6 +9,12 @@ import {
 import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export async function deepLink(
   url: string,
@@ -17,12 +22,13 @@ export async function deepLink(
   waitForLaunch?: boolean,
   sessionId?: string
 ): Promise<ContentResult> {
-  try {
-    const driver = getDriver(sessionId);
-    if (!driver) {
-      return { content: [{ type: 'text', text: 'No driver found' }] };
-    }
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
 
+  try {
     if (isRemoteDriverSession(driver)) {
       const platform = getPlatformName(driver);
       if (platform === PLATFORM.android) {
@@ -57,22 +63,12 @@ export async function deepLink(
       throw new Error('Unsupported driver for deep link');
     }
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Successfully opened deep link "${url}"${appId ? ` with app ${appId}` : ''}`,
-        },
-      ],
-    };
-  } catch (err: any) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to open deep link "${url}". err: ${err.toString()}`,
-        },
-      ],
-    };
+    return textResult(
+      `Successfully opened deep link "${url}"${appId ? ` with app ${appId}` : ''}`
+    );
+  } catch (err: unknown) {
+    return errorResult(
+      `Failed to open deep link "${url}". err: ${toolErrorMessage(err)}`
+    );
   }
 }

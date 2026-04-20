@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getDriver, getSessionId, listSessions } from '../../session-store.js';
+import { textResult } from '../tool-response.js';
 
 export default function listSessionsTool(server: any): void {
   server.addTool({
@@ -16,14 +17,7 @@ export default function listSessionsTool(server: any): void {
       const activeSessionId = getSessionId();
 
       if (sessions.length === 0) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'No active sessions found.',
-            },
-          ],
-        };
+        return textResult('No active sessions found.');
       }
 
       const sessionSummary = sessions
@@ -34,14 +28,9 @@ export default function listSessionsTool(server: any): void {
         })
         .join('\n');
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Active session: ${activeSessionId || 'Unknown'}\nSelect with: select_session { "sessionId": "..." }\n\nSessions:\n${sessionSummary}`,
-          },
-        ],
-      };
+      return textResult(
+        `Active session: ${activeSessionId || 'Unknown'}\nSelect with: select_session { "sessionId": "..." }\n\nSessions:\n${sessionSummary}`
+      );
     },
   });
 }

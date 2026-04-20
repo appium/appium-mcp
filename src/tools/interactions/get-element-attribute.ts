@@ -1,8 +1,13 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import { getElementAttribute } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function getElementAttributeTool(server: FastMCP): void {
   const schema = z.object({
@@ -31,10 +36,11 @@ export default function getElementAttributeTool(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const value = await getElementAttribute(
@@ -42,26 +48,15 @@ export default function getElementAttributeTool(server: FastMCP): void {
           args.elementUUID,
           args.attribute
         );
-        return {
-          content: [
-            {
-              type: 'text',
-              text:
-                value !== null
-                  ? `Attribute "${args.attribute}" of element ${args.elementUUID}: ${value}`
-                  : `Attribute "${args.attribute}" is not set on element ${args.elementUUID}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to get attribute "${args.attribute}" from element ${args.elementUUID}. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          value !== null
+            ? `Attribute "${args.attribute}" of element ${args.elementUUID}: ${value}`
+            : `Attribute "${args.attribute}" is not set on element ${args.elementUUID}`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to get attribute "${args.attribute}" from element ${args.elementUUID}. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

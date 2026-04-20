@@ -1,14 +1,19 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import {
   elementClick as _elementClick,
   performActions,
 } from '../../command.js';
 import log from '../../logger.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
-export default function generateTest(server: FastMCP): void {
+export default function clickElement(server: FastMCP): void {
   const clickActionSchema = z.object({
     elementUUID: elementUUIDScheme,
     sessionId: z
@@ -30,10 +35,11 @@ export default function generateTest(server: FastMCP): void {
       args: z.infer<typeof clickActionSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         // Check if this is an AI-generated coordinate-based UUID
@@ -76,37 +82,22 @@ export default function generateTest(server: FastMCP): void {
 
           await performActions(driver, operation);
 
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Successfully clicked at coordinates (${x}, ${y}) using AI-found element`,
-              },
-            ],
-          };
+          return textResult(
+            `Successfully clicked at coordinates (${x}, ${y}) using AI-found element`
+          );
         }
 
         // Traditional element click
         await _elementClick(driver, args.elementUUID);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully clicked on element ${args.elementUUID}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        const errorMessage = err.message || err.toString();
+        return textResult(
+          `Successfully clicked on element ${args.elementUUID}`
+        );
+      } catch (err: unknown) {
+        const errorMessage = toolErrorMessage(err);
         log.error('Failed to click element:', errorMessage);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to click on element ${args.elementUUID}. err: ${errorMessage}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed to click on element ${args.elementUUID}. err: ${errorMessage}`
+        );
       }
     },
   });

@@ -1,5 +1,6 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
+import { textResult } from '../tool-response.js';
 
 export default function generateTest(server: FastMCP): void {
   const generateTestSchema = z.object({
@@ -34,15 +35,7 @@ export default function generateTest(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, _context: any): Promise<any> => ({
-      content: [
-        {
-          type: 'text',
-          text: instructions({
-            steps: args.steps,
-          }),
-        },
-      ],
-    }),
+    execute: async (args: any, _context: any): Promise<any> =>
+      textResult(instructions({ steps: args.steps })),
   });
 }

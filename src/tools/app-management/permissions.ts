@@ -1,8 +1,14 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
 import { resolveAppId } from './resolve-app-id.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const iosPermissionStateSchema = z.enum(['yes', 'no', 'unset', 'limited']);
 
@@ -83,50 +89,48 @@ export default function mobilePermissions(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        return { content: [{ type: 'text', text: 'No driver found' }] };
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       const platform = getPlatformName(driver);
       const appId =
         args.id ??
         (args.name ? await resolveAppId(args.name, args.sessionId) : undefined);
 
-      if (args.action === 'get') {
-        if (platform === PLATFORM.android) {
-          const params: Record<string, unknown> = {};
-          if (args.permissionFilter != null) {
-            params.type = args.permissionFilter;
+        if (args.action === 'get') {
+          if (platform === PLATFORM.android) {
+            const params: Record<string, unknown> = {};
+            if (args.permissionFilter != null) {
+              params.type = args.permissionFilter;
+            }
+            if (args.appPackage != null) {
+              params.appPackage = args.appPackage;
+            }
+            const raw = await execute(driver, 'mobile: getPermissions', params);
+            return textResult(JSON.stringify(raw, null, 2));
           }
-          if (appId != null) {
-            params.appPackage = appId;
-          }
-          const raw = await execute(driver, 'mobile: getPermissions', params);
-          return {
-            content: [{ type: 'text', text: JSON.stringify(raw, null, 2) }],
-          };
-        }
-        if (platform === PLATFORM.ios) {
-          if (!appId) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'iOS get requires id or name and service (string).',
-                },
-              ],
-            };
-          }
-          if (args.service === undefined || typeof args.service === 'number') {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'iOS get requires service as a string name (e.g. camera, photos).',
-                },
-              ],
-            };
+          if (platform === PLATFORM.ios) {
+            if (!args.bundleId) {
+              throw new Error(
+                'iOS get requires bundleId and service (string).'
+              );
+            }
+            if (
+              args.service === undefined ||
+              typeof args.service === 'number'
+            ) {
+              throw new Error(
+                'iOS get requires service as a string name (e.g. camera, photos).'
+              );
+            }
+            const raw = await execute(driver, 'mobile: getPermission', {
+              bundleId: args.bundleId,
+              service: args.service,
+            });
+            return textResult(String(raw));
           }
           const raw = await execute(driver, 'mobile: getPermission', {
             bundleId: appId,
@@ -146,44 +150,35 @@ export default function mobilePermissions(server: FastMCP): void {
         };
       }
 
-      if (args.action === 'update') {
-        if (platform === PLATFORM.android) {
-          if (args.permissions === undefined) {
-            return {
-              content: [
-                { type: 'text', text: 'Android update requires permissions.' },
-              ],
+        if (args.action === 'update') {
+          if (platform === PLATFORM.android) {
+            if (args.permissions === undefined) {
+              throw new Error('Android update requires permissions.');
+            }
+            const params: Record<string, unknown> = {
+              permissions: args.permissions,
             };
+            if (args.appPackage != null) {
+              params.appPackage = args.appPackage;
+            }
+            if (args.permissionChangeAction != null) {
+              params.action = args.permissionChangeAction;
+            }
+            if (args.target != null) {
+              params.target = args.target;
+            }
+            await execute(driver, 'mobile: changePermissions', params);
+            return textResult('Permissions updated successfully.');
           }
-          const params: Record<string, unknown> = {
-            permissions: args.permissions,
-          };
-          if (appId != null) {
-            params.appPackage = appId;
-          }
-          if (args.permissionChangeAction != null) {
-            params.action = args.permissionChangeAction;
-          }
-          if (args.target != null) {
-            params.target = args.target;
-          }
-          await execute(driver, 'mobile: changePermissions', params);
-          return {
-            content: [
-              { type: 'text', text: 'Permissions updated successfully.' },
-            ],
-          };
-        }
-        if (platform === PLATFORM.ios) {
-          if (!appId || !args.access) {
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: 'iOS update requires id or name and access map.',
-                },
-              ],
-            };
+          if (platform === PLATFORM.ios) {
+            if (!args.bundleId || !args.access) {
+              throw new Error('iOS update requires bundleId and access map.');
+            }
+            await execute(driver, 'mobile: setPermission', {
+              bundleId: args.bundleId,
+              access: args.access,
+            });
+            return textResult('Permission settings updated successfully.');
           }
           await execute(driver, 'mobile: setPermission', {
             bundleId: appId,
@@ -208,25 +203,22 @@ export default function mobilePermissions(server: FastMCP): void {
         };
       }
 
-      if (platform !== PLATFORM.ios) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'action=reset is only supported on iOS (mobile: resetPermission for the AUT).',
-            },
-          ],
-        };
-      }
-      if (args.service === undefined) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'iOS reset requires service (name or numeric id).',
-            },
-          ],
-        };
+        if (platform !== PLATFORM.ios) {
+          throw new Error(
+            'action=reset is only supported on iOS (mobile: resetPermission for the AUT).'
+          );
+        }
+        if (args.service === undefined) {
+          throw new Error('iOS reset requires service (name or numeric id).');
+        }
+        await execute(driver, 'mobile: resetPermission', {
+          service: args.service,
+        });
+        return textResult('Permission reset successfully.');
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed permissions action ${args.action}. err: ${toolErrorMessage(err)}`
+        );
       }
       await execute(driver, 'mobile: resetPermission', {
         service: args.service,

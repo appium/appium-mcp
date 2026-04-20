@@ -21,6 +21,7 @@ import {
   createSessionDashboardUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import { textResult } from '../tool-response.js';
 import WebDriver from 'webdriver';
 
 // Define capabilities type
@@ -409,14 +410,9 @@ export default function createSession(server: any): void {
 
         const totalSessions = listSessions().length;
 
-        const textResponse = {
-          content: [
-            {
-              type: 'text',
-              text: `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`,
-            },
-          ],
-        };
+        const textResponse = textResult(
+          `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`
+        );
 
         // Add interactive session dashboard UI
         const uiResource = createUIResource(

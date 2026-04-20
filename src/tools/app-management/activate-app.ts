@@ -1,28 +1,28 @@
 import type { ContentResult } from 'fastmcp';
-import { getDriver } from '../../session-store.js';
 import { activateApp as _activateApp } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export async function activate(
   id: string,
   sessionId?: string
 ): Promise<ContentResult> {
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
+
   try {
-    const driver = getDriver(sessionId);
-    if (!driver) {
-      return { content: [{ type: 'text', text: 'No driver found' }] };
-    }
     await _activateApp(driver, id);
-    return {
-      content: [{ type: 'text', text: `App ${id} activated correctly.` }],
-    };
-  } catch (err: any) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Error activating the app ${id}: ${err.toString()}`,
-        },
-      ],
-    };
+    return textResult(`App ${id} activated correctly.`);
+  } catch (err: unknown) {
+    return errorResult(
+      `Error activating the app ${id}: ${toolErrorMessage(err)}`
+    );
   }
 }

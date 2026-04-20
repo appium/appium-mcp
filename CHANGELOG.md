@@ -1,3 +1,33 @@
+## [1.60.1](https://github.com/appium/appium-mcp/compare/v1.60.0...v1.60.1) (2026-04-19)
+
+### Bug Fixes
+
+* **click:** rename default export to clickElement ([#276](https://github.com/appium/appium-mcp/issues/276)) ([65d5f52](https://github.com/appium/appium-mcp/commit/65d5f52700e84239efd38d75fd1f468c58b57569))
+
+## [1.60.0](https://github.com/appium/appium-mcp/compare/v1.59.1...v1.60.0) (2026-04-19)
+
+### Features
+
+* **tools:** complete migration of all tools to textResult/errorResult/resolveDriver ([#275](https://github.com/appium/appium-mcp/issues/275)) ([2b3c190](https://github.com/appium/appium-mcp/commit/2b3c19094e1cbafb237b5cbefa600fbf1a0dd890))
+
+## [1.59.1](https://github.com/appium/appium-mcp/compare/v1.59.0...v1.59.1) (2026-04-18)
+
+### Miscellaneous Chores
+
+* **tools:** unify tool text results and driver resolution helpers ([#263](https://github.com/appium/appium-mcp/issues/263)) ([f9084ec](https://github.com/appium/appium-mcp/commit/f9084ec82169660a6cb2a3c12e0714706b8a1c7c))
+
+## [1.59.0](https://github.com/appium/appium-mcp/compare/v1.58.0...v1.59.0) (2026-04-17)
+
+### Features
+
+* rename appium_app to appium_app_lifecycle ([#273](https://github.com/appium/appium-mcp/issues/273)) ([d524036](https://github.com/appium/appium-mcp/commit/d5240366604a988fdc56e5e1d218f71743f344de))
+
+## [1.58.0](https://github.com/appium/appium-mcp/compare/v1.57.0...v1.58.0) (2026-04-17)
+
+### Features
+
+* support remote sessions for context management and app listing ([#265](https://github.com/appium/appium-mcp/issues/265)) ([1abe075](https://github.com/appium/appium-mcp/commit/1abe07510ef7241f91a6f7a09fb06760922cd5c7))
+
 ## [1.57.0](https://github.com/appium/appium-mcp/compare/v1.56.3...v1.57.0) (2026-04-16)
 
 ### Features

@@ -1,5 +1,11 @@
-import { getDriver, getPlatformName } from '../../session-store.js';
+import { getPlatformName } from '../../session-store.js';
 import { z } from 'zod';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const scrollToElementSchema = z.object({
   sessionId: z
@@ -135,12 +141,11 @@ export default function scrollToElement(server: any): void {
       openWorldHint: false,
     },
     execute: async (args: any, _context: any): Promise<any> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error(
-          'No active driver session. Please create a session first.'
-        );
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const platform = getPlatformName(driver);
@@ -151,14 +156,9 @@ export default function scrollToElement(server: any): void {
             args.strategy,
             args.selector
           );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Element ${args.selector} is already visible on screen.`,
-              },
-            ],
-          };
+          return textResult(
+            `Element ${args.selector} is already visible on screen.`
+          );
         } catch (_error) {
           const direction = args.direction || 'down';
           switch (platform) {
@@ -178,24 +178,14 @@ export default function scrollToElement(server: any): void {
             args.strategy,
             args.selector
           );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Successfully scrolled found element ${args.selector} after initial scroll.`,
-              },
-            ],
-          };
+          return textResult(
+            `Successfully scrolled and found element ${args.selector}.`
+          );
         }
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to scroll and find element. Error: ${err.toString()}`,
-            },
-          ],
-        };
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to scroll and find element. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

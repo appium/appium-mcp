@@ -1,7 +1,12 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { getClipboard, setClipboard } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 /**
  * Register clipboard read/write tools.
@@ -36,35 +41,22 @@ export default function clipboard(server: FastMCP): void {
       args: { sessionId?: string },
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const content = await getClipboard(driver);
         if (!content) {
-          return {
-            content: [{ type: 'text', text: 'Clipboard is empty.' }],
-          };
+          return textResult('Clipboard is empty.');
         }
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Clipboard content: ${content}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to get clipboard content. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(`Clipboard content: ${content}`);
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to get clipboard content. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });
@@ -97,30 +89,21 @@ export default function clipboard(server: FastMCP): void {
       args: z.infer<typeof setClipboardSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         await setClipboard(driver, args.content);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully set clipboard content to: ${args.content}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to set clipboard content. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully set clipboard content to: ${args.content}`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to set clipboard content. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

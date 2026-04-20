@@ -12,7 +12,7 @@
  * See src/tools/README.md for tool organization.
  * See src/tools/metadata/README.md for YAML metadata approach.
  */
-import { FastMCP } from 'fastmcp';
+import type { FastMCP } from 'fastmcp';
 import log from '../logger.js';
 import answerAppium from './documentation/answer-appium.js';
 import appiumSkills from './documentation/appium-skills.js';
@@ -56,10 +56,12 @@ import app from './app-management/app.js';
 import mobilePermissions from './app-management/permissions.js';
 import context from './context/context.js';
 
+type RegisteredTool = Parameters<FastMCP['addTool']>[0];
+
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
-  const originalAddTool = (server as any).addTool.bind(server);
-  (server as any).addTool = (toolDef: any) => {
+  const originalAddTool = server.addTool.bind(server);
+  server.addTool = (toolDef: RegisteredTool): void => {
     const toolName = toolDef?.name ?? 'unknown_tool';
     const originalExecute = toolDef?.execute;
     if (typeof originalExecute !== 'function') {
@@ -75,7 +77,10 @@ export default function registerTools(server: FastMCP): void {
       'secret',
       'clientSecret',
     ];
-    const redactArgs = (obj: any) => {
+    const redactArgs = (obj: unknown): unknown => {
+      if (obj === undefined || obj === null) {
+        return obj;
+      }
       try {
         return JSON.parse(
           JSON.stringify(obj, (key, value) => {
@@ -105,7 +110,7 @@ export default function registerTools(server: FastMCP): void {
     };
     return originalAddTool({
       ...toolDef,
-      execute: async (args: any, context: any) => {
+      execute: async (args, context) => {
         const start = Date.now();
         log.info(`[TOOL START] ${toolName}`, redactArgs(args));
         try {
@@ -113,9 +118,10 @@ export default function registerTools(server: FastMCP): void {
           const duration = Date.now() - start;
           log.info(`[TOOL END] ${toolName} (${duration}ms)`);
           return result;
-        } catch (err: any) {
+        } catch (err: unknown) {
           const duration = Date.now() - start;
-          const msg = err?.stack || err?.message || String(err);
+          const msg =
+            err instanceof Error ? err.stack || err.message : String(err);
           log.error(`[TOOL ERROR] ${toolName} (${duration}ms): ${msg}`);
           throw err;
         }

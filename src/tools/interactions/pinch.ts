@@ -1,6 +1,6 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import {
   execute,
@@ -8,6 +8,12 @@ import {
   getWindowRect,
   performActions,
 } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function pinch(server: FastMCP): void {
   const pinchSchema = z.object({
@@ -53,10 +59,11 @@ export default function pinch(server: FastMCP): void {
       args: z.infer<typeof pinchSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const platform = getPlatformName(driver);
@@ -153,23 +160,13 @@ export default function pinch(server: FastMCP): void {
         }
 
         const target = elementUUID ? `element ${elementUUID}` : 'screen';
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully performed pinch ${direction} (scale=${scale}) on ${target}.`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to perform pinch gesture. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully performed pinch ${direction} (scale=${scale}) on ${target}.`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to perform pinch gesture. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

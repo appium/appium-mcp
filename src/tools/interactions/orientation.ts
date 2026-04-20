@@ -1,10 +1,15 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import {
   getOrientation as _getOrientation,
   setOrientation as _setOrientation,
 } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const orientationSchema = z.object({
   action: z
@@ -36,22 +41,18 @@ export default function orientation(server: FastMCP): void {
       args: z.infer<typeof orientationSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         if (args.action === 'get') {
           const currentOrientation = await _getOrientation(driver);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Successfully got orientation: ${currentOrientation}`,
-              },
-            ],
-          };
+          return textResult(
+            `Successfully got orientation: ${currentOrientation}`
+          );
         }
 
         if (!args.orientation) {
@@ -59,23 +60,13 @@ export default function orientation(server: FastMCP): void {
         }
 
         await _setOrientation(driver, args.orientation);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully set orientation to ${args.orientation}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to ${args.action} orientation. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully set orientation to ${args.orientation}`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to ${args.action} orientation. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

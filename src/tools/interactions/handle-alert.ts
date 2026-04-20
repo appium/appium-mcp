@@ -3,11 +3,16 @@ import { z } from 'zod';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
 import {
   DriverInstance,
-  getDriver,
   getPlatformName,
   PLATFORM,
 } from '../../session-store.js';
 import { elementClick, execute, getPageSource } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const ANDROID_LOCATOR_STRATEGY_ORDER = [
   'id',
@@ -121,24 +126,18 @@ export default function alert(server: FastMCP): void {
       args: z.infer<typeof appiumAlertSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         if (args.action === 'get_text') {
           const text = await (driver as any).getAlertText();
-          return {
-            content: [
-              {
-                type: 'text',
-                text: text
-                  ? `Alert text: "${text}"`
-                  : 'Alert is present but has no text.',
-              },
-            ],
-          };
+          return textResult(
+            text ? `Alert text: "${text}"` : 'Alert is present but has no text.'
+          );
         }
 
         const platform = getPlatformName(driver);
@@ -152,31 +151,21 @@ export default function alert(server: FastMCP): void {
           );
         }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully ${args.action}ed alert${
-                args.buttonLabel ? ` with button "${args.buttonLabel}"` : ''
-              }`,
-            },
-          ],
-        };
-      } catch (err: any) {
+        return textResult(
+          `Successfully ${args.action}ed alert${
+            args.buttonLabel ? ` with button "${args.buttonLabel}"` : ''
+          }`
+        );
+      } catch (err: unknown) {
         const contextStr =
           args.action === 'get_text'
             ? 'action=get_text'
             : args.buttonLabel
               ? `action=${args.action}, buttonLabel="${args.buttonLabel}"`
               : `action=${args.action}`;
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed alert action (${contextStr}). err: ${err.toString()}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed alert action (${contextStr}). err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

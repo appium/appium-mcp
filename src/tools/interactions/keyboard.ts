@@ -1,7 +1,12 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { execute } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function keyboard(server: FastMCP): void {
   const hideKeyboardSchema = z.object({
@@ -33,33 +38,21 @@ export default function keyboard(server: FastMCP): void {
       args: z.infer<typeof hideKeyboardSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const params =
           args.keys && args.keys.length > 0 ? { keys: args.keys } : {};
         await execute(driver, 'mobile: hideKeyboard', params);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Keyboard dismissed successfully.',
-            },
-          ],
-        };
+        return textResult('Keyboard dismissed successfully.');
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to hide keyboard. Error: ${message}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed to hide keyboard. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });
@@ -83,10 +76,11 @@ export default function keyboard(server: FastMCP): void {
       args: { sessionId?: string },
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const raw = await execute(driver, 'mobile: isKeyboardShown', {});
@@ -95,24 +89,11 @@ export default function keyboard(server: FastMCP): void {
             `Unexpected isKeyboardShown result type: ${typeof raw}`
           );
         }
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ keyboardShown: raw }, null, 2),
-            },
-          ],
-        };
+        return textResult(JSON.stringify({ keyboardShown: raw }, null, 2));
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to query keyboard visibility. Error: ${message}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed to query keyboard visibility. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

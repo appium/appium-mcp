@@ -1,8 +1,14 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import { execute, getElementRect, performActions } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function doubleTap(server: FastMCP): void {
   const doubleTapActionSchema = z.object({
@@ -25,20 +31,17 @@ export default function doubleTap(server: FastMCP): void {
       args: z.infer<typeof doubleTapActionSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const platform = getPlatformName(driver);
         if (platform === PLATFORM.android) {
           // Get element location for Android double tap
-          const element = await driver.findElement('id', args.elementUUID);
-          const elementRect = await getElementRect(
-            driver,
-            element['element-6066-11e4-a52e-4f735466cecf']
-          );
+          const elementRect = await getElementRect(driver, args.elementUUID);
 
           // Calculate center coordinates
           const x = elementRect.x + elementRect.width / 2;
@@ -74,23 +77,13 @@ export default function doubleTap(server: FastMCP): void {
           );
         }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully performed double tap on element ${args.elementUUID}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to perform double tap on element ${args.elementUUID}. Error: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully performed double tap on element ${args.elementUUID}`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to perform double tap on element ${args.elementUUID}. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

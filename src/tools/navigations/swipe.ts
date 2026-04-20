@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import log from '../../logger.js';
 import { elementUUIDScheme } from '../../schema.js';
 import {
@@ -8,6 +8,12 @@ import {
   getWindowRect,
   performActions,
 } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 function calculateSwipeCoordinates(
   direction: 'left' | 'right' | 'up' | 'down',
@@ -184,12 +190,11 @@ export default function swipe(server: any): void {
       openWorldHint: false,
     },
     execute: async (args: any, _context: any): Promise<any> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error(
-          'No active driver session. Please create a session first.'
-        );
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const platform = getPlatformName(driver);
@@ -345,23 +350,11 @@ export default function swipe(server: any): void {
           ? ` ${args.direction}`
           : ` from (${startX}, ${startY}) to (${endX}, ${endY})`;
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Swiped${directionText} successfully.`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to perform swipe. Error: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(`Swiped${directionText} successfully.`);
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to perform swipe. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

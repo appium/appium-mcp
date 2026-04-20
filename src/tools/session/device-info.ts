@@ -1,8 +1,14 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
 import { BatteryState } from 'appium-xcuitest-driver/build/lib/commands/enum.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 // iOS: maps UIDeviceBatteryState values to human-readable strings
 // @see https://github.com/appium/appium-xcuitest-driver/blob/5bdad71/lib/commands/enum.ts#L91
@@ -65,30 +71,20 @@ export default function deviceInfo(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (args: z.infer<typeof schema>): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        return {
-          content: [{ type: 'text', text: 'No driver found' }],
-          isError: true,
-        };
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       if (args.action === 'info') {
         try {
           const result = await execute(driver, 'mobile: deviceInfo', {});
-          return {
-            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-          };
+          return textResult(JSON.stringify(result, null, 2));
         } catch (err: unknown) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Failed to get device info: ${err instanceof Error ? err.message : String(err)}`,
-              },
-            ],
-            isError: true,
-          };
+          return errorResult(
+            `Failed to get device info: ${toolErrorMessage(err)}`
+          );
         }
       }
 
@@ -97,21 +93,11 @@ export default function deviceInfo(server: FastMCP): void {
           const platform = getPlatformName(driver);
           const raw = await execute(driver, 'mobile: batteryInfo', {});
           const formatted = formatBatteryInfo(platform, raw);
-          return {
-            content: [
-              { type: 'text', text: JSON.stringify(formatted, null, 2) },
-            ],
-          };
+          return textResult(JSON.stringify(formatted, null, 2));
         } catch (err: unknown) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Failed to get battery info: ${err instanceof Error ? err.message : String(err)}`,
-              },
-            ],
-            isError: true,
-          };
+          return errorResult(
+            `Failed to get battery info: ${toolErrorMessage(err)}`
+          );
         }
       }
 
@@ -122,26 +108,15 @@ export default function deviceInfo(server: FastMCP): void {
             params.format = args.format;
           }
           const time = await execute(driver, 'mobile: getDeviceTime', params);
-          return {
-            content: [{ type: 'text', text: String(time) }],
-          };
+          return textResult(String(time));
         } catch (err: unknown) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Failed to get device time: ${err instanceof Error ? err.message : String(err)}`,
-              },
-            ],
-            isError: true,
-          };
+          return errorResult(
+            `Failed to get device time: ${toolErrorMessage(err)}`
+          );
         }
       }
 
-      return {
-        content: [{ type: 'text', text: `Unknown action: ${args.action}` }],
-        isError: true,
-      };
+      return errorResult(`Unknown action: ${args.action}`);
     },
   });
 }

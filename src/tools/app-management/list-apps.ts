@@ -16,8 +16,20 @@ import {
 } from '../../ui/mcp-ui-utils.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import { execute } from '../../command.js';
+import { textResult, errorResult, toolErrorMessage } from '../tool-response.js';
 
 const execAsync = promisify(exec);
+
+/** Extract package ids from the `mobile: listApps` result (map or legacy array). */
+function androidListAppsPackageIds(
+  result: Record<string, unknown> | string[]
+): string[] {
+  if (Array.isArray(result)) {
+    return result;
+  }
+  return Object.keys(result);
+}
 
 function normalizeListAppsResult(
   result: Record<string, Record<string, unknown> | undefined>
@@ -40,11 +52,24 @@ export async function listAppsFromDevice(
     throw new Error('No driver found');
   }
 
-  if (isRemoteDriverSession(driver)) {
-    throw new Error('listApps is not yet implemented for the remote driver');
-  }
-
   const platform = getPlatformName(driver);
+
+  if (isRemoteDriverSession(driver)) {
+    if (platform === PLATFORM.android) {
+      const result = await execute(driver, 'mobile: listApps', {});
+      const ids = androidListAppsPackageIds(result);
+      return ids.map((packageName) => ({ packageName, appName: packageName }));
+    }
+    if (platform === PLATFORM.ios) {
+      const result = await execute(driver, 'mobile: listApps', {
+        applicationType,
+      });
+      return normalizeListAppsResult(
+        (result as Record<string, Record<string, unknown> | undefined>) || {}
+      );
+    }
+    throw new Error(`listApps is not implemented for platform: ${platform}`);
+  }
 
   if (platform === PLATFORM.ios && isXCUITestDriverSession(driver)) {
     const xcuiDriver = driver as XCUITestDriver;
@@ -85,24 +110,15 @@ export async function list(
 ): Promise<ContentResult> {
   try {
     const apps = await listAppsFromDevice(applicationType, sessionId);
-    const textResponse = {
-      content: [
-        {
-          type: 'text' as const,
-          text: `Installed apps: ${JSON.stringify(apps, null, 2)}`,
-        },
-      ],
-    };
+    const textResponse = textResult(
+      `Installed apps: ${JSON.stringify(apps, null, 2)}`
+    );
     const uiResource = createUIResource(
       `ui://appium-mcp/app-list/${Date.now()}`,
       createAppListUI(apps)
     );
     return addUIResourceToResponse(textResponse, uiResource);
-  } catch (err: any) {
-    return {
-      content: [
-        { type: 'text', text: `Failed to list apps. err: ${err.toString()}` },
-      ],
-    };
+  } catch (err: unknown) {
+    return errorResult(`Failed to list apps. err: ${toolErrorMessage(err)}`);
   }
 }

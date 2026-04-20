@@ -41,13 +41,12 @@ export const PLATFORM = {
 };
 
 /**
- * Determine whether the provided driver represents a remote driver session.
+ * Determine whether the provided driver represents a remote Appium session
+ * (i.e. a `Client` obtained via `WebDriver.newSession`) rather than an
+ * in-process `AndroidUiautomator2Driver` or `XCUITestDriver`.
  *
- * This checks for the presence of a string-valued `sessionId` property on the
- * driver object, which indicates a remote/WebDriver session.
- *
- * @param driver - The driver instance to inspect (may be a Client, AndroidUiautomator2Driver, XCUITestDriver, or null).
- * @returns `true` if `driver` is non-null and has a string `sessionId`; otherwise `false`.
+ * @param driver - The driver instance to inspect.
+ * @returns `true` if `driver` is non-null and not an embedded Appium driver.
  */
 export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
   if (driver) {
@@ -134,23 +133,6 @@ export function getDriver(sessionId?: string): NullableDriverInstance {
     return null;
   }
   return sessions.get(id)?.driver ?? null;
-}
-
-/**
- * Get a driver instance or throw if none is available.
- * Accepts an optional sessionId to target a specific session
- * instead of the currently active one.
- */
-export function getDriverOrThrow(sessionId?: string): DriverInstance {
-  const driver = getDriver(sessionId);
-  if (!driver) {
-    throw new Error(
-      sessionId
-        ? `No driver found for session ${sessionId}`
-        : 'No active session. Call create_session first.'
-    );
-  }
-  return driver;
 }
 
 export function getSessionId() {
@@ -311,10 +293,17 @@ export const getPlatformName = (driver: any): string => {
     return PLATFORM.ios;
   }
 
-  if ((driver as Client).isAndroid) {
+  const client = driver as Client;
+  if (client.isAndroid) {
     return PLATFORM.android;
-  } else if ((driver as Client).isIOS) {
+  }
+  if (client.isIOS) {
     return PLATFORM.ios;
+  }
+
+  const session = listSessions().find((s) => s.sessionId === client.sessionId);
+  if (session && session.platform) {
+    return session.platform;
   }
 
   throw new Error('Unknown driver type');

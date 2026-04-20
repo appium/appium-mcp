@@ -1,7 +1,12 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { getWindowSize as cmdGetWindowSize } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function getWindowSize(server: FastMCP): void {
   server.addTool({
@@ -22,28 +27,19 @@ export default function getWindowSize(server: FastMCP): void {
       args: { sessionId?: string },
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const { width, height } = await cmdGetWindowSize(driver);
-        return {
-          content: [
-            { type: 'text', text: `Width: ${width}, Height: ${height}` },
-          ],
-        };
+        return textResult(`Width: ${width}, Height: ${height}`);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to get window size. Error: ${message}`,
-            },
-          ],
-        };
+        return errorResult(
+          `Failed to get window size. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

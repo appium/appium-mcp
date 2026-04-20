@@ -1,8 +1,14 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver, getPlatformName, PLATFORM } from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import { execute, getElementRect, performActions } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function longPress(server: FastMCP): void {
   const longPressSchema = z.object({
@@ -35,10 +41,11 @@ export default function longPress(server: FastMCP): void {
       args: z.infer<typeof longPressSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver(args.sessionId);
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const platform = getPlatformName(driver);
@@ -95,23 +102,13 @@ export default function longPress(server: FastMCP): void {
           );
         }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully performed long press on element ${args.elementUUID}`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to perform long press on element ${args.elementUUID}. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          `Successfully performed long press on element ${args.elementUUID}`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to perform long press on element ${args.elementUUID}. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

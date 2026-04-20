@@ -42,7 +42,9 @@ describe('appium_mobile_device_info tool', () => {
       mockGetDriver.mockReturnValue(null as any);
       const result = await tool.execute({ action: 'battery' }, undefined);
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe('No driver found');
+      expect(result.content[0].text).toBe(
+        'No active driver session. Call create_session first or pass a valid sessionId.'
+      );
     });
 
     test('returns formatted iOS battery info', async () => {
@@ -97,7 +99,9 @@ describe('appium_mobile_device_info tool', () => {
       mockGetDriver.mockReturnValue(null as any);
       const result = await tool.execute({ action: 'info' }, undefined);
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe('No driver found');
+      expect(result.content[0].text).toBe(
+        'No active driver session. Call create_session first or pass a valid sessionId.'
+      );
     });
 
     test('returns device info as formatted JSON', async () => {
@@ -136,7 +140,9 @@ describe('appium_mobile_device_info tool', () => {
       mockGetDriver.mockReturnValue(null as any);
       const result = await tool.execute({ action: 'time' }, undefined);
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe('No driver found');
+      expect(result.content[0].text).toBe(
+        'No active driver session. Call create_session first or pass a valid sessionId.'
+      );
     });
 
     test('returns device time as string', async () => {
