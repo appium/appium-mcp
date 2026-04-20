@@ -7,12 +7,14 @@ export const GESTURE_ACTIONS = [
   'long_press',
   'scroll',
   'swipe',
-  'flick',
   'pinch_zoom',
   'scroll_to_element',
 ] as const;
 
 export type GestureAction = (typeof GESTURE_ACTIONS)[number];
+
+export const SWIPE_SPEEDS = ['slow', 'normal', 'fast'] as const;
+export type SwipeSpeed = (typeof SWIPE_SPEEDS)[number];
 
 export const LOCATOR_STRATEGIES = [
   'xpath',
@@ -27,24 +29,25 @@ export const LOCATOR_STRATEGIES = [
 ] as const;
 
 export const gestureSchema = z.object({
-  action: z.enum(GESTURE_ACTIONS).describe(
-    `Gesture to perform. ` +
-      `tap: single tap on an element (elementUUID) or coordinates (x, y). ` +
-      `double_tap: double tap on an element or coordinates. ` +
-      `long_press: press and hold on an element or coordinates (use duration). ` +
-      `scroll: slow content-aware drag (default 800ms) — respects scroll views on iOS. Use for browsing lists, feeds, pages. Supports direction or custom coordinates. ` +
-      `swipe: fast directional gesture (default 300ms) — raw touch. Use for dismissing sheets, switching screens, carousels. Supports direction or custom coordinates. ` +
-      `flick: very fast swipe with no hold (default 100ms). Use for pull-to-refresh and velocity-sensitive UIs. Supports direction or custom coordinates. ` +
-      `pinch_zoom: two-finger pinch to zoom in (scale > 1) or out (scale < 1) on an element or screen. ` +
-      `scroll_to_element: repeatedly scroll until an element matching strategy + selector becomes visible.`
-  ),
+  action: z
+    .enum(GESTURE_ACTIONS)
+    .describe(
+      `Gesture to perform. ` +
+        `tap: tap an element or a coordinate. ` +
+        `double_tap: trigger a double-tap action (e.g. zoom in on an image, favorite a post). ` +
+        `long_press: press and hold to open a context menu or initiate drag. ` +
+        `scroll: browse a list, feed, or page to reveal content. ` +
+        `swipe: dismiss a card, switch screens or tabs, navigate a carousel, or pull-to-refresh (use speed=fast). ` +
+        `pinch_zoom: zoom in (scale > 1) or out (scale < 1) on maps, images, or any zoomable view. ` +
+        `scroll_to_element: scroll until a specific element is on screen.`
+    ),
 
   elementUUID: elementUUIDScheme
     .optional()
     .describe(
       `UUID of the element to act on. Supports AI coordinate UUIDs (format: ai-element:x,y:bbox). ` +
         `Used by: tap, double_tap, long_press, pinch_zoom. ` +
-        `For scroll/swipe/flick, when provided with direction, the gesture is calculated relative to this element instead of the whole screen.`
+        `For scroll/swipe, when provided with direction, the gesture is calculated relative to this element instead of the whole screen.`
     ),
 
   x: z
@@ -55,7 +58,7 @@ export const gestureSchema = z.object({
     .describe(
       `X coordinate. ` +
         `For tap/double_tap/long_press: tap location (alternative to elementUUID). ` +
-        `For scroll/swipe/flick: starting X for custom-coordinate mode (requires y, endX, endY).`
+        `For scroll/swipe: starting X for custom-coordinate mode (requires y, endX, endY).`
     ),
   y: z
     .number()
@@ -65,27 +68,38 @@ export const gestureSchema = z.object({
     .describe(
       `Y coordinate. ` +
         `For tap/double_tap/long_press: tap location. ` +
-        `For scroll/swipe/flick: starting Y for custom-coordinate mode.`
+        `For scroll/swipe: starting Y for custom-coordinate mode.`
     ),
   endX: z
     .number()
     .int()
     .min(0)
     .optional()
-    .describe(`Ending X coordinate. Used by: scroll, swipe, flick (custom-coordinate mode).`),
+    .describe(
+      `Ending X coordinate. Used by: scroll, swipe (custom-coordinate mode).`
+    ),
   endY: z
     .number()
     .int()
     .min(0)
     .optional()
-    .describe(`Ending Y coordinate. Used by: scroll, swipe, flick (custom-coordinate mode).`),
+    .describe(
+      `Ending Y coordinate. Used by: scroll, swipe (custom-coordinate mode).`
+    ),
 
   direction: z
     .enum(['up', 'down', 'left', 'right'])
     .optional()
     .describe(
-      `Direction for scroll, swipe, or flick. Coordinates are auto-calculated from screen or element bounds. ` +
+      `Direction for scroll or swipe. Coordinates are auto-calculated from screen or element bounds. ` +
         `Either direction OR custom coordinates (x, y, endX, endY) must be provided for these actions.`
+    ),
+
+  speed: z
+    .enum(SWIPE_SPEEDS)
+    .optional()
+    .describe(
+      `Swipe speed. slow = deliberate drag; normal = default navigation speed; fast = flick with no hold, use for pull-to-refresh and other velocity-sensitive UIs. Used by: swipe.`
     ),
 
   duration: z
@@ -95,8 +109,8 @@ export const gestureSchema = z.object({
     .max(10000)
     .optional()
     .describe(
-      `Duration in milliseconds. ` +
-        `long_press default 2000 (range 500-10000). scroll default 800. swipe default 300. flick default 100.`
+      `Duration in milliseconds. long_press default 2000 (range 500-10000). scroll default 800. ` +
+        `For swipe, prefer the speed parameter; duration overrides it if both are provided.`
     ),
 
   scale: z
@@ -112,7 +126,9 @@ export const gestureSchema = z.object({
     .min(0.1)
     .max(20)
     .optional()
-    .describe(`Pinch velocity in scale factor per second. Default 2.2. Used by: pinch_zoom.`),
+    .describe(
+      `Pinch velocity in scale factor per second. Default 2.2. Used by: pinch_zoom.`
+    ),
 
   strategy: z
     .enum(LOCATOR_STRATEGIES)

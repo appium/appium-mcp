@@ -24,16 +24,13 @@ interface Rect {
   height: number;
 }
 
-const DEFAULT_DURATIONS = {
-  scroll: 800,
-  swipe: 300,
-  flick: 100,
-} as const;
+const SCROLL_DURATION_MS = 800;
+const SCROLL_INITIAL_PAUSE_MS = 250;
 
-const INITIAL_PAUSE = {
-  scroll: 250,
-  swipe: 200,
-  flick: 0,
+const SWIPE_SPEED_PROFILES = {
+  slow: { duration: 600, initialPause: 250 },
+  normal: { duration: 300, initialPause: 200 },
+  fast: { duration: 100, initialPause: 0 },
 } as const;
 
 function coordsForDirection(direction: Direction, rect: Rect): Coords {
@@ -142,7 +139,7 @@ export async function handleScroll(
       return errorResult(`scroll: ${coordsResult.error}`);
     }
     const coords = coordsResult;
-    const duration = args.duration ?? DEFAULT_DURATIONS.scroll;
+    const duration = args.duration ?? SCROLL_DURATION_MS;
     const platform = getPlatformName(driver);
 
     if (platform === PLATFORM.ios && args.direction && !args.elementUUID) {
@@ -154,7 +151,7 @@ export async function handleScroll(
         endY: coords.endY,
       });
     } else {
-      await performW3CDrag(driver, coords, duration, INITIAL_PAUSE.scroll);
+      await performW3CDrag(driver, coords, duration, SCROLL_INITIAL_PAUSE_MS);
     }
 
     return textResult(
@@ -177,10 +174,19 @@ export async function handleSwipe(
       return errorResult(`swipe: ${coordsResult.error}`);
     }
     const coords = coordsResult;
-    const duration = args.duration ?? DEFAULT_DURATIONS.swipe;
+    const speed = args.speed ?? 'normal';
+    const profile = SWIPE_SPEED_PROFILES[speed];
+    const duration = args.duration ?? profile.duration;
+    const initialPause = profile.initialPause;
     const platform = getPlatformName(driver);
 
-    if (platform === PLATFORM.ios && args.direction && !args.elementUUID) {
+    // speed=fast preserves raw-velocity behavior (pull-to-refresh etc.) — skip iOS native paths.
+    if (
+      platform === PLATFORM.ios &&
+      args.direction &&
+      !args.elementUUID &&
+      speed !== 'fast'
+    ) {
       try {
         await execute(driver, 'mobile: swipe', { direction: args.direction });
       } catch {
@@ -193,42 +199,19 @@ export async function handleSwipe(
             duration: duration / 1000,
           });
         } catch {
-          await performW3CDrag(driver, coords, duration, INITIAL_PAUSE.swipe);
+          await performW3CDrag(driver, coords, duration, initialPause);
         }
       }
     } else {
-      await performW3CDrag(driver, coords, duration, INITIAL_PAUSE.swipe);
+      await performW3CDrag(driver, coords, duration, initialPause);
     }
 
     return textResult(
       args.direction
-        ? `Successfully swiped ${args.direction}.`
-        : `Successfully swiped from (${coords.startX}, ${coords.startY}) to (${coords.endX}, ${coords.endY}).`
+        ? `Successfully swiped ${args.direction} (speed=${speed}).`
+        : `Successfully swiped from (${coords.startX}, ${coords.startY}) to (${coords.endX}, ${coords.endY}) (speed=${speed}).`
     );
   } catch (err) {
     return errorResult(`Failed to swipe. ${toolErrorMessage(err)}`);
-  }
-}
-
-export async function handleFlick(
-  driver: DriverInstance,
-  args: GestureArgs
-): Promise<ContentResult> {
-  try {
-    const coordsResult = await resolveCoords(driver, args);
-    if ('error' in coordsResult) {
-      return errorResult(`flick: ${coordsResult.error}`);
-    }
-    const coords = coordsResult;
-    const duration = args.duration ?? DEFAULT_DURATIONS.flick;
-    await performW3CDrag(driver, coords, duration, INITIAL_PAUSE.flick);
-
-    return textResult(
-      args.direction
-        ? `Successfully flicked ${args.direction}.`
-        : `Successfully flicked from (${coords.startX}, ${coords.startY}) to (${coords.endX}, ${coords.endY}).`
-    );
-  } catch (err) {
-    return errorResult(`Failed to flick. ${toolErrorMessage(err)}`);
   }
 }
