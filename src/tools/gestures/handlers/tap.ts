@@ -88,7 +88,9 @@ export async function handleTap(
       );
     }
     await performActions(driver, w3cTapAt(args.x, args.y));
-    return textResult(`Successfully tapped at coordinates (${args.x}, ${args.y}).`);
+    return textResult(
+      `Successfully tapped at coordinates (${args.x}, ${args.y}).`
+    );
   } catch (err) {
     return errorResult(`Failed to perform tap. ${toolErrorMessage(err)}`);
   }
@@ -143,7 +145,9 @@ export async function handleDoubleTap(
     ]);
     return textResult(`Successfully double tapped at (${x}, ${y}).`);
   } catch (err) {
-    return errorResult(`Failed to perform double_tap. ${toolErrorMessage(err)}`);
+    return errorResult(
+      `Failed to perform double_tap. ${toolErrorMessage(err)}`
+    );
   }
 }
 
@@ -202,8 +206,12 @@ export async function handleLongPress(
         ],
       },
     ]);
-    return textResult(`Successfully long pressed at (${x}, ${y}) for ${duration}ms.`);
+    return textResult(
+      `Successfully long pressed at (${x}, ${y}) for ${duration}ms.`
+    );
   } catch (err) {
-    return errorResult(`Failed to perform long_press. ${toolErrorMessage(err)}`);
+    return errorResult(
+      `Failed to perform long_press. ${toolErrorMessage(err)}`
+    );
   }
 }

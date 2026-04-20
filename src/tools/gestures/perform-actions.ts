@@ -37,22 +37,30 @@ const actionStepSchema = z.object({
   origin: z
     .string()
     .optional()
-    .describe('Coordinate origin: "viewport" (default) or "pointer" (relative to current position).'),
+    .describe(
+      'Coordinate origin: "viewport" (default) or "pointer" (relative to current position).'
+    ),
 });
 
 const inputSourceSchema = z.object({
   type: z
     .enum(['pointer', 'key', 'none'])
-    .describe('Input source type. pointer = touch/mouse, key = keyboard, none = pause/timing.'),
+    .describe(
+      'Input source type. pointer = touch/mouse, key = keyboard, none = pause/timing.'
+    ),
   id: z
     .string()
-    .describe('Unique identifier for this input source (e.g. "finger1", "finger2").'),
+    .describe(
+      'Unique identifier for this input source (e.g. "finger1", "finger2").'
+    ),
   parameters: z
     .object({
       pointerType: z
         .enum(['touch', 'mouse', 'pen'])
         .optional()
-        .describe('Pointer type. Use "touch" for mobile gestures. Only for type=pointer.'),
+        .describe(
+          'Pointer type. Use "touch" for mobile gestures. Only for type=pointer.'
+        ),
     })
     .optional(),
   actions: z
@@ -80,9 +88,9 @@ export default function performActionsTool(server: FastMCP): void {
     name: 'appium_perform_actions',
     description:
       `Execute raw W3C Actions API sequences for advanced multi-touch gestures not covered by appium_gesture. ` +
-        `Use this for custom multi-finger gestures (rotate, three-finger swipe, edge swipes), complex timing sequences, ` +
-        `or any gesture requiring precise control over individual touch points. ` +
-        `Prefer appium_gesture for standard gestures (tap, scroll, swipe, pinch) — it handles platform differences automatically.`,
+      `Use this for custom multi-finger gestures (rotate, three-finger swipe, edge swipes), complex timing sequences, ` +
+      `or any gesture requiring precise control over individual touch points. ` +
+      `Prefer appium_gesture for standard gestures (tap, scroll, swipe, pinch) — it handles platform differences automatically.`,
     parameters: performActionsSchema,
     annotations: {
       readOnlyHint: false,

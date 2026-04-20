@@ -31,13 +31,9 @@ async function performW3CScroll(
   const { width, height } = await getWindowRect(driver);
   const startX = Math.floor(width / 2);
   const startY =
-    direction === 'down'
-      ? Math.floor(height * 0.8)
-      : Math.floor(height * 0.2);
+    direction === 'down' ? Math.floor(height * 0.8) : Math.floor(height * 0.2);
   const endY =
-    direction === 'down'
-      ? Math.floor(height * 0.2)
-      : Math.floor(height * 0.8);
+    direction === 'down' ? Math.floor(height * 0.2) : Math.floor(height * 0.8);
 
   await performActions(driver, [
     {
@@ -108,8 +104,6 @@ export async function handleScrollToElement(
       `Element ${args.selector} not found after ${MAX_SCROLL_ATTEMPTS} scrolls in direction '${direction}'.`
     );
   } catch (err) {
-    return errorResult(
-      `Failed to scroll_to_element. ${toolErrorMessage(err)}`
-    );
+    return errorResult(`Failed to scroll_to_element. ${toolErrorMessage(err)}`);
   }
 }

@@ -1,7 +1,11 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { elementUUIDScheme } from '../../schema.js';
-import { getElementRect, getWindowRect, performActions } from '../../command.js';
+import {
+  getElementRect,
+  getWindowRect,
+  performActions,
+} from '../../command.js';
 import {
   errorResult,
   resolveDriver,
@@ -23,13 +27,17 @@ const dragAndDropSchema = z.object({
     .int()
     .min(0)
     .optional()
-    .describe('Source X coordinate. Required if sourceElementUUID is not provided.'),
+    .describe(
+      'Source X coordinate. Required if sourceElementUUID is not provided.'
+    ),
   sourceY: z
     .number()
     .int()
     .min(0)
     .optional()
-    .describe('Source Y coordinate. Required if sourceElementUUID is not provided.'),
+    .describe(
+      'Source Y coordinate. Required if sourceElementUUID is not provided.'
+    ),
   targetElementUUID: elementUUIDScheme
     .optional()
     .describe(
@@ -40,13 +48,17 @@ const dragAndDropSchema = z.object({
     .int()
     .min(0)
     .optional()
-    .describe('Target X coordinate. Required if targetElementUUID is not provided.'),
+    .describe(
+      'Target X coordinate. Required if targetElementUUID is not provided.'
+    ),
   targetY: z
     .number()
     .int()
     .min(0)
     .optional()
-    .describe('Target Y coordinate. Required if targetElementUUID is not provided.'),
+    .describe(
+      'Target Y coordinate. Required if targetElementUUID is not provided.'
+    ),
   duration: z
     .number()
     .int()

@@ -21,7 +21,9 @@ export async function handlePinchZoom(
   args: GestureArgs
 ): Promise<ContentResult> {
   if (args.scale === undefined) {
-    return errorResult('pinch_zoom requires a scale value (e.g. 0.5 to zoom out, 2.0 to zoom in).');
+    return errorResult(
+      'pinch_zoom requires a scale value (e.g. 0.5 to zoom out, 2.0 to zoom in).'
+    );
   }
   const scale = args.scale;
   const velocity = args.velocity ?? DEFAULT_VELOCITY;
@@ -112,6 +114,8 @@ export async function handlePinchZoom(
       `Successfully pinched ${direction} (scale=${scale}) on ${target}.`
     );
   } catch (err) {
-    return errorResult(`Failed to perform pinch_zoom. ${toolErrorMessage(err)}`);
+    return errorResult(
+      `Failed to perform pinch_zoom. ${toolErrorMessage(err)}`
+    );
   }
 }
