@@ -131,7 +131,9 @@ describe('appium_session tool', () => {
     test('returns error when sessionId is missing', async () => {
       const tool = await getToolExecute();
       const result = await tool.execute({ action: 'select' }, undefined);
-      expect(result.content[0].text).toBe('sessionId is required for select');
+      expect(result.content[0].text).toBe(
+        'sessionId is required for select action'
+      );
     });
 
     test('returns error when session is not found', async () => {
@@ -186,7 +188,9 @@ describe('appium_session tool', () => {
     test('returns error when platform is missing', async () => {
       const tool = await getToolExecute();
       const result = await tool.execute({ action: 'create' }, undefined);
-      expect(result.content[0].text).toBe('platform is required for create');
+      expect(result.content[0].text).toBe(
+        'platform is required for create action'
+      );
     });
   });
 });
