@@ -60,14 +60,7 @@ async function scrollOnce(
     await execute(driver, 'mobile: scroll', { direction });
     return;
   }
-  // Android: prefer UiScrollable (native, reliable); fall back to W3C scroll.
-  const method = direction === 'up' ? 'scrollBackward' : 'scrollForward';
-  const selector = `new UiScrollable(new UiSelector().scrollable(true)).${method}()`;
-  try {
-    await driver.findElement('-android uiautomator', selector);
-  } catch {
-    await performW3CScroll(driver, direction);
-  }
+  await performW3CScroll(driver, direction);
 }
 
 export async function handleScrollToElement(
