@@ -294,7 +294,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | Tool              | Description                                                              |
 | ----------------- | ------------------------------------------------------------------------ |
 | `select_device`   | **REQUIRED FIRST**: Discover available devices and select one. Auto-selects if only one device found |
-| `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only) |
+| `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only). Set `APPIUM_MCP_WDA_APP_PATH` to skip all downloads and use a local `.app` bundle instead. |
 
 ### Session Management
 
