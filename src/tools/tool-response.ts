@@ -17,7 +17,7 @@ export function toolErrorMessage(err: unknown): string {
 export function readWebElementId(
   element: Record<string, unknown>
 ): string | undefined {
-  const id = element[W3C_ELEMENT_ID] ?? element['ELEMENT'];
+  const id = element[W3C_ELEMENT_ID] ?? element.ELEMENT;
   return typeof id === 'string' ? id : undefined;
 }
 
