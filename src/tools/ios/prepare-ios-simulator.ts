@@ -65,29 +65,32 @@ async function cleanupFile(filePath: string): Promise<void> {
 
 // ── WDA download helpers ──
 
+// Resolves the latest WDA version via GitHub's release permalink instead of the REST API, avoiding the 60/hr
+// unauthenticated API limit. Note: still subject to general GitHub rate limiting and redirect behavior.
 async function getLatestWDAVersionFromGitHub(): Promise<string> {
-  const response = await fetch(
-    'https://api.github.com/repos/appium/WebDriverAgent/releases/latest',
-    {
-      headers: {
-        'User-Agent': 'mcp-appium',
-        Accept: 'application/vnd.github.v3+json',
-      },
-    }
-  );
+  const permalink = 'https://github.com/appium/WebDriverAgent/releases/latest';
+  const response = await fetch(permalink, {
+    method: 'HEAD',
+    redirect: 'manual',
+    headers: { 'User-Agent': 'mcp-appium' },
+  });
 
-  if (!response.ok) {
+  const location = response.headers.get('location');
+  if (!location) {
     throw new Error(
-      `Failed to fetch WDA version: ${response.status} ${response.statusText}`
+      `Failed to resolve latest WDA version (${response.status} ${response.statusText}): no redirect from ${permalink}`
     );
   }
 
-  const release = (await response.json()) as { tag_name?: string };
-  if (release.tag_name) {
-    return release.tag_name.replace(/^v/, '');
+  // Expected format: https://github.com/appium/WebDriverAgent/releases/tag/v<version>
+  const match = location.match(/\/releases\/tag\/v?([^/]+)\/?$/);
+  if (!match) {
+    throw new Error(
+      `Failed to parse WDA version from redirect location: ${location}`
+    );
   }
 
-  throw new Error('No tag_name found in release data');
+  return match[1];
 }
 
 async function downloadFile(url: string, destPath: string): Promise<void> {
@@ -220,7 +223,36 @@ async function getWDAState(simulatorUdid: string): Promise<WDAState> {
 async function resolveWdaAppPath(
   forceRefreshWda: boolean,
   platform: 'ios' | 'tvos' = 'ios'
-): Promise<{ wdaAppPath: string; version: string; downloaded: boolean }> {
+): Promise<{
+  wdaAppPath: string;
+  version: string;
+  source: 'env' | 'cache' | 'download';
+}> {
+  // Provide a way to override the WDA app path via an env variable (useful in environments where external downloads are blocked)
+  const envAppPath = process.env.APPIUM_MCP_WDA_APP_PATH;
+  if (envAppPath) {
+    if (!envAppPath.endsWith('.app')) {
+      throw new Error(
+        `APPIUM_MCP_WDA_APP_PATH must point to a .app bundle, got: ${envAppPath}`
+      );
+    }
+    if (!(await fileExists(envAppPath))) {
+      throw new Error(
+        `APPIUM_MCP_WDA_APP_PATH points to a non-existent path: ${envAppPath}`
+      );
+    }
+    if (forceRefreshWda) {
+      log.warn(
+        'forceRefreshWda=true is ignored because APPIUM_MCP_WDA_APP_PATH is set'
+      );
+    }
+    return {
+      wdaAppPath: envAppPath,
+      version: 'user-provided',
+      source: 'env',
+    };
+  }
+
   const arch = os.arch();
   const archStr = arch === 'arm64' ? 'arm64' : 'x86_64';
   const artifactPrefix =
@@ -238,7 +270,7 @@ async function resolveWdaAppPath(
         return {
           wdaAppPath: cachedAppPath,
           version: cachedVersion,
-          downloaded: false,
+          source: 'cache',
         };
       }
     }
@@ -256,7 +288,7 @@ async function resolveWdaAppPath(
 
   // Check if this specific version is already extracted
   if (!forceRefreshWda && (await fileExists(wdaAppPath))) {
-    return { wdaAppPath, version: wdaVersion, downloaded: false };
+    return { wdaAppPath, version: wdaVersion, source: 'cache' };
   }
 
   // Clean any prior (possibly partial) extraction before downloading
@@ -283,7 +315,7 @@ async function resolveWdaAppPath(
     throw new Error('WebDriverAgent extraction failed - app bundle not found');
   }
 
-  return { wdaAppPath, version: wdaVersion, downloaded: true };
+  return { wdaAppPath, version: wdaVersion, source: 'download' };
 }
 
 async function installWdaStep(
@@ -390,15 +422,20 @@ async function prepareSimulator(
     wdaAppPath = resolved.wdaAppPath;
     result.wdaAppPath = wdaAppPath;
 
-    if (resolved.downloaded) {
+    if (resolved.source === 'download') {
       result.wda_download = {
         status: 'completed',
         detail: `WDA v${resolved.version} downloaded and extracted to ${wdaAppPath}`,
       };
-    } else {
+    } else if (resolved.source === 'cache') {
       result.wda_download = {
         status: 'skipped',
         detail: `WDA v${resolved.version} already cached at ${wdaAppPath}`,
+      };
+    } else {
+      result.wda_download = {
+        status: 'skipped',
+        detail: `Using WDA from APPIUM_MCP_WDA_APP_PATH: ${wdaAppPath}`,
       };
     }
   } catch (error: any) {
@@ -448,7 +485,7 @@ export default function prepareIosSimulator(server: FastMCP): void {
   server.addTool({
     name: 'prepare_ios_simulator',
     description:
-      'Prepare an iOS/tvOS simulator for Appium testing in a single call. Automatically boots the simulator, downloads prebuilt WDA (if not cached), and installs/launches WDA. Each step is skipped if already satisfied. Use skipWda=true to only boot without WDA.',
+      'Prepare an iOS/tvOS simulator for Appium testing in a single call. Automatically boots the simulator, downloads prebuilt WDA (if not cached), and installs/launches WDA. Each step is skipped if already satisfied. Use skipWda=true to only boot without WDA. Set APPIUM_MCP_WDA_APP_PATH to an absolute path to a pre-extracted WebDriverAgentRunner-Runner.app to skip download entirely (useful in environments where external downloads are blocked).',
     parameters: prepareIosSimulatorSchema,
     annotations: {
       readOnlyHint: false,
