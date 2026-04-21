@@ -420,7 +420,7 @@ import { performActions, elementClick as _elementClick } from '../../command.js'
  */
 export default function clickElement(server: FastMCP): void {
   server.addTool({
-    name: 'appium_click',
+    name: 'appium_gesture', // action=tap 分发：ai-element: UUID 路由到坐标点击
     parameters: { elementUUID: z.string() },
     
     execute: async (args, _context) => {
@@ -502,8 +502,9 @@ export default function clickElement(server: FastMCP): void {
 // 返回：elementUUID = "ai-element:500,552:42,526,958,578"
 
 {
-  "tool": "appium_click",
+  "tool": "appium_gesture",
   "arguments": {
+    "action": "tap",
     "elementUUID": "ai-element:500,552:42,526,958,578"
   }
 }
@@ -521,8 +522,10 @@ src/
 │   └── types.ts                  # 类型定义
 │
 ├── tools/interactions/
-│   ├── find.ts                   # 修改：添加 ai_instruction
-│   └── click.ts                  # 修改：使用W3C Actions API处理坐标
+│   └── find.ts                   # 修改：添加 ai_instruction
+│
+├── tools/gestures/handlers/
+│   └── tap.ts                    # ai-element: UUID 路由到 W3C 坐标点击
 │
 └── tests/benchmark_model/        # 现有（参考）
     ├── benchmark_model.ts
@@ -550,7 +553,7 @@ src/
 
 5. **坐标格式**：AI生成的elementUUID使用特殊格式 `ai-element:{x},{y}:{bbox}` 以区别于传统UUID
 
-6. **点击拦截**：`appium_click` 检查UUID前缀以路由到W3C Actions API点击或传统元素点击
+6. **点击拦截**：`appium_gesture`（action=tap）检查UUID前缀以路由到W3C Actions API点击或传统元素点击
 
 7. **模型选择**：基于基准测试，默认使用 `Qwen3-VL-235B-A22B-Instruct`（100%准确率，最快），但可通过环境变量配置
 
