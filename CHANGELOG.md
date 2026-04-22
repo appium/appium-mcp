@@ -1,3 +1,9 @@
+## [1.63.0](https://github.com/appium/appium-mcp/compare/v1.62.0...v1.63.0) (2026-04-22)
+
+### Features
+
+* **ios:** use GH permalink for WDA download; support `APPIUM_MCP_WDA_APP_PATH` override ([#281](https://github.com/appium/appium-mcp/issues/281)) ([c4c32bc](https://github.com/appium/appium-mcp/commit/c4c32bc210cdf16df2b426b9f65633d1c5085496))
+
 ## [1.62.0](https://github.com/appium/appium-mcp/compare/v1.61.0...v1.62.0) (2026-04-22)
 
 ### Features
