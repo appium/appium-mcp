@@ -57,10 +57,7 @@ export async function handleScrollToElement(
       : 'down';
 
   const maxScroll = args.maxScrollAttempts;
-  if (
-    args.scrollDistancePreset &&
-    args.scrollDistance !== undefined
-  ) {
+  if (args.scrollDistancePreset && args.scrollDistance !== undefined) {
     log.warn(
       'scroll_to_element: scrollDistancePreset is set; ignoring scrollDistance'
     );
