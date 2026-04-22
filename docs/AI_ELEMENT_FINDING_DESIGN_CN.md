@@ -72,7 +72,7 @@ AI_VISION_IMAGE_QUALITY=80      # JPEG质量 1-100（默认：80）
       "ANDROID_HOME": "/Users/xyz/Library/Android/sdk",
       "AI_VISION_MODEL": "Qwen3-VL-235B-A22B-Instruct",
       "AI_VISION_API_BASE_URL": "https://api.your-provider.com",
-      "AI_VISION_API_TOKEN": "your_api_key_here",
+      "AI_VISION_API_KEY": "your_api_key_here",
       "AI_VISION_COORD_TYPE": "normalized"
     }
   }

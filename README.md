@@ -134,6 +134,25 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 
 ## ⚙️ Configuration
 
+### Environment Variables
+
+> **Note:** Appium driver prerequisites (`ANDROID_HOME`, `JAVA_HOME`, UiAutomator2/XCUITest driver setup) are not listed here, they are system-level requirements. Once this MCP server is configured, ask your AI assistant to set up the environment for you using the built-in `appium_skills` tool.
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `CAPABILITIES_CONFIG` | Optional | Absolute path to a `capabilities.json` file with per-platform capability presets |
+| `SCREENSHOTS_DIR` | Optional | Directory where screenshots and screen recordings are saved. Defaults to the current working directory |
+| `NO_UI` | Optional | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode) |
+| `APPIUM_MCP_WDA_APP_PATH` | Optional | Absolute path to a pre-extracted `WebDriverAgentRunner-Runner.app` bundle. When set, `prepare_ios_simulator` skips all GitHub downloads and uses this bundle directly — useful in environments where external downloads are blocked |
+| `REMOTE_SERVER_URL_ALLOW_REGEX` | Optional | Regex pattern that remote Appium server URLs must match. Defaults to `^https?://` |
+| `AI_VISION_API_BASE_URL` | Required for AI Vision | Base URL of the OpenAI-compatible vision model API |
+| `AI_VISION_API_KEY` | Required for AI Vision | API key for the vision model provider |
+| `AI_VISION_MODEL` | Optional | Vision model name (default: `Qwen3-VL-235B-A22B-Instruct`) |
+| `AI_VISION_COORD_TYPE` | Optional | Coordinate type: `normalized` (default) or `absolute` |
+| `AI_VISION_IMAGE_MAX_WIDTH` | Optional | Max image width in pixels before compression (default: `1080`) |
+| `AI_VISION_IMAGE_QUALITY` | Optional | JPEG quality 1–100 for compressed screenshots sent to the vision API (default: `80`) |
+| `SENTENCE_TRANSFORMERS_MODEL` | Optional | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`) |
+
 ### Capabilities
 
 Create a `capabilities.json` file to define your device capabilities:
@@ -198,7 +217,7 @@ Configure AI-powered element finding using vision models. This feature allows yo
     "env": {
       "ANDROID_HOME": "/path/to/android/sdk",
       "AI_VISION_API_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "AI_VISION_API_TOKEN": "your_api_key_here"
+      "AI_VISION_API_KEY": "your_api_key_here"
     }
   }
 }
@@ -206,10 +225,7 @@ Configure AI-powered element finding using vision models. This feature allows yo
 
 **Optional Environment Variables:**
 
-- `AI_VISION_MODEL`: Model name (default: `Qwen3-VL-235B-A22B-Instruct`)
-- `AI_VISION_COORD_TYPE`: Coordinate type - `normalized` or `absolute` (default: `normalized`)
-- `AI_VISION_IMAGE_MAX_WIDTH`: Max image width for compression in pixels (default: `1080`)
-- `AI_VISION_IMAGE_QUALITY`: JPEG quality 1-100 (default: `80`)
+See the [Environment Variables](#environment-variables) table above for the full list of `AI_VISION_*` options and their defaults.
 
 **Supported Vision Model Providers:**
 
