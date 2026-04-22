@@ -136,10 +136,10 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 
 ### Environment Variables
 
+> **Note:** Appium driver prerequisites (`ANDROID_HOME`, `JAVA_HOME`, UiAutomator2/XCUITest driver setup) are not listed here, they are system-level requirements. Once this MCP server is configured, ask your AI assistant to set up the environment for you using the built-in `appium_skills` tool.
+
 | Variable | Required | Description |
 | -------- | -------- | ----------- |
-| `ANDROID_HOME` | Required for Android | Path to the Android SDK (e.g. `~/Library/Android/sdk`) |
-| `JAVA_HOME` | Required for Android | Path to the JDK used by Appium drivers (e.g. `/Applications/Android Studio.app/Contents/jbr/Contents/Home`). |
 | `CAPABILITIES_CONFIG` | Optional | Absolute path to a `capabilities.json` file with per-platform capability presets |
 | `SCREENSHOTS_DIR` | Optional | Directory where screenshots and screen recordings are saved. Defaults to the current working directory |
 | `NO_UI` | Optional | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode) |
