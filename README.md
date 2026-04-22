@@ -225,10 +225,7 @@ Configure AI-powered element finding using vision models. This feature allows yo
 
 **Optional Environment Variables:**
 
-- `AI_VISION_MODEL`: Model name (default: `Qwen3-VL-235B-A22B-Instruct`)
-- `AI_VISION_COORD_TYPE`: Coordinate type - `normalized` or `absolute` (default: `normalized`)
-- `AI_VISION_IMAGE_MAX_WIDTH`: Max image width for compression in pixels (default: `1080`)
-- `AI_VISION_IMAGE_QUALITY`: JPEG quality 1-100 (default: `80`)
+See the [Environment Variables](#environment-variables) table above for the full list of `AI_VISION_*` options and their defaults.
 
 **Supported Vision Model Providers:**
 
