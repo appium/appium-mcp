@@ -1,6 +1,7 @@
 import type { ContentResult } from 'fastmcp';
 import type { DriverInstance } from '../../../session-store.js';
 import { getPageSource } from '../../../command.js';
+import log from '../../../logger.js';
 import {
   errorResult,
   textResult,
@@ -56,6 +57,14 @@ export async function handleScrollToElement(
       : 'down';
 
   const maxScroll = args.maxScrollAttempts;
+  if (
+    args.scrollDistancePreset &&
+    args.scrollDistance !== undefined
+  ) {
+    log.warn(
+      'scroll_to_element: scrollDistancePreset is set; ignoring scrollDistance'
+    );
+  }
   const distance = resolveScrollDistance(args);
 
   try {

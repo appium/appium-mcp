@@ -71,7 +71,7 @@ export default function findElement(server: FastMCP): void {
 
 **Environment Variables Required for AI Mode**:
 - AI_VISION_API_BASE_URL: Vision model API endpoint (required)
-- AI_VISION_API_KEY: Vision API authentication key (required)
+- AI_VISION_API_KEY: API authentication key (required)
 - AI_VISION_MODEL: Model name (optional, defaults to Qwen3-VL-235B-A22B-Instruct)
 - AI_VISION_COORD_TYPE: Coordinate type (optional, defaults to normalized)
 
@@ -99,14 +99,12 @@ export default function findElement(server: FastMCP): void {
               'selector is required for traditional locator strategies'
             );
           }
-
-          const idKey = 'element-6066-11e4-a52e-4f735466cecf';
           const element = await driver.findElement(
             args.strategy,
             args.selector
           );
           return textResult(
-            `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${(element as Record<string, string>)[idKey]}`
+            `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${element['element-6066-11e4-a52e-4f735466cecf']}`
           );
         }
 
@@ -136,7 +134,7 @@ export default function findElement(server: FastMCP): void {
 
         const { width, height } = metadata;
 
-        // Step 3: Find element using AI (singleton to preserve LRU cache across tool calls)
+        // Step 3: Find element using AI (singleton to preserve LRU cache across calls)
         const finder = getAIVisionFinder();
         const result = await finder.findElement(
           screenshotBase64,
