@@ -134,6 +134,25 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 
 ## ⚙️ Configuration
 
+### Environment Variables
+
+> **Note:** Appium driver prerequisites (`ANDROID_HOME`, `JAVA_HOME`, UiAutomator2/XCUITest driver setup) are not listed here, they are system-level requirements. Once this MCP server is configured, ask your AI assistant to set up the environment for you using the built-in `appium_skills` tool.
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `CAPABILITIES_CONFIG` | Optional | Absolute path to a `capabilities.json` file with per-platform capability presets |
+| `SCREENSHOTS_DIR` | Optional | Directory where screenshots and screen recordings are saved. Defaults to the current working directory |
+| `NO_UI` | Optional | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode) |
+| `APPIUM_MCP_WDA_APP_PATH` | Optional | Absolute path to a pre-extracted `WebDriverAgentRunner-Runner.app` bundle. When set, `prepare_ios_simulator` skips all GitHub downloads and uses this bundle directly — useful in environments where external downloads are blocked |
+| `REMOTE_SERVER_URL_ALLOW_REGEX` | Optional | Regex pattern that remote Appium server URLs must match. Defaults to `^https?://` |
+| `AI_VISION_API_BASE_URL` | Required for AI Vision | Base URL of the OpenAI-compatible vision model API |
+| `AI_VISION_API_KEY` | Required for AI Vision | API key for the vision model provider |
+| `AI_VISION_MODEL` | Optional | Vision model name (default: `Qwen3-VL-235B-A22B-Instruct`) |
+| `AI_VISION_COORD_TYPE` | Optional | Coordinate type: `normalized` (default) or `absolute` |
+| `AI_VISION_IMAGE_MAX_WIDTH` | Optional | Max image width in pixels before compression (default: `1080`) |
+| `AI_VISION_IMAGE_QUALITY` | Optional | JPEG quality 1–100 for compressed screenshots sent to the vision API (default: `80`) |
+| `SENTENCE_TRANSFORMERS_MODEL` | Optional | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`) |
+
 ### Capabilities
 
 Create a `capabilities.json` file to define your device capabilities:
@@ -198,7 +217,7 @@ Configure AI-powered element finding using vision models. This feature allows yo
     "env": {
       "ANDROID_HOME": "/path/to/android/sdk",
       "AI_VISION_API_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "AI_VISION_API_TOKEN": "your_api_key_here"
+      "AI_VISION_API_KEY": "your_api_key_here"
     }
   }
 }
@@ -206,10 +225,7 @@ Configure AI-powered element finding using vision models. This feature allows yo
 
 **Optional Environment Variables:**
 
-- `AI_VISION_MODEL`: Model name (default: `Qwen3-VL-235B-A22B-Instruct`)
-- `AI_VISION_COORD_TYPE`: Coordinate type - `normalized` or `absolute` (default: `normalized`)
-- `AI_VISION_IMAGE_MAX_WIDTH`: Max image width for compression in pixels (default: `1080`)
-- `AI_VISION_IMAGE_QUALITY`: JPEG quality 1-100 (default: `80`)
+See the [Environment Variables](#environment-variables) table above for the full list of `AI_VISION_*` options and their defaults.
 
 **Supported Vision Model Providers:**
 
@@ -294,7 +310,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | Tool              | Description                                                              |
 | ----------------- | ------------------------------------------------------------------------ |
 | `select_device`   | **REQUIRED FIRST**: Discover available devices and select one. Auto-selects if only one device found |
-| `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only) |
+| `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only). Set `APPIUM_MCP_WDA_APP_PATH` to skip all downloads and use a local `.app` bundle instead. |
 
 ### Session Management
 
@@ -321,12 +337,9 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | Tool                  | Description                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------- |
 | `appium_find_element` | Find a specific element using traditional locator strategies (xpath, id, accessibility id, etc.) **OR** AI-powered natural language descriptions (e.g., "yellow search button at bottom"). Supports both traditional and AI modes. |
-| `appium_tap_by_coordinates` | Tap at specific screen coordinates (x, y). On iOS, coordinates are in points. On Android, coordinates are in device pixels. Use `appium_get_page_source` for accurate coordinates. |
-| `appium_click`        | Click on an element                                                                          |
-| `appium_double_tap`   | Perform double tap on an element                                                             |
-| `appium_long_press`   | Perform a long press (press and hold) gesture on an element                                  |
+| `appium_gesture`      | Perform a touch gesture. `action` = `tap`, `double_tap`, `long_press`, `scroll`, `swipe`, `pinch_zoom`, or `scroll_to_element`. Supports element UUIDs (including AI-found `ai-element:` UUIDs) and raw coordinates. For swipe, use `speed` = `slow` \| `normal` \| `fast` (fast for pull-to-refresh). |
 | `appium_drag_and_drop` | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates) |
-| `appium_pinch`        | Perform a pinch gesture to zoom in (scale > 1) or zoom out (scale < 1) on an element or the whole screen. Works on both iOS and Android. |
+| `appium_perform_actions` | Execute raw W3C Actions API sequences for custom multi-touch gestures (rotate, three-finger swipe, edge swipes, precise timing). Prefer `appium_gesture` for standard gestures. |
 | `appium_set_value`    | Enter text into an input field                                                               |
 | `appium_mobile_hide_keyboard` | Dismiss the on-screen keyboard (`mobile: hideKeyboard`) |
 | `appium_mobile_is_keyboard_shown` | Whether the on-screen keyboard is visible (`mobile: isKeyboardShown`) |
@@ -341,9 +354,6 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | -------------------------- | ------------------------------------------------------- |
 | `appium_screenshot`        | Take a screenshot and save as PNG. Optionally provide `elementUUID` to capture a specific element. |
 | `appium_get_window_size`   | Get the width and height of the device screen in pixels |
-| `appium_scroll`            | Scroll the screen vertically (up or down)               |
-| `appium_scroll_to_element` | Scroll until a specific element becomes visible         |
-| `appium_swipe`             | Swipe the screen in a direction (left, right, up, down) or between custom coordinates |
 | `appium_get_page_source`   | Get the page source (XML) from the current screen       |
 | `appium_orientation`   | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set). |
 | `appium_geolocation`       | Get, set, or reset the device GPS coordinates with `action` = `get`, `set`, or `reset`. For `set`, provide `latitude` and `longitude` (and optional `altitude` on Android). Not supported on Android emulators for `reset`. |

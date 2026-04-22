@@ -202,7 +202,7 @@ npm run inspect:built
       "console": "integratedTerminal",
       "env": {
         "AI_VISION_API_BASE_URL": "https://xxxxxxx" // 你需要替换为你的 API_BASE_URL,
-        "AI_VISION_API_TOKEN": "sk-xxxxx" // 你需要替换为你的 API_TOKEN,
+        "AI_VISION_API_KEY": "sk-xxxxx" // 你需要替换为你的 API_TOKEN,
         "AI_VISION_MODEL": "Qwen3-VL-235B-A22B-Instruct" // 你可以替换为任何你希望的VL模型名称，详见 benchmark 测试完成已支持的模型,
         "AI_VISION_COORD_TYPE": "normalized" // 不同模型的坐标类型不同，详见 benchmark 测试完成已支持的坐标类型,
         "AI_VISION_IMAGE_MAX_WIDTH": "1080",

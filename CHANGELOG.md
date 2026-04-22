@@ -1,3 +1,33 @@
+## [1.63.1](https://github.com/appium/appium-mcp/compare/v1.63.0...v1.63.1) (2026-04-22)
+
+### Miscellaneous Chores
+
+* **docs:** add env var section in configuration ([#285](https://github.com/appium/appium-mcp/issues/285)) ([fa6f483](https://github.com/appium/appium-mcp/commit/fa6f483682873bd6499ffd112504cc417337f298))
+
+## [1.63.0](https://github.com/appium/appium-mcp/compare/v1.62.0...v1.63.0) (2026-04-22)
+
+### Features
+
+* **ios:** use GH permalink for WDA download; support `APPIUM_MCP_WDA_APP_PATH` override ([#281](https://github.com/appium/appium-mcp/issues/281)) ([c4c32bc](https://github.com/appium/appium-mcp/commit/c4c32bc210cdf16df2b426b9f65633d1c5085496))
+
+## [1.62.0](https://github.com/appium/appium-mcp/compare/v1.61.0...v1.62.0) (2026-04-22)
+
+### Features
+
+* **app-management:** export permissions to server and add name parameter ([#270](https://github.com/appium/appium-mcp/issues/270)) ([a6d8e1e](https://github.com/appium/appium-mcp/commit/a6d8e1e95b3374cb33237168dfb2b5d761563acc))
+
+## [1.61.0](https://github.com/appium/appium-mcp/compare/v1.60.2...v1.61.0) (2026-04-21)
+
+### Features
+
+* consolidate gesture tools ([#278](https://github.com/appium/appium-mcp/issues/278)) ([17faac6](https://github.com/appium/appium-mcp/commit/17faac696cf4d096250fcc182d4d68af73ed1a92))
+
+## [1.60.2](https://github.com/appium/appium-mcp/compare/v1.60.1...v1.60.2) (2026-04-21)
+
+### Miscellaneous Chores
+
+* **docs:** remove outdated PR review checklist files ([#280](https://github.com/appium/appium-mcp/issues/280)) ([762fa05](https://github.com/appium/appium-mcp/commit/762fa056ffc31123fed180fac4d3cfe1d45f0744))
+
 ## [1.60.1](https://github.com/appium/appium-mcp/compare/v1.60.0...v1.60.1) (2026-04-19)
 
 ### Bug Fixes

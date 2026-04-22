@@ -26,16 +26,10 @@ import fileTransfer from './session/file-transfer.js';
 import driverSettings from './session/driver-settings.js';
 import prepareIosSimulator from './ios/prepare-ios-simulator.js';
 import generateTest from './test-generation/generate-tests.js';
-import scroll from './navigations/scroll.js';
-import scrollToElement from './navigations/scroll-to-element.js';
-import swipe from './navigations/swipe.js';
+import gesture from './gestures/gesture.js';
+import performActionsTool from './gestures/perform-actions.js';
+import dragAndDrop from './gestures/drag-and-drop.js';
 import findElement from './interactions/find.js';
-import tap from './interactions/tap.js';
-import clickElement from './interactions/click.js';
-import doubleTap from './interactions/double-tap.js';
-import longPress from './interactions/long-press.js';
-import dragAndDrop from './interactions/drag-and-drop.js';
-import pinch from './interactions/pinch.js';
 import pressKey from './interactions/press-key.js';
 import setValue from './interactions/set-value.js';
 import keyboard from './interactions/keyboard.js';
@@ -50,6 +44,7 @@ import screenshot from './interactions/screenshot.js';
 import getWindowSize from './interactions/window-size.js';
 import screenRecording from './interactions/screen-recording.js';
 import app from './app-management/app.js';
+import mobilePermissions from './app-management/permissions.js';
 import context from './context/context.js';
 
 type RegisteredTool = Parameters<FastMCP['addTool']>[0];
@@ -137,23 +132,17 @@ export default function registerTools(server: FastMCP): void {
   // iOS Setup
   prepareIosSimulator(server);
 
-  // Navigation
-  scroll(server);
-  scrollToElement(server);
-  swipe(server);
+  // Gestures (touch input)
+  gesture(server);
+  dragAndDrop(server);
+  performActionsTool(server);
 
   // Element Interactions
   // PRIORITY ORDER FOR ELEMENT SEARCH:
   // 1. getActiveElement    - Get currently focused element (efficient, instant)
   // 2. findElement         - Find specific element by strategy/selector
   // 3. generateLocators    - Generate all locators (heavyweight, for debugging only)
-  tap(server);
   findElement(server);
-  clickElement(server);
-  doubleTap(server);
-  longPress(server);
-  dragAndDrop(server);
-  pinch(server);
   pressKey(server);
   setValue(server);
   keyboard(server);
@@ -170,6 +159,7 @@ export default function registerTools(server: FastMCP): void {
 
   // App Management
   app(server);
+  mobilePermissions(server);
 
   // Context Management
   context(server);
