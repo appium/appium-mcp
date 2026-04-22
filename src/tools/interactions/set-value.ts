@@ -64,7 +64,7 @@ export default function setValue(server: FastMCP): void {
         return textResult(detail);
       } catch (err: unknown) {
         return errorResult(
-          `Failed to set value ${args.text} into element ${args.elementUUID}. err: ${toolErrorMessage(err)}`
+          `Failed to set value ${args.text} into element ${args.elementUUID ?? '(focus)'}. err: ${toolErrorMessage(err)}`
         );
       }
     },

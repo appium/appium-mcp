@@ -35,9 +35,7 @@ export default function getActiveElement(server: FastMCP): void {
 
       try {
         const element = await _getActiveElement(driver);
-        const elementId = readWebElementId(
-          element as unknown as Record<string, unknown>
-        );
+        const elementId = readWebElementId(element);
 
         if (!elementId) {
           throw new Error(

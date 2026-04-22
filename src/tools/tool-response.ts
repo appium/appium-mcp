@@ -12,12 +12,18 @@ export function toolErrorMessage(err: unknown): string {
 }
 
 /**
- * Reads the WebDriver element id from a findElement/activeElement payload.
+ * Reads the WebDriver element id from a findElement/activeElement payload,
+ * or returns the value when the driver already returned a plain id string.
  */
-export function readWebElementId(
-  element: Record<string, unknown>
-): string | undefined {
-  const id = element[W3C_ELEMENT_ID] ?? element.ELEMENT;
+export function readWebElementId(element: unknown): string | undefined {
+  if (typeof element === 'string') {
+    return element;
+  }
+  if (element === null || typeof element !== 'object') {
+    return undefined;
+  }
+  const rec = element as Record<string, unknown>;
+  const id = rec[W3C_ELEMENT_ID] ?? rec.ELEMENT;
   return typeof id === 'string' ? id : undefined;
 }
 
@@ -28,15 +34,21 @@ export function textResult(text: string): ContentResult {
   return { content: [{ type: 'text', text }] };
 }
 
+function sanitizePrimaryElementIdLine(elementId: string): string {
+  return elementId.replace(/[\r\n]+/g, '').trim();
+}
+
 /**
  * Canonical first line: machine-parseable `elementId:<value>`, then human-readable detail.
+ * Strips newlines from elementId so the first line stays one logical field for parsers.
  */
 export function textResultWithPrimaryElementId(
   elementId: string,
   detail: string
 ): ContentResult {
+  const safeId = sanitizePrimaryElementIdLine(elementId);
   const d = detail.replace(/^\s+/, '');
-  return textResult(`elementId:${elementId}\n${d}`);
+  return textResult(`elementId:${safeId}\n${d}`);
 }
 
 /**

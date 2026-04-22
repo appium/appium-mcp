@@ -102,9 +102,7 @@ export default function findElement(server: FastMCP): void {
             args.strategy,
             args.selector
           );
-          const elementId = readWebElementId(
-            element as unknown as Record<string, unknown>
-          );
+          const elementId = readWebElementId(element);
           if (!elementId) {
             throw new Error('Element was returned without a valid element ID');
           }

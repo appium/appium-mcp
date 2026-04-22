@@ -150,7 +150,7 @@ export async function handleDoubleTap(
       },
     ]);
     return textResult(`Successfully double tapped at (${x}, ${y}).`);
-  } catch (err) {
+  } catch (err: unknown) {
     return errorResult(
       `Failed to perform double_tap. ${toolErrorMessage(err)}`
     );
@@ -213,12 +213,8 @@ export async function handleLongPress(
         ],
       },
     ]);
-    if (args.elementUUID) {
-      return textResultWithPrimaryElementId(
-        args.elementUUID,
-        `Successfully long pressed at (${x}, ${y}) for ${duration}ms.`
-      );
-    }
+    // Coordinate-based W3C path (including element→coords fallback): do not emit a
+    // canonical elementId line — the gesture target is the point, not native element press.
     return textResult(
       `Successfully long pressed at (${x}, ${y}) for ${duration}ms.`
     );
