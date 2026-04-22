@@ -241,7 +241,7 @@ npm run inspect:built
   "console": "integratedTerminal",
   "env": {
     "AI_VISION_API_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    "AI_VISION_API_TOKEN": "sk-xxxxx",
+    "AI_VISION_API_KEY": "sk-xxxxx",
     "AI_VISION_MODEL": "Qwen3-VL-235B-A22B-Instruct",
     "AI_VISION_COORD_TYPE": "normalized",
     "AI_VISION_IMAGE_MAX_WIDTH": "1080",
