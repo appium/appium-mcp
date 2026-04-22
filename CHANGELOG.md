@@ -1,3 +1,9 @@
+## [1.63.1](https://github.com/appium/appium-mcp/compare/v1.63.0...v1.63.1) (2026-04-22)
+
+### Miscellaneous Chores
+
+* **docs:** add env var section in configuration ([#285](https://github.com/appium/appium-mcp/issues/285)) ([fa6f483](https://github.com/appium/appium-mcp/commit/fa6f483682873bd6499ffd112504cc417337f298))
+
 ## [1.63.0](https://github.com/appium/appium-mcp/compare/v1.62.0...v1.63.0) (2026-04-22)
 
 ### Features
