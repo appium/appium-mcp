@@ -213,8 +213,6 @@ export async function handleLongPress(
         ],
       },
     ]);
-    // Coordinate-based W3C path (including element→coords fallback): do not emit a
-    // canonical elementId line — the gesture target is the point, not native element press.
     return textResult(
       `Successfully long pressed at (${x}, ${y}) for ${duration}ms.`
     );

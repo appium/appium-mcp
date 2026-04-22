@@ -65,8 +65,7 @@ export type DriverOrError =
 
 /**
  * Resolves the driver for a tool call or returns a standardised error result.
- * Named resolveDriver (not requireDriver / getDriverOrThrow) to make clear
- * it never throws.
+ * Does not throw.
  */
 export function resolveDriver(sessionId?: string): DriverOrError {
   const driver = getDriver(sessionId);
