@@ -17,7 +17,7 @@ import {
   createSessionDashboardUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import { textResult } from '../tool-response.js';
+import { textResult, toolErrorMessage } from '../tool-response.js';
 import WebDriver from 'webdriver';
 
 // Define capabilities type
@@ -48,8 +48,8 @@ async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
     await access(configPath, constants.F_OK);
     const configContent = await readFile(configPath, 'utf8');
     return JSON.parse(configContent);
-  } catch (error) {
-    log.warn(`Failed to parse capabilities config: ${error}`);
+  } catch (error: unknown) {
+    log.warn(`Failed to parse capabilities config: ${toolErrorMessage(error)}`);
     return { android: {}, ios: {}, general: {} };
   }
 }

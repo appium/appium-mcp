@@ -2,6 +2,8 @@ import type { ContentResult } from 'fastmcp';
 import type { DriverInstance } from '../session-store.js';
 import { getDriver } from '../session-store.js';
 
+const W3C_ELEMENT_ID = 'element-6066-11e4-a52e-4f735466cecf';
+
 /**
  * Normalizes unknown errors into a message string for tool responses.
  */
@@ -10,10 +12,43 @@ export function toolErrorMessage(err: unknown): string {
 }
 
 /**
+ * Reads the WebDriver element id from a findElement/activeElement payload,
+ * or returns the value when the driver already returned a plain id string.
+ */
+export function readWebElementId(element: unknown): string | undefined {
+  if (typeof element === 'string') {
+    return element;
+  }
+  if (element === null || typeof element !== 'object') {
+    return undefined;
+  }
+  const rec = element as Record<string, unknown>;
+  const id = rec[W3C_ELEMENT_ID] ?? rec.ELEMENT;
+  return typeof id === 'string' ? id : undefined;
+}
+
+/**
  * Standard success ContentResult.
  */
 export function textResult(text: string): ContentResult {
   return { content: [{ type: 'text', text }] };
+}
+
+function sanitizePrimaryElementIdLine(elementId: string): string {
+  return elementId.replace(/[\r\n]+/g, '').trim();
+}
+
+/**
+ * Canonical first line: machine-parseable `elementId:<value>`, then human-readable detail.
+ * Strips newlines from elementId so the first line stays one logical field for parsers.
+ */
+export function textResultWithPrimaryElementId(
+  elementId: string,
+  detail: string
+): ContentResult {
+  const safeId = sanitizePrimaryElementIdLine(elementId);
+  const d = detail.replace(/^\s+/, '');
+  return textResult(`elementId:${safeId}\n${d}`);
 }
 
 /**
@@ -30,8 +65,7 @@ export type DriverOrError =
 
 /**
  * Resolves the driver for a tool call or returns a standardised error result.
- * Named resolveDriver (not requireDriver / getDriverOrThrow) to make clear
- * it never throws.
+ * Does not throw.
  */
 export function resolveDriver(sessionId?: string): DriverOrError {
   const driver = getDriver(sessionId);

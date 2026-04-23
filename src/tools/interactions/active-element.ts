@@ -3,9 +3,10 @@ import { z } from 'zod';
 import { getActiveElement as _getActiveElement } from '../../command.js';
 import {
   resolveDriver,
-  textResult,
+  textResultWithPrimaryElementId,
   errorResult,
   toolErrorMessage,
+  readWebElementId,
 } from '../tool-response.js';
 
 export default function getActiveElement(server: FastMCP): void {
@@ -34,9 +35,7 @@ export default function getActiveElement(server: FastMCP): void {
 
       try {
         const element = await _getActiveElement(driver);
-        const elementId =
-          element['element-6066-11e4-a52e-4f735466cecf'] ??
-          (element as unknown as { ELEMENT?: string }).ELEMENT;
+        const elementId = readWebElementId(element);
 
         if (!elementId) {
           throw new Error(
@@ -44,8 +43,9 @@ export default function getActiveElement(server: FastMCP): void {
           );
         }
 
-        return textResult(
-          `Successfully found an active element. Element id: ${elementId}`
+        return textResultWithPrimaryElementId(
+          elementId,
+          'Successfully found an active element.'
         );
       } catch (err: unknown) {
         return errorResult(

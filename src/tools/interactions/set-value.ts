@@ -5,6 +5,7 @@ import { setValue as _setValue } from '../../command.js';
 import {
   resolveDriver,
   textResult,
+  textResultWithPrimaryElementId,
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
@@ -56,12 +57,14 @@ export default function setValue(server: FastMCP): void {
           args.text,
           args.w3cActions
         );
-        return textResult(
-          `Successfully set value ${args.text} into element ${args.elementUUID}`
-        );
+        const detail = `Successfully set value ${args.text} into element ${args.elementUUID ?? '(focus)'}${args.w3cActions ? ' via W3C Actions' : ''}.`;
+        if (args.elementUUID) {
+          return textResultWithPrimaryElementId(args.elementUUID, detail);
+        }
+        return textResult(detail);
       } catch (err: unknown) {
         return errorResult(
-          `Failed to set value ${args.text} into element ${args.elementUUID}. err: ${toolErrorMessage(err)}`
+          `Failed to set value ${args.text} into element ${args.elementUUID ?? '(focus)'}. err: ${toolErrorMessage(err)}`
         );
       }
     },

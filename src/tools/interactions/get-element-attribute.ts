@@ -4,7 +4,7 @@ import { elementUUIDScheme } from '../../schema.js';
 import { getElementAttribute } from '../../command.js';
 import {
   resolveDriver,
-  textResult,
+  textResultWithPrimaryElementId,
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
@@ -48,11 +48,11 @@ export default function getElementAttributeTool(server: FastMCP): void {
           args.elementUUID,
           args.attribute
         );
-        return textResult(
+        const detail =
           value !== null
             ? `Attribute "${args.attribute}" of element ${args.elementUUID}: ${value}`
-            : `Attribute "${args.attribute}" is not set on element ${args.elementUUID}`
-        );
+            : `Attribute "${args.attribute}" is not set on element ${args.elementUUID}`;
+        return textResultWithPrimaryElementId(args.elementUUID, detail);
       } catch (err: unknown) {
         return errorResult(
           `Failed to get attribute "${args.attribute}" from element ${args.elementUUID}. err: ${toolErrorMessage(err)}`

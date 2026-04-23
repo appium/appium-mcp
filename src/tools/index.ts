@@ -12,7 +12,7 @@
  * See src/tools/README.md for tool organization.
  * See src/tools/metadata/README.md for YAML metadata approach.
  */
-import type { FastMCP } from 'fastmcp';
+import type { ContentResult, FastMCP } from 'fastmcp';
 import log from '../logger.js';
 import answerAppium from './documentation/answer-appium.js';
 import appiumSkills from './documentation/appium-skills.js';
@@ -48,6 +48,30 @@ import mobilePermissions from './app-management/permissions.js';
 import context from './context/context.js';
 
 type RegisteredTool = Parameters<FastMCP['addTool']>[0];
+
+function sessionIdFromToolArgs(args: unknown): string | undefined {
+  if (
+    args &&
+    typeof args === 'object' &&
+    'sessionId' in args &&
+    typeof (args as { sessionId?: unknown }).sessionId === 'string'
+  ) {
+    return (args as { sessionId: string }).sessionId;
+  }
+  return undefined;
+}
+
+function isErrorFromToolResult(result: unknown): boolean {
+  if (
+    result &&
+    typeof result === 'object' &&
+    'content' in result &&
+    Array.isArray((result as { content: unknown }).content)
+  ) {
+    return (result as ContentResult).isError === true;
+  }
+  return false;
+}
 
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
@@ -106,14 +130,29 @@ export default function registerTools(server: FastMCP): void {
         log.info(`[TOOL START] ${toolName}`, redactArgs(args));
         try {
           const result = await originalExecute(args, context);
-          const duration = Date.now() - start;
-          log.info(`[TOOL END] ${toolName} (${duration}ms)`);
+          const durationMs = Date.now() - start;
+          log.info(
+            JSON.stringify({
+              tool: toolName,
+              durationMs,
+              sessionId: sessionIdFromToolArgs(args),
+              isError: isErrorFromToolResult(result),
+            })
+          );
           return result;
         } catch (err: unknown) {
-          const duration = Date.now() - start;
+          const durationMs = Date.now() - start;
+          log.info(
+            JSON.stringify({
+              tool: toolName,
+              durationMs,
+              sessionId: sessionIdFromToolArgs(args),
+              isError: true,
+            })
+          );
           const msg =
             err instanceof Error ? err.stack || err.message : String(err);
-          log.error(`[TOOL ERROR] ${toolName} (${duration}ms): ${msg}`);
+          log.error(`[TOOL ERROR] ${toolName} (${durationMs}ms): ${msg}`);
           throw err;
         }
       },

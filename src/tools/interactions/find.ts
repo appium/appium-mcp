@@ -6,9 +6,10 @@ import { AIVisionFinder } from '../../ai-finder/vision-finder.js';
 import log from '../../logger.js';
 import {
   resolveDriver,
-  textResult,
+  textResultWithPrimaryElementId,
   errorResult,
   toolErrorMessage,
+  readWebElementId,
 } from '../tool-response.js';
 
 // Module-level singleton: ensures the LRU cache persists across tool calls.
@@ -101,8 +102,13 @@ export default function findElement(server: FastMCP): void {
             args.strategy,
             args.selector
           );
-          return textResult(
-            `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${element['element-6066-11e4-a52e-4f735466cecf']}`
+          const elementId = readWebElementId(element);
+          if (!elementId) {
+            throw new Error('Element was returned without a valid element ID');
+          }
+          return textResultWithPrimaryElementId(
+            elementId,
+            `Successfully found element ${args.selector} with strategy ${args.strategy}.`
           );
         }
 
@@ -146,13 +152,13 @@ export default function findElement(server: FastMCP): void {
         const elementUUID = `ai-element:${result.center.x},${result.center.y}:${result.bbox.join(',')}`;
 
         // Step 5: Build response text with optional annotated image path
-        let responseText = `Successfully found "${result.target}" at coordinates (${result.center.x}, ${result.center.y}) using AI vision. Element id ${elementUUID}`;
+        let detail = `Successfully found "${result.target}" at coordinates (${result.center.x}, ${result.center.y}) using AI vision.`;
 
         if (result.annotatedImagePath) {
-          responseText += `; vision image: ${result.annotatedImagePath}`;
+          detail += ` Vision image: ${result.annotatedImagePath}`;
         }
 
-        return textResult(responseText);
+        return textResultWithPrimaryElementId(elementUUID, detail);
       } catch (err: unknown) {
         const errorMessage = toolErrorMessage(err);
         log.error('Failed to find element:', errorMessage);

@@ -4,7 +4,7 @@ import { elementUUIDScheme } from '../../schema.js';
 import { getElementText } from '../../command.js';
 import {
   resolveDriver,
-  textResult,
+  textResultWithPrimaryElementId,
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
@@ -38,8 +38,9 @@ export default function getText(server: FastMCP): void {
 
       try {
         const text = await getElementText(driver, args.elementUUID);
-        return textResult(
-          `Successfully got text ${text} from element ${args.elementUUID}`
+        return textResultWithPrimaryElementId(
+          args.elementUUID,
+          `Successfully got text ${text} from element ${args.elementUUID}.`
         );
       } catch (err: unknown) {
         return errorResult(
