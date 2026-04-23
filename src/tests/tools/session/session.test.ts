@@ -1,4 +1,4 @@
-import { describe, test, expect, jest } from '@jest/globals';
+import { beforeEach, describe, test, expect, jest } from '@jest/globals';
 
 // ── module mocks ──────────────────────────────────────────────────────────────
 
@@ -28,13 +28,21 @@ jest.unstable_mockModule('appium-xcuitest-driver', () => ({
   XCUITestDriver: class {},
 }));
 jest.unstable_mockModule('webdriver', () => ({
-  default: { newSession: async () => ({ sessionId: 'remote-session-id' }) },
+  default: {
+    newSession: async () => ({ sessionId: 'remote-session-id' }),
+    attachToSession: async () => ({
+      sessionId: 'attached-session-id',
+      capabilities: { platformName: 'Android' },
+    }),
+  },
 }));
 
 jest.unstable_mockModule('../../../session-store', () => ({
   getDriver: jest.fn(),
+  getSessionOwnership: jest.fn(),
   getSessionId: jest.fn(),
   listSessions: jest.fn(),
+  detachSession: jest.fn(),
   setActiveSession: jest.fn(),
   safeDeleteSession: jest.fn(),
   setSession: jest.fn(),
@@ -52,25 +60,23 @@ jest.unstable_mockModule('../../../ui/mcp-ui-utils', () => ({
 
 const {
   getDriver,
+  getSessionOwnership,
   getSessionId,
   listSessions,
+  detachSession,
   setActiveSession,
   safeDeleteSession,
+  setSession,
 } = await import('../../../session-store.js');
 
 const mockGetDriver = getDriver as jest.MockedFunction<typeof getDriver>;
-const mockGetSessionId = getSessionId as jest.MockedFunction<
-  typeof getSessionId
->;
-const mockListSessions = listSessions as jest.MockedFunction<
-  typeof listSessions
->;
-const mockSetActiveSession = setActiveSession as jest.MockedFunction<
-  typeof setActiveSession
->;
-const mockSafeDeleteSession = safeDeleteSession as jest.MockedFunction<
-  typeof safeDeleteSession
->;
+const mockGetSessionOwnership = getSessionOwnership as jest.MockedFunction<typeof getSessionOwnership>;
+const mockGetSessionId = getSessionId as jest.MockedFunction<typeof getSessionId>;
+const mockListSessions = listSessions as jest.MockedFunction<typeof listSessions>;
+const mockDetachSession = detachSession as jest.MockedFunction<typeof detachSession>;
+const mockSetActiveSession = setActiveSession as jest.MockedFunction<typeof setActiveSession>;
+const mockSafeDeleteSession = safeDeleteSession as jest.MockedFunction<typeof safeDeleteSession>;
+const mockSetSession = setSession as jest.MockedFunction<typeof setSession>;
 
 const {
   buildAndroidCapabilities,
@@ -83,13 +89,14 @@ const {
 
 const mockServer = { addTool: jest.fn() } as any;
 
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 async function getToolExecute() {
-  const { default: session } =
-    await import('../../../tools/session/session.js');
+  const { default: session } = await import('../../../tools/session/session.js');
   session(mockServer);
-  return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-    -1
-  )?.[0];
+  return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(-1)?.[0];
 }
 
 // ── appium_session_management tool tests ─────────────────────────────────────────────────
@@ -110,6 +117,7 @@ describe('appium_session_management tool', () => {
         {
           sessionId: 'abc123',
           isActive: true,
+          ownership: 'owned',
           platform: 'Android',
           automationName: 'UiAutomator2',
           deviceName: 'Pixel 6',
@@ -124,6 +132,7 @@ describe('appium_session_management tool', () => {
       const result = await tool.execute({ action: 'list' }, undefined);
       expect(result.content[0].text).toContain('abc123');
       expect(result.content[0].text).toContain('active');
+      expect(result.content[0].text).toContain('ownership=owned');
     });
   });
 
@@ -165,14 +174,30 @@ describe('appium_session_management tool', () => {
   describe('action: delete', () => {
     test('deletes active session when no sessionId given', async () => {
       const tool = await getToolExecute();
+      mockGetSessionOwnership.mockReturnValue('owned');
       mockSafeDeleteSession.mockResolvedValue(true as any);
 
       const result = await tool.execute({ action: 'delete' }, undefined);
       expect(result.content[0].text).toContain('deleted successfully');
     });
 
+    test('rejects deleting an attached session', async () => {
+      const tool = await getToolExecute();
+      mockGetSessionOwnership.mockReturnValue('attached');
+
+      const result = await tool.execute(
+        { action: 'delete', sessionId: 'borrowed' },
+        undefined
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('action=detach');
+      expect(mockSafeDeleteSession).not.toHaveBeenCalled();
+    });
+
     test('reports not found when session does not exist', async () => {
       const tool = await getToolExecute();
+      mockGetSessionOwnership.mockReturnValue('owned');
       mockSafeDeleteSession.mockResolvedValue(false as any);
 
       const result = await tool.execute(
@@ -181,6 +206,92 @@ describe('appium_session_management tool', () => {
       );
       expect(result.content[0].text).toContain('ghost');
       expect(result.content[0].text).toContain('not found');
+    });
+  });
+
+  describe('action: attach', () => {
+    test('returns error when remoteServerUrl is missing', async () => {
+      const tool = await getToolExecute();
+
+      const result = await tool.execute(
+        { action: 'attach', sessionId: 'borrowed' },
+        undefined
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBe(
+        'remoteServerUrl is required for attach action'
+      );
+    });
+
+    test('returns error when sessionId is missing', async () => {
+      const tool = await getToolExecute();
+
+      const result = await tool.execute(
+        { action: 'attach', remoteServerUrl: 'http://localhost:4723' },
+        undefined
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBe(
+        'sessionId is required for attach action'
+      );
+    });
+
+    test('attaches an existing remote session as attached ownership', async () => {
+      const tool = await getToolExecute();
+      mockListSessions.mockReturnValue([
+        { sessionId: 'borrowed', isActive: true, ownership: 'attached' },
+      ] as any);
+
+      const result = await tool.execute(
+        {
+          action: 'attach',
+          remoteServerUrl: 'http://localhost:4723',
+          sessionId: 'borrowed',
+        },
+        undefined
+      );
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Attached to existing session');
+      expect(mockSetSession).toHaveBeenCalledWith(
+        expect.anything(),
+        'borrowed',
+        { platformName: 'Android' },
+        'attached'
+      );
+    });
+  });
+
+  describe('action: detach', () => {
+    test('rejects detaching an owned session', async () => {
+      const tool = await getToolExecute();
+      mockGetSessionOwnership.mockReturnValue('owned');
+
+      const result = await tool.execute(
+        { action: 'detach', sessionId: 'owned-session' },
+        undefined
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('action=delete');
+      expect(mockDetachSession).not.toHaveBeenCalled();
+    });
+
+    test('detaches an attached session', async () => {
+      const tool = await getToolExecute();
+      mockGetSessionOwnership.mockReturnValue('attached');
+      mockDetachSession.mockReturnValue(true);
+
+      const result = await tool.execute(
+        { action: 'detach', sessionId: 'borrowed' },
+        undefined
+      );
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('detached successfully');
+      expect(mockDetachSession).toHaveBeenCalledWith('borrowed');
     });
   });
 

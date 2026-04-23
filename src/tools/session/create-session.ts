@@ -349,7 +349,7 @@ export async function createSessionAction(args: {
         capabilities: finalCapabilities,
       });
       sessionId = client.sessionId;
-      setSession(client, client.sessionId, finalCapabilities);
+      setSession(client, client.sessionId, finalCapabilities, 'owned');
     } else {
       if (platform === 'general') {
         throw new Error(
@@ -359,7 +359,7 @@ export async function createSessionAction(args: {
       const driver = createDriverForPlatform(platform);
       log.info(`Sending session with ${driver.constructor.name}`);
       sessionId = await createDriverSession(driver, finalCapabilities);
-      setSession(driver, sessionId, finalCapabilities);
+      setSession(driver, sessionId, finalCapabilities, 'owned');
     }
 
     const sessionIdStr =

@@ -10,6 +10,7 @@ export type DriverInstance =
   | XCUITestDriver;
 export type NullableDriverInstance = DriverInstance | null;
 export type SessionCapabilities = Record<string, any>;
+export type SessionOwnership = 'owned' | 'attached';
 
 interface SessionMetadata {
   platform: string | null;
@@ -23,6 +24,7 @@ interface SessionInfo {
   sessionId: string;
   currentContext: string | null;
   isDeletingSession: boolean;
+  ownership: SessionOwnership;
   metadata: SessionMetadata;
 }
 
@@ -96,7 +98,8 @@ export function isXCUITestDriverSession(
 export function setSession(
   d: DriverInstance,
   id: string | null,
-  capabilities: SessionCapabilities = {}
+  capabilities: SessionCapabilities = {},
+  ownership: SessionOwnership = 'owned'
 ) {
   if (!id) {
     activeSessionId = null;
@@ -122,6 +125,7 @@ export function setSession(
     sessionId: id,
     currentContext: 'NATIVE_APP',
     isDeletingSession: false,
+    ownership,
     metadata,
   });
   activeSessionId = id;
@@ -143,6 +147,7 @@ export function listSessions(): Array<{
   sessionId: string;
   currentContext: string | null;
   isActive: boolean;
+  ownership: SessionOwnership;
   platform: string | null;
   automationName: string | null;
   deviceName: string | null;
@@ -152,11 +157,22 @@ export function listSessions(): Array<{
     sessionId: session.sessionId,
     currentContext: session.currentContext,
     isActive: session.sessionId === activeSessionId,
+    ownership: session.ownership,
     platform: session.metadata.platform,
     automationName: session.metadata.automationName,
     deviceName: session.metadata.deviceName,
     capabilities: session.metadata.capabilities,
   }));
+}
+
+export function getSessionOwnership(
+  sessionId?: string
+): SessionOwnership | null {
+  const id = sessionId ?? activeSessionId;
+  if (!id) {
+    return null;
+  }
+  return sessions.get(id)?.ownership ?? null;
 }
 
 export function setActiveSession(sessionId: string): boolean {
@@ -220,6 +236,25 @@ function selectNextActiveSessionId(deletedSessionId: string): string | null {
   return nextSession ?? null;
 }
 
+export function detachSession(sessionId?: string): boolean {
+  const id = sessionId ?? activeSessionId;
+  if (!id) {
+    log.info('No active session to detach.');
+    return false;
+  }
+
+  const session = sessions.get(id);
+  if (!session) {
+    log.info(`Session ${id} not found.`);
+    return false;
+  }
+
+  sessions.delete(id);
+  activeSessionId = selectNextActiveSessionId(id);
+  log.info(`Session ${id} detached successfully.`);
+  return true;
+}
+
 export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
   const id = sessionId ?? activeSessionId;
 
@@ -269,7 +304,9 @@ export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
 
 export async function safeDeleteAllSessions(): Promise<number> {
   let deletedCount = 0;
-  const sessionIds = Array.from(sessions.keys());
+  const sessionIds = Array.from(sessions.values())
+    .filter((session) => session.ownership === 'owned')
+    .map((session) => session.sessionId);
 
   for (const sessionId of sessionIds) {
     try {
