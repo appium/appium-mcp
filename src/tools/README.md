@@ -6,10 +6,13 @@ This directory contains all MCP tools available in MCP Appium.
 
 ### Session Management (`session/`)
 
-- `create-session.ts` - Create mobile automation sessions
-- `delete-session.ts` - Clean up sessions
-- `device-control.ts` - Device controls in one tool (`appium_mobile_device_control`; `action=lock|unlock|shake|open_notifications`)
+- `session.ts` - Unified session tool (`appium_session_management`; `action=create|delete|list|select`)
+  - `create-session.ts` - Capability builders and `createSessionAction` (used by `session.ts`)
+  - `delete-session.ts` - `deleteSessionAction` (used by `session.ts`)
+  - `list-sessions.ts` - `listSessionsAction` (used by `session.ts`)
+  - `select-session.ts` - `selectSessionAction` (used by `session.ts`)
 - `select-device.ts` - Discover devices and select one (auto-selects if only one found)
+- `device-control.ts` - Device controls in one tool (`appium_mobile_device_control`; `action=lock|unlock|shake|open_notifications`)
 - `file-transfer.ts` - Push/pull files on device (`appium_mobile_file` with `action=push|pull`)
 - `driver-settings.ts` - Read/update Appium driver session settings (`appium_get_settings`, `appium_update_settings`)
 

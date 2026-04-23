@@ -185,7 +185,7 @@ Set the `CAPABILITIES_CONFIG` environment variable to point to your configuratio
 
 #### Platform names and "general" mode
 
-- You can pass any platform name to `create_session`.
+- You can pass any platform name to `appium_session_management` (action=create).
 - If the platform is `ios` or `android`, the server builds capabilities for that platform (including selected device info when local).
 - If the platform is any other value, it is treated internally as `general`:
   - The session will use the provided `capabilities` exactly as given, or
@@ -288,7 +288,7 @@ The following tools return lightweight text-only responses when NO_UI is enabled
 - `appium_get_page_source` - Returns XML as text without interactive inspector UI
 - `generate_locators` - Returns locator data as JSON without interactive UI
 - `select_device` - Returns device list as text without picker UI
-- `create_session` - Returns session info as text without dashboard UI
+- `appium_session_management` (action=create) - Returns session info as text without dashboard UI
 - `appium_context` - Returns context list as text with `action=list` without switcher UI
 - `appium_app_lifecycle` (action=`list`) - Returns app list as JSON without interactive UI
 
@@ -316,13 +316,12 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 | Tool             | Description                                                                                                 |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
-| `delete_session` | Delete the current mobile session and clean up resources                                                    |
+| `appium_session_management` | Unified session management. `action=create`: start a new session for Android, iOS, or `general` capabilities (see 'general' mode above); forwards capabilities to a remote server via WebDriver `newSession` when `remoteServerUrl` is provided. `action=delete`: stop and clean up a session (defaults to active). `action=list`: show all active sessions. `action=select`: switch the active session by `sessionId`. |
 | `appium_mobile_device_control` | Control device behavior: lock/unlock the screen, shake the device, or open the notifications panel (`action`: `lock` \| `unlock` \| `shake` \| `open_notifications`). `shake` is iOS only; `open_notifications` is Android only; `seconds` is optional for timed lock. |
 | `appium_get_settings` | Read current Appium driver session settings (idle timeouts, animation-related flags, selector waits, etc.). Helps diagnose and tune flaky automation. |
 | `appium_update_settings` | Merge key-value updates into driver session settings (driver-specific keys; use `appium_get_settings` to inspect). |
 
-The remote server URL in `create_session` can be set via the `remoteServerUrl` parameter.
+The remote server URL in `appium_session_management` (action=create) can be set via the `remoteServerUrl` parameter.
 If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
 This allows you to restrict which remote servers can be used with your MCP Appium instance, preventing unauthorized connections.
 The default regex pattern allows any URL that starts with `http://` or `https://`.

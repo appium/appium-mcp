@@ -16,10 +16,7 @@ import type { FastMCP } from 'fastmcp';
 import log from '../logger.js';
 import answerAppium from './documentation/answer-appium.js';
 import appiumSkills from './documentation/appium-skills.js';
-import createSession from './session/create-session.js';
-import deleteSession from './session/delete-session.js';
-import listSessions from './session/list-sessions.js';
-import selectSession from './session/select-session.js';
+import session from './session/session.js';
 import generateLocators from './test-generation/locators.js';
 import selectDevice from './session/select-device.js';
 import mobileDeviceControl from './session/device-control.js';
@@ -125,10 +122,7 @@ export default function registerTools(server: FastMCP): void {
 
   // Session Management
   selectDevice(server);
-  createSession(server);
-  listSessions(server);
-  selectSession(server);
-  deleteSession(server);
+  session(server);
   mobileDeviceControl(server);
   geolocation(server);
   deviceInfo(server);

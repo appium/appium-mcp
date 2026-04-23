@@ -1,7 +1,3 @@
-/**
- * Tool to create a new mobile session (Android or iOS)
- */
-import { z } from 'zod';
 import { access, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { URL } from 'node:url';
@@ -288,150 +284,114 @@ async function createDriverSession(
  * // Register the tool
  * createSession(server);
  */
-export default function createSession(server: any): void {
-  server.addTool({
-    name: 'create_session',
-    description: `Create a new Appium session with Android, iOS or any device/driver Appium supports.
-      WORKFLOW FOR LOCAL SERVERS (no remoteServerUrl):
-      - Use select_device tool FIRST to discover devices and let the user choose platform and device
-      - Then call create_session with the selected platform
-      - For iOS simulators, call prepare_ios_simulator before create_session
-      - DO NOT assume or default to any platform
-      WORKFLOW FOR REMOTE SERVERS (remoteServerUrl provided):
-      - SKIP select_device tool entirely
-      - Infer the platform from the user's request (e.g., 'ios', 'android', or 'general')
-      - If platform is 'general', treat the provided capabilities as a pass-through W3C/Appium capability set (useful for non-Android/iOS drivers like Windows, macOS, or custom drivers)
-      - Infer device type from context when possible (e.g., 'simulator', 'real device')
-      - Call create_session directly with platform, remoteServerUrl, and any other capabilities from the user's request
-      - Example: User says 'start session with http://localhost:4723 for ios with iphone 17' → infer platform='ios' and call create_session with remoteServerUrl and platform parameters
-      `,
-    parameters: z.object({
-      platform: z.enum(['ios', 'android', 'general']).describe(
-        `REQUIRED: Platform to use.
-          - For local servers, this must match the platform the user explicitly selected via the select_device tool ('ios' or 'android').
-          - Use 'general' when you want the tool to treat capabilities as a pass-through Appium/W3C capability set (recommended for non-Android/iOS drivers such as Windows, macOS, or other custom Appium servers). 'general' will not apply any platform-specific defaults.
-          - If remoteServerUrl is provided, the assistant should confirm or infer the platform from the conversation; do not assume a default.`
-      ),
-      capabilities: z
-        .record(z.string(), z.any())
-        .optional()
-        .describe(
-          'Optional custom W3C format capabilities for the session. These are applied on top of defaults for ios/android or used as-is for platform="general". Common options include appium:app (app path), appium:deviceName, appium:platformVersion, appium:bundleId, appium:autoGrantPermissions, etc. Custom capabilities override default and config file settings.'
-        ),
-      remoteServerUrl: z
-        .string()
-        .optional()
-        .describe(
-          'Remote Appium server URL (e.g., http://localhost:4723 or http://192.168.1.100:4723). If not provided, uses local Appium server.'
-        ),
-    }),
-    annotations: {
-      readOnlyHint: false,
-      openWorldHint: false,
-    },
-    execute: async (args: any, _context: any): Promise<any> => {
-      try {
-        const {
-          platform,
-          capabilities: customCapabilities,
-          remoteServerUrl,
-        } = args;
+export async function createSessionAction(args: {
+  platform: 'ios' | 'android' | 'general';
+  capabilities?: Record<string, any>;
+  remoteServerUrl?: string;
+}): Promise<any> {
+  try {
+    const {
+      platform,
+      capabilities: customCapabilities,
+      remoteServerUrl,
+    } = args;
 
-        const configCapabilities = await loadCapabilitiesConfig();
-        let finalCapabilities;
-        if (platform === 'android') {
-          finalCapabilities = buildAndroidCapabilities(
-            configCapabilities.android,
-            customCapabilities,
-            !!remoteServerUrl
-          );
-        } else if (platform === 'ios') {
-          finalCapabilities = await buildIOSCapabilities(
-            configCapabilities.ios,
-            customCapabilities,
-            !!remoteServerUrl
-          );
-        } else {
-          finalCapabilities = {
-            ...configCapabilities.general,
-            ...customCapabilities,
-          };
-        }
+    const configCapabilities = await loadCapabilitiesConfig();
+    let finalCapabilities;
+    if (platform === 'android') {
+      finalCapabilities = buildAndroidCapabilities(
+        configCapabilities.android,
+        customCapabilities,
+        !!remoteServerUrl
+      );
+    } else if (platform === 'ios') {
+      finalCapabilities = await buildIOSCapabilities(
+        configCapabilities.ios,
+        customCapabilities,
+        !!remoteServerUrl
+      );
+    } else {
+      finalCapabilities = {
+        ...configCapabilities.general,
+        ...customCapabilities,
+      };
+    }
 
-        log.info(
-          `Creating new ${platform.toUpperCase()} session with capabilities:`,
-          JSON.stringify(finalCapabilities, null, 2)
+    log.info(
+      `Creating new ${platform.toUpperCase()} session with capabilities:`,
+      JSON.stringify(finalCapabilities, null, 2)
+    );
+    let sessionId;
+    if (remoteServerUrl) {
+      validateRemoteServerUrl(
+        remoteServerUrl,
+        process.env.REMOTE_SERVER_URL_ALLOW_REGEX
+      );
+
+      const remoteUrl = new URL(remoteServerUrl);
+      const protocol = remoteUrl.protocol.replace(':', '');
+      const port = getPortFromUrl(remoteUrl);
+      const user = remoteUrl.username
+        ? decodeURIComponent(remoteUrl.username)
+        : undefined;
+      const key = remoteUrl.password
+        ? decodeURIComponent(remoteUrl.password)
+        : undefined;
+      log.info(
+        `Sending capabilities to remote server: ${protocol}://${remoteUrl.hostname}:${port}${remoteUrl.pathname}`
+      );
+      const client = await WebDriver.newSession({
+        protocol,
+        hostname: remoteUrl.hostname,
+        port,
+        path: remoteUrl.pathname,
+        ...(user && key ? { user, key } : {}),
+        capabilities: finalCapabilities,
+      });
+      sessionId = client.sessionId;
+      setSession(client, client.sessionId, finalCapabilities);
+    } else {
+      if (platform === 'general') {
+        throw new Error(
+          'platform="general" requires a remoteServerUrl — local drivers are not supported for general sessions.'
         );
-        let sessionId;
-        if (remoteServerUrl) {
-          validateRemoteServerUrl(
-            remoteServerUrl,
-            process.env.REMOTE_SERVER_URL_ALLOW_REGEX
-          );
-
-          const remoteUrl = new URL(remoteServerUrl);
-          const protocol = remoteUrl.protocol.replace(':', '');
-          const port = getPortFromUrl(remoteUrl);
-          const user = remoteUrl.username
-            ? decodeURIComponent(remoteUrl.username)
-            : undefined;
-          const key = remoteUrl.password
-            ? decodeURIComponent(remoteUrl.password)
-            : undefined;
-          log.info(
-            `Sending capabilities to remote server: ${protocol}://${remoteUrl.hostname}:${port}${remoteUrl.pathname}`
-          );
-          const client = await WebDriver.newSession({
-            protocol,
-            hostname: remoteUrl.hostname,
-            port,
-            path: remoteUrl.pathname,
-            ...(user && key ? { user, key } : {}),
-            capabilities: finalCapabilities,
-          });
-          sessionId = client.sessionId;
-          setSession(client, client.sessionId, finalCapabilities);
-        } else {
-          const driver = createDriverForPlatform(platform);
-          log.info(`Sending session with ${driver.constructor.name}`);
-          sessionId = await createDriverSession(driver, finalCapabilities);
-          setSession(driver, sessionId, finalCapabilities);
-        }
-
-        // Safely convert sessionId to string for display
-        const sessionIdStr =
-          typeof sessionId === 'string'
-            ? sessionId
-            : String(sessionId || 'Unknown');
-
-        log.info(
-          `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}`
-        );
-
-        const totalSessions = listSessions().length;
-
-        const textResponse = textResult(
-          `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`
-        );
-
-        // Add interactive session dashboard UI
-        const uiResource = createUIResource(
-          `ui://appium-mcp/session-dashboard/${sessionIdStr}`,
-          createSessionDashboardUI({
-            sessionId: sessionIdStr,
-            platform: finalCapabilities.platformName,
-            automationName: finalCapabilities['appium:automationName'],
-            deviceName: finalCapabilities['appium:deviceName'],
-            platformVersion: finalCapabilities['appium:platformVersion'],
-            udid: finalCapabilities['appium:udid'],
-          })
-        );
-
-        return addUIResourceToResponse(textResponse, uiResource);
-      } catch (error: any) {
-        log.error('Error creating session:', error);
-        throw new Error(`Failed to create session: ${error.message}`);
       }
-    },
-  });
+      const driver = createDriverForPlatform(platform);
+      log.info(`Sending session with ${driver.constructor.name}`);
+      sessionId = await createDriverSession(driver, finalCapabilities);
+      setSession(driver, sessionId, finalCapabilities);
+    }
+
+    const sessionIdStr =
+      typeof sessionId === 'string'
+        ? sessionId
+        : String(sessionId || 'Unknown');
+
+    log.info(
+      `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}`
+    );
+
+    const totalSessions = listSessions().length;
+
+    const textResponse = textResult(
+      `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`
+    );
+
+    const uiResource = createUIResource(
+      `ui://appium-mcp/session-dashboard/${sessionIdStr}`,
+      createSessionDashboardUI({
+        sessionId: sessionIdStr,
+        platform: finalCapabilities.platformName,
+        automationName: finalCapabilities['appium:automationName'],
+        deviceName: finalCapabilities['appium:deviceName'],
+        platformVersion: finalCapabilities['appium:platformVersion'],
+        udid: finalCapabilities['appium:udid'],
+      })
+    );
+
+    return addUIResourceToResponse(textResponse, uiResource);
+  } catch (error: any) {
+    log.error('Error creating session:', error);
+    throw new Error(`Failed to create session: ${error.message}`);
+  }
 }
