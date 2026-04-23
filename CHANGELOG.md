@@ -1,3 +1,9 @@
+## [1.67.0](https://github.com/appium/appium-mcp/compare/v1.66.0...v1.67.0) (2026-04-23)
+
+### Features
+
+* scroll-until-found for appium_find_element ([#277](https://github.com/appium/appium-mcp/issues/277)) ([f69eb71](https://github.com/appium/appium-mcp/commit/f69eb71f959d550d01619ec79fc832aa3f81a4db))
+
 ## [1.66.0](https://github.com/appium/appium-mcp/compare/v1.65.0...v1.66.0) (2026-04-23)
 
 ### Features
