@@ -2,6 +2,13 @@ import { beforeEach, describe, test, expect, jest } from '@jest/globals';
 
 // ── module mocks ──────────────────────────────────────────────────────────────
 
+const mockAttachToSession = jest.fn<
+  (options: Record<string, unknown>) => Promise<any>
+>(async (_options: Record<string, unknown>) => ({
+  sessionId: 'attached-session-id',
+  capabilities: { platformName: 'Android' },
+}));
+
 jest.unstable_mockModule('../../../tools/session/select-device', () => ({
   getSelectedDevice: () => 'device-udid',
   getSelectedDeviceType: () => 'simulator',
@@ -30,10 +37,7 @@ jest.unstable_mockModule('appium-xcuitest-driver', () => ({
 jest.unstable_mockModule('webdriver', () => ({
   default: {
     newSession: async () => ({ sessionId: 'remote-session-id' }),
-    attachToSession: async () => ({
-      sessionId: 'attached-session-id',
-      capabilities: { platformName: 'Android' },
-    }),
+    attachToSession: mockAttachToSession,
   },
 }));
 
@@ -91,6 +95,11 @@ const mockServer = { addTool: jest.fn() } as any;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockGetSessionOwnership.mockReturnValue(null);
+  mockAttachToSession.mockResolvedValue({
+    sessionId: 'attached-session-id',
+    capabilities: { platformName: 'Android' },
+  });
 });
 
 async function getToolExecute() {
@@ -181,18 +190,18 @@ describe('appium_session_management tool', () => {
       expect(result.content[0].text).toContain('deleted successfully');
     });
 
-    test('rejects deleting an attached session', async () => {
+    test('allows deleting an attached session when explicitly requested', async () => {
       const tool = await getToolExecute();
-      mockGetSessionOwnership.mockReturnValue('attached');
+      mockSafeDeleteSession.mockResolvedValue(true as any);
 
       const result = await tool.execute(
         { action: 'delete', sessionId: 'borrowed' },
         undefined
       );
 
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('action=detach');
-      expect(mockSafeDeleteSession).not.toHaveBeenCalled();
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('deleted successfully');
+      expect(mockSafeDeleteSession).toHaveBeenCalledWith('borrowed');
     });
 
     test('reports not found when session does not exist', async () => {
@@ -238,11 +247,147 @@ describe('appium_session_management tool', () => {
       );
     });
 
-    test('attaches an existing remote session as attached ownership', async () => {
+    test('attaches an existing remote session and prefers getAppiumSessionCapabilities per field', async () => {
       const tool = await getToolExecute();
       mockListSessions.mockReturnValue([
         { sessionId: 'borrowed', isActive: true, ownership: 'attached' },
       ] as any);
+      mockAttachToSession.mockResolvedValue({
+        sessionId: 'attached-session-id',
+        getAppiumSessionCapabilities: async () => ({
+          capabilities: {
+            platformName: 'Android',
+            automationName: 'UiAutomator2',
+          },
+        }),
+        getSession: async () => ({
+          platformName: 'iOS',
+          automationName: 'XCUITest',
+          deviceName: 'Ignored Device',
+        }),
+      } as any);
+
+      const result = await tool.execute(
+        {
+          action: 'attach',
+          remoteServerUrl: 'http://localhost:4723',
+          sessionId: 'borrowed',
+          capabilities: {
+            platformName: 'Provided',
+            automationName: 'UiAutomator2',
+            deviceName: 'Pixel 9 Pro XL',
+            'appium:app': 'demo.apk',
+          },
+        },
+        undefined
+      );
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('Attached to existing session');
+      expect(mockAttachToSession).toHaveBeenCalledWith({
+        sessionId: 'borrowed',
+        protocol: 'http',
+        hostname: 'localhost',
+        port: 4723,
+        path: '/',
+        capabilities: {
+          platformName: 'Provided',
+          automationName: 'UiAutomator2',
+          deviceName: 'Pixel 9 Pro XL',
+          'appium:app': 'demo.apk',
+        },
+      });
+      expect(mockSetSession).toHaveBeenCalledWith(
+        expect.anything(),
+        'borrowed',
+        {
+          'appium:app': 'demo.apk',
+          platformName: 'Android',
+          'appium:automationName': 'UiAutomator2',
+          'appium:deviceName': 'Ignored Device',
+        },
+        'attached'
+      );
+    });
+
+    test('falls back to getSession when getAppiumSessionCapabilities is unavailable', async () => {
+      const tool = await getToolExecute();
+      mockAttachToSession.mockResolvedValue({
+        sessionId: 'attached-session-id',
+        getAppiumSessionCapabilities: async () => {
+          throw new Error('unsupported');
+        },
+        getSession: async () => ({
+          platformName: 'Android',
+          automationName: 'UiAutomator2',
+        }),
+      } as any);
+
+      const result = await tool.execute(
+        {
+          action: 'attach',
+          remoteServerUrl: 'http://localhost:4723',
+          sessionId: 'borrowed',
+          capabilities: {
+            deviceName: 'Pixel 9 Pro XL',
+            'appium:app': 'demo.apk',
+          },
+        },
+        undefined
+      );
+
+      expect(result.isError).toBeFalsy();
+      expect(mockSetSession).toHaveBeenCalledWith(
+        expect.anything(),
+        'borrowed',
+        {
+          'appium:app': 'demo.apk',
+          platformName: 'Android',
+          'appium:automationName': 'UiAutomator2',
+          'appium:deviceName': 'Pixel 9 Pro XL',
+        },
+        'attached'
+      );
+    });
+
+    test('falls back to provided capabilities when runtime capability methods are unavailable', async () => {
+      const tool = await getToolExecute();
+      mockAttachToSession.mockResolvedValue({
+        sessionId: 'attached-session-id',
+      } as any);
+
+      const result = await tool.execute(
+        {
+          action: 'attach',
+          remoteServerUrl: 'http://localhost:4723',
+          sessionId: 'borrowed',
+          capabilities: {
+            platformName: 'Android',
+            'appium:automationName': 'UiAutomator2',
+            deviceName: 'Pixel 9 Pro XL',
+            'appium:app': 'demo.apk',
+          },
+        },
+        undefined
+      );
+
+      expect(result.isError).toBeFalsy();
+      expect(mockSetSession).toHaveBeenCalledWith(
+        expect.anything(),
+        'borrowed',
+        {
+          'appium:app': 'demo.apk',
+          platformName: 'Android',
+          'appium:automationName': 'UiAutomator2',
+          'appium:deviceName': 'Pixel 9 Pro XL',
+        },
+        'attached'
+      );
+    });
+
+    test('detaches an existing attached session before re-attaching the same id', async () => {
+      const tool = await getToolExecute();
+      mockGetSessionOwnership.mockReturnValue('attached');
 
       const result = await tool.execute(
         {
@@ -254,13 +399,27 @@ describe('appium_session_management tool', () => {
       );
 
       expect(result.isError).toBeFalsy();
-      expect(result.content[0].text).toContain('Attached to existing session');
-      expect(mockSetSession).toHaveBeenCalledWith(
-        expect.anything(),
-        'borrowed',
-        { platformName: 'Android' },
-        'attached'
+      expect(mockDetachSession).toHaveBeenCalledWith('borrowed');
+      expect(mockAttachToSession).toHaveBeenCalled();
+    });
+
+    test('rejects attaching over an existing owned session', async () => {
+      const tool = await getToolExecute();
+      mockGetSessionOwnership.mockReturnValue('owned');
+
+      const result = await tool.execute(
+        {
+          action: 'attach',
+          remoteServerUrl: 'http://localhost:4723',
+          sessionId: 'owned-session',
+        },
+        undefined
       );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('action=select');
+      expect(mockDetachSession).not.toHaveBeenCalled();
+      expect(mockAttachToSession).not.toHaveBeenCalled();
     });
   });
 
@@ -282,7 +441,6 @@ describe('appium_session_management tool', () => {
     test('detaches an attached session', async () => {
       const tool = await getToolExecute();
       mockGetSessionOwnership.mockReturnValue('attached');
-      mockDetachSession.mockReturnValue(true);
 
       const result = await tool.execute(
         { action: 'detach', sessionId: 'borrowed' },
