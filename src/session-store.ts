@@ -106,13 +106,17 @@ export function setSession(
     return;
   }
 
+  // `getAppiumSessionCapabilities()` may return metadata fields without the
+  // `appium:` prefix, so accept both namespaced and non-namespaced variants.
   const metadata: SessionMetadata = {
     platform:
       (capabilities.platformName as string | undefined) ??
       (capabilities['appium:platformName'] as string | undefined) ??
       null,
     automationName:
-      (capabilities['appium:automationName'] as string | undefined) ?? null,
+      (capabilities['appium:automationName'] as string | undefined) ??
+      (capabilities.automationName as string | undefined) ??
+      null,
     deviceName:
       (capabilities['appium:deviceName'] as string | undefined) ??
       (capabilities.deviceName as string | undefined) ??
@@ -236,23 +240,26 @@ function selectNextActiveSessionId(deletedSessionId: string): string | null {
   return nextSession ?? null;
 }
 
-export function detachSession(sessionId?: string): boolean {
+export function detachSession(sessionId?: string): void {
   const id = sessionId ?? activeSessionId;
   if (!id) {
-    log.info('No active session to detach.');
-    return false;
+    throw new Error('No active session to detach.');
   }
 
   const session = sessions.get(id);
   if (!session) {
-    log.info(`Session ${id} not found.`);
-    return false;
+    throw new Error(`Session ${id} not found.`);
+  }
+
+  if (session.ownership !== 'attached') {
+    throw new Error(
+      `Session ${id} is owned by MCP Appium. Use action=delete to remove it.`
+    );
   }
 
   sessions.delete(id);
   activeSessionId = selectNextActiveSessionId(id);
   log.info(`Session ${id} detached successfully.`);
-  return true;
 }
 
 export async function safeDeleteSession(sessionId?: string): Promise<boolean> {

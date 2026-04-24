@@ -1,5 +1,5 @@
 import { detachSession, getSessionOwnership } from '../../session-store.js';
-import { errorResult, textResult } from '../tool-response.js';
+import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 
 export async function detachSessionAction(sessionId?: string): Promise<any> {
   const ownership = getSessionOwnership(sessionId);
@@ -16,11 +16,10 @@ export async function detachSessionAction(sessionId?: string): Promise<any> {
     );
   }
 
-  const detached = detachSession(sessionId);
-  if (!detached) {
-    return errorResult(
-      sessionId ? `Session ${sessionId} not found.` : 'No active session found.'
-    );
+  try {
+    detachSession(sessionId);
+  } catch (error: unknown) {
+    return errorResult(toolErrorMessage(error));
   }
 
   return textResult(

@@ -1,16 +1,7 @@
-import { getSessionOwnership, safeDeleteSession } from '../../session-store.js';
+import { safeDeleteSession } from '../../session-store.js';
 import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 
 export async function deleteSessionAction(sessionId?: string): Promise<any> {
-  const ownership = getSessionOwnership(sessionId);
-  if (ownership === 'attached') {
-    return errorResult(
-      sessionId
-        ? `Session ${sessionId} was attached from an external client. Use action=detach instead of action=delete.`
-        : 'Active session was attached from an external client. Use action=detach instead of action=delete.'
-    );
-  }
-
   try {
     const deleted = await safeDeleteSession(sessionId);
     if (deleted) {
