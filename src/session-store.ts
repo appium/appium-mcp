@@ -10,6 +10,7 @@ export type DriverInstance =
   | XCUITestDriver;
 export type NullableDriverInstance = DriverInstance | null;
 export type SessionCapabilities = Record<string, any>;
+export type SessionOwnership = 'owned' | 'attached';
 
 interface SessionMetadata {
   platform: string | null;
@@ -23,6 +24,7 @@ interface SessionInfo {
   sessionId: string;
   currentContext: string | null;
   isDeletingSession: boolean;
+  ownership: SessionOwnership;
   metadata: SessionMetadata;
 }
 
@@ -96,20 +98,25 @@ export function isXCUITestDriverSession(
 export function setSession(
   d: DriverInstance,
   id: string | null,
-  capabilities: SessionCapabilities = {}
+  capabilities: SessionCapabilities = {},
+  ownership: SessionOwnership = 'owned'
 ) {
   if (!id) {
     activeSessionId = null;
     return;
   }
 
+  // `getAppiumSessionCapabilities()` may return metadata fields without the
+  // `appium:` prefix, so accept both namespaced and non-namespaced variants.
   const metadata: SessionMetadata = {
     platform:
       (capabilities.platformName as string | undefined) ??
       (capabilities['appium:platformName'] as string | undefined) ??
       null,
     automationName:
-      (capabilities['appium:automationName'] as string | undefined) ?? null,
+      (capabilities['appium:automationName'] as string | undefined) ??
+      (capabilities.automationName as string | undefined) ??
+      null,
     deviceName:
       (capabilities['appium:deviceName'] as string | undefined) ??
       (capabilities.deviceName as string | undefined) ??
@@ -122,6 +129,7 @@ export function setSession(
     sessionId: id,
     currentContext: 'NATIVE_APP',
     isDeletingSession: false,
+    ownership,
     metadata,
   });
   activeSessionId = id;
@@ -143,6 +151,7 @@ export function listSessions(): Array<{
   sessionId: string;
   currentContext: string | null;
   isActive: boolean;
+  ownership: SessionOwnership;
   platform: string | null;
   automationName: string | null;
   deviceName: string | null;
@@ -152,11 +161,22 @@ export function listSessions(): Array<{
     sessionId: session.sessionId,
     currentContext: session.currentContext,
     isActive: session.sessionId === activeSessionId,
+    ownership: session.ownership,
     platform: session.metadata.platform,
     automationName: session.metadata.automationName,
     deviceName: session.metadata.deviceName,
     capabilities: session.metadata.capabilities,
   }));
+}
+
+export function getSessionOwnership(
+  sessionId?: string
+): SessionOwnership | null {
+  const id = sessionId ?? activeSessionId;
+  if (!id) {
+    return null;
+  }
+  return sessions.get(id)?.ownership ?? null;
 }
 
 export function setActiveSession(sessionId: string): boolean {
@@ -220,6 +240,28 @@ function selectNextActiveSessionId(deletedSessionId: string): string | null {
   return nextSession ?? null;
 }
 
+export function detachSession(sessionId?: string): void {
+  const id = sessionId ?? activeSessionId;
+  if (!id) {
+    throw new Error('No active session to detach.');
+  }
+
+  const session = sessions.get(id);
+  if (!session) {
+    throw new Error(`Session ${id} not found.`);
+  }
+
+  if (session.ownership !== 'attached') {
+    throw new Error(
+      `Session ${id} is owned by MCP Appium. Use action=delete to remove it.`
+    );
+  }
+
+  sessions.delete(id);
+  activeSessionId = selectNextActiveSessionId(id);
+  log.info(`Session ${id} detached successfully.`);
+}
+
 export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
   const id = sessionId ?? activeSessionId;
 
@@ -269,7 +311,9 @@ export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
 
 export async function safeDeleteAllSessions(): Promise<number> {
   let deletedCount = 0;
-  const sessionIds = Array.from(sessions.keys());
+  const sessionIds = Array.from(sessions.values())
+    .filter((session) => session.ownership === 'owned')
+    .map((session) => session.sessionId);
 
   for (const sessionId of sessionIds) {
     try {

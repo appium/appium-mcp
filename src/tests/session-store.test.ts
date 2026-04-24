@@ -24,11 +24,13 @@ await jest.unstable_mockModule('../logger', () => ({
 }));
 
 const {
+  detachSession,
   isRemoteDriverSession,
   isAndroidUiautomator2DriverSession,
   isXCUITestDriverSession,
   setSession,
   getDriver,
+  getSessionOwnership,
   getSessionId,
   listSessions,
   setActiveSession,
@@ -42,8 +44,7 @@ const {
   PLATFORM,
 } = await import('../session-store.js');
 
-const { AndroidUiautomator2Driver } =
-  await import('appium-uiautomator2-driver');
+const { AndroidUiautomator2Driver } = await import('appium-uiautomator2-driver');
 const { XCUITestDriver } = await import('appium-xcuitest-driver');
 
 // Shared mock driver factory with a controllable deleteSession.
@@ -54,6 +55,11 @@ function makeMockDriver(deleteSessionImpl?: () => Promise<void>) {
 afterEach(async () => {
   // Remove all sessions to reset shared module-level state between tests.
   await safeDeleteAllSessions();
+  for (const session of listSessions()) {
+    if (session.ownership === 'attached') {
+      detachSession(session.sessionId);
+    }
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -176,6 +182,21 @@ describe('setSession', () => {
     expect(session?.deviceName).toBe('Pixel 5');
   });
 
+  test('accepts non-prefixed metadata fields from attached session capabilities', () => {
+    const driver = makeMockDriver();
+    setSession(driver, 'session-meta-fallback', {
+      platformName: 'Android',
+      automationName: 'UiAutomator2',
+      deviceName: 'Pixel 9 Pro XL',
+    });
+    const session = listSessions().find(
+      (s) => s.sessionId === 'session-meta-fallback'
+    );
+    expect(session?.platform).toBe('Android');
+    expect(session?.automationName).toBe('UiAutomator2');
+    expect(session?.deviceName).toBe('Pixel 9 Pro XL');
+  });
+
   test('falls back to appium:platformName when platformName is absent', () => {
     const driver = makeMockDriver();
     setSession(driver, 'session-fallback', {
@@ -185,6 +206,14 @@ describe('setSession', () => {
       (s) => s.sessionId === 'session-fallback'
     );
     expect(session?.platform).toBe('iOS');
+  });
+
+  test('stores ownership and exposes it through list/get helpers', () => {
+    const driver = makeMockDriver();
+    setSession(driver, 'session-attached', {}, 'attached');
+
+    expect(getSessionOwnership('session-attached')).toBe('attached');
+    expect(listSessions()[0]?.ownership).toBe('attached');
   });
 });
 
@@ -464,6 +493,61 @@ describe('safeDeleteAllSessions', () => {
     const count = await safeDeleteAllSessions();
     // Only the good session should have been deleted.
     expect(count).toBe(1);
+  });
+
+  test('deletes only owned sessions', async () => {
+    let ownedDeleted = false;
+    setSession(
+      {
+        deleteSession: async () => {
+          ownedDeleted = true;
+        },
+      } as any,
+      'owned-session',
+      {},
+      'owned'
+    );
+    setSession(makeMockDriver(), 'attached-session', {}, 'attached');
+
+    const count = await safeDeleteAllSessions();
+
+    expect(count).toBe(1);
+    expect(ownedDeleted).toBe(true);
+    expect(getDriver('owned-session')).toBeNull();
+    expect(getDriver('attached-session')).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// detachSession / getSessionOwnership
+// ---------------------------------------------------------------------------
+describe('detachSession / getSessionOwnership', () => {
+  test('returns null ownership for a missing session', () => {
+    expect(getSessionOwnership('missing')).toBeNull();
+  });
+
+  test('does not detach an owned session', () => {
+    setSession(makeMockDriver(), 'owned-session', {}, 'owned');
+
+    expect(() => detachSession('owned-session')).toThrow(
+      'Session owned-session is owned by MCP Appium. Use action=delete to remove it.'
+    );
+    expect(getDriver('owned-session')).not.toBeNull();
+  });
+
+  test('detaches an attached session without deleting it', () => {
+    let deleted = false;
+    const driver = {
+      deleteSession: async () => {
+        deleted = true;
+      },
+    } as any;
+
+    setSession(driver, 'attached-session', {}, 'attached');
+
+    expect(() => detachSession('attached-session')).not.toThrow();
+    expect(getDriver('attached-session')).toBeNull();
+    expect(deleted).toBe(false);
   });
 });
 

@@ -1,12 +1,14 @@
 import type { FastMCP } from 'fastmcp';
 import { z } from 'zod';
+import { attachSessionAction } from './attach-session.js';
 import { createSessionAction } from './create-session.js';
 import { deleteSessionAction } from './delete-session.js';
+import { detachSessionAction } from './detach-session.js';
 import { listSessionsAction } from './list-sessions.js';
 import { selectSessionAction } from './select-session.js';
 import { errorResult, toolErrorMessage } from '../tool-response.js';
 
-const SESSION_ACTIONS = ['create', 'delete', 'list', 'select'] as const;
+const SESSION_ACTIONS = ['create', 'attach', 'detach', 'delete', 'list', 'select'] as const;
 
 const CREATE_SESSION_DESCRIPTION = `Create a new Appium session with Android, iOS or any device/driver Appium supports.
       WORKFLOW FOR LOCAL SERVERS (no remoteServerUrl):
@@ -28,8 +30,10 @@ const schema = z.object({
     .describe(
       'Action to perform. ' +
         `create: ${CREATE_SESSION_DESCRIPTION}` +
+        'attach: Attach MCP Appium to an existing remote Appium session without taking ownership of its lifecycle. Requires remoteServerUrl and sessionId.' +
+        'detach: Remove an attached Appium session from MCP Appium without deleting the real remote session. Defaults to the active session.' +
         'delete: Delete a mobile session and clean up resources. If sessionId is omitted, deletes the active session.' +
-        'list: List all active Appium sessions managed by this MCP server, including active flag and current context.' +
+        'list: List all active Appium sessions managed by this MCP server, including active flag, ownership, and current context.' +
         'select: Set an existing Appium session as the active session for subsequent tool calls (requires sessionId).'
     ),
   platform: z
@@ -52,13 +56,13 @@ const schema = z.object({
     .string()
     .optional()
     .describe(
-      'Remote Appium server URL for create (e.g. http://localhost:4723). Omit to use local server.'
+      'Remote Appium server URL for create or attach (e.g. http://localhost:4723). Omit to use local server for create.'
     ),
   sessionId: z
     .string()
     .optional()
     .describe(
-      'For delete: session to remove (defaults to active). For select: session to activate. Required for select.'
+      'For attach: existing session to connect to. For delete: session to remove (defaults to active). For detach: attached session to remove from MCP (defaults to active). For select: session to activate. Required for attach and select.'
     ),
 });
 
@@ -66,7 +70,7 @@ export default function session(server: FastMCP): void {
   server.addTool({
     name: 'appium_session_management',
     description:
-      'Manage Appium sessions. Use action=create to start a session, delete to stop one, list to see all active sessions, or select to switch the active session.',
+      'Manage Appium sessions. Use action=create to start a session, attach to connect to an existing one, detach to forget an attached session, delete to stop one, list to see all active sessions, or select to switch the active session.',
     parameters: schema,
     annotations: {
       destructiveHint: true,
@@ -84,6 +88,24 @@ export default function session(server: FastMCP): void {
             capabilities: args.capabilities,
             remoteServerUrl: args.remoteServerUrl,
           });
+        }
+
+        if (args.action === 'attach') {
+          if (!args.remoteServerUrl) {
+            return errorResult('remoteServerUrl is required for attach action');
+          }
+          if (!args.sessionId) {
+            return errorResult('sessionId is required for attach action');
+          }
+          return attachSessionAction({
+            remoteServerUrl: args.remoteServerUrl,
+            sessionId: args.sessionId,
+            capabilities: args.capabilities,
+          });
+        }
+
+        if (args.action === 'detach') {
+          return detachSessionAction(args.sessionId);
         }
 
         if (args.action === 'delete') {
