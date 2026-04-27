@@ -15,6 +15,7 @@ import type {
   IOSRecordingOptions,
   AndroidRecordingOptions,
 } from './tools/interactions/screen-recording.js';
+import log from './logger.js';
 
 /**
  * Execute a driver command.
@@ -247,8 +248,15 @@ export async function elementClick(
     )
   ) {
     const caps = getSessionInfo(driver.sessionId);
+    const settings = await getSessionDriverSettings(driver);
     // nativeWebTap === true means we should use the native tap (elementClick) even in webview context
-    if (caps?.metadata?.capabilities?.['appium:nativeWebTap'] !== true) {
+    if (
+      caps?.metadata?.capabilities?.['appium:nativeWebTap'] !== true ||
+      settings.nativeWebTap !== true
+    ) {
+      log.debug(
+        `Using arguments[0].click() to click element ${elementUUID} in webview context (nativeWebTap not enabled)`
+      );
       return await execute(
         driver,
         'arguments[0].click();',
