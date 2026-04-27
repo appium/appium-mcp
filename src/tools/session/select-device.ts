@@ -10,6 +10,7 @@ import {
   createDevicePickerUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
+import { textResult } from '../tool-response.js';
 
 // Store selected device globally
 let selectedDeviceUdid: string | null = null;
@@ -67,26 +68,21 @@ function selectAndroidDevice(deviceUdid: string, devices: any[]): void {
  * Format device selection response for Android
  */
 function formatAndroidSelectionResponse(deviceUdid: string): any {
-  return {
-    content: [
+  return textResult(
+    JSON.stringify(
       {
-        type: 'text',
-        text: JSON.stringify(
-          {
-            message: `✅ Device selected: ${deviceUdid}`,
-            instructions:
-              '🚀 You can now create a session using the create_session tool with:',
-            platform: 'android',
-            capabilities: {
-              'appium:udid': deviceUdid,
-            },
-          },
-          null,
-          2
-        ),
+        message: `✅ Device selected: ${deviceUdid}`,
+        instructions:
+          '🚀 You can now create a session using the create_session tool with:',
+        platform: 'android',
+        capabilities: {
+          'appium:udid': deviceUdid,
+        },
       },
-    ],
-  };
+      null,
+      2
+    )
+  );
 }
 
 /**
@@ -97,14 +93,9 @@ function formatAndroidListResponse(devices: any[]): any {
     .map((device, index) => `  ${index + 1}. ${device.udid}`)
     .join('\n');
 
-  const textResponse = {
-    content: [
-      {
-        type: 'text',
-        text: `📱 Available Android devices/emulators (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`,
-      },
-    ],
-  };
+  const textResponse = textResult(
+    `📱 Available Android devices/emulators (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`
+  );
 
   // Add interactive UI picker
   const uiResource = createUIResource(
@@ -179,26 +170,21 @@ function formatIOSSelectionResponse(
   deviceName: string,
   deviceUdid: string
 ): any {
-  return {
-    content: [
+  return textResult(
+    JSON.stringify(
       {
-        type: 'text',
-        text: JSON.stringify(
-          {
-            message: `✅ Device selected: ${deviceName} (${deviceUdid})`,
-            instructions:
-              '🚀 You can now call the setup_wda tool to setup WDA on the simulator.',
-            platform: 'ios',
-            capabilities: {
-              'appium:udid': deviceUdid,
-            },
-          },
-          null,
-          2
-        ),
+        message: `✅ Device selected: ${deviceName} (${deviceUdid})`,
+        instructions:
+          '🚀 You can now call the prepare_ios_simulator tool to boot and setup WDA on the simulator.',
+        platform: 'ios',
+        capabilities: {
+          'appium:udid': deviceUdid,
+        },
       },
-    ],
-  };
+      null,
+      2
+    )
+  );
 }
 
 /**
@@ -215,14 +201,9 @@ function formatIOSListResponse(
     )
     .join('\n');
 
-  const textResponse = {
-    content: [
-      {
-        type: 'text',
-        text: `📱 Available iOS ${iosDeviceType === 'simulator' ? 'simulators' : 'devices'} (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`,
-      },
-    ],
-  };
+  const textResponse = textResult(
+    `📱 Available iOS ${iosDeviceType === 'simulator' ? 'simulators' : 'devices'} (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`
+  );
 
   // Add interactive UI picker
   const uiResource = createUIResource(
@@ -244,6 +225,12 @@ async function handleAndroidDeviceSelection(deviceUdid?: string): Promise<any> {
     return formatAndroidSelectionResponse(deviceUdid);
   }
 
+  // Auto-select when only one device is available
+  if (devices.length === 1) {
+    selectAndroidDevice(devices[0].udid, devices);
+    return formatAndroidSelectionResponse(devices[0].udid);
+  }
+
   return formatAndroidListResponse(devices);
 }
 
@@ -254,6 +241,11 @@ async function handleIOSDeviceSelection(
   iosDeviceType: 'simulator' | 'real' | undefined,
   deviceUdid?: string
 ): Promise<any> {
+  const iosManager = IOSManager.getInstance();
+  if (!iosManager.isMac()) {
+    throw new Error('iOS testing is only available on macOS');
+  }
+
   validateIOSDeviceType(iosDeviceType);
 
   const devices = await getIOSDevices(iosDeviceType!);
@@ -263,43 +255,63 @@ async function handleIOSDeviceSelection(
     return formatIOSSelectionResponse(selectedDevice.name, deviceUdid);
   }
 
+  // Auto-select when only one device is available
+  if (devices.length === 1) {
+    const selectedDevice = selectIOSDevice(
+      devices[0].udid,
+      devices,
+      iosDeviceType!
+    );
+    return formatIOSSelectionResponse(selectedDevice.name, devices[0].udid);
+  }
+
   return formatIOSListResponse(devices, iosDeviceType!);
 }
 
 export default function selectDevice(server: any): void {
   server.addTool({
     name: 'select_device',
-    description: `Select a specific device from available LOCAL devices. For LOCAL Appium servers ONLY.
+    description: `Discover and select a device for LOCAL Appium servers ONLY.
       DO NOT use this tool for REMOTE Appium servers - remoteServerUrl indicates a remote server.
       WORKFLOW FOR LOCAL SERVERS:
-      - Use this tool ONLY when select_platform returns multiple devices
-      - For Android: Use before calling create_session if multiple devices are found
-      - For iOS: Use before calling boot_simulator or create_session if multiple simulators/devices are found
-      - Ask the user which device they want to use from the list provided
+      1. ASK THE USER which platform they want (Android or iOS) - do not assume
+      2. Call this tool with the chosen platform (and iosDeviceType for iOS)
+      3. If only one device is found, it is auto-selected - proceed to create_session (or prepare_ios_simulator for iOS simulators)
+      4. If multiple devices are found, ask the user which one they want, then call this tool again with deviceUdid
+      5. After selection, proceed to create_session (or prepare_ios_simulator for iOS simulators, then create_session)
       WORKFLOW FOR REMOTE SERVERS:
       - SKIP this tool entirely
       - Device selection should be handled via capabilities in create_session (e.g., appium:deviceName, appium:udid)
       - The remote Appium server is already configured for specific device(s)
       `,
-    parameters: z.object({
-      platform: z
-        .enum(['ios', 'android'])
-        .describe(
-          'The platform to list devices for (must match previously selected platform)'
-        ),
-      iosDeviceType: z
-        .enum(['simulator', 'real'])
-        .optional()
-        .describe(
-          "For iOS only: Specify whether to use 'simulator' or 'real' device. REQUIRED when platform is 'ios'."
-        ),
-      deviceUdid: z
-        .string()
-        .optional()
-        .describe(
-          'The UDID of the device selected by the user. If not provided, this tool will list available devices for the user to choose from.'
-        ),
-    }),
+    parameters: z
+      .object({
+        platform: z
+          .enum(['ios', 'android'])
+          .describe(
+            'The platform to list devices for (must match previously selected platform)'
+          ),
+        iosDeviceType: z
+          .enum(['simulator', 'real'])
+          .optional()
+          .describe(
+            "For iOS only: Specify whether to use 'simulator' or 'real' device. REQUIRED when platform is 'ios'."
+          ),
+        deviceUdid: z
+          .string()
+          .optional()
+          .describe(
+            'The UDID of the device selected by the user. If not provided, this tool will list available devices for the user to choose from.'
+          ),
+      })
+      .refine(
+        (data) => data.platform !== 'ios' || data.iosDeviceType !== undefined,
+        {
+          message:
+            "iosDeviceType ('simulator' or 'real') is required when platform is 'ios'",
+          path: ['iosDeviceType'],
+        }
+      ),
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,

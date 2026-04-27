@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.36.0",
+  "version": "1.67.0",
   "type": "module",
   "repository": {
     "type": "git",
@@ -39,7 +39,7 @@
     "version": "npm run sync-version",
     "zip-assets": "node scripts/zip-assets.mjs zip",
     "unzip-assets": "node scripts/zip-assets.mjs unzip",
-    "postinstall": "node scripts/zip-assets.mjs unzip"
+    "preinstall": "node scripts/zip-assets.mjs unzip"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -55,10 +55,9 @@
     "appium-adb": "^14.1.8",
     "appium-ios-device": "^3.1.0",
     "appium-uiautomator2-driver": "^7.0.0",
-    "appium-xcuitest-driver": "^10.23.1",
-    "axios": "^1.7.9",
+    "appium-xcuitest-driver": "^11.0.0",
     "fast-xml-parser": "^5.2.3",
-    "fastmcp": "^3.33.0",
+    "fastmcp": "^4.0.0",
     "langchain": "^1.1.6",
     "lodash": "^4.17.21",
     "node-simctl": "^8.0.4",
@@ -81,9 +80,8 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.5.3",
     "semantic-release": "^25.0.2",
-    "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.2"
   },
   "files": [
     "scripts",

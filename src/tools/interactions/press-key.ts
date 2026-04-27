@@ -1,7 +1,6 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import {
-  getDriver,
   getPlatformName,
   isAndroidUiautomator2DriverSession,
   isXCUITestDriverSession,
@@ -11,6 +10,12 @@ import {
 import { execute } from '../../command.js';
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const ANDROID_KEYCODE_MAP: Record<string, number> = {
   BACK: 4,
@@ -36,6 +41,10 @@ const IOS_BUTTONS_DESCRIPTION = Object.keys(IOS_BUTTON_MAP).join(', ');
 export default function pressKey(server: FastMCP): void {
   const pressKeySchema = z
     .object({
+      sessionId: z
+        .string()
+        .optional()
+        .describe('Session ID to target. If omitted, uses the active session.'),
       key: z
         .enum([
           'BACK',
@@ -87,10 +96,11 @@ export default function pressKey(server: FastMCP): void {
       args: z.infer<typeof pressKeySchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       const platform = getPlatformName(driver);
       const { key, keyCode, isLongPress } = args;
@@ -148,32 +158,15 @@ export default function pressKey(server: FastMCP): void {
           );
         }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text:
-                platform === PLATFORM.android
-                  ? `Successfully pressed key${
-                      key ? ` "${key}"` : ''
-                    } on Android.`
-                  : `Successfully pressed key${
-                      key ? ` "${key}"` : ''
-                    } on iOS/tvOS.`,
-            },
-          ],
-        };
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to press key${
-                key ? ` "${key}"` : ''
-              }. err: ${err.toString()}`,
-            },
-          ],
-        };
+        return textResult(
+          platform === PLATFORM.android
+            ? `Successfully pressed key${key ? ` "${key}"` : ''} on Android.`
+            : `Successfully pressed key${key ? ` "${key}"` : ''} on iOS/tvOS.`
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to press key${key ? ` "${key}"` : ''}. err: ${toolErrorMessage(err)}`
+        );
       }
     },
   });

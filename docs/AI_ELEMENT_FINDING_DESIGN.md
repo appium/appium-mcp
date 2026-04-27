@@ -72,7 +72,7 @@ AI_VISION_IMAGE_QUALITY=80      # JPEG quality 1-100 (default: 80)
       "ANDROID_HOME": "/Users/xyz/Library/Android/sdk",
       "AI_VISION_MODEL": "Qwen3-VL-235B-A22B-Instruct",
       "AI_VISION_API_BASE_URL": "https://api.your-provider.com",
-      "AI_VISION_API_TOKEN": "your_api_key_here",
+      "AI_VISION_API_KEY": "your_api_key_here",
       "AI_VISION_COORD_TYPE": "normalized"
     }
   }
@@ -423,7 +423,7 @@ import { performActions, elementClick as _elementClick } from '../../command.js'
  */
 export default function clickElement(server: FastMCP): void {
   server.addTool({
-    name: 'appium_click',
+    name: 'appium_gesture', // action=tap dispatch routes ai-element: UUIDs to coordinate tap
     parameters: { elementUUID: z.string() },
     
     execute: async (args, _context) => {
@@ -505,8 +505,9 @@ export default function clickElement(server: FastMCP): void {
 // Returns: elementUUID = "ai-element:500,552:42,526,958,578"
 
 {
-  "tool": "appium_click",
+  "tool": "appium_gesture",
   "arguments": {
+    "action": "tap",
     "elementUUID": "ai-element:500,552:42,526,958,578"
   }
 }
@@ -524,8 +525,10 @@ src/
 │   └── types.ts                  # Type definitions
 │
 ├── tools/interactions/
-│   ├── find.ts                   # MODIFIED: Add ai_instruction
-│   └── click.ts                  # MODIFIED: W3C Actions API for coordinates
+│   └── find.ts                   # MODIFIED: Add ai_instruction
+│
+├── tools/gestures/handlers/
+│   └── tap.ts                    # Routes ai-element: UUIDs to W3C coordinate tap
 │
 └── tests/benchmark_model/        # EXISTING (reference)
     ├── benchmark_model.ts
@@ -553,7 +556,7 @@ src/
 
 5. **Coordinate Format**: AI-generated elementUUID uses special format `ai-element:{x},{y}:{bbox}` to distinguish from traditional UUIDs
 
-6. **Click Interception**: `appium_click` checks UUID prefix to route to W3C Actions API tap or traditional element click
+6. **Tap Interception**: `appium_gesture` (action=tap) checks UUID prefix to route to W3C Actions API tap or traditional element click
 
 7. **Model Selection**: Based on benchmark, defaults to `Qwen3-VL-235B-A22B-Instruct` (100% accuracy, fastest), but configurable via env
 

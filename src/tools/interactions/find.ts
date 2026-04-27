@@ -1,10 +1,16 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import { getScreenshot } from '../../command.js';
 import { imageUtil } from '@appium/support';
 import { AIVisionFinder } from '../../ai-finder/vision-finder.js';
 import log from '../../logger.js';
+import {
+  resolveDriver,
+  textResultWithPrimaryElementId,
+  errorResult,
+  toolErrorMessage,
+  readWebElementId,
+} from '../tool-response.js';
 
 // Module-level singleton: ensures the LRU cache persists across tool calls.
 // Creating a new AIVisionFinder() on every call would reset the cache each time.
@@ -43,6 +49,10 @@ export const findElementSchema = z.object({
     .describe(
       'Natural language instruction for AI-based element finding (required when strategy is ai_instruction)'
     ),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 export default function findElement(server: FastMCP): void {
@@ -64,7 +74,9 @@ export default function findElement(server: FastMCP): void {
 - AI_VISION_API_BASE_URL: Vision model API endpoint (required)
 - AI_VISION_API_KEY: API authentication key (required)
 - AI_VISION_MODEL: Model name (optional, defaults to Qwen3-VL-235B-A22B-Instruct)
-- AI_VISION_COORD_TYPE: Coordinate type (optional, defaults to normalized)`,
+- AI_VISION_COORD_TYPE: Coordinate type (optional, defaults to normalized)
+
+**Scrolling until an element appears**: use \`appium_gesture\` with \`action=scroll_to_element\` (same strategy + selector), not this tool.`,
     parameters: findElementSchema,
     annotations: {
       readOnlyHint: true,
@@ -74,10 +86,11 @@ export default function findElement(server: FastMCP): void {
       args: z.infer<typeof findElementSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
-      if (!driver) {
-        throw new Error('No driver found');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         // Route 1: Traditional locator strategy
@@ -91,14 +104,14 @@ export default function findElement(server: FastMCP): void {
             args.strategy,
             args.selector
           );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Successfully found element ${args.selector} with strategy ${args.strategy}. Element id ${element['element-6066-11e4-a52e-4f735466cecf']}`,
-              },
-            ],
-          };
+          const elementId = readWebElementId(element);
+          if (!elementId) {
+            throw new Error('Element was returned without a valid element ID');
+          }
+          return textResultWithPrimaryElementId(
+            elementId,
+            `Successfully found element ${args.selector} with strategy ${args.strategy}.`
+          );
         }
 
         // Route 2: AI vision-based finding
@@ -141,31 +154,17 @@ export default function findElement(server: FastMCP): void {
         const elementUUID = `ai-element:${result.center.x},${result.center.y}:${result.bbox.join(',')}`;
 
         // Step 5: Build response text with optional annotated image path
-        let responseText = `Successfully found "${result.target}" at coordinates (${result.center.x}, ${result.center.y}) using AI vision. Element id ${elementUUID}`;
+        let detail = `Successfully found "${result.target}" at coordinates (${result.center.x}, ${result.center.y}) using AI vision.`;
 
         if (result.annotatedImagePath) {
-          responseText += `; vision image: ${result.annotatedImagePath}`;
+          detail += ` Vision image: ${result.annotatedImagePath}`;
         }
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: responseText,
-            },
-          ],
-        };
-      } catch (err: any) {
-        const errorMessage = err.message || err.toString();
+        return textResultWithPrimaryElementId(elementUUID, detail);
+      } catch (err: unknown) {
+        const errorMessage = toolErrorMessage(err);
         log.error('Failed to find element:', errorMessage);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to find element. Error: ${errorMessage}`,
-            },
-          ],
-        };
+        return errorResult(`Failed to find element. Error: ${errorMessage}`);
       }
     },
   });

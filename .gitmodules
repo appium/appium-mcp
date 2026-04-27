@@ -7,3 +7,6 @@
 [submodule "src/resources/submodules/appium-xcuitest-driver"]
 	path = src/resources/submodules/appium-xcuitest-driver
 	url = https://github.com/appium/appium-xcuitest-driver.git
+[submodule "src/resources/submodules/appium-skills"]
+	path = src/resources/submodules/appium-skills
+	url = https://github.com/appium/skills.git

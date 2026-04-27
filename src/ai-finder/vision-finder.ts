@@ -6,7 +6,6 @@
  */
 
 import { imageUtil } from '@appium/support';
-import axios, { AxiosError } from 'axios';
 import crypto from 'node:crypto';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -304,55 +303,84 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
     prompt: string,
     mimeType: string = 'image/jpeg'
   ): Promise<string> {
+    const controller = new AbortController();
+    const timeoutMs = 120000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       log.info(`AI Vision: Calling API with model: ${this.config.model}`);
       const startTime = Date.now();
 
-      const response = await axios.post(
+      const response = await fetch(
         `${this.config.apiBaseUrl}/chat/completions`,
         {
-          model: this.config.model,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                {
-                  type: 'image_url',
-                  image_url: { url: `data:${mimeType};base64,${imageBase64}` },
-                  // Image size control parameters (from benchmark_model.ts)
-                  min_pixels: 64 * 32 * 32, // 65536 pixels
-                  max_pixels: 2560 * 32 * 32, // 2621440 pixels
-                },
-              ],
-            },
-          ],
-          max_tokens: 4096,
-        },
-        {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${this.config.apiToken}`,
           },
-          timeout: 120000, // 120s timeout (matches benchmark)
+          body: JSON.stringify({
+            model: this.config.model,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: prompt },
+                  {
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:${mimeType};base64,${imageBase64}`,
+                    },
+                    // Image size control parameters (from benchmark_model.ts)
+                    min_pixels: 64 * 32 * 32, // 65536 pixels
+                    max_pixels: 2560 * 32 * 32, // 2621440 pixels
+                  },
+                ],
+              },
+            ],
+            max_tokens: 4096,
+          }),
+          signal: controller.signal,
         }
       );
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(async () => ({ message: await response.text() }));
+        const errorDetail =
+          errorData?.error?.message ||
+          errorData?.message ||
+          `HTTP ${response.status}`;
+        const errorMessage = `HTTP ${response.status}: ${errorDetail}`;
+        log.error(`AI Vision: API call failed: ${errorMessage}`);
+        throw new Error(`Vision API call failed: ${errorMessage}`);
+      }
+
+      const data = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
 
       const duration = Date.now() - startTime;
       log.info(`AI Vision: API call completed in ${duration}ms`);
 
-      return response.data.choices[0].message.content;
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) {
+        throw new Error(
+          'Vision API response missing choices[0].message.content'
+        );
+      }
+
+      return content;
     } catch (error) {
-      if (error instanceof AxiosError) {
-        const status = error.response?.status || 'N/A';
-        const errorData = error.response?.data;
-        const errorDetail =
-          errorData?.error?.message || errorData?.message || error.message;
-        const errorMessage = `HTTP ${status}: ${errorDetail}`;
+      if (error instanceof Error && error.name === 'AbortError') {
+        const errorMessage = `HTTP timeout after ${timeoutMs}ms`;
         log.error(`AI Vision: API call failed: ${errorMessage}`);
         throw new Error(`Vision API call failed: ${errorMessage}`);
       }
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

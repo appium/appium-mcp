@@ -13,11 +13,12 @@ import { getScreenshot } from '../../command.js';
 import z from 'zod';
 import { imageUtil } from '@appium/support';
 import { resolveScreenshotDir } from '../../utils/paths.js';
+import { textResult, errorResult, toolErrorMessage } from '../tool-response.js';
 
 export { resolveScreenshotDir };
 
 export interface ScreenshotDeps {
-  getDriver: () => NullableDriverInstance;
+  getDriver: (sessionId?: string) => NullableDriverInstance;
   writeFile: typeof writeFile;
   mkdir: typeof mkdir;
   resolveScreenshotDir: typeof resolveScreenshotDir;
@@ -36,12 +37,15 @@ export async function executeScreenshot(opts: {
   deps?: ScreenshotDeps;
   elementId?;
   maxWidth?: number;
+  sessionId?: string;
 }): Promise<any> {
-  const { deps = defaultDeps, elementId, maxWidth } = opts;
+  const { deps = defaultDeps, elementId, maxWidth, sessionId } = opts;
 
-  const driver = deps.getDriver();
+  const driver = deps.getDriver(sessionId);
   if (!driver) {
-    throw new Error('No driver found');
+    return errorResult(
+      `No active driver session. Call create_session first or pass a valid sessionId.`
+    );
   }
 
   try {
@@ -79,14 +83,9 @@ export async function executeScreenshot(opts: {
     // Save screenshot to disk
     await deps.writeFile(filepath, screenshotBuffer);
 
-    const textResponse = {
-      content: [
-        {
-          type: 'text',
-          text: `Screenshot saved successfully to: ${filepath}`,
-        },
-      ],
-    };
+    const textResponse = textResult(
+      `Screenshot saved successfully to: ${filepath}`
+    );
 
     // Add interactive screenshot viewer UI
     const uiResource = createUIResource(
@@ -95,63 +94,46 @@ export async function executeScreenshot(opts: {
     );
 
     return addUIResourceToResponse(textResponse, uiResource);
-  } catch (err: any) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to take screenshot. err: ${err.toString()}`,
-        },
-      ],
-    };
+  } catch (err: unknown) {
+    return errorResult(
+      `Failed to take screenshot. err: ${toolErrorMessage(err)}`
+    );
   }
 }
 
-const maxWidthSchema = z
-  .number()
-  .optional()
-  .describe(
-    'Optional maximum width in pixels to resize the screenshot. The aspect ratio is preserved. Useful for reducing token usage when sending screenshots to LLMs.'
-  );
+const screenshotSchema = z.object({
+  elementUUID: elementUUIDScheme
+    .optional()
+    .describe(
+      'Optional element UUID. If provided, captures only this element. If omitted, captures full screen.'
+    ),
+  maxWidth: z
+    .number()
+    .optional()
+    .describe(
+      'Optional maximum width in pixels to resize the screenshot. The aspect ratio is preserved. Useful for reducing token usage when sending screenshots to LLMs.'
+    ),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
+});
 
-export function screenshot(server: FastMCP): void {
-  const screenshotSchema = z.object({
-    maxWidth: maxWidthSchema,
-  });
-
+export default function screenshot(server: FastMCP): void {
   server.addTool({
     name: 'appium_screenshot',
     description:
-      'Take a screenshot of the current screen and return as PNG image',
+      'Take a screenshot and save as PNG. Optionally provide elementUUID to capture only that element.',
     parameters: screenshotSchema,
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, _context: any): Promise<any> =>
-      executeScreenshot({ maxWidth: args.maxWidth }),
-  });
-}
-
-export function elementScreenshot(server: FastMCP): void {
-  const elementScreenshotSchema = z.object({
-    elementUUID: elementUUIDScheme,
-    maxWidth: maxWidthSchema,
-  });
-
-  server.addTool({
-    name: 'appium_element_screenshot',
-    description:
-      'Take a screenshot of the given element uuid and return as PNG image',
-    parameters: elementScreenshotSchema,
-    annotations: {
-      readOnlyHint: false,
-      openWorldHint: false,
-    },
-    execute: async (args: any, _context: any): Promise<any> =>
+    execute: async (args: z.infer<typeof screenshotSchema>, _context: any) =>
       executeScreenshot({
         elementId: args.elementUUID,
         maxWidth: args.maxWidth,
+        sessionId: args.sessionId,
       }),
   });
 }

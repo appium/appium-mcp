@@ -6,21 +6,19 @@ This directory contains all MCP tools available in MCP Appium.
 
 ### Session Management (`session/`)
 
-- `create-session.ts` - Create mobile automation sessions
-- `delete-session.ts` - Clean up sessions
-- `open-notifications.ts` - Open notifications panel (Android only)
-- `shake.ts` - iOS Simulator shake via `mobile: shake` (`appium_mobile_shake`; not Android, not physical iOS)
-- `lock.ts` - Lock device (`appium_mobile_lock`); optionally lock for N seconds (Android & iOS)
-- `lock.ts` - Unlock device (`appium_mobile_unlock`)
-- `select-platform.ts` - Choose Android or iOS
-- `select-device.ts` - Choose specific device
-- `file-transfer.ts` - Push/pull files on device (`appium_mobile_push_file`, `appium_mobile_pull_file`)
+- `session.ts` - Unified session tool (`appium_session_management`; `action=create|delete|list|select`)
+  - `create-session.ts` - Capability builders and `createSessionAction` (used by `session.ts`)
+  - `delete-session.ts` - `deleteSessionAction` (used by `session.ts`)
+  - `list-sessions.ts` - `listSessionsAction` (used by `session.ts`)
+  - `select-session.ts` - `selectSessionAction` (used by `session.ts`)
+- `select-device.ts` - Discover devices and select one (auto-selects if only one found)
+- `device-control.ts` - Device controls in one tool (`appium_mobile_device_control`; `action=lock|unlock|shake|open_notifications`)
+- `file-transfer.ts` - Push/pull files on device (`appium_mobile_file` with `action=push|pull`)
+- `driver-settings.ts` - Read/update Appium driver session settings (`appium_driver_settings`, `action`: `get` \| `update`)
 
 ### iOS Setup (`ios/`)
 
-- `boot-simulator.ts` - Boot iOS simulators
-- `setup-wda.ts` - Setup WebDriverAgent
-- `install-wda.ts` - Install WebDriverAgent
+- `prepare-ios-simulator.ts` - Boot simulator, download, install and launch WebDriverAgent in a single call
 
 ### Navigation (`navigations/`)
 
@@ -69,7 +67,13 @@ When searching for elements, follow this priority order for efficiency:
 - `terminate-app.ts` - Terminate apps
 - `install-app.ts` - Install apps
 - `uninstall-app.ts` - Uninstall apps
+- `clear-app.ts` - Clear app data / cache without uninstall (`appium_mobile_clear_app`; iOS Simulator only, Android broadly)
+- `permissions.ts` - Unified mobile permissions (`appium_mobile_permissions`; action get / update / reset, platform-specific fields)
 - `list-apps.ts` - List installed apps
+
+### Context Management (`context/`)
+
+- `context.ts` - Unified context operations (`appium_context`; `action=list|switch`)
 
 ### Test Generation (`test-generation/`)
 
@@ -79,6 +83,7 @@ When searching for elements, follow this priority order for efficiency:
 ### Documentation (`documentation/`)
 
 - `answer-appium.ts` - Answer Appium questions using RAG
+- `appium-skills.ts` - Return ordered Appium environment setup or troubleshooting skills from the vendored appium/skills repository
 
 ## Adding a New Tool
 
