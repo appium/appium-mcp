@@ -1,15 +1,21 @@
 import type { Client } from 'webdriver';
 import {
+  getPlatformName,
   isAndroidUiautomator2DriverSession,
   isRemoteDriverSession,
   isXCUITestDriverSession,
+  PLATFORM,
+  getCurrentContext as getStorecCurrentContext,
+  getSessionInfo,
 } from './session-store.js';
 import type { DriverInstance } from './session-store.js';
 import type { StringRecord, Element as AppiumElement } from '@appium/types';
+import { util } from '@appium/support';
 import type {
   IOSRecordingOptions,
   AndroidRecordingOptions,
 } from './tools/interactions/screen-recording.js';
+import log from './logger.js';
 
 /**
  * Execute a driver command.
@@ -235,6 +241,30 @@ export async function elementClick(
   driver: DriverInstance,
   elementUUID: string
 ): Promise<void> {
+  if (
+    getPlatformName(driver.sessionId) === PLATFORM.ios &&
+    getStorecCurrentContext(driver.sessionId as string | undefined)?.startsWith(
+      'WEBVIEW_'
+    )
+  ) {
+    const caps = getSessionInfo(driver.sessionId);
+    const settings = await getSessionDriverSettings(driver);
+    // nativeWebTap === true means we should use the native tap (elementClick) even in webview context
+    if (
+      caps?.metadata?.capabilities?.['appium:nativeWebTap'] !== true ||
+      settings.nativeWebTap !== true
+    ) {
+      log.debug(
+        `Using arguments[0].click() to click element ${elementUUID} in webview context (nativeWebTap not enabled)`
+      );
+      return await execute(
+        driver,
+        'arguments[0].click();',
+        util.wrapElement(elementUUID)
+      );
+    }
+  }
+
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.click(elementUUID);
   } else if (isXCUITestDriverSession(driver)) {

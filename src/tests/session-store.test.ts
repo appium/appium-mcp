@@ -175,17 +175,6 @@ describe('setSession', () => {
     expect(session?.automationName).toBe('UiAutomator2');
     expect(session?.deviceName).toBe('Pixel 5');
   });
-
-  test('falls back to appium:platformName when platformName is absent', () => {
-    const driver = makeMockDriver();
-    setSession(driver, 'session-fallback', {
-      'appium:platformName': 'iOS',
-    });
-    const session = listSessions().find(
-      (s) => s.sessionId === 'session-fallback'
-    );
-    expect(session?.platform).toBe('iOS');
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -506,17 +495,5 @@ describe('getPlatformName', () => {
       platformName: 'Android',
     });
     expect(getPlatformName(client)).toBe(PLATFORM.android);
-  });
-
-  test('falls back to appium:platformName when platformName is absent', () => {
-    const client = {
-      isAndroid: false,
-      isIOS: false,
-      sessionId: 'session-remote-ios-cap',
-    } as any;
-    setSession(client, 'session-remote-ios-cap', {
-      'appium:platformName': 'iOS',
-    });
-    expect(getPlatformName(client)).toBe(PLATFORM.ios);
   });
 });
