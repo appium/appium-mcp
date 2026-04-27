@@ -63,7 +63,8 @@ export const gestureSchema = z.object({
     .describe(
       `X coordinate. ` +
         `For tap/double_tap/long_press: tap location (alternative to elementUUID). ` +
-        `For scroll/swipe: starting X for custom-coordinate mode (requires y, endX, endY).`
+        `For scroll/swipe: starting X for custom-coordinate mode (requires y, endX, endY). ` +
+        `For pinch_zoom: center X of the pinch. Requires y. Ignored if elementUUID is set.`
     ),
   y: z
     .number()
@@ -73,7 +74,8 @@ export const gestureSchema = z.object({
     .describe(
       `Y coordinate. ` +
         `For tap/double_tap/long_press: tap location. ` +
-        `For scroll/swipe: starting Y for custom-coordinate mode.`
+        `For scroll/swipe: starting Y for custom-coordinate mode. ` +
+        `For pinch_zoom: center Y of the pinch. Requires x. Ignored if elementUUID is set.`
     ),
   endX: z
     .number()
