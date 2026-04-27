@@ -5,6 +5,7 @@ import {
   isXCUITestDriverSession,
   PLATFORM,
   getCurrentContext as getStorecCurrentContext,
+  getSessionInfo,
 } from './session-store.js';
 import type { DriverInstance } from './session-store.js';
 import type { StringRecord, Element as AppiumElement } from '@appium/types';
@@ -142,19 +143,21 @@ export async function elementClick(
   driver: DriverInstance,
   elementUUID: string
 ): Promise<void> {
-  // iOS platform, AND for WebView context
-  // TODO: this should consider nativeWebTap capability and not just platform + context
   if (
     getPlatformName(driver.sessionId) === PLATFORM.ios &&
     getStorecCurrentContext(driver.sessionId as string | undefined)?.startsWith(
       'WEBVIEW_'
     )
   ) {
-    return await execute(
-      driver,
-      'arguments[0].click();',
-      util.wrapElement(elementUUID)
-    );
+    const caps = getSessionInfo(driver.sessionId);
+    // nativeWebTap === true means we should use the native tap (elementClick) even in webview context
+    if (caps?.metadata?.capabilities?.['appium:nativeWebTap'] !== true) {
+      return await execute(
+        driver,
+        'arguments[0].click();',
+        util.wrapElement(elementUUID)
+      );
+    }
   }
 
   if (isAndroidUiautomator2DriverSession(driver)) {

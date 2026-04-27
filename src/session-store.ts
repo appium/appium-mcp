@@ -105,10 +105,7 @@ export function setSession(
   }
 
   const metadata: SessionMetadata = {
-    platform:
-      (capabilities.platformName as string | undefined) ??
-      (capabilities['appium:platformName'] as string | undefined) ??
-      null,
+    platform: (capabilities.platformName as string | undefined) ?? null,
     automationName:
       (capabilities['appium:automationName'] as string | undefined) ?? null,
     deviceName:
@@ -184,6 +181,13 @@ export function setCurrentContext(
 
   session.currentContext = context;
   return true;
+}
+
+export function getSessionInfo(sessionId: string | null): SessionInfo | null {
+  if (!sessionId) {
+    return null;
+  }
+  return sessions.get(sessionId) ?? null;
 }
 
 export function getCurrentContext(sessionId?: string): string | null {
