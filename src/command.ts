@@ -2,6 +2,7 @@ import type { Client } from 'webdriver';
 import {
   getPlatformName,
   isAndroidUiautomator2DriverSession,
+  isRemoteDriverSession,
   isXCUITestDriverSession,
   PLATFORM,
   getCurrentContext as getStorecCurrentContext,
@@ -42,6 +43,65 @@ export async function execute(
 }
 
 /**
+ * Query the current state of an application.
+ *
+ * Returns a numeric value:
+ *   0 = not installed, 1 = not running, 2 = background (suspended),
+ *   3 = background, 4 = foreground
+ *
+ * @param driver - The driver instance to use.
+ * @param appId - Application identifier to query.
+ * @returns Numeric app state.
+ */
+export async function queryAppState(
+  driver: DriverInstance,
+  appId: string
+): Promise<number> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.queryAppState(appId);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.queryAppState(appId);
+  }
+  return Number(
+    await (driver as Client).executeScript('mobile: queryAppState', [
+      { bundleId: appId },
+    ])
+  );
+}
+
+/**
+ * Read current Appium driver session settings (embedded drivers or remote
+ * WebDriver `GET /session/:id/appium/settings`).
+ */
+export async function getSessionDriverSettings(
+  driver: DriverInstance
+): Promise<StringRecord<unknown>> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getSettings();
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.getSettings();
+  }
+  return await (driver as Client).getSettings();
+}
+
+/**
+ * Update Appium driver session settings (embedded drivers or remote WebDriver
+ * `POST /session/:id/appium/settings`).
+ */
+export async function updateSessionDriverSettings(
+  driver: DriverInstance,
+  settings: StringRecord<unknown>
+): Promise<void> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    await driver.updateSettings(settings as never);
+  } else if (isXCUITestDriverSession(driver)) {
+    await driver.updateSettings(settings);
+  } else {
+    await (driver as Client).updateSettings(settings);
+  }
+}
+
+/**
  * Activate an application by its bundle/package id on the device.
  *
  * Works across Android and iOS driver implementations as well as remote
@@ -75,6 +135,8 @@ export async function getCurrentContext(
     return await driver.getCurrentContext();
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.getCurrentContext();
+  } else if (isRemoteDriverSession(driver)) {
+    return String(await (driver as Client).getAppiumContext());
   }
   throw new Error('getCurrentContext is not supported');
 }
@@ -90,6 +152,9 @@ export async function getContexts(driver: DriverInstance): Promise<string[]> {
     return await driver.getContexts();
   } else if (isXCUITestDriverSession(driver)) {
     return (await driver.getContexts()) as string[];
+  } else if (isRemoteDriverSession(driver)) {
+    const contexts = await (driver as Client).getAppiumContexts();
+    return contexts.map((c) => (typeof c === 'string' ? c : String(c)));
   }
   throw new Error('getContexts is not supported');
 }
@@ -108,8 +173,34 @@ export async function setContext(
     return await driver.setContext(name);
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.setContext(name || null);
+  } else if (isRemoteDriverSession(driver)) {
+    if (name == null || name === '') {
+      throw new Error('Context name is required');
+    }
+    return await (driver as Client).switchAppiumContext(name);
   }
   throw new Error('setContext is not supported');
+}
+
+/**
+ * Build a W3C Actions API key sequence for the given text.
+ * Each character is emitted as a keyDown+keyUp pair so it works
+ * on both Android and iOS without relying on driver-specific setValue.
+ *
+ * @param text - The text to type.
+ * @returns A W3C `key` action sequence object.
+ */
+export function buildW3cKeyActions(text: string): StringRecord<any> {
+  const actions = text.split('').flatMap((char) => [
+    { type: 'keyDown', value: char },
+    { type: 'keyUp', value: char },
+  ]);
+
+  return {
+    type: 'key',
+    id: 'keyboard',
+    actions,
+  };
 }
 
 /**
@@ -118,13 +209,19 @@ export async function setContext(
  * @param driver - The driver instance to use.
  * @param elementUUID - Element identifier.
  * @param text - Text to set into the element.
+ * @param w3cActions - When true, use the W3C Actions API (performActions) instead
+ *   of the driver-specific setValue. Works on both Android and iOS.
  * @returns Driver-specific result (often void or element value).
  */
 export async function setValue(
   driver: DriverInstance,
   elementUUID: string,
-  text: string
+  text: string,
+  w3cActions = false
 ) {
+  if (w3cActions) {
+    return await performActions(driver, [buildW3cKeyActions(text)]);
+  }
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.setValue(text, elementUUID);
   } else if (isXCUITestDriverSession(driver)) {
@@ -285,6 +382,27 @@ export async function getElementText(
   return await driver.getElementText(elementUUID);
 }
 
+/**
+ * Get the value of an element's attribute.
+ *
+ * @param driver - The driver instance to query.
+ * @param elementUUID - Identifier of the element.
+ * @param attribute - Name of the attribute to retrieve.
+ * @returns The attribute value as a string, or null if not set.
+ */
+export async function getElementAttribute(
+  driver: DriverInstance,
+  elementUUID: string,
+  attribute: string
+): Promise<string | null> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.getAttribute(attribute, elementUUID);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.getAttribute(attribute, elementUUID);
+  }
+  return await driver.getElementAttribute(elementUUID, attribute);
+}
+
 export async function getActiveElement(
   driver: DriverInstance
 ): Promise<AppiumElement> {
@@ -370,6 +488,26 @@ export async function stopRecordingScreen(
     return (await driver.stopRecordingScreen({})) ?? '';
   }
   throw new Error('stopRecordingScreen is not supported for this driver');
+}
+
+/**
+ * Get the current window size of the device screen.
+ *
+ * @param driver - The driver instance to query.
+ * @returns An object with `width` and `height` in pixels.
+ */
+export async function getWindowSize(
+  driver: DriverInstance
+): Promise<{ width: number; height: number }> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    const { width, height } = await driver.getWindowRect();
+    return { width, height };
+  } else if (isXCUITestDriverSession(driver)) {
+    const { width, height } = await driver.getWindowRect();
+    return { width, height };
+  }
+  const { width, height } = await (driver as Client).getWindowRect();
+  return { width, height };
 }
 
 /**

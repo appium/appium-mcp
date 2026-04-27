@@ -1,6 +1,6 @@
 # AI Vision Element Finding — End-to-End Debugging Guide (Beginner's Edition)
 
-> This document is designed for complete beginners who are unfamiliar with MCP and Node.js. It will guide you step-by-step from scratch to verify the complete end-to-end process of AI vision element finding (`appium_find_element` AI mode + `appium_click`).
+> This document is designed for complete beginners who are unfamiliar with MCP and Node.js. It will guide you step-by-step from scratch to verify the complete end-to-end process of AI vision element finding (`appium_find_element` AI mode + `appium_gesture` action=tap).
 
 ---
 
@@ -38,8 +38,8 @@ Your description
     → Call vision model API
     → Parse returned bbox coordinates
     → Return UUID in format ai-element:x,y:x1,y1,x2,y2
-  → appium_click (elementUUID=ai-element:...)
-    → Click at coordinates using W3C Actions API
+  → appium_gesture (action=tap, elementUUID=ai-element:...)
+    → Tap at coordinates using W3C Actions API
 ```
 
 ---
@@ -241,7 +241,7 @@ npm run inspect:built
   "console": "integratedTerminal",
   "env": {
     "AI_VISION_API_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    "AI_VISION_API_TOKEN": "sk-xxxxx",
+    "AI_VISION_API_KEY": "sk-xxxxx",
     "AI_VISION_MODEL": "Qwen3-VL-235B-A22B-Instruct",
     "AI_VISION_COORD_TYPE": "normalized",
     "AI_VISION_IMAGE_MAX_WIDTH": "1080",
@@ -334,7 +334,7 @@ In the Inspector interface:
 **Verification points:**
 - ✅ `strategy` parameter enum values include `ai_instruction`
 - ✅ `ai_instruction` parameter exists (natural language description)
-- ✅ `appium_click` tool has `elementUUID` parameter
+- ✅ `appium_gesture` tool has `action` and `elementUUID` parameters
 
 **This step verifies: AI finding functionality is correctly registered in the MCP server.**
 
@@ -481,19 +481,20 @@ Element id ai-element:540,156:42,130,1038,182
 
 **Copy this UUID**, you'll need it in the next step.
 
-### 6.8 Step 5: Click AI-Found Element
+### 6.8 Step 5: Tap AI-Found Element
 
-Call `appium_click` with the UUID from previous step:
+Call `appium_gesture` with `action=tap` and the UUID from previous step:
 
 ```json
 {
+  "action": "tap",
   "elementUUID": "ai-element:540,156:42,130,1038,182"
 }
 ```
 
 **Expected response:**
 ```
-Successfully clicked at coordinates (540, 156) using AI-found element
+Successfully tapped at AI element coordinates (540, 156).
 ```
 
 **Observe device:** The element at that position should be clicked, and UI should change accordingly (e.g., search box activated).
@@ -749,8 +750,8 @@ Sometimes ADB initialization gets stuck, restarting Inspector can solve it:
 
 - [x] `create_session` returns Session ID, app successfully opens on emulator/device
 - [x] `appium_find_element` returns UUID with `ai-element:` prefix, coordinates are reasonable
-- [x] `appium_click` returns `Successfully clicked at coordinates`
-- [x] Observe emulator/device screen, element at corresponding position is indeed clicked (UI changes)
+- [x] `appium_gesture` (action=tap) returns `Successfully tapped at AI element coordinates`
+- [x] Observe emulator/device screen, element at corresponding position is indeed tapped (UI changes)
 
 ### Complete Success Output Example
 
@@ -759,8 +760,8 @@ Sometimes ADB initialization gets stuck, restarting Inspector can solve it:
 Successfully found "Search" at coordinates (540, 156) using AI vision.
 Element id ai-element:540,156:42,130,1038,182
 
-# appium_click success output
-Successfully clicked at coordinates (540, 156) using AI-found element
+# appium_gesture (action=tap) success output
+Successfully tapped at AI element coordinates (540, 156).
 ```
 
 ---
@@ -788,7 +789,7 @@ npm run inspect:built
 2. create_session     → Create Appium Session (open app)
 3. appium_screenshot  → Screenshot to confirm current screen
 4. appium_find_element (strategy=ai_instruction) → AI find element, get UUID
-5. appium_click (elementUUID=ai-element:...)    → Click AI-found element
+5. appium_gesture (action=tap, elementUUID=ai-element:...) → Tap AI-found element
 6. delete_session     → Close session
 ```
 

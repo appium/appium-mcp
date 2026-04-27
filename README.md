@@ -134,6 +134,25 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 
 ## ⚙️ Configuration
 
+### Environment Variables
+
+> **Note:** Appium driver prerequisites (`ANDROID_HOME`, `JAVA_HOME`, UiAutomator2/XCUITest driver setup) are not listed here, they are system-level requirements. Once this MCP server is configured, ask your AI assistant to set up the environment for you using the built-in `appium_skills` tool.
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `CAPABILITIES_CONFIG` | Optional | Absolute path to a `capabilities.json` file with per-platform capability presets |
+| `SCREENSHOTS_DIR` | Optional | Directory where screenshots and screen recordings are saved. Defaults to the current working directory |
+| `NO_UI` | Optional | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode) |
+| `APPIUM_MCP_WDA_APP_PATH` | Optional | Absolute path to a pre-extracted `WebDriverAgentRunner-Runner.app` bundle. When set, `prepare_ios_simulator` skips all GitHub downloads and uses this bundle directly — useful in environments where external downloads are blocked |
+| `REMOTE_SERVER_URL_ALLOW_REGEX` | Optional | Regex pattern that remote Appium server URLs must match. Defaults to `^https?://` |
+| `AI_VISION_API_BASE_URL` | Required for AI Vision | Base URL of the OpenAI-compatible vision model API |
+| `AI_VISION_API_KEY` | Required for AI Vision | API key for the vision model provider |
+| `AI_VISION_MODEL` | Optional | Vision model name (default: `Qwen3-VL-235B-A22B-Instruct`) |
+| `AI_VISION_COORD_TYPE` | Optional | Coordinate type: `normalized` (default) or `absolute` |
+| `AI_VISION_IMAGE_MAX_WIDTH` | Optional | Max image width in pixels before compression (default: `1080`) |
+| `AI_VISION_IMAGE_QUALITY` | Optional | JPEG quality 1–100 for compressed screenshots sent to the vision API (default: `80`) |
+| `SENTENCE_TRANSFORMERS_MODEL` | Optional | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`) |
+
 ### Capabilities
 
 Create a `capabilities.json` file to define your device capabilities:
@@ -166,7 +185,7 @@ Set the `CAPABILITIES_CONFIG` environment variable to point to your configuratio
 
 #### Platform names and "general" mode
 
-- You can pass any platform name to `create_session`.
+- You can pass any platform name to `appium_session_management` (action=create).
 - If the platform is `ios` or `android`, the server builds capabilities for that platform (including selected device info when local).
 - If the platform is any other value, it is treated internally as `general`:
   - The session will use the provided `capabilities` exactly as given, or
@@ -184,7 +203,7 @@ Screen recordings are saved as MP4 files to the same directory as screenshots (`
 - **iOS**: Requires [ffmpeg](https://ffmpeg.org/download.html) to be installed and available on `PATH`. The default codec is `libx264` with `yuv420p` pixel format for QuickTime compatibility.
 - **Android**: Uses the built-in `screenrecord` command via UiAutomator2. No additional dependencies required.
 
-To record a fixed-duration clip, pass `timeLimit` (in seconds) to `appium_start_recording_screen` — the tool will wait, stop, and return the saved file path automatically. For manual control, call `appium_start_recording_screen` without `timeLimit`, then `appium_stop_recording_screen` when done.
+To start recording, call `appium_screen_recording` with `action="start"`. You may provide `timeLimit` in seconds to limit the maximum recording duration, but the start call still returns immediately. To finalize the recording, save the video, and receive the file path, call `appium_screen_recording` again with `action="stop"`.
 
 ### AI Vision Element Finding
 
@@ -198,7 +217,7 @@ Configure AI-powered element finding using vision models. This feature allows yo
     "env": {
       "ANDROID_HOME": "/path/to/android/sdk",
       "AI_VISION_API_BASE_URL": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "AI_VISION_API_TOKEN": "your_api_key_here"
+      "AI_VISION_API_KEY": "your_api_key_here"
     }
   }
 }
@@ -206,10 +225,7 @@ Configure AI-powered element finding using vision models. This feature allows yo
 
 **Optional Environment Variables:**
 
-- `AI_VISION_MODEL`: Model name (default: `Qwen3-VL-235B-A22B-Instruct`)
-- `AI_VISION_COORD_TYPE`: Coordinate type - `normalized` or `absolute` (default: `normalized`)
-- `AI_VISION_IMAGE_MAX_WIDTH`: Max image width for compression in pixels (default: `1080`)
-- `AI_VISION_IMAGE_QUALITY`: JPEG quality 1-100 (default: `80`)
+See the [Environment Variables](#environment-variables) table above for the full list of `AI_VISION_*` options and their defaults.
 
 **Supported Vision Model Providers:**
 
@@ -272,9 +288,9 @@ The following tools return lightweight text-only responses when NO_UI is enabled
 - `appium_get_page_source` - Returns XML as text without interactive inspector UI
 - `generate_locators` - Returns locator data as JSON without interactive UI
 - `select_device` - Returns device list as text without picker UI
-- `create_session` - Returns session info as text without dashboard UI
-- `appium_get_contexts` - Returns context list as text without switcher UI
-- `appium_list_apps` - Returns app list as JSON without interactive UI
+- `appium_session_management` (action=create) - Returns session info as text without dashboard UI
+- `appium_context` - Returns context list as text with `action=list` without switcher UI
+- `appium_app_lifecycle` (action=`list`) - Returns app list as JSON without interactive UI
 
 **When to Enable NO_UI:**
 
@@ -293,21 +309,18 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 
 | Tool              | Description                                                              |
 | ----------------- | ------------------------------------------------------------------------ |
-| `select_platform` | **REQUIRED FIRST**: Ask user to choose between Android or iOS platform   |
-| `select_device`   | Select a specific device when multiple devices are available             |
-| `boot_simulator`  | Boot an iOS simulator and wait for it to be ready (iOS only)             |
-| `setup_wda`       | Download and setup prebuilt WebDriverAgent for iOS simulators (iOS only) |
-| `install_wda`     | Install and launch WebDriverAgent on a booted iOS simulator (iOS only)   |
+| `select_device`   | **REQUIRED FIRST**: Discover available devices and select one. Auto-selects if only one device found |
+| `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only). Set `APPIUM_MCP_WDA_APP_PATH` to skip all downloads and use a local `.app` bundle instead. |
 
 ### Session Management
 
 | Tool             | Description                                                                                                 |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| `create_session` | Create a new mobile automation session for Android, iOS, or `general` capabilities (see 'general' mode above). If a remote Appium server is referenced, `create_session` forwards the final capabilities to that server via the WebDriver `newSession` API - include device selection (e.g., `appium:udid`) in `capabilities` when targeting a remote server. |
-| `delete_session` | Delete the current mobile session and clean up resources                                                    |
-| `appium_mobile_shake` | Shake gesture (`mobile: shake`) on **iOS Simulator only** (XCUITest). Not supported on Android or physical iOS devices. |
+| `appium_session_management` | Unified session management. `action=create`: start a new session for Android, iOS, or `general` capabilities (see 'general' mode above); forwards capabilities to a remote server via WebDriver `newSession` when `remoteServerUrl` is provided. `action=delete`: stop and clean up a session (defaults to active). `action=list`: show all active sessions. `action=select`: switch the active session by `sessionId`. |
+| `appium_mobile_device_control` | Control device behavior: lock/unlock the screen, shake the device, or open the notifications panel (`action`: `lock` \| `unlock` \| `shake` \| `open_notifications`). `shake` is iOS only; `open_notifications` is Android only; `seconds` is optional for timed lock. |
+| `appium_driver_settings` | Read or update Appium driver session settings in one tool. `action=get` returns current settings as JSON; `action=update` merges a `settings` map (driver-specific keys; use `action=get` first to inspect). |
 
-The remote server URL in `create_session` can be set via the `remoteServerUrl` parameter.
+The remote server URL in `appium_session_management` (action=create) can be set via the `remoteServerUrl` parameter.
 If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
 This allows you to restrict which remote servers can be used with your MCP Appium instance, preventing unauthorized connections.
 The default regex pattern allows any URL that starts with `http://` or `https://`.
@@ -316,59 +329,51 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 
 | Tool                  | Description                                                                                                                              |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `appium_get_contexts` | Get all available contexts in the current Appium session. Returns a list of context names including NATIVE_APP and any webview contexts (e.g., WEBVIEW_<id> or WEBVIEW_<package>). |
-| `appium_switch_context` | Switch to a specific context in the Appium session. Use this to switch between native app context (NATIVE_APP) and webview contexts (WEBVIEW_<id> or WEBVIEW_<package>). Use appium_get_contexts to see available contexts first. |
+| `appium_context` | Manage contexts in one tool. `action=list` gets all available contexts including NATIVE_APP and WEBVIEW_* entries. `action=switch` switches to a target context (`context` required). |
 
 ### Element Discovery & Interaction
 
 | Tool                  | Description                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------- |
-| `appium_find_element` | Find a specific element using traditional locator strategies (xpath, id, accessibility id, etc.) **OR** AI-powered natural language descriptions (e.g., "yellow search button at bottom"). Supports both traditional and AI modes. |
-| `appium_tap_by_coordinates` | Tap at specific screen coordinates (x, y). On iOS, coordinates are in points. On Android, coordinates are in device pixels. Use `appium_get_page_source` for accurate coordinates. |
-| `appium_click`        | Click on an element                                                                          |
-| `appium_double_tap`   | Perform double tap on an element                                                             |
-| `appium_long_press`   | Perform a long press (press and hold) gesture on an element                                  |
+| `appium_find_element` | Find a specific element using traditional locator strategies (xpath, id, accessibility id, etc.) **OR** AI-powered natural language descriptions (e.g., "yellow search button at bottom"). To scroll until an element appears, use **`appium_gesture`** with **`action=scroll_to_element`** (same `strategy` / `selector` as find). |
+| `appium_gesture`      | Perform a touch gesture. `action` = `tap`, `double_tap`, `long_press`, `scroll`, `swipe`, `pinch_zoom`, or **`scroll_to_element`**. **`scroll_to_element`** scrolls vertically (`direction` = `up` \| `down`) until the locator matches, **page source stops changing** after a scroll (end of list), or **`maxScrollAttempts`** (default 10, max 80). Optional **`scrollDistance`** (0.05–1) or **`scrollDistancePreset`** = `small` \| `medium` \| `large`. Supports element UUIDs and raw coordinates for other actions. For swipe, use `speed` = `slow` \| `normal` \| `fast` (fast for pull-to-refresh). |
 | `appium_drag_and_drop` | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates) |
-| `appium_pinch`        | Perform a pinch gesture to zoom in (scale > 1) or zoom out (scale < 1) on an element or the whole screen. Works on both iOS and Android. |
+| `appium_perform_actions` | Execute raw W3C Actions API sequences for custom multi-touch gestures (rotate, three-finger swipe, edge swipes, precise timing). Prefer `appium_gesture` for standard gestures. |
 | `appium_set_value`    | Enter text into an input field                                                               |
 | `appium_mobile_hide_keyboard` | Dismiss the on-screen keyboard (`mobile: hideKeyboard`) |
 | `appium_mobile_is_keyboard_shown` | Whether the on-screen keyboard is visible (`mobile: isKeyboardShown`) |
 | `appium_get_text`     | Get text content from an element                                                             |
 | `appium_get_clipboard` | Get the current clipboard content as plain text from the device            |
 | `appium_set_clipboard` | Set the device clipboard to the provided plain text                        |
-| `appium_handle_alert` | Accept or dismiss system/permission alerts, or click a dialog button by label |
+| `appium_alert` | Handle alerts with `action` = `accept`, `dismiss`, or `get_text` (optional `buttonLabel`) |
 
 ### Screen & Navigation
 
 | Tool                       | Description                                             |
 | -------------------------- | ------------------------------------------------------- |
-| `appium_screenshot`        | Take a screenshot of the current screen and save as PNG |
-| `appium_element_screenshot` | Take a screenshot of a specific element by its UUID and save as PNG |
-| `appium_scroll`            | Scroll the screen vertically (up or down)               |
-| `appium_scroll_to_element` | Scroll until a specific element becomes visible         |
-| `appium_swipe`             | Swipe the screen in a direction (left, right, up, down) or between custom coordinates |
+| `appium_screenshot`        | Take a screenshot and save as PNG. Optionally provide `elementUUID` to capture a specific element. |
+| `appium_get_window_size`   | Get the width and height of the device screen in pixels |
 | `appium_get_page_source`   | Get the page source (XML) from the current screen       |
-| `appium_get_orientation`   | Get the current device/screen orientation (LANDSCAPE or PORTRAIT). |
-| `appium_set_orientation`   | Set the device/screen orientation to LANDSCAPE or PORTRAIT (rotate screen). |
-| `appium_set_geolocation`   | Set the GPS coordinates (latitude, longitude, altitude) of the device. |
-| `appium_get_geolocation`   | Get the current GPS coordinates (latitude, longitude, altitude) of the device. |
-| `appium_reset_geolocation` | Reset the simulated/mocked geolocation back to the system default. On iOS, clears the simulated location. On Android real devices, removes the mock location provider. Not supported on Android emulators. |
-| `appium_start_recording_screen` | Start recording the device screen. Works on iOS (XCUITest, requires ffmpeg) and Android (UiAutomator2). |
-| `appium_stop_recording_screen` | Stop the active screen recording and save the video to disk as an MP4 file. Returns the path to the saved file. |
-| `appium_mobile_get_device_info` | Get device information (model, OS version, locale, timezone, screen density, etc.). On iOS real devices, includes detailed lockdown info (hardware model, product type, CPU architecture, etc.). |
-| `appium_mobile_get_battery_info` | Get the current battery level (as a percentage) and charging state of the device. Works on both iOS and Android. |
+| `appium_orientation`   | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set). |
+| `appium_geolocation`       | Get, set, or reset the device GPS coordinates with `action` = `get`, `set`, or `reset`. For `set`, provide `latitude` and `longitude` (and optional `altitude` on Android). Not supported on Android emulators for `reset`. |
+| `appium_screen_recording` | Start or stop screen recording with `action` = `start` or `stop`. On stop, returns the saved MP4 path. |
+| `appium_mobile_device_info` | Get device information, battery status, or current device time. Use `action` = `info` (model, OS version, locale, timezone, screen density, etc.), `battery` (level as percentage and charging state), or `time` (current device time; accepts an optional `format` moment.js string, defaults to ISO 8601). Works on both iOS and Android. |
 
 ### App Management
 
-| Tool                  | Description                                                        |
-| --------------------- | ------------------------------------------------------------------ |
-| `appium_activate_app` | Activate (launch/bring to foreground) a specified app by bundle ID |
-| `appium_mobile_background_app` | Background the current app for a duration (optional; defaults to 5 seconds) |
-| `appium_installApp`   | Install an app on the device from a file path                      |
-| `appium_uninstallApp` | Uninstall an app from the device by bundle ID                      |
-| `appium_terminateApp` | Terminate (close) a specified app                                  |
-| `appium_list_apps`    | List all installed apps on the device (Android and iOS)             |
-| `appium_is_app_installed` | Check whether an app is installed. Package name for Android, bundle ID for iOS. |
+| Tool          | Action           | Description                                                                                                                                                                                |
+|---------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `appium_app_lifecycle`  | `activate`       | Activate (launch/bring to foreground) a specified app by bundle ID or name                                                                                                                 |
+| `appium_app_lifecycle`  | `terminate`      | Terminate (close) a specified app                                                                                                                                                          |
+| `appium_app_lifecycle`  | `install`        | Install an app on the device from a file path                                                                                                                                              |
+| `appium_app_lifecycle`  | `uninstall`      | Uninstall an app from the device by bundle ID or name                                                                                                                                      |
+| `appium_app_lifecycle`  | `list`           | List all installed apps on the device (Android and iOS)                                                                                                                                    |
+| `appium_app_lifecycle`  | `is_installed`   | Check whether an app is installed. Package name for Android, bundle ID for iOS.                                                                                                            |
+| `appium_app_lifecycle`  | `query_state`    | Query the current state of an app: 0=not installed, 1=not running, 2=background suspended, 3=background, 4=foreground                                                                      |
+| `appium_app_lifecycle`  | `background`     | Background the current app for a duration (optional; defaults to 5 seconds)                                                                                                                |
+| `appium_app_lifecycle`  | `clear`          | Clear app data and cache without uninstalling (`mobile: clearApp`). Android: stop the app first when possible. iOS: **Simulator only**; not supported on real devices.                     |
+| `appium_app_lifecycle`  | `deep_link`      | Open a deep link URL with the default or a specified app                                                                                                                                    |
+| `appium_mobile_permissions`| Get, update, or reset app permissions in one tool (`action`: get / update / reset) |  Android: list or change runtime permissions. iOS Simulator: get/set privacy via bundle id; reset (`action=reset`) applies to the AUT on sim and device. |
 
 ### Test Generation & Documentation
 
@@ -377,6 +382,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `generate_locators`          | Generate intelligent locators for all interactive elements on the current screen |
 | `appium_generate_tests`      | Generate automated test code from natural language scenarios                     |
 | `appium_documentation_query` | Query Appium documentation using RAG for help and guidance                       |
+| `appium_skills` | Return ordered setup or troubleshooting skills from `appium/skills` for local Appium environments |
 
 ## 🤖 Client Support
 
@@ -406,6 +412,23 @@ This example demonstrates a complete e-commerce checkout flow that can be automa
   }
 }
 ```
+
+**Scroll until element is on screen (`appium_gesture` / `scroll_to_element`):**
+```json
+{
+  "tool": "appium_gesture",
+  "arguments": {
+    "action": "scroll_to_element",
+    "strategy": "xpath",
+    "selector": "//*[contains(@text,'My header')]",
+    "direction": "down",
+    "maxScrollAttempts": 40,
+    "scrollDistancePreset": "medium"
+  }
+}
+```
+
+Use **`scrollDistance`** (0.05–1) instead of **`scrollDistancePreset`** when you want an exact fraction. Then call **`appium_find_element`** with the same `strategy` / `selector` to obtain the element id.
 
 **AI Mode (Natural Language):**
 ```json

@@ -1,5 +1,6 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
+import { textResult } from '../tool-response.js';
 
 export default function generateTest(server: FastMCP): void {
   const generateTestSchema = z.object({
@@ -11,7 +12,7 @@ export default function generateTest(server: FastMCP): void {
       `## Instructions`,
       `- You are an Appium test generator.`,
       `- You are given a scenario and you need to generate a appium test for it.`,
-      `- Request user to select the platform first using select_platform tool and create a session`,
+      `- Request user to select the platform first using select_device tool and create a session`,
       `- Use generate_locators tool to fetch all interactable elements from the current screen and use it to generate the tests`,
       `- Element can only be clicked only if it is clickable.`,
       `- Text can entered in the element only if it is focusable`,
@@ -34,15 +35,7 @@ export default function generateTest(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, _context: any): Promise<any> => ({
-      content: [
-        {
-          type: 'text',
-          text: instructions({
-            steps: args.steps,
-          }),
-        },
-      ],
-    }),
+    execute: async (args: any, _context: any): Promise<any> =>
+      textResult(instructions({ steps: args.steps })),
   });
 }

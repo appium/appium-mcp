@@ -2,7 +2,7 @@
  * Unit tests for AIVisionFinder
  *
  * Mock strategy:
- * - axios.post: spied on via jest.spyOn to avoid real HTTP requests
+ * - global fetch: mocked to avoid real HTTP requests
  * - @appium/support imageUtil: mocked via __mocks__/@appium/support.ts
  * - Screenshot input: benchmark image.png read as base64
  */
@@ -18,7 +18,6 @@ import {
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import axios, { AxiosError } from 'axios';
 import { mockSharpInstance } from './__mocks__/@appium/support.js';
 
 // ─── Resolve paths ────────────────────────────────────────────────────────────
@@ -40,11 +39,13 @@ const IMAGE_HEIGHT = 2400;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function buildAxiosResponse(content: string) {
+function buildFetchResponse(content: string) {
   return {
-    data: {
+    ok: true,
+    status: 200,
+    json: async () => ({
       choices: [{ message: { content } }],
-    },
+    }),
   };
 }
 
@@ -53,7 +54,7 @@ function buildAxiosResponse(content: string) {
  * and prints it to the test log, simulating what a real API call would return.
  */
 function mockModelResponse(content: string) {
-  const response = buildAxiosResponse(content);
+  const response = buildFetchResponse(content);
   return jest.fn().mockImplementation(() => {
     console.log(`\n[Model Response]\n${content}\n`);
     return Promise.resolve(response);
@@ -75,10 +76,12 @@ function arrayBBoxResponse(bbox: [number, number, number, number]): string {
 
 describe('AIVisionFinder', () => {
   const originalEnv = { ...process.env };
-  let postSpy: ReturnType<typeof jest.spyOn>;
+  const originalFetch = global.fetch;
+  let fetchSpy: jest.MockedFunction<typeof fetch>;
 
   beforeEach(() => {
-    postSpy = jest.spyOn(axios, 'post');
+    fetchSpy = jest.fn() as jest.MockedFunction<typeof fetch>;
+    global.fetch = fetchSpy;
 
     process.env.AI_VISION_API_BASE_URL = 'https://mock-api.example.com/v1';
     process.env.AI_VISION_API_KEY = 'mock-token-12345';
@@ -90,6 +93,7 @@ describe('AIVisionFinder', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    global.fetch = originalFetch;
     Object.keys(process.env).forEach((key) => {
       if (!(key in originalEnv)) {
         delete process.env[key];
@@ -130,7 +134,7 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         800, 50, 950, 120,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Search', normalizedBBox)) as any
       );
 
@@ -155,11 +159,11 @@ describe('AIVisionFinder', () => {
       expect(result.center).toEqual({ x: 945, y: 204 });
     });
 
-    test('should call axios.post with correct endpoint and authorization header', async () => {
+    test('should call fetch with correct endpoint and authorization header', async () => {
       const normalizedBBox: [number, number, number, number] = [
         100, 100, 300, 200,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Button', normalizedBBox)) as any
       );
 
@@ -173,10 +177,9 @@ describe('AIVisionFinder', () => {
         IMAGE_HEIGHT
       );
 
-      expect(postSpy).toHaveBeenCalledTimes(1);
-      const [url, _body, config] = postSpy.mock.calls[0] as [
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const [url, config] = fetchSpy.mock.calls[0] as [
         string,
-        unknown,
         { headers: Record<string, string> },
       ];
       expect(url).toBe('https://mock-api.example.com/v1/chat/completions');
@@ -187,7 +190,7 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         100, 100, 300, 200,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Icon', normalizedBBox)) as any
       );
 
@@ -201,14 +204,15 @@ describe('AIVisionFinder', () => {
         IMAGE_HEIGHT
       );
 
-      const [_url, body] = postSpy.mock.calls[0] as [
+      const [_url, requestInit] = fetchSpy.mock.calls[0] as [
         string,
-        {
-          messages: Array<{
-            content: Array<{ type: string; image_url?: { url: string } }>;
-          }>;
-        },
+        RequestInit,
       ];
+      const body = JSON.parse(String(requestInit.body)) as {
+        messages: Array<{
+          content: Array<{ type: string; image_url?: { url: string } }>;
+        }>;
+      };
       const imageContent = body.messages[0].content.find(
         (c) => c.type === 'image_url'
       );
@@ -224,7 +228,7 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         200, 300, 400, 500,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(arrayBBoxResponse(normalizedBBox)) as any
       );
 
@@ -255,7 +259,7 @@ describe('AIVisionFinder', () => {
       const absoluteBBox: [number, number, number, number] = [
         100, 200, 400, 350,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Submit', absoluteBBox)) as any
       );
 
@@ -284,7 +288,7 @@ describe('AIVisionFinder', () => {
       const outOfBoundsBBox: [number, number, number, number] = [
         0, 0, 1200, 2600,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(
           jsonBBoxResponse('Full screen', outOfBoundsBBox)
         ) as any
@@ -316,7 +320,7 @@ describe('AIVisionFinder', () => {
       const reversedXBBox: [number, number, number, number] = [
         500, 100, 200, 300,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Element', reversedXBBox)) as any
       );
 
@@ -339,7 +343,7 @@ describe('AIVisionFinder', () => {
       const reversedYBBox: [number, number, number, number] = [
         100, 600, 400, 200,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Element', reversedYBBox)) as any
       );
 
@@ -361,20 +365,13 @@ describe('AIVisionFinder', () => {
 
   describe('findElement – API error handling', () => {
     test('should throw with HTTP status code when API returns 401', async () => {
-      const axiosError = new AxiosError(
-        'Request failed with status code 401',
-        '401',
-        undefined,
-        undefined,
-        {
-          status: 401,
-          data: { error: { message: 'Unauthorized: invalid API token' } },
-          statusText: 'Unauthorized',
-          headers: {},
-          config: {} as any,
-        }
-      );
-      postSpy.mockRejectedValue(axiosError);
+      fetchSpy.mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => ({
+          error: { message: 'Unauthorized: invalid API token' },
+        }),
+      } as Response);
 
       const { AIVisionFinder } = await import('../ai-finder/vision-finder.js');
       const finder = new AIVisionFinder();
@@ -390,20 +387,11 @@ describe('AIVisionFinder', () => {
     });
 
     test('should throw with HTTP status code when API returns 429 (rate limit)', async () => {
-      const axiosError = new AxiosError(
-        'Request failed with status code 429',
-        '429',
-        undefined,
-        undefined,
-        {
-          status: 429,
-          data: { error: { message: 'Rate limit exceeded' } },
-          statusText: 'Too Many Requests',
-          headers: {},
-          config: {} as any,
-        }
-      );
-      postSpy.mockRejectedValue(axiosError);
+      fetchSpy.mockResolvedValue({
+        ok: false,
+        status: 429,
+        json: async () => ({ error: { message: 'Rate limit exceeded' } }),
+      } as Response);
 
       const { AIVisionFinder } = await import('../ai-finder/vision-finder.js');
       const finder = new AIVisionFinder();
@@ -418,9 +406,9 @@ describe('AIVisionFinder', () => {
       ).rejects.toThrow(/Vision API call failed.*HTTP 429/);
     });
 
-    test('should rethrow non-Axios errors as-is', async () => {
+    test('should rethrow non-fetch errors as-is', async () => {
       const networkError = new Error('Network timeout');
-      postSpy.mockRejectedValue(networkError);
+      fetchSpy.mockRejectedValue(networkError);
 
       const { AIVisionFinder } = await import('../ai-finder/vision-finder.js');
       const finder = new AIVisionFinder();
@@ -440,7 +428,7 @@ describe('AIVisionFinder', () => {
 
   describe('findElement – unparseable model response', () => {
     test('should throw when model response contains no valid bbox', async () => {
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(
           'I cannot find the element you are looking for.'
         ) as any
@@ -462,7 +450,7 @@ describe('AIVisionFinder', () => {
     test('should throw when model response has malformed JSON bbox (missing bbox_2d)', async () => {
       const malformedResponse =
         'Parameters: {"target": "Search", "coordinates": [100, 200]}';
-      postSpy.mockImplementation(mockModelResponse(malformedResponse) as any);
+      fetchSpy.mockImplementation(mockModelResponse(malformedResponse) as any);
 
       const { AIVisionFinder } = await import('../ai-finder/vision-finder.js');
       const finder = new AIVisionFinder();
@@ -488,8 +476,8 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         100, 100, 300, 200,
       ];
-      postSpy.mockResolvedValue(
-        buildAxiosResponse(jsonBBoxResponse('Button', normalizedBBox)) as any
+      fetchSpy.mockResolvedValue(
+        buildFetchResponse(jsonBBoxResponse('Button', normalizedBBox)) as any
       );
 
       const { AIVisionFinder } = await import('../ai-finder/vision-finder.js');
@@ -514,7 +502,7 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         100, 100, 300, 200,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Button', normalizedBBox)) as any
       );
 
@@ -547,7 +535,7 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         100, 100, 300, 200,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Button', normalizedBBox)) as any
       );
 
@@ -574,7 +562,7 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         100, 100, 300, 200,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Button', normalizedBBox)) as any
       );
 
@@ -600,7 +588,7 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         100, 100, 300, 200,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Button', normalizedBBox)) as any
       );
 
@@ -619,14 +607,15 @@ describe('AIVisionFinder', () => {
       expect(result.bbox).toHaveLength(4);
 
       // The image sent to the API should be the original base64 (fallback path)
-      const [_url, body] = postSpy.mock.calls[0] as [
+      const [_url, requestInit] = fetchSpy.mock.calls[0] as [
         string,
-        {
-          messages: Array<{
-            content: Array<{ type: string; image_url?: { url: string } }>;
-          }>;
-        },
+        RequestInit,
       ];
+      const body = JSON.parse(String(requestInit.body)) as {
+        messages: Array<{
+          content: Array<{ type: string; image_url?: { url: string } }>;
+        }>;
+      };
       const imageContent = body.messages[0].content.find(
         (c) => c.type === 'image_url'
       );
@@ -646,7 +635,7 @@ describe('AIVisionFinder', () => {
       const zeroWidthBBox: [number, number, number, number] = [
         1079, 100, 1079, 300,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Edge', zeroWidthBBox)) as any
       );
 
@@ -672,7 +661,7 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         100, 50, 300, 150,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Search', normalizedBBox)) as any
       );
 
@@ -686,12 +675,13 @@ describe('AIVisionFinder', () => {
         IMAGE_HEIGHT
       );
 
-      const [_url, body] = postSpy.mock.calls[0] as [
+      const [_url, requestInit] = fetchSpy.mock.calls[0] as [
         string,
-        {
-          messages: Array<{ content: Array<{ type: string; text?: string }> }>;
-        },
+        RequestInit,
       ];
+      const body = JSON.parse(String(requestInit.body)) as {
+        messages: Array<{ content: Array<{ type: string; text?: string }> }>;
+      };
       const textContent = body.messages[0].content.find(
         (c) => c.type === 'text'
       );
@@ -707,7 +697,7 @@ describe('AIVisionFinder', () => {
       const normalizedBBox: [number, number, number, number] = [
         100, 100, 300, 200,
       ];
-      postSpy.mockImplementation(
+      fetchSpy.mockImplementation(
         mockModelResponse(jsonBBoxResponse('Button', normalizedBBox)) as any
       );
 
@@ -721,7 +711,11 @@ describe('AIVisionFinder', () => {
         IMAGE_HEIGHT
       );
 
-      const [_url, body] = postSpy.mock.calls[0] as [string, { model: string }];
+      const [_url, requestInit] = fetchSpy.mock.calls[0] as [
+        string,
+        RequestInit,
+      ];
+      const body = JSON.parse(String(requestInit.body)) as { model: string };
       expect(body.model).toBe('custom-vision-model-v2');
     });
   });

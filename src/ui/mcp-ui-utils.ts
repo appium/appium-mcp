@@ -675,8 +675,8 @@ export function createSessionDashboardUI(sessionInfo: {
       window.parent.postMessage({
         type: 'tool',
         payload: {
-          toolName: 'appium_get_contexts',
-          params: {}
+          toolName: 'appium_context',
+          params: { action: 'list' }
         }
       }, '*');
     }
@@ -1225,8 +1225,9 @@ export function createContextSwitcherUI(
       window.parent.postMessage({
         type: 'tool',
         payload: {
-          toolName: 'appium_switch_context',
+          toolName: 'appium_context',
           params: {
+            action: 'switch',
             context: contextName
           }
         }

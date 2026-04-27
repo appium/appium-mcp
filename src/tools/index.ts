@@ -12,70 +12,71 @@
  * See src/tools/README.md for tool organization.
  * See src/tools/metadata/README.md for YAML metadata approach.
  */
-import { FastMCP } from 'fastmcp';
+import type { ContentResult, FastMCP } from 'fastmcp';
 import log from '../logger.js';
 import answerAppium from './documentation/answer-appium.js';
-import createSession from './session/create-session.js';
-import deleteSession from './session/delete-session.js';
-import listSessions from './session/list-sessions.js';
-import selectSession from './session/select-session.js';
+import appiumSkills from './documentation/appium-skills.js';
+import session from './session/session.js';
 import generateLocators from './test-generation/locators.js';
-import selectPlatform from './session/select-platform.js';
 import selectDevice from './session/select-device.js';
-import openNotifications from './session/open-notifications.js';
-import shakeDevice from './session/shake.js';
-import { lockDevice, unlockDevice } from './session/lock.js';
-import {
-  setGeolocation,
-  getGeolocation,
-  resetGeolocation,
-} from './session/geolocation.js';
+import mobileDeviceControl from './session/device-control.js';
+import geolocation from './session/geolocation.js';
 import deviceInfo from './session/device-info.js';
-import batteryInfo from './session/battery-info.js';
-import { pushFile, pullFile } from './session/file-transfer.js';
-import bootSimulator from './ios/boot-simulator.js';
-import setupWDA from './ios/setup-wda.js';
-import installWDA from './ios/install-wda.js';
+import fileTransfer from './session/file-transfer.js';
+import driverSettings from './session/driver-settings.js';
+import prepareIosSimulator from './ios/prepare-ios-simulator.js';
 import generateTest from './test-generation/generate-tests.js';
-import scroll from './navigations/scroll.js';
-import scrollToElement from './navigations/scroll-to-element.js';
-import swipe from './navigations/swipe.js';
+import gesture from './gestures/gesture.js';
+import performActionsTool from './gestures/perform-actions.js';
+import dragAndDrop from './gestures/drag-and-drop.js';
 import findElement from './interactions/find.js';
-import tap from './interactions/tap.js';
-import clickElement from './interactions/click.js';
-import doubleTap from './interactions/double-tap.js';
-import longPress from './interactions/long-press.js';
-import dragAndDrop from './interactions/drag-and-drop.js';
-import pinch from './interactions/pinch.js';
 import pressKey from './interactions/press-key.js';
 import setValue from './interactions/set-value.js';
 import keyboard from './interactions/keyboard.js';
 import getText from './interactions/get-text.js';
+import getElementAttribute from './interactions/get-element-attribute.js';
 import getActiveElement from './interactions/active-element.js';
 import getPageSource from './interactions/get-page-source.js';
-import { getOrientation, setOrientation } from './interactions/orientation.js';
+import orientation from './interactions/orientation.js';
 import clipboard from './interactions/clipboard.js';
-import handleAlert from './interactions/handle-alert.js';
-import { screenshot, elementScreenshot } from './interactions/screenshot.js';
-import {
-  startRecordingScreen,
-  stopRecordingScreen,
-} from './interactions/screen-recording.js';
-import activateApp from './app-management/activate-app.js';
-import backgroundApp from './app-management/background-app.js';
-import installApp from './app-management/install-app.js';
-import uninstallApp from './app-management/uninstall-app.js';
-import terminateApp from './app-management/terminate-app.js';
-import listApps from './app-management/list-apps.js';
-import isAppInstalled from './app-management/is-app-installed.js';
-import deepLink from './app-management/deep-link.js';
-import getContexts from './context/get-contexts.js';
-import switchContext from './context/switch-context.js';
+import alert from './interactions/handle-alert.js';
+import screenshot from './interactions/screenshot.js';
+import getWindowSize from './interactions/window-size.js';
+import screenRecording from './interactions/screen-recording.js';
+import app from './app-management/app.js';
+import mobilePermissions from './app-management/permissions.js';
+import context from './context/context.js';
+
+type RegisteredTool = Parameters<FastMCP['addTool']>[0];
+
+function sessionIdFromToolArgs(args: unknown): string | undefined {
+  if (
+    args &&
+    typeof args === 'object' &&
+    'sessionId' in args &&
+    typeof (args as { sessionId?: unknown }).sessionId === 'string'
+  ) {
+    return (args as { sessionId: string }).sessionId;
+  }
+  return undefined;
+}
+
+function isErrorFromToolResult(result: unknown): boolean {
+  if (
+    result &&
+    typeof result === 'object' &&
+    'content' in result &&
+    Array.isArray((result as { content: unknown }).content)
+  ) {
+    return (result as ContentResult).isError === true;
+  }
+  return false;
+}
 
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
-  const originalAddTool = (server as any).addTool.bind(server);
-  (server as any).addTool = (toolDef: any) => {
+  const originalAddTool = server.addTool.bind(server);
+  server.addTool = (toolDef: RegisteredTool): void => {
     const toolName = toolDef?.name ?? 'unknown_tool';
     const originalExecute = toolDef?.execute;
     if (typeof originalExecute !== 'function') {
@@ -91,7 +92,10 @@ export default function registerTools(server: FastMCP): void {
       'secret',
       'clientSecret',
     ];
-    const redactArgs = (obj: any) => {
+    const redactArgs = (obj: unknown): unknown => {
+      if (obj === undefined || obj === null) {
+        return obj;
+      }
       try {
         return JSON.parse(
           JSON.stringify(obj, (key, value) => {
@@ -121,18 +125,34 @@ export default function registerTools(server: FastMCP): void {
     };
     return originalAddTool({
       ...toolDef,
-      execute: async (args: any, context: any) => {
+      execute: async (args, context) => {
         const start = Date.now();
         log.info(`[TOOL START] ${toolName}`, redactArgs(args));
         try {
           const result = await originalExecute(args, context);
-          const duration = Date.now() - start;
-          log.info(`[TOOL END] ${toolName} (${duration}ms)`);
+          const durationMs = Date.now() - start;
+          log.info(
+            JSON.stringify({
+              tool: toolName,
+              durationMs,
+              sessionId: sessionIdFromToolArgs(args),
+              isError: isErrorFromToolResult(result),
+            })
+          );
           return result;
-        } catch (err: any) {
-          const duration = Date.now() - start;
-          const msg = err?.stack || err?.message || String(err);
-          log.error(`[TOOL ERROR] ${toolName} (${duration}ms): ${msg}`);
+        } catch (err: unknown) {
+          const durationMs = Date.now() - start;
+          log.info(
+            JSON.stringify({
+              tool: toolName,
+              durationMs,
+              sessionId: sessionIdFromToolArgs(args),
+              isError: true,
+            })
+          );
+          const msg =
+            err instanceof Error ? err.stack || err.message : String(err);
+          log.error(`[TOOL ERROR] ${toolName} (${durationMs}ms): ${msg}`);
           throw err;
         }
       },
@@ -140,74 +160,48 @@ export default function registerTools(server: FastMCP): void {
   };
 
   // Session Management
-  selectPlatform(server);
   selectDevice(server);
-  createSession(server);
-  listSessions(server);
-  selectSession(server);
-  deleteSession(server);
-  openNotifications(server);
-  shakeDevice(server);
-  lockDevice(server);
-  unlockDevice(server);
-  setGeolocation(server);
-  getGeolocation(server);
-  resetGeolocation(server);
+  session(server);
+  mobileDeviceControl(server);
+  geolocation(server);
   deviceInfo(server);
-  batteryInfo(server);
-  pushFile(server);
-  pullFile(server);
+  fileTransfer(server);
+  driverSettings(server);
 
   // iOS Setup
-  bootSimulator(server);
-  setupWDA(server);
-  installWDA(server);
+  prepareIosSimulator(server);
 
-  // Navigation
-  scroll(server);
-  scrollToElement(server);
-  swipe(server);
+  // Gestures (touch input)
+  gesture(server);
+  dragAndDrop(server);
+  performActionsTool(server);
 
   // Element Interactions
   // PRIORITY ORDER FOR ELEMENT SEARCH:
   // 1. getActiveElement    - Get currently focused element (efficient, instant)
   // 2. findElement         - Find specific element by strategy/selector
   // 3. generateLocators    - Generate all locators (heavyweight, for debugging only)
-  tap(server);
   findElement(server);
-  clickElement(server);
-  doubleTap(server);
-  longPress(server);
-  dragAndDrop(server);
-  pinch(server);
   pressKey(server);
   setValue(server);
   keyboard(server);
   getText(server);
+  getElementAttribute(server);
   clipboard(server);
   getActiveElement(server);
   getPageSource(server);
-  getOrientation(server);
-  setOrientation(server);
-  handleAlert(server);
+  orientation(server);
+  alert(server);
   screenshot(server);
-  elementScreenshot(server);
-  startRecordingScreen(server);
-  stopRecordingScreen(server);
+  getWindowSize(server);
+  screenRecording(server);
 
   // App Management
-  activateApp(server);
-  backgroundApp(server);
-  installApp(server);
-  uninstallApp(server);
-  terminateApp(server);
-  listApps(server);
-  isAppInstalled(server);
-  deepLink(server);
+  app(server);
+  mobilePermissions(server);
 
   // Context Management
-  getContexts(server);
-  switchContext(server);
+  context(server);
 
   // Test Generation
   generateLocators(server);
@@ -215,5 +209,6 @@ export default function registerTools(server: FastMCP): void {
 
   // Documentation
   answerAppium(server);
+  appiumSkills(server);
   log.info('All tools registered');
 }

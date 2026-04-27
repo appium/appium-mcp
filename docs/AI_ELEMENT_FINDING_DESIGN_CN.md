@@ -72,7 +72,7 @@ AI_VISION_IMAGE_QUALITY=80      # JPEG质量 1-100（默认：80）
       "ANDROID_HOME": "/Users/xyz/Library/Android/sdk",
       "AI_VISION_MODEL": "Qwen3-VL-235B-A22B-Instruct",
       "AI_VISION_API_BASE_URL": "https://api.your-provider.com",
-      "AI_VISION_API_TOKEN": "your_api_key_here",
+      "AI_VISION_API_KEY": "your_api_key_here",
       "AI_VISION_COORD_TYPE": "normalized"
     }
   }
@@ -420,7 +420,7 @@ import { performActions, elementClick as _elementClick } from '../../command.js'
  */
 export default function clickElement(server: FastMCP): void {
   server.addTool({
-    name: 'appium_click',
+    name: 'appium_gesture', // action=tap 分发：ai-element: UUID 路由到坐标点击
     parameters: { elementUUID: z.string() },
     
     execute: async (args, _context) => {
@@ -502,8 +502,9 @@ export default function clickElement(server: FastMCP): void {
 // 返回：elementUUID = "ai-element:500,552:42,526,958,578"
 
 {
-  "tool": "appium_click",
+  "tool": "appium_gesture",
   "arguments": {
+    "action": "tap",
     "elementUUID": "ai-element:500,552:42,526,958,578"
   }
 }
@@ -521,8 +522,10 @@ src/
 │   └── types.ts                  # 类型定义
 │
 ├── tools/interactions/
-│   ├── find.ts                   # 修改：添加 ai_instruction
-│   └── click.ts                  # 修改：使用W3C Actions API处理坐标
+│   └── find.ts                   # 修改：添加 ai_instruction
+│
+├── tools/gestures/handlers/
+│   └── tap.ts                    # ai-element: UUID 路由到 W3C 坐标点击
 │
 └── tests/benchmark_model/        # 现有（参考）
     ├── benchmark_model.ts
@@ -550,7 +553,7 @@ src/
 
 5. **坐标格式**：AI生成的elementUUID使用特殊格式 `ai-element:{x},{y}:{bbox}` 以区别于传统UUID
 
-6. **点击拦截**：`appium_click` 检查UUID前缀以路由到W3C Actions API点击或传统元素点击
+6. **点击拦截**：`appium_gesture`（action=tap）检查UUID前缀以路由到W3C Actions API点击或传统元素点击
 
 7. **模型选择**：基于基准测试，默认使用 `Qwen3-VL-235B-A22B-Instruct`（100%准确率，最快），但可通过环境变量配置
 

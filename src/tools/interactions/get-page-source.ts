@@ -1,15 +1,25 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { getDriver } from '../../session-store.js';
 import {
   createUIResource,
   createPageSourceInspectorUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
 import { getPageSource as _getPageSource } from '../../command.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 export default function getPageSource(server: FastMCP): void {
-  const pageSourceSchema = z.object({});
+  const pageSourceSchema = z.object({
+    sessionId: z
+      .string()
+      .optional()
+      .describe('Session ID to target. If omitted, uses the active session.'),
+  });
   server.addTool({
     name: 'appium_get_page_source',
     description: 'Get the page source (XML) from the current screen',
@@ -19,13 +29,14 @@ export default function getPageSource(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (
-      _args: z.infer<typeof pageSourceSchema>,
+      args: z.infer<typeof pageSourceSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const driver = getDriver();
-      if (!driver) {
-        throw new Error('No driver found. Please create a session first.');
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
       }
+      const { driver } = resolved;
 
       try {
         const pageSource = await _getPageSource(driver);
@@ -33,18 +44,12 @@ export default function getPageSource(server: FastMCP): void {
           throw new Error('Page source is empty or null');
         }
 
-        const textResponse = {
-          content: [
-            {
-              type: 'text',
-              text:
-                'Page source retrieved successfully: \n' +
-                '```xml ' +
-                pageSource +
-                '```',
-            },
-          ],
-        };
+        const textResponse = textResult(
+          'Page source retrieved successfully: \n' +
+            '```xml ' +
+            pageSource +
+            '```'
+        );
 
         // Add interactive page source inspector UI
         const uiResource = createUIResource(
@@ -53,16 +58,10 @@ export default function getPageSource(server: FastMCP): void {
         );
 
         return addUIResourceToResponse(textResponse, uiResource);
-      } catch (err: any) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to get page source. Error: ${err.toString()}`,
-            },
-          ],
-          isError: true,
-        };
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to get page source. Error: ${toolErrorMessage(err)}`
+        );
       }
     },
   });
