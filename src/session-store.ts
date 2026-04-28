@@ -169,6 +169,16 @@ export function listSessions(): Array<{
   }));
 }
 
+/**
+ * Return the ownership mode for a session.
+ *
+ * Owned sessions were created by MCP Appium and should be deleted through MCP.
+ * Attached sessions were adopted from an external Appium server and can be
+ * detached without deleting the remote session.
+ *
+ * @param sessionId - Optional session id to inspect. Defaults to the active session.
+ * @returns The session ownership mode, or `null` when the session is missing.
+ */
 export function getSessionOwnership(
   sessionId?: string
 ): SessionOwnership | null {
@@ -240,6 +250,14 @@ function selectNextActiveSessionId(deletedSessionId: string): string | null {
   return nextSession ?? null;
 }
 
+/**
+ * Remove an attached session from the in-memory MCP session registry without
+ * calling `deleteSession()` on the remote Appium server.
+ *
+ * @param sessionId - Optional session id to detach. Defaults to the active session.
+ * @throws {Error} If there is no target session, the session is missing, or
+ *   the session is owned by MCP Appium.
+ */
 export function detachSession(sessionId?: string): void {
   const id = sessionId ?? activeSessionId;
   if (!id) {

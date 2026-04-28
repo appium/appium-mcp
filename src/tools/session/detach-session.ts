@@ -1,6 +1,13 @@
 import { detachSession, getSessionOwnership } from '../../session-store.js';
 import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 
+/**
+ * Detach an attached Appium session from MCP Appium without deleting the
+ * remote session itself.
+ *
+ * @param sessionId - Optional session id to detach. Defaults to the active session.
+ * @returns A tool response describing whether the detach succeeded.
+ */
 export async function detachSessionAction(sessionId?: string): Promise<any> {
   const ownership = getSessionOwnership(sessionId);
   if (!ownership) {

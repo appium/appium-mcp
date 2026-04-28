@@ -44,7 +44,8 @@ const {
   PLATFORM,
 } = await import('../session-store.js');
 
-const { AndroidUiautomator2Driver } = await import('appium-uiautomator2-driver');
+const { AndroidUiautomator2Driver } =
+  await import('appium-uiautomator2-driver');
 const { XCUITestDriver } = await import('appium-xcuitest-driver');
 
 // Shared mock driver factory with a controllable deleteSession.

@@ -74,12 +74,24 @@ const {
 } = await import('../../../session-store.js');
 
 const mockGetDriver = getDriver as jest.MockedFunction<typeof getDriver>;
-const mockGetSessionOwnership = getSessionOwnership as jest.MockedFunction<typeof getSessionOwnership>;
-const mockGetSessionId = getSessionId as jest.MockedFunction<typeof getSessionId>;
-const mockListSessions = listSessions as jest.MockedFunction<typeof listSessions>;
-const mockDetachSession = detachSession as jest.MockedFunction<typeof detachSession>;
-const mockSetActiveSession = setActiveSession as jest.MockedFunction<typeof setActiveSession>;
-const mockSafeDeleteSession = safeDeleteSession as jest.MockedFunction<typeof safeDeleteSession>;
+const mockGetSessionOwnership = getSessionOwnership as jest.MockedFunction<
+  typeof getSessionOwnership
+>;
+const mockGetSessionId = getSessionId as jest.MockedFunction<
+  typeof getSessionId
+>;
+const mockListSessions = listSessions as jest.MockedFunction<
+  typeof listSessions
+>;
+const mockDetachSession = detachSession as jest.MockedFunction<
+  typeof detachSession
+>;
+const mockSetActiveSession = setActiveSession as jest.MockedFunction<
+  typeof setActiveSession
+>;
+const mockSafeDeleteSession = safeDeleteSession as jest.MockedFunction<
+  typeof safeDeleteSession
+>;
 const mockSetSession = setSession as jest.MockedFunction<typeof setSession>;
 
 const {
@@ -103,9 +115,12 @@ beforeEach(() => {
 });
 
 async function getToolExecute() {
-  const { default: session } = await import('../../../tools/session/session.js');
+  const { default: session } =
+    await import('../../../tools/session/session.js');
   session(mockServer);
-  return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(-1)?.[0];
+  return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
+    -1
+  )?.[0];
 }
 
 // ── appium_session_management tool tests ─────────────────────────────────────────────────

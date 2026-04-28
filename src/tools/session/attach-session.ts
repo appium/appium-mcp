@@ -1,9 +1,22 @@
 import WebDriver, { type Client } from 'webdriver';
 import { URL } from 'node:url';
-import { detachSession, getSessionOwnership, listSessions, setSession, type SessionCapabilities } from '../../session-store.js';
+import {
+  detachSession,
+  getSessionOwnership,
+  listSessions,
+  setSession,
+  type SessionCapabilities,
+} from '../../session-store.js';
 import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 import { getPortFromUrl, validateRemoteServerUrl } from './create-session.js';
 
+/**
+ * Normalize capability payloads returned by Appium/WebdriverIO into a flat
+ * capability record.
+ *
+ * @param value - Raw response payload from session capability APIs.
+ * @returns A capability record when one can be derived, otherwise `undefined`.
+ */
 function readCapabilities(value: unknown): SessionCapabilities | undefined {
   if (!value || typeof value !== 'object') {
     return undefined;
@@ -25,6 +38,13 @@ const METADATA_FIELDS = [
   ['deviceName', 'appium:deviceName', 'appium:deviceName'],
 ] as const;
 
+/**
+ * Read capabilities from a WebdriverIO client method when available.
+ *
+ * @param client - Attached WebdriverIO client for the target Appium session.
+ * @param methodName - Capability reader to invoke on the client.
+ * @returns Parsed capabilities, or `undefined` when the method is missing or fails.
+ */
 async function readClientCapabilities(
   client: Client,
   methodName: 'getAppiumSessionCapabilities' | 'getSession'
@@ -41,6 +61,14 @@ async function readClientCapabilities(
   }
 }
 
+/**
+ * Attach MCP Appium to an existing remote Appium session without taking
+ * ownership of the underlying session lifecycle.
+ *
+ * @param args - Remote server location, target session id, and optional
+ *   capability overrides to seed local metadata.
+ * @returns A tool response describing whether the attach succeeded.
+ */
 export async function attachSessionAction(args: {
   remoteServerUrl: string;
   sessionId: string;

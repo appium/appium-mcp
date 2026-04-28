@@ -8,7 +8,14 @@ import { listSessionsAction } from './list-sessions.js';
 import { selectSessionAction } from './select-session.js';
 import { errorResult, toolErrorMessage } from '../tool-response.js';
 
-const SESSION_ACTIONS = ['create', 'attach', 'detach', 'delete', 'list', 'select'] as const;
+const SESSION_ACTIONS = [
+  'create',
+  'attach',
+  'detach',
+  'delete',
+  'list',
+  'select',
+] as const;
 
 const CREATE_SESSION_DESCRIPTION = `Create a new Appium session with Android, iOS or any device/driver Appium supports.
       DEFAULT MODE (no remoteServerUrl) — USE THIS UNLESS THE USER EXPLICITLY PROVIDES A SERVER URL:
