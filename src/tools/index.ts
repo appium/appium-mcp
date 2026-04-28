@@ -25,6 +25,7 @@ import deviceInfo from './session/device-info.js';
 import fileTransfer from './session/file-transfer.js';
 import driverSettings from './session/driver-settings.js';
 import prepareIosSimulator from './ios/prepare-ios-simulator.js';
+import prepareIosRealDevice from './ios/prepare-ios-real-device.js';
 import generateTest from './test-generation/generate-tests.js';
 import gesture from './gestures/gesture.js';
 import performActionsTool from './gestures/perform-actions.js';
@@ -170,6 +171,7 @@ export default function registerTools(server: FastMCP): void {
 
   // iOS Setup
   prepareIosSimulator(server);
+  prepareIosRealDevice(server);
 
   // Gestures (touch input)
   gesture(server);
