@@ -14,7 +14,7 @@ async function startServer(): Promise<void> {
 
   try {
     if (useHttpStream) {
-      server.start({
+      await server.start({
         transportType: 'httpStream',
         httpStream: {
           endpoint: '/sse',
@@ -28,7 +28,7 @@ async function startServer(): Promise<void> {
       log.info('Waiting for client connections...');
     } else {
       // Start with stdio transport
-      server.start({
+      await server.start({
         transportType: 'stdio',
       });
 
