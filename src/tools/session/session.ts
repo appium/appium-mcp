@@ -9,12 +9,14 @@ import { errorResult, toolErrorMessage } from '../tool-response.js';
 const SESSION_ACTIONS = ['create', 'delete', 'list', 'select'] as const;
 
 const CREATE_SESSION_DESCRIPTION = `Create a new Appium session with Android, iOS or any device/driver Appium supports.
-      WORKFLOW FOR LOCAL SERVERS (no remoteServerUrl):
+      DEFAULT MODE (no remoteServerUrl) — USE THIS UNLESS THE USER EXPLICITLY PROVIDES A SERVER URL:
+      - Drivers run embedded inside this MCP server; no separate Appium process is needed
       - Use select_device tool FIRST to discover devices and let the user choose platform and device
-      - Then call action=create with the selected platform
+      - Then call action=create with the selected platform (do NOT pass remoteServerUrl)
       - For iOS simulators, call prepare_ios_simulator before action=create
       - DO NOT assume or default to any platform
-      WORKFLOW FOR REMOTE SERVERS (remoteServerUrl provided):
+      - NEVER invent a localhost URL (e.g. http://localhost:4723) — omitting remoteServerUrl IS the local/embedded mode
+      REMOTE SERVER MODE (only when user explicitly provides a URL like http://localhost:4723):
       - SKIP select_device tool entirely
       - Infer the platform from the user's request (e.g., 'ios', 'android', or 'general')
       - If platform is 'general', treat the provided capabilities as a pass-through W3C/Appium capability set (useful for non-Android/iOS drivers like Windows, macOS, or custom drivers)
