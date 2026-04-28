@@ -55,7 +55,7 @@ Before you begin, ensure you have the following installed:
 1.  Install Xcode from the App Store.
 2.  Install the Xcode Command Line Tools: `xcode-select --install`.
 3.  Install iOS simulators through Xcode.
-4.  For real device testing, enable Developer Mode on the device and sign in to your Apple ID in Xcode (Settings → Accounts). Use `appium_prepare_ios_real_device` to build, sign, and install WebDriverAgent in a single call - it will guide you through provisioning profile selection and certificate trust.
+4.  For real device testing, enable Developer Mode on the device and sign in to your Apple ID in Xcode (Settings → Accounts). Use `appium_prepare_ios_real_device` to download, sign, and install WebDriverAgent in a single call - it will guide you through provisioning profile selection and certificate trust.
 
 ## 🛠️ Installation
 
@@ -311,7 +311,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | ----------------- | ------------------------------------------------------------------------ |
 | `select_device`   | **REQUIRED FIRST**: Discover available devices and select one. Auto-selects if only one device found |
 | `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only). Set `APPIUM_MCP_WDA_APP_PATH` to skip all downloads and use a local `.app` bundle instead. |
-| `appium_prepare_ios_real_device` | Prepare a real iOS device for Appium testing. **Two-step flow**: (1) call without `provisioningProfileUuid` to list available `.mobileprovision` profiles; (2) call again with the chosen UUID and `isFreeAccount` to build WDA unsigned, package it as an IPA, resign with the profile, and install on the device. Results are cached per WDA version and profile, so repeat runs are fast. After install, follow the on-screen trust instructions before starting a session. macOS + Xcode 15+ required. |
+| `appium_prepare_ios_real_device` | Prepare a real iOS device for Appium testing. **Two-step flow**: (1) call without `provisioningProfileUuid` to list available `.mobileprovision` profiles; (2) call again with the chosen UUID and `isFreeAccount` to download the matching WDA release, package it as an IPA, resign with the profile, and install on the device. Results are cached per WDA version and profile, so repeat runs are fast. After install, follow the on-screen trust instructions before starting a session and pass the returned `capabilitiesHint` to `create_session`. macOS + Xcode 15+ required. |
 
 ### Session Management
 

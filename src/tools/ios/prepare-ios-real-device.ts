@@ -6,13 +6,12 @@
  *    .mobileprovision profiles so the LLM can ask the user which to use plus
  *    whether the underlying account is free or enterprise.
  *  - Build (provisioningProfileUuid + isFreeAccount given): chains
- *    xcodebuild → package IPA → applesign → install on device. Each step is
- *    cached so re-runs are fast.
+ *    download matching WDA release → package IPA → applesign → install on
+ *    device. Each step is cached so re-runs are fast.
  *
  * After a successful run the WDA app is installed on the device. Subsequent
- * create_session calls should pass `appium:usePreinstalledWDA: true` together
- * with the returned `wdaBundleId` (as `appium:updatedWDABundleId`) so Appium
- * skips its own rebuild.
+ * create_session calls should pass the returned `capabilitiesHint` so Appium
+ * uses the signed prebuilt WDA bundle instead of rebuilding it.
  */
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
@@ -20,7 +19,15 @@ import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 import os from 'node:os';
-import { access, mkdir, readdir, readFile, rm, cp } from 'node:fs/promises';
+import {
+  access,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  cp,
+  writeFile,
+} from 'node:fs/promises';
 import { constants, createWriteStream, existsSync } from 'node:fs';
 import { BOOTSTRAP_PATH } from 'appium-webdriveragent';
 import Applesign from 'applesign';
@@ -41,7 +48,7 @@ interface StepResult {
 
 interface PrepareRealDeviceResult {
   validate_device: StepResult;
-  wda_build: StepResult;
+  wda_download: StepResult;
   wda_package: StepResult;
   wda_sign: StepResult;
   wda_install: StepResult;
@@ -145,7 +152,7 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
   });
 }
 
-// ── WDA project resolution ──
+// ── WDA release resolution ──
 
 async function getWdaPackageVersion(): Promise<string> {
   try {
@@ -158,37 +165,43 @@ async function getWdaPackageVersion(): Promise<string> {
   }
 }
 
-// ── xcodebuild ──
-
-async function buildWdaUnsigned(
-  projectDir: string,
-  derivedDataPath: string
+async function downloadWdaApp(
+  version: string,
+  downloadDir: string
 ): Promise<string> {
-  const cmd = [
-    'xcodebuild',
-    'clean',
-    'build-for-testing',
-    '-project',
-    'WebDriverAgent.xcodeproj',
-    '-derivedDataPath',
-    `"${derivedDataPath}"`,
-    '-scheme',
-    'WebDriverAgentRunner',
-    '-destination',
-    'generic/platform=iOS',
-    'CODE_SIGNING_ALLOWED=NO',
-  ].join(' ');
-  await execAsync(cmd, { cwd: projectDir, maxBuffer: 1024 * 1024 * 64 });
-  const builtAppPath = path.join(
-    derivedDataPath,
-    'Build/Products/Debug-iphoneos/WebDriverAgentRunner-Runner.app'
-  );
-  if (!(await fileExists(builtAppPath))) {
+  const url = `https://github.com/appium/WebDriverAgent/releases/download/v${version}/WebDriverAgentRunner-Runner.zip`;
+  const zipPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.zip');
+
+  await mkdir(downloadDir, { recursive: true });
+
+  log.info(`Downloading WDA v${version} from ${url}...`);
+  const response = await fetch(url, {
+    method: 'GET',
+    redirect: 'follow',
+    headers: { 'User-Agent': 'appium-mcp' },
+  });
+  if (!response.ok) {
     throw new Error(
-      `xcodebuild succeeded but ${builtAppPath} was not produced`
+      `Failed to download WDA release v${version}: HTTP ${response.status}. ` +
+        `Check that the release exists at ${url}`
     );
   }
-  return builtAppPath;
+
+  const buffer = await response.arrayBuffer();
+  await writeFile(zipPath, Buffer.from(buffer));
+
+  log.info('Extracting WDA zip...');
+  await execAsync(`unzip -oqq "${zipPath}" -d "${downloadDir}"`);
+  await rm(zipPath, { force: true });
+
+  const appPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.app');
+  if (!(await fileExists(appPath))) {
+    throw new Error(
+      `WebDriverAgentRunner-Runner.app not found after extracting ${url}. ` +
+        `The release asset format may have changed.`
+    );
+  }
+  return appPath;
 }
 
 async function stripFrameworks(appPath: string): Promise<void> {
@@ -313,7 +326,7 @@ async function runPipeline(
 ): Promise<PrepareRealDeviceResult> {
   const result: PrepareRealDeviceResult = {
     validate_device: { status: 'skipped', detail: '' },
-    wda_build: { status: 'skipped', detail: '' },
+    wda_download: { status: 'skipped', detail: '' },
     wda_package: { status: 'skipped', detail: '' },
     wda_sign: { status: 'skipped', detail: '' },
     wda_install: { status: 'skipped', detail: '' },
@@ -355,7 +368,7 @@ async function runPipeline(
         p.uuid.toLowerCase() === inputs.provisioningProfileUuid.toLowerCase()
     );
     if (!found) {
-      result.wda_build = {
+      result.wda_download = {
         status: 'failed',
         detail: `Provisioning profile UUID "${inputs.provisioningProfileUuid}" not found on this machine`,
       };
@@ -363,7 +376,7 @@ async function runPipeline(
     }
     profile = found;
   } catch (err) {
-    result.wda_build = {
+    result.wda_download = {
       status: 'failed',
       detail: (err as Error).message,
     };
@@ -373,39 +386,41 @@ async function runPipeline(
   // ── Resolve cache paths ──
   const wdaVersion = await getWdaPackageVersion();
   const versionRoot = cachePath(`wda-real/${wdaVersion}`);
-  const derivedDataPath = path.join(versionRoot, 'derived');
+  const downloadDir = path.join(versionRoot, 'downloaded');
   const unsignedIpaPath = path.join(versionRoot, 'Payload.ipa');
   const flag = inputs.isFreeAccount ? 'free' : 'ent';
   const signedDir = path.join(versionRoot, 'signed', `${profile.uuid}-${flag}`);
   const stagedIpaPath = path.join(signedDir, 'Payload.ipa');
   const resignedIpaPath = path.join(signedDir, 'Payload-resigned.ipa');
 
-  // ── Step 2: Build (cached) ──
-  const builtAppPath = path.join(
-    derivedDataPath,
-    'Build/Products/Debug-iphoneos/WebDriverAgentRunner-Runner.app'
+  // ── Step 2: Download matching WDA release (cached) ──
+  const downloadedAppPath = path.join(
+    downloadDir,
+    'WebDriverAgentRunner-Runner.app'
   );
+  let appPath = downloadedAppPath;
   try {
-    if (!inputs.forceRebuild && (await fileExists(builtAppPath))) {
-      result.wda_build = {
+    if (!inputs.forceRebuild && (await fileExists(downloadedAppPath))) {
+      result.wda_download = {
         status: 'skipped',
-        detail: `Reusing cached WDA build at ${builtAppPath}`,
+        detail: `Reusing cached WDA release at ${downloadedAppPath}`,
       };
     } else {
-      if (await fileExists(derivedDataPath)) {
-        await rm(derivedDataPath, { recursive: true, force: true });
+      if (await fileExists(downloadDir)) {
+        await rm(downloadDir, { recursive: true, force: true });
       }
-      await mkdir(derivedDataPath, { recursive: true });
-      log.info(`Building WDA v${wdaVersion} unsigned...`);
-      await buildWdaUnsigned(BOOTSTRAP_PATH, derivedDataPath);
-      await stripFrameworks(builtAppPath);
-      result.wda_build = {
+      appPath = await downloadWdaApp(wdaVersion, downloadDir);
+      await stripFrameworks(appPath);
+      result.wda_download = {
         status: 'completed',
-        detail: `Built WDA v${wdaVersion} into ${builtAppPath}`,
+        detail: `Downloaded WDA v${wdaVersion} to ${appPath}`,
       };
     }
   } catch (err) {
-    result.wda_build = { status: 'failed', detail: (err as Error).message };
+    result.wda_download = {
+      status: 'failed',
+      detail: (err as Error).message,
+    };
     return result;
   }
 
@@ -418,7 +433,7 @@ async function runPipeline(
       };
     } else {
       log.info('Packaging WDA as unsigned IPA...');
-      await packageAppAsIpa(builtAppPath, unsignedIpaPath);
+      await packageAppAsIpa(appPath, unsignedIpaPath);
       result.wda_package = {
         status: 'completed',
         detail: `Packaged unsigned IPA at ${unsignedIpaPath}`,
@@ -498,7 +513,7 @@ async function runPipeline(
   result.ready = true;
   result.capabilitiesHint = {
     'appium:usePreinstalledWDA': true,
-    'appium:updatedWDABundleId': bundleId.replace(/\.xctrunner$/, ''),
+    'appium:prebuiltWDAPath': resignedIpaPath,
     'appium:wdaLaunchTimeout': 30000,
   };
 
@@ -539,13 +554,13 @@ const prepareRealDeviceSchema = z.object({
     .boolean()
     .optional()
     .describe(
-      'If true, ignore cached xcodebuild output and signed IPA and start clean. Default: false.'
+      'If true, ignore cached WDA download and signed IPA and start clean. Default: false.'
     ),
   skipInstall: z
     .boolean()
     .optional()
     .describe(
-      'If true, build and sign WDA but do not push it to the device. Default: false.'
+      'If true, download and sign WDA but do not push it to the device. Default: false.'
     ),
 });
 
@@ -556,14 +571,14 @@ export default function prepareIosRealDevice(server: FastMCP): void {
       'Prepare an iOS real device for Appium testing in a single call. Two-mode flow: ' +
       '(1) Call without provisioningProfileUuid to receive the list of available .mobileprovision profiles — ' +
       'present them to the user and confirm whether the chosen profile belongs to a free Apple ID or a paid/enterprise team. ' +
-      '(2) Call again with the chosen UUID and isFreeAccount to build WebDriverAgent (unsigned), package it as an IPA, ' +
+      '(2) Call again with the chosen UUID and isFreeAccount to download the matching WebDriverAgent release, package it as an IPA, ' +
       'resign it with the chosen profile, and install it on the device. ' +
       'Each step is cached so repeat runs are fast. ' +
       'IMPORTANT: If the result contains requiresUserTrust=true, present the userAction message to the user and wait for ' +
       'them to confirm they have trusted the certificate on the device BEFORE calling create_session. ' +
       'Skipping this step will cause the session to hang or fail. ' +
       'After the user confirms, pass the returned capabilitiesHint to create_session ' +
-      'so Appium reuses the preinstalled WDA instead of rebuilding. Requires macOS, Xcode 15+, and a paired developer-mode device.',
+      'so Appium uses the signed prebuilt WDA instead of rebuilding. Requires macOS, Xcode 15+, and a paired developer-mode device.',
     parameters: prepareRealDeviceSchema,
     annotations: {
       readOnlyHint: false,

@@ -19,7 +19,7 @@ This directory contains all MCP tools available in MCP Appium.
 ### iOS Setup (`ios/`)
 
 - `prepare-ios-simulator.ts` - Boot simulator, download, install and launch WebDriverAgent in a single call
-- `prepare-ios-real-device.ts` - Build WDA unsigned, resign with a local provisioning profile, and install on a real device. Discovery mode (no UUID) lists available `.mobileprovision` profiles; build mode (UUID + `isFreeAccount`) runs the full pipeline with per-version/per-profile caching.
+- `prepare-ios-real-device.ts` - Download the matching WDA release, resign with a local provisioning profile, and install on a real device. Discovery mode (no UUID) lists available `.mobileprovision` profiles; build mode (UUID + `isFreeAccount`) runs the full pipeline with per-version/per-profile caching and returns `usePreinstalledWDA` + `prebuiltWDAPath` capabilities.
 
 ### Navigation (`navigations/`)
 
