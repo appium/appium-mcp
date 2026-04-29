@@ -29,3 +29,7 @@ export function resolveAppiumResourcesPath(...segments: string[]): string {
   const packageRoot = resolve(__dirname, '..', '..');
   return resolve(packageRoot, 'src', 'resources', ...segments);
 }
+
+export function resolveAppiumMcpCachePath(...segments: string[]): string {
+  return join(os.homedir(), '.cache', 'appium-mcp', ...segments);
+}

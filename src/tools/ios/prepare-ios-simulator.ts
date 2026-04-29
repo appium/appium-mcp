@@ -9,16 +9,14 @@ import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 import { access, mkdir, unlink, readdir, stat, rm } from 'node:fs/promises';
-import { constants, createWriteStream } from 'node:fs';
-import { Readable } from 'node:stream';
-import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
-import { pipeline } from 'node:stream/promises';
+import { constants } from 'node:fs';
 import os from 'node:os';
-import { zip } from '@appium/support';
+import { net, plist, zip } from '@appium/support';
 import { Simctl } from 'node-simctl';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
 import { textResult } from '../tool-response.js';
+import { resolveAppiumMcpCachePath } from '../../utils/paths.js';
 
 const execAsync = promisify(exec);
 
@@ -36,10 +34,6 @@ interface PrepareResult {
   ready: boolean;
   udid: string;
   wdaAppPath?: string;
-}
-
-function cachePath(folder: string): string {
-  return path.join(os.homedir(), '.cache', 'appium-mcp', folder);
 }
 
 // ── Filesystem helpers ──
@@ -93,43 +87,12 @@ async function getLatestWDAVersionFromGitHub(): Promise<string> {
   return match[1];
 }
 
-async function downloadFile(url: string, destPath: string): Promise<void> {
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      redirect: 'follow',
-    });
-
-    if (!response.ok || !response.body) {
-      throw new Error(
-        `Failed to download: ${response.status} ${response.statusText}`
-      );
-    }
-
-    const writer = createWriteStream(destPath);
-    const stream = Readable.fromWeb(
-      response.body as unknown as NodeReadableStream<Uint8Array>
-    );
-
-    try {
-      await pipeline(stream, writer);
-    } catch (streamError: any) {
-      writer.close();
-      await cleanupFile(destPath);
-      throw streamError;
-    }
-  } catch (error: any) {
-    await cleanupFile(destPath);
-    throw error;
-  }
-}
-
 async function unzipFile(zipPath: string, destDir: string): Promise<void> {
   await zip.extractAllTo(zipPath, destDir, { useSystemUnzip: true });
 }
 
 async function getLatestWDAVersionFromCache(): Promise<string | null> {
-  const wdaCacheDir = cachePath('wda');
+  const wdaCacheDir = resolveAppiumMcpCachePath('wda');
 
   if (!(await fileExists(wdaCacheDir))) {
     return null;
@@ -168,10 +131,13 @@ async function launchAppOnSimulator(
 }
 
 async function getAppBundleId(appPath: string): Promise<string> {
-  const { stdout } = await execAsync(
-    `/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "${path.join(appPath, 'Info.plist')}"`
-  );
-  return stdout.trim();
+  const manifest = (await plist.parsePlistFile(
+    path.join(appPath, 'Info.plist')
+  )) as { CFBundleIdentifier?: string };
+  if (!manifest.CFBundleIdentifier) {
+    throw new Error(`No CFBundleIdentifier found in ${appPath}`);
+  }
+  return manifest.CFBundleIdentifier;
 }
 
 interface WDAState {
@@ -263,7 +229,11 @@ async function resolveWdaAppPath(
     const cachedVersion = await getLatestWDAVersionFromCache();
     if (cachedVersion) {
       const cachedAppPath = path.join(
-        cachePath(`wda/${cachedVersion}/extracted-${platform}`),
+        resolveAppiumMcpCachePath(
+          'wda',
+          cachedVersion,
+          `extracted-${platform}`
+        ),
         `${artifactPrefix}-Runner.app`
       );
       if (await fileExists(cachedAppPath)) {
@@ -278,7 +248,7 @@ async function resolveWdaAppPath(
 
   // Download from GitHub
   const wdaVersion = await getLatestWDAVersionFromGitHub();
-  const versionCacheDir = cachePath(`wda/${wdaVersion}`);
+  const versionCacheDir = resolveAppiumMcpCachePath('wda', wdaVersion);
   const extractDir = path.join(versionCacheDir, `extracted-${platform}`);
   const zipPath = path.join(
     versionCacheDir,
@@ -301,7 +271,9 @@ async function resolveWdaAppPath(
 
   const downloadUrl = `https://github.com/appium/WebDriverAgent/releases/download/v${wdaVersion}/${artifactPrefix}-Build-Sim-${archStr}.zip`;
   log.info(`Downloading prebuilt WDA v${wdaVersion}...`);
-  await downloadFile(downloadUrl, zipPath);
+  await net.downloadFile(downloadUrl, zipPath, {
+    headers: { 'User-Agent': 'appium-mcp' },
+  });
 
   try {
     log.info('Extracting WebDriverAgent...');
