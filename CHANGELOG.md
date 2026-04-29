@@ -1,3 +1,13 @@
+## [1.68.0](https://github.com/appium/appium-mcp/compare/v1.67.1...v1.68.0) (2026-04-29)
+
+### Features
+
+* **tools:** single appium_mobile_clipboard tool ([#292](https://github.com/appium/appium-mcp/issues/292)) ([ce7c7dc](https://github.com/appium/appium-mcp/commit/ce7c7dc6e20f0dd43b0ebf3f56651065af55fa8c))
+
+### Bug Fixes
+
+* loading mcp server to start ([#298](https://github.com/appium/appium-mcp/issues/298)) ([82414d6](https://github.com/appium/appium-mcp/commit/82414d6dbec351887758aae9414ac9adfc4de22d))
+
 ## [1.67.1](https://github.com/appium/appium-mcp/compare/v1.67.0...v1.67.1) (2026-04-27)
 
 ### Bug Fixes

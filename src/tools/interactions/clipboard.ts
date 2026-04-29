@@ -8,101 +8,83 @@ import {
   toolErrorMessage,
 } from '../tool-response.js';
 
-/**
- * Register clipboard read/write tools.
- *
- * - appium_get_clipboard: reads the current clipboard content as plain text
- * - appium_set_clipboard: writes plain text to the clipboard
- *
- * Both tools rely on the `mobile: getClipboard` / `mobile: setClipboard`
- * Appium execute commands and work on Android, iOS, and remote WebDriver
- * sessions.
- */
+const schema = z.object({
+  action: z
+    .enum(['get', 'set'])
+    .describe(
+      'get: read device clipboard as plain text. set: write plain text to the clipboard.'
+    ),
+  content: z
+    .string()
+    .optional()
+    .describe(
+      'Required when action is set. Plain text to put on the clipboard.'
+    ),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
+});
+
+type ClipboardArgs = z.infer<typeof schema>;
+
+async function handleGet(sessionId?: string): Promise<ContentResult> {
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
+
+  const text = await getClipboard(driver);
+  if (!text) {
+    return textResult('Clipboard is empty.');
+  }
+  return textResult(`Clipboard content: ${text}`);
+}
+
+async function handleSet(
+  sessionId: string | undefined,
+  content: string
+): Promise<ContentResult> {
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
+
+  await setClipboard(driver, content);
+  return textResult(`Successfully set clipboard content to: ${content}`);
+}
+
 export default function clipboard(server: FastMCP): void {
-  // ─── Get Clipboard ────────────────────────────────────────────────────────
-
   server.addTool({
-    name: 'appium_mobile_get_clipboard',
+    name: 'appium_mobile_clipboard',
     description:
-      'Get the current clipboard content as plain text from the device. ' +
-      'Works on Android (UiAutomator2) and iOS (XCUITest). ' +
-      'Returns an empty string if the clipboard is empty.',
-    parameters: z.object({
-      sessionId: z
-        .string()
-        .optional()
-        .describe('Session ID to target. If omitted, uses the active session.'),
-    }),
-    annotations: {
-      readOnlyHint: true,
-      openWorldHint: false,
-    },
-    execute: async (
-      args: { sessionId?: string },
-      _context: Record<string, unknown> | undefined
-    ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
-      if (!resolved.ok) {
-        return resolved.result;
-      }
-      const { driver } = resolved;
-
-      try {
-        const content = await getClipboard(driver);
-        if (!content) {
-          return textResult('Clipboard is empty.');
-        }
-        return textResult(`Clipboard content: ${content}`);
-      } catch (err: unknown) {
-        return errorResult(
-          `Failed to get clipboard content. err: ${toolErrorMessage(err)}`
-        );
-      }
-    },
-  });
-
-  // ─── Set Clipboard ────────────────────────────────────────────────────────
-
-  const setClipboardSchema = z.object({
-    content: z
-      .string()
-      .describe('The plain text content to write to the device clipboard'),
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-  });
-
-  server.addTool({
-    name: 'appium_mobile_set_clipboard',
-    description:
-      'Set the device clipboard to the provided plain text. ' +
-      'Works on Android (UiAutomator2) and iOS (XCUITest). ' +
-      'Useful for pre-filling clipboard content before testing paste operations, ' +
-      'or for injecting long strings without typing them character by character.',
-    parameters: setClipboardSchema,
+      'Read or set the device clipboard as plain text (Android UiAutomator2 / iOS XCUITest). ' +
+      'action=get returns current text; action=set requires content.',
+    parameters: schema,
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
     },
     execute: async (
-      args: z.infer<typeof setClipboardSchema>,
+      args: ClipboardArgs,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
-      if (!resolved.ok) {
-        return resolved.result;
-      }
-      const { driver } = resolved;
-
       try {
-        await setClipboard(driver, args.content);
-        return textResult(
-          `Successfully set clipboard content to: ${args.content}`
-        );
+        switch (args.action) {
+          case 'get':
+            return await handleGet(args.sessionId);
+          case 'set': {
+            if (args.content === undefined) {
+              return errorResult('content is required for set action');
+            }
+            return await handleSet(args.sessionId, args.content);
+          }
+        }
       } catch (err: unknown) {
         return errorResult(
-          `Failed to set clipboard content. err: ${toolErrorMessage(err)}`
+          `Failed to ${args.action} clipboard. err: ${toolErrorMessage(err)}`
         );
       }
     },

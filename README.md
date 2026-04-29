@@ -344,8 +344,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_mobile_hide_keyboard` | Dismiss the on-screen keyboard (`mobile: hideKeyboard`) |
 | `appium_mobile_is_keyboard_shown` | Whether the on-screen keyboard is visible (`mobile: isKeyboardShown`) |
 | `appium_get_text`     | Get text content from an element                                                             |
-| `appium_get_clipboard` | Get the current clipboard content as plain text from the device            |
-| `appium_set_clipboard` | Set the device clipboard to the provided plain text                        |
+| `appium_mobile_clipboard` | Read or set device clipboard plain text. `action=get` \| `set` (`content` required for set). |
 | `appium_alert` | Handle alerts with `action` = `accept`, `dismiss`, or `get_text` (optional `buttonLabel`) |
 
 ### Screen & Navigation
