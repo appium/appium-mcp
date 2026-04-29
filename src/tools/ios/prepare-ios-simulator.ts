@@ -38,6 +38,11 @@ interface PrepareResult {
 
 // ── Filesystem helpers ──
 
+interface WDAState {
+  installed: boolean;
+  running: boolean;
+}
+
 async function fileExists(filePath: string): Promise<boolean> {
   try {
     await access(filePath, constants.F_OK);
@@ -46,6 +51,8 @@ async function fileExists(filePath: string): Promise<boolean> {
     return false;
   }
 }
+
+// ── WDA download helpers ──
 
 async function cleanupFile(filePath: string): Promise<void> {
   try {
@@ -56,8 +63,6 @@ async function cleanupFile(filePath: string): Promise<void> {
     }
   }
 }
-
-// ── WDA download helpers ──
 
 // Resolves the latest WDA version via GitHub's release permalink instead of the REST API, avoiding the 60/hr
 // unauthenticated API limit. Note: still subject to general GitHub rate limiting and redirect behavior.
@@ -91,6 +96,8 @@ async function unzipFile(zipPath: string, destDir: string): Promise<void> {
   await zip.extractAllTo(zipPath, destDir, { useSystemUnzip: true });
 }
 
+// ── WDA install helpers ──
+
 async function getLatestWDAVersionFromCache(): Promise<string | null> {
   const wdaCacheDir = resolveAppiumMcpCachePath('wda');
 
@@ -114,8 +121,6 @@ async function getLatestWDAVersionFromCache(): Promise<string | null> {
   return filteredVersions.length > 0 ? filteredVersions[0] : null;
 }
 
-// ── WDA install helpers ──
-
 async function installAppOnSimulator(
   appPath: string,
   simulatorUdid: string
@@ -138,11 +143,6 @@ async function getAppBundleId(appPath: string): Promise<string> {
     throw new Error(`No CFBundleIdentifier found in ${appPath}`);
   }
   return manifest.CFBundleIdentifier;
-}
-
-interface WDAState {
-  installed: boolean;
-  running: boolean;
 }
 
 async function getWDAState(simulatorUdid: string): Promise<WDAState> {

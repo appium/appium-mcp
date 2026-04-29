@@ -28,34 +28,6 @@ const schema = z.object({
 
 type ClipboardArgs = z.infer<typeof schema>;
 
-async function handleGet(sessionId?: string): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
-  if (!resolved.ok) {
-    return resolved.result;
-  }
-  const { driver } = resolved;
-
-  const text = await getClipboard(driver);
-  if (!text) {
-    return textResult('Clipboard is empty.');
-  }
-  return textResult(`Clipboard content: ${text}`);
-}
-
-async function handleSet(
-  sessionId: string | undefined,
-  content: string
-): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
-  if (!resolved.ok) {
-    return resolved.result;
-  }
-  const { driver } = resolved;
-
-  await setClipboard(driver, content);
-  return textResult(`Successfully set clipboard content to: ${content}`);
-}
-
 export default function clipboard(server: FastMCP): void {
   server.addTool({
     name: 'appium_mobile_clipboard',
@@ -89,4 +61,32 @@ export default function clipboard(server: FastMCP): void {
       }
     },
   });
+}
+
+async function handleGet(sessionId?: string): Promise<ContentResult> {
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
+
+  const text = await getClipboard(driver);
+  if (!text) {
+    return textResult('Clipboard is empty.');
+  }
+  return textResult(`Clipboard content: ${text}`);
+}
+
+async function handleSet(
+  sessionId: string | undefined,
+  content: string
+): Promise<ContentResult> {
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
+
+  await setClipboard(driver, content);
+  return textResult(`Successfully set clipboard content to: ${content}`);
 }

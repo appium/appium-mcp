@@ -42,6 +42,50 @@ const deviceControlSchema = z.object({
     ),
 });
 
+export default function mobileDeviceControl(server: FastMCP): void {
+  server.addTool({
+    name: 'appium_mobile_device_control',
+    description:
+      'Control device behavior: lock/unlock the screen, shake the device, or open the notifications panel. Use the action parameter to choose what to do.',
+    parameters: deviceControlSchema,
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+    },
+    execute: async (
+      args: z.infer<typeof deviceControlSchema>,
+      _context: Record<string, unknown> | undefined
+    ): Promise<ContentResult> => {
+      const resolved = resolveDriver(args.sessionId);
+      if (!resolved.ok) {
+        return resolved.result;
+      }
+      const { driver } = resolved;
+
+      if (args.action !== 'lock' && args.seconds !== undefined) {
+        return errorResult('seconds is only valid when action is lock');
+      }
+
+      try {
+        switch (args.action) {
+          case 'lock':
+            return await handleLock(driver, args.seconds);
+          case 'unlock':
+            return await handleUnlock(driver);
+          case 'shake':
+            return await handleShake(driver);
+          case 'open_notifications':
+            return await handleOpenNotifications(driver);
+        }
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed device control action ${args.action}. err: ${toolErrorMessage(err)}`
+        );
+      }
+    },
+  });
+}
+
 async function handleLock(
   driver: DriverInstance,
   seconds?: number
@@ -88,48 +132,4 @@ async function handleOpenNotifications(
   }
 
   return textResult('Successfully opened notifications panel.');
-}
-
-export default function mobileDeviceControl(server: FastMCP): void {
-  server.addTool({
-    name: 'appium_mobile_device_control',
-    description:
-      'Control device behavior: lock/unlock the screen, shake the device, or open the notifications panel. Use the action parameter to choose what to do.',
-    parameters: deviceControlSchema,
-    annotations: {
-      readOnlyHint: false,
-      openWorldHint: false,
-    },
-    execute: async (
-      args: z.infer<typeof deviceControlSchema>,
-      _context: Record<string, unknown> | undefined
-    ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
-      if (!resolved.ok) {
-        return resolved.result;
-      }
-      const { driver } = resolved;
-
-      if (args.action !== 'lock' && args.seconds !== undefined) {
-        return errorResult('seconds is only valid when action is lock');
-      }
-
-      try {
-        switch (args.action) {
-          case 'lock':
-            return await handleLock(driver, args.seconds);
-          case 'unlock':
-            return await handleUnlock(driver);
-          case 'shake':
-            return await handleShake(driver);
-          case 'open_notifications':
-            return await handleOpenNotifications(driver);
-        }
-      } catch (err: unknown) {
-        return errorResult(
-          `Failed device control action ${args.action}. err: ${toolErrorMessage(err)}`
-        );
-      }
-    },
-  });
 }

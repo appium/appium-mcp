@@ -4,6 +4,10 @@ import { getDriver } from '../session-store.js';
 
 const W3C_ELEMENT_ID = 'element-6066-11e4-a52e-4f735466cecf';
 
+export type DriverOrError =
+  | { ok: true; driver: DriverInstance }
+  | { ok: false; result: ContentResult };
+
 /**
  * Normalizes unknown errors into a message string for tool responses.
  */
@@ -34,10 +38,6 @@ export function textResult(text: string): ContentResult {
   return { content: [{ type: 'text', text }] };
 }
 
-function sanitizePrimaryElementIdLine(elementId: string): string {
-  return elementId.replace(/[\r\n]+/g, '').trim();
-}
-
 /**
  * Canonical first line: machine-parseable `elementId:<value>`, then human-readable detail.
  * Strips newlines from elementId so the first line stays one logical field for parsers.
@@ -58,10 +58,6 @@ export function textResultWithPrimaryElementId(
 export function errorResult(text: string): ContentResult {
   return { content: [{ type: 'text', text }], isError: true };
 }
-
-export type DriverOrError =
-  | { ok: true; driver: DriverInstance }
-  | { ok: false; result: ContentResult };
 
 /**
  * Resolves the driver for a tool call or returns a standardised error result.
@@ -93,4 +89,8 @@ export function platformMismatch(
   return errorResult(
     `action=${action} is ${expected}-only. Current session platform is '${actual}'.`
   );
+}
+
+function sanitizePrimaryElementIdLine(elementId: string): string {
+  return elementId.replace(/[\r\n]+/g, '').trim();
 }

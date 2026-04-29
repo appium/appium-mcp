@@ -18,6 +18,38 @@ export interface ElementWithLocators {
 }
 
 /**
+ * Main function to generate locators for all elements from sourceXML
+ *
+ * @param sourceXML - The XML page source to process
+ * @param isNative - Whether this is a native context
+ * @param automationName - The automation driver name (uiautomator2, xcuitest, etc.)
+ * @param filters - Optional filters to apply when selecting elements
+ * @returns Array of elements with their generated locators
+ */
+export function generateAllElementLocators(
+  sourceXML: string,
+  isNative: boolean = true,
+  automationName: string,
+  filters: FilterOptions = {}
+): ElementWithLocators[] {
+  const sourceJSON = xmlToJSON(sourceXML);
+  const results: ElementWithLocators[] = [];
+
+  if (sourceJSON) {
+    traverseAndProcessElements(
+      sourceJSON,
+      sourceXML,
+      isNative,
+      automationName,
+      filters,
+      results
+    );
+  }
+
+  return results;
+}
+
+/**
  * Transforms a JSONElement with locators into ElementWithLocators format
  */
 function transformElementWithLocators(
@@ -114,36 +146,4 @@ function traverseAndProcessElements(
       )
     );
   }
-}
-
-/**
- * Main function to generate locators for all elements from sourceXML
- *
- * @param sourceXML - The XML page source to process
- * @param isNative - Whether this is a native context
- * @param automationName - The automation driver name (uiautomator2, xcuitest, etc.)
- * @param filters - Optional filters to apply when selecting elements
- * @returns Array of elements with their generated locators
- */
-export function generateAllElementLocators(
-  sourceXML: string,
-  isNative: boolean = true,
-  automationName: string,
-  filters: FilterOptions = {}
-): ElementWithLocators[] {
-  const sourceJSON = xmlToJSON(sourceXML);
-  const results: ElementWithLocators[] = [];
-
-  if (sourceJSON) {
-    traverseAndProcessElements(
-      sourceJSON,
-      sourceXML,
-      isNative,
-      automationName,
-      filters,
-      results
-    );
-  }
-
-  return results;
 }

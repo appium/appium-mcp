@@ -83,25 +83,6 @@ const dragAndDropSchema = z.object({
 
 type DragArgs = z.infer<typeof dragAndDropSchema>;
 
-async function resolvePoint(
-  driver: DriverInstance,
-  uuid: string | undefined,
-  x: number | undefined,
-  y: number | undefined
-): Promise<{ x: number; y: number } | { error: string }> {
-  if (uuid) {
-    const rect = await getElementRect(driver, uuid);
-    return {
-      x: Math.floor(rect.x + rect.width / 2),
-      y: Math.floor(rect.y + rect.height / 2),
-    };
-  }
-  if (x === undefined || y === undefined) {
-    return { error: 'missing element UUID or coordinates' };
-  }
-  return { x, y };
-}
-
 export default function dragAndDrop(server: FastMCP): void {
   server.addTool({
     name: 'appium_drag_and_drop',
@@ -206,4 +187,23 @@ export default function dragAndDrop(server: FastMCP): void {
       }
     },
   });
+}
+
+async function resolvePoint(
+  driver: DriverInstance,
+  uuid: string | undefined,
+  x: number | undefined,
+  y: number | undefined
+): Promise<{ x: number; y: number } | { error: string }> {
+  if (uuid) {
+    const rect = await getElementRect(driver, uuid);
+    return {
+      x: Math.floor(rect.x + rect.width / 2),
+      y: Math.floor(rect.y + rect.height / 2),
+    };
+  }
+  if (x === undefined || y === undefined) {
+    return { error: 'missing element UUID or coordinates' };
+  }
+  return { x, y };
 }

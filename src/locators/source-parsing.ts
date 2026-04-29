@@ -16,6 +16,17 @@ export const xmlToDOM = (string: string): XMLDocument =>
 export const domToXML = (dom: XMLNode): string =>
   xmlSerializer.serializeToString(dom);
 
+interface ElementAttributes {
+  [key: string]: string;
+}
+
+interface JSONElement {
+  children: JSONElement[];
+  tagName: string;
+  attributes: ElementAttributes;
+  path: string;
+}
+
 /**
  * Get the child nodes of a Node object
  *
@@ -52,17 +63,6 @@ export function findDOMNodeByPath(
     selectedElement = childNodesOf(selectedElement)[parseInt(index, 10)];
   }
   return selectedElement;
-}
-
-interface ElementAttributes {
-  [key: string]: string;
-}
-
-interface JSONElement {
-  children: JSONElement[];
-  tagName: string;
-  attributes: ElementAttributes;
-  path: string;
 }
 
 /**

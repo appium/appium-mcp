@@ -220,110 +220,6 @@ export function getSuggestedLocators(
 }
 
 /**
- * Return information about whether an xpath query results in a unique element, and the non-unique
- * index of the element in the document if not unique
- */
-function determineXpathUniqueness(
-  xpath: string,
-  doc: XMLDocument,
-  domNode: XMLNode
-): [boolean, number?] {
-  let othersWithAttr: XMLNode[] = [];
-
-  // If the XPath does not parse, move to the next unique attribute
-  try {
-    const result = XPath.select(xpath, doc as any);
-    othersWithAttr = Array.isArray(result)
-      ? (result as unknown as XMLNode[])
-      : [];
-  } catch {
-    return [false];
-  }
-
-  if (othersWithAttr.length > 1) {
-    return [false, othersWithAttr.indexOf(domNode)];
-  }
-
-  return [true];
-}
-
-/**
- * Given an xml doc and a current dom node, try to find a robust xpath selector qualified by
- * key attributes, which is unique in the document (or unique plus index).
- */
-function getUniqueXPath(
-  doc: XMLDocument,
-  domNode: XMLNode,
-  attrs: string[] | [string, string][]
-): [string | undefined, boolean | undefined] {
-  let uniqueXpath: string | undefined, semiUniqueXpath: string | undefined;
-  const tagForXpath = domNode.nodeName || '*';
-  const isPairs = attrs.length > 0 && _.isArray(attrs[0]);
-  const isNodeName = attrs.length === 0;
-
-  // If we're looking for a unique //<nodetype>, return it only if it's actually unique. No
-  // semi-uniqueness here!
-  if (isNodeName) {
-    let xpath = `//${domNode.nodeName}`;
-    const [isUnique] = determineXpathUniqueness(xpath, doc, domNode);
-    if (isUnique) {
-      // even if this node name is unique, if it's the root node, we don't want to refer to it using
-      // '//' but rather '/'
-      if (!domNode.parentNode?.nodeName) {
-        xpath = `/${domNode.nodeName}`;
-      }
-      return [xpath, true];
-    }
-    return [undefined, undefined];
-  }
-
-  // Otherwise go through our various attributes to look for uniqueness
-  for (const attrName of attrs) {
-    let xpath: string;
-    if (isPairs) {
-      const [attr1Name, attr2Name] = attrName as [string, string];
-      const attr1Value = (domNode as XMLElement).getAttribute?.(attr1Name);
-      const attr2Value = (domNode as XMLElement).getAttribute?.(attr2Name);
-      if (!attr1Value || !attr2Value) {
-        continue;
-      }
-      xpath = `//${tagForXpath}[@${attr1Name}="${attr1Value}" and @${attr2Name}="${attr2Value}"]`;
-    } else {
-      const attrValue = (domNode as XMLElement).getAttribute?.(
-        attrName as string
-      );
-      if (!attrValue) {
-        continue;
-      }
-      xpath = `//${tagForXpath}[@${attrName}="${attrValue}"]`;
-    }
-    const [isUnique, indexIfNotUnique] = determineXpathUniqueness(
-      xpath,
-      doc,
-      domNode
-    );
-    if (isUnique) {
-      uniqueXpath = xpath;
-      break;
-    }
-
-    // if the xpath wasn't totally unique it might still be our best bet. Store a less unique
-    // version qualified by an index for later in semiUniqueXpath. If we can't find a better
-    // unique option down the road, we'll fall back to this
-    if (!semiUniqueXpath && !_.isUndefined(indexIfNotUnique)) {
-      semiUniqueXpath = `(${xpath})[${indexIfNotUnique + 1}]`;
-    }
-  }
-  if (uniqueXpath) {
-    return [uniqueXpath, true];
-  }
-  if (semiUniqueXpath) {
-    return [semiUniqueXpath, false];
-  }
-  return [undefined, undefined];
-}
-
-/**
  * Get an optimal XPath for a Node
  */
 export function getOptimalXPath(
@@ -648,6 +544,110 @@ export function getOptimalUiAutomatorSelector(
     return null;
   }
   return null;
+}
+
+/**
+ * Return information about whether an xpath query results in a unique element, and the non-unique
+ * index of the element in the document if not unique
+ */
+function determineXpathUniqueness(
+  xpath: string,
+  doc: XMLDocument,
+  domNode: XMLNode
+): [boolean, number?] {
+  let othersWithAttr: XMLNode[] = [];
+
+  // If the XPath does not parse, move to the next unique attribute
+  try {
+    const result = XPath.select(xpath, doc as any);
+    othersWithAttr = Array.isArray(result)
+      ? (result as unknown as XMLNode[])
+      : [];
+  } catch {
+    return [false];
+  }
+
+  if (othersWithAttr.length > 1) {
+    return [false, othersWithAttr.indexOf(domNode)];
+  }
+
+  return [true];
+}
+
+/**
+ * Given an xml doc and a current dom node, try to find a robust xpath selector qualified by
+ * key attributes, which is unique in the document (or unique plus index).
+ */
+function getUniqueXPath(
+  doc: XMLDocument,
+  domNode: XMLNode,
+  attrs: string[] | [string, string][]
+): [string | undefined, boolean | undefined] {
+  let uniqueXpath: string | undefined, semiUniqueXpath: string | undefined;
+  const tagForXpath = domNode.nodeName || '*';
+  const isPairs = attrs.length > 0 && _.isArray(attrs[0]);
+  const isNodeName = attrs.length === 0;
+
+  // If we're looking for a unique //<nodetype>, return it only if it's actually unique. No
+  // semi-uniqueness here!
+  if (isNodeName) {
+    let xpath = `//${domNode.nodeName}`;
+    const [isUnique] = determineXpathUniqueness(xpath, doc, domNode);
+    if (isUnique) {
+      // even if this node name is unique, if it's the root node, we don't want to refer to it using
+      // '//' but rather '/'
+      if (!domNode.parentNode?.nodeName) {
+        xpath = `/${domNode.nodeName}`;
+      }
+      return [xpath, true];
+    }
+    return [undefined, undefined];
+  }
+
+  // Otherwise go through our various attributes to look for uniqueness
+  for (const attrName of attrs) {
+    let xpath: string;
+    if (isPairs) {
+      const [attr1Name, attr2Name] = attrName as [string, string];
+      const attr1Value = (domNode as XMLElement).getAttribute?.(attr1Name);
+      const attr2Value = (domNode as XMLElement).getAttribute?.(attr2Name);
+      if (!attr1Value || !attr2Value) {
+        continue;
+      }
+      xpath = `//${tagForXpath}[@${attr1Name}="${attr1Value}" and @${attr2Name}="${attr2Value}"]`;
+    } else {
+      const attrValue = (domNode as XMLElement).getAttribute?.(
+        attrName as string
+      );
+      if (!attrValue) {
+        continue;
+      }
+      xpath = `//${tagForXpath}[@${attrName}="${attrValue}"]`;
+    }
+    const [isUnique, indexIfNotUnique] = determineXpathUniqueness(
+      xpath,
+      doc,
+      domNode
+    );
+    if (isUnique) {
+      uniqueXpath = xpath;
+      break;
+    }
+
+    // if the xpath wasn't totally unique it might still be our best bet. Store a less unique
+    // version qualified by an index for later in semiUniqueXpath. If we can't find a better
+    // unique option down the road, we'll fall back to this
+    if (!semiUniqueXpath && !_.isUndefined(indexIfNotUnique)) {
+      semiUniqueXpath = `(${xpath})[${indexIfNotUnique + 1}]`;
+    }
+  }
+  if (uniqueXpath) {
+    return [uniqueXpath, true];
+  }
+  if (semiUniqueXpath) {
+    return [semiUniqueXpath, false];
+  }
+  return [undefined, undefined];
 }
 
 function logLocatorError(strategy: string, error: any): void {

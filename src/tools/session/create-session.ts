@@ -36,25 +36,6 @@ interface CapabilitiesConfig {
 }
 
 /**
- * Load capabilities configuration from file if specified in environment
- */
-async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
-  const configPath = process.env.CAPABILITIES_CONFIG;
-  if (!configPath) {
-    return { android: {}, ios: {}, general: {} };
-  }
-
-  try {
-    await access(configPath, constants.F_OK);
-    const configContent = await readFile(configPath, 'utf8');
-    return JSON.parse(configContent);
-  } catch (error: unknown) {
-    log.warn(`Failed to parse capabilities config: ${toolErrorMessage(error)}`);
-    return { android: {}, ios: {}, general: {} };
-  }
-}
-
-/**
  * Remove empty string values from capabilities object
  */
 export function filterEmptyCapabilities(
@@ -220,41 +201,6 @@ export function validateRemoteServerUrl(
 }
 
 /**
- * Create the appropriate driver instance for the given platform
- */
-function createDriverForPlatform(platform: 'android' | 'ios'): any {
-  if (platform === 'android') {
-    const driver = new AndroidUiautomator2Driver({} as any);
-    driver.relaxedSecurityEnabled = true;
-    return driver;
-  }
-  if (platform === 'ios') {
-    const driver = new XCUITestDriver({} as any);
-    driver.relaxedSecurityEnabled = true;
-    return driver;
-  }
-  throw new Error(
-    `Unsupported platform: ${platform}. Please choose 'android' or 'ios'.`
-  );
-}
-
-/**
- * Create a new session with the given driver and capabilities
- */
-async function createDriverSession(
-  driver: any,
-  capabilities: Capabilities
-): Promise<string> {
-  // @ts-ignore
-  const result = await driver.createSession(null, {
-    alwaysMatch: capabilities,
-    firstMatch: [{}],
-  });
-  // Appium drivers return [sessionId, caps], extract just the session ID
-  return Array.isArray(result) ? result[0] : result;
-}
-
-/**
  * Registers a tool for creating a new mobile session with Android or iOS devices.
  *
  * This function adds a 'create_session' tool to the provided server that handles
@@ -394,4 +340,58 @@ export async function createSessionAction(args: {
     log.error('Error creating session:', error);
     throw new Error(`Failed to create session: ${error.message}`);
   }
+}
+
+/**
+ * Load capabilities configuration from file if specified in environment
+ */
+async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
+  const configPath = process.env.CAPABILITIES_CONFIG;
+  if (!configPath) {
+    return { android: {}, ios: {}, general: {} };
+  }
+
+  try {
+    await access(configPath, constants.F_OK);
+    const configContent = await readFile(configPath, 'utf8');
+    return JSON.parse(configContent);
+  } catch (error: unknown) {
+    log.warn(`Failed to parse capabilities config: ${toolErrorMessage(error)}`);
+    return { android: {}, ios: {}, general: {} };
+  }
+}
+
+/**
+ * Create the appropriate driver instance for the given platform
+ */
+function createDriverForPlatform(platform: 'android' | 'ios'): any {
+  if (platform === 'android') {
+    const driver = new AndroidUiautomator2Driver({} as any);
+    driver.relaxedSecurityEnabled = true;
+    return driver;
+  }
+  if (platform === 'ios') {
+    const driver = new XCUITestDriver({} as any);
+    driver.relaxedSecurityEnabled = true;
+    return driver;
+  }
+  throw new Error(
+    `Unsupported platform: ${platform}. Please choose 'android' or 'ios'.`
+  );
+}
+
+/**
+ * Create a new session with the given driver and capabilities
+ */
+async function createDriverSession(
+  driver: any,
+  capabilities: Capabilities
+): Promise<string> {
+  // @ts-ignore
+  const result = await driver.createSession(null, {
+    alwaysMatch: capabilities,
+    firstMatch: [{}],
+  });
+  // Appium drivers return [sessionId, caps], extract just the session ID
+  return Array.isArray(result) ? result[0] : result;
 }

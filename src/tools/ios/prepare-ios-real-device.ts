@@ -58,6 +58,15 @@ interface ProfileChoice {
 
 // ── Filesystem helpers ──
 
+interface PipelineInputs {
+  udid: string;
+  provisioningProfileUuid: string;
+  isFreeAccount: boolean;
+  forceRebuild: boolean;
+}
+
+// ── Provisioning profile discovery ──
+
 async function fileExists(filePath: string): Promise<boolean> {
   try {
     await access(filePath, constants.F_OK);
@@ -67,14 +76,14 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-// ── Provisioning profile discovery ──
-
 function getProvisioningProfileDir(): string {
   return path.join(
     os.homedir(),
     'Library/Developer/Xcode/UserData/Provisioning Profiles'
   );
 }
+
+// ── WDA release resolution ──
 
 async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
   const dir = getProvisioningProfileDir();
@@ -116,8 +125,6 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
     };
   });
 }
-
-// ── WDA release resolution ──
 
 async function getWdaPackageVersion(): Promise<string> {
   try {
@@ -161,6 +168,8 @@ async function downloadWdaApp(
   return appPath;
 }
 
+// ── IPA packaging ──
+
 async function stripFrameworks(appPath: string): Promise<void> {
   const frameworksDir = path.join(appPath, 'Frameworks');
   if (!(await fileExists(frameworksDir))) {
@@ -171,7 +180,7 @@ async function stripFrameworks(appPath: string): Promise<void> {
   }
 }
 
-// ── IPA packaging ──
+// ── Signing ──
 
 async function packageAppAsIpa(
   appPath: string,
@@ -198,7 +207,7 @@ async function packageAppAsIpa(
   await rm(stagingDir, { recursive: true, force: true });
 }
 
-// ── Signing ──
+// ── Bundle ID extraction (from the signed IPA) ──
 
 async function signIpa(
   ipaPath: string,
@@ -226,7 +235,7 @@ async function signIpa(
   return resignedPath;
 }
 
-// ── Bundle ID extraction (from the signed IPA) ──
+// ── Main pipeline ──
 
 async function extractBundleIdFromIpa(ipaPath: string): Promise<string> {
   const tmpDir = path.join(path.dirname(ipaPath), `bundleid-${Date.now()}`);
@@ -254,15 +263,6 @@ async function extractBundleIdFromIpa(ipaPath: string): Promise<string> {
   } finally {
     await rm(tmpDir, { recursive: true, force: true });
   }
-}
-
-// ── Main pipeline ──
-
-interface PipelineInputs {
-  udid: string;
-  provisioningProfileUuid: string;
-  isFreeAccount: boolean;
-  forceRebuild: boolean;
 }
 
 async function runPipeline(

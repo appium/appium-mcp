@@ -31,23 +31,6 @@ type PinchTarget = {
   spread: number;
 };
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function maxSpreadForCenter(
-  cx: number,
-  cy: number,
-  windowRect: RectLike
-): number {
-  const left = windowRect.x ?? 0;
-  const top = windowRect.y ?? 0;
-  const right = left + windowRect.width - 1;
-  const bottom = top + windowRect.height - 1;
-
-  return Math.max(1, Math.min(cx - left, right - cx, cy - top, bottom - cy));
-}
-
 export function resolveElementPinchTarget(
   elementRect: RectLike,
   windowRect: RectLike
@@ -91,44 +74,6 @@ export function resolveElementPinchTarget(
     cx,
     cy,
     spread: Math.min(cappedDesired, maxSpreadForCenter(cx, cy, windowRect)),
-  };
-}
-
-function resolveWindowPinchTarget(windowRect: RectLike): PinchTarget {
-  const cx = Math.floor((windowRect.x ?? 0) + windowRect.width / 2);
-  const cy = Math.floor((windowRect.y ?? 0) + windowRect.height / 2);
-
-  return {
-    cx,
-    cy,
-    spread: Math.floor(
-      Math.min(windowRect.width, windowRect.height) * DEFAULT_PINCH_SPREAD_RATIO
-    ),
-  };
-}
-
-function resolveCoordinatePinchTarget(
-  x: number,
-  y: number,
-  windowRect: RectLike
-): PinchTarget | string {
-  const left = windowRect.x ?? 0;
-  const top = windowRect.y ?? 0;
-  const right = left + windowRect.width;
-  const bottom = top + windowRect.height;
-
-  if (x < left || x >= right || y < top || y >= bottom) {
-    return `pinch_zoom coordinates (${x}, ${y}) are outside window bounds (${windowRect.width}x${windowRect.height}).`;
-  }
-
-  const desired = Math.floor(
-    Math.min(windowRect.width, windowRect.height) * DEFAULT_PINCH_SPREAD_RATIO
-  );
-
-  return {
-    cx: x,
-    cy: y,
-    spread: Math.min(desired, maxSpreadForCenter(x, y, windowRect)),
   };
 }
 
@@ -292,4 +237,59 @@ export async function handlePinchZoom(
       `Failed to perform pinch_zoom. ${toolErrorMessage(err)}`
     );
   }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function maxSpreadForCenter(
+  cx: number,
+  cy: number,
+  windowRect: RectLike
+): number {
+  const left = windowRect.x ?? 0;
+  const top = windowRect.y ?? 0;
+  const right = left + windowRect.width - 1;
+  const bottom = top + windowRect.height - 1;
+
+  return Math.max(1, Math.min(cx - left, right - cx, cy - top, bottom - cy));
+}
+
+function resolveWindowPinchTarget(windowRect: RectLike): PinchTarget {
+  const cx = Math.floor((windowRect.x ?? 0) + windowRect.width / 2);
+  const cy = Math.floor((windowRect.y ?? 0) + windowRect.height / 2);
+
+  return {
+    cx,
+    cy,
+    spread: Math.floor(
+      Math.min(windowRect.width, windowRect.height) * DEFAULT_PINCH_SPREAD_RATIO
+    ),
+  };
+}
+
+function resolveCoordinatePinchTarget(
+  x: number,
+  y: number,
+  windowRect: RectLike
+): PinchTarget | string {
+  const left = windowRect.x ?? 0;
+  const top = windowRect.y ?? 0;
+  const right = left + windowRect.width;
+  const bottom = top + windowRect.height;
+
+  if (x < left || x >= right || y < top || y >= bottom) {
+    return `pinch_zoom coordinates (${x}, ${y}) are outside window bounds (${windowRect.width}x${windowRect.height}).`;
+  }
+
+  const desired = Math.floor(
+    Math.min(windowRect.width, windowRect.height) * DEFAULT_PINCH_SPREAD_RATIO
+  );
+
+  return {
+    cx: x,
+    cy: y,
+    spread: Math.min(desired, maxSpreadForCenter(x, y, windowRect)),
+  };
 }

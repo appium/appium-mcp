@@ -209,17 +209,6 @@ export function hasActiveSession(): boolean {
   return !!session && !session.isDeletingSession;
 }
 
-function selectNextActiveSessionId(deletedSessionId: string): string | null {
-  if (activeSessionId !== deletedSessionId) {
-    return activeSessionId;
-  }
-
-  const nextSession = Array.from(sessions.keys()).find(
-    (id) => id !== deletedSessionId
-  );
-  return nextSession ?? null;
-}
-
 export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
   const id = sessionId ?? activeSessionId;
 
@@ -283,6 +272,17 @@ export async function safeDeleteAllSessions(): Promise<number> {
   }
 
   return deletedCount;
+}
+
+function selectNextActiveSessionId(deletedSessionId: string): string | null {
+  if (activeSessionId !== deletedSessionId) {
+    return activeSessionId;
+  }
+
+  const nextSession = Array.from(sessions.keys()).find(
+    (id) => id !== deletedSessionId
+  );
+  return nextSession ?? null;
 }
 
 export const getPlatformName = (driver: any): string => {

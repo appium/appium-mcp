@@ -34,31 +34,6 @@ const schema = z.object({
 
 type DriverSettingsArgs = z.infer<typeof schema>;
 
-async function handleGet(sessionId?: string): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
-  if (!resolved.ok) {
-    return resolved.result;
-  }
-  const { driver } = resolved;
-
-  const settings = await getSessionDriverSettings(driver);
-  return textResult(JSON.stringify(settings, null, 2));
-}
-
-async function handleUpdate(
-  sessionId: string | undefined,
-  settings: Record<string, unknown>
-): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
-  if (!resolved.ok) {
-    return resolved.result;
-  }
-  const { driver } = resolved;
-
-  await updateSessionDriverSettings(driver, settings);
-  return textResult('Successfully updated driver settings.');
-}
-
 export default function driverSettings(server: FastMCP): void {
   server.addTool({
     name: 'appium_driver_settings',
@@ -93,4 +68,29 @@ export default function driverSettings(server: FastMCP): void {
       }
     },
   });
+}
+
+async function handleGet(sessionId?: string): Promise<ContentResult> {
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
+
+  const settings = await getSessionDriverSettings(driver);
+  return textResult(JSON.stringify(settings, null, 2));
+}
+
+async function handleUpdate(
+  sessionId: string | undefined,
+  settings: Record<string, unknown>
+): Promise<ContentResult> {
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
+  const { driver } = resolved;
+
+  await updateSessionDriverSettings(driver, settings);
+  return textResult('Successfully updated driver settings.');
 }

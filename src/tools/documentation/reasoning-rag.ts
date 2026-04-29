@@ -20,6 +20,18 @@ export type ReasoningTask =
   | 'classification';
 
 /**
+ * Enhanced RAG response with reasoning
+ */
+export interface EnhancedRAGResponse {
+  query: string;
+  retrievedChunks: Document[];
+  reasoningResults: ReasoningResult[];
+  summary: string;
+  answer: string;
+  sources: string[];
+}
+
+/**
  * Configuration for reasoning models
  */
 interface ReasoningConfig {
@@ -37,18 +49,6 @@ interface ReasoningResult {
   reasoningOutput: string;
   confidence?: number;
   metadata: Record<string, any>;
-}
-
-/**
- * Enhanced RAG response with reasoning
- */
-export interface EnhancedRAGResponse {
-  query: string;
-  retrievedChunks: Document[];
-  reasoningResults: ReasoningResult[];
-  summary: string;
-  answer: string;
-  sources: string[];
 }
 
 /**

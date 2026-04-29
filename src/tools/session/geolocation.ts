@@ -52,6 +52,38 @@ const schema = z.object({
 
 type GeolocationArgs = z.infer<typeof schema>;
 
+export default function geolocation(server: FastMCP): void {
+  server.addTool({
+    name: 'appium_geolocation',
+    description:
+      'Get, set, or reset the device geolocation (GPS coordinates). Works on both iOS (simulators and real devices) and Android (emulators and real devices with mock location enabled). Use action=get to read current coordinates, action=set with latitude/longitude (and optional altitude for Android) to simulate a location, or action=reset to restore the system default. Note: On Android emulators, reset is not supported — use action=set to manually restore coordinates instead. On Android real devices, the mocked location may persist until the GPS cache refreshes.',
+    parameters: schema,
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+    },
+    execute: async (
+      args: GeolocationArgs,
+      _context: Record<string, unknown> | undefined
+    ): Promise<ContentResult> => {
+      try {
+        switch (args.action) {
+          case 'get':
+            return await handleGet(args);
+          case 'set':
+            return await handleSet(args);
+          case 'reset':
+            return await handleReset(args);
+        }
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to ${args.action} geolocation. Error: ${toolErrorMessage(err)}`
+        );
+      }
+    },
+  });
+}
+
 async function handleGet(args: GeolocationArgs): Promise<ContentResult> {
   const resolved = resolveDriver(args.sessionId);
   if (!resolved.ok) {
@@ -138,36 +170,4 @@ async function handleReset(args: GeolocationArgs): Promise<ContentResult> {
   }
 
   return textResult('Successfully reset geolocation to default.');
-}
-
-export default function geolocation(server: FastMCP): void {
-  server.addTool({
-    name: 'appium_geolocation',
-    description:
-      'Get, set, or reset the device geolocation (GPS coordinates). Works on both iOS (simulators and real devices) and Android (emulators and real devices with mock location enabled). Use action=get to read current coordinates, action=set with latitude/longitude (and optional altitude for Android) to simulate a location, or action=reset to restore the system default. Note: On Android emulators, reset is not supported — use action=set to manually restore coordinates instead. On Android real devices, the mocked location may persist until the GPS cache refreshes.',
-    parameters: schema,
-    annotations: {
-      readOnlyHint: false,
-      openWorldHint: false,
-    },
-    execute: async (
-      args: GeolocationArgs,
-      _context: Record<string, unknown> | undefined
-    ): Promise<ContentResult> => {
-      try {
-        switch (args.action) {
-          case 'get':
-            return await handleGet(args);
-          case 'set':
-            return await handleSet(args);
-          case 'reset':
-            return await handleReset(args);
-        }
-      } catch (err: unknown) {
-        return errorResult(
-          `Failed to ${args.action} geolocation. Error: ${toolErrorMessage(err)}`
-        );
-      }
-    },
-  });
 }

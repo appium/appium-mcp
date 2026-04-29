@@ -50,30 +50,6 @@ import context from './context/context.js';
 
 type RegisteredTool = Parameters<FastMCP['addTool']>[0];
 
-function sessionIdFromToolArgs(args: unknown): string | undefined {
-  if (
-    args &&
-    typeof args === 'object' &&
-    'sessionId' in args &&
-    typeof (args as { sessionId?: unknown }).sessionId === 'string'
-  ) {
-    return (args as { sessionId: string }).sessionId;
-  }
-  return undefined;
-}
-
-function isErrorFromToolResult(result: unknown): boolean {
-  if (
-    result &&
-    typeof result === 'object' &&
-    'content' in result &&
-    Array.isArray((result as { content: unknown }).content)
-  ) {
-    return (result as ContentResult).isError === true;
-  }
-  return false;
-}
-
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
   const originalAddTool = server.addTool.bind(server);
@@ -213,4 +189,28 @@ export default function registerTools(server: FastMCP): void {
   answerAppium(server);
   appiumSkills(server);
   log.info('All tools registered');
+}
+
+function sessionIdFromToolArgs(args: unknown): string | undefined {
+  if (
+    args &&
+    typeof args === 'object' &&
+    'sessionId' in args &&
+    typeof (args as { sessionId?: unknown }).sessionId === 'string'
+  ) {
+    return (args as { sessionId: string }).sessionId;
+  }
+  return undefined;
+}
+
+function isErrorFromToolResult(result: unknown): boolean {
+  if (
+    result &&
+    typeof result === 'object' &&
+    'content' in result &&
+    Array.isArray((result as { content: unknown }).content)
+  ) {
+    return (result as ContentResult).isError === true;
+  }
+  return false;
 }

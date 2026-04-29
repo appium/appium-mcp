@@ -35,6 +35,75 @@ export function clearSelectedDevice(): void {
   selectedDeviceInfo = null;
 }
 
+export default function selectDevice(server: any): void {
+  server.addTool({
+    name: 'select_device',
+    description: `Discover and select a device for LOCAL Appium servers ONLY.
+      DO NOT use this tool for REMOTE Appium servers - remoteServerUrl indicates a remote server.
+      WORKFLOW FOR LOCAL SERVERS:
+      1. ASK THE USER which platform they want (Android or iOS) - do not assume
+      2. Call this tool with the chosen platform (and iosDeviceType for iOS)
+      3. If only one device is found, it is auto-selected - proceed to create_session (or prepare_ios_simulator for iOS simulators)
+      4. If multiple devices are found, ask the user which one they want, then call this tool again with deviceUdid
+      5. After selection, proceed to create_session (or prepare_ios_simulator for iOS simulators, then create_session)
+      WORKFLOW FOR REMOTE SERVERS:
+      - SKIP this tool entirely
+      - Device selection should be handled via capabilities in create_session (e.g., appium:deviceName, appium:udid)
+      - The remote Appium server is already configured for specific device(s)
+      `,
+    parameters: z
+      .object({
+        platform: z
+          .enum(['ios', 'android'])
+          .describe(
+            'The platform to list devices for (must match previously selected platform)'
+          ),
+        iosDeviceType: z
+          .enum(['simulator', 'real'])
+          .optional()
+          .describe(
+            "For iOS only: Specify whether to use 'simulator' or 'real' device. REQUIRED when platform is 'ios'."
+          ),
+        deviceUdid: z
+          .string()
+          .optional()
+          .describe(
+            'The UDID of the device selected by the user. If not provided, this tool will list available devices for the user to choose from.'
+          ),
+      })
+      .refine(
+        (data) => data.platform !== 'ios' || data.iosDeviceType !== undefined,
+        {
+          message:
+            "iosDeviceType ('simulator' or 'real') is required when platform is 'ios'",
+          path: ['iosDeviceType'],
+        }
+      ),
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+    },
+    execute: async (args: any, _context: any): Promise<any> => {
+      try {
+        const { platform, iosDeviceType, deviceUdid } = args;
+
+        if (platform === 'android') {
+          return await handleAndroidDeviceSelection(deviceUdid);
+        } else if (platform === 'ios') {
+          return await handleIOSDeviceSelection(iosDeviceType, deviceUdid);
+        } else {
+          throw new Error(
+            `Invalid platform: ${platform}. Please choose 'android' or 'ios'.`
+          );
+        }
+      } catch (error: any) {
+        log.error('Error selecting device:', error);
+        throw new Error(`Failed to select device: ${error.message}`);
+      }
+    },
+  });
+}
+
 /**
  * Get and validate Android devices
  */
@@ -266,73 +335,4 @@ async function handleIOSDeviceSelection(
   }
 
   return formatIOSListResponse(devices, iosDeviceType!);
-}
-
-export default function selectDevice(server: any): void {
-  server.addTool({
-    name: 'select_device',
-    description: `Discover and select a device for LOCAL Appium servers ONLY.
-      DO NOT use this tool for REMOTE Appium servers - remoteServerUrl indicates a remote server.
-      WORKFLOW FOR LOCAL SERVERS:
-      1. ASK THE USER which platform they want (Android or iOS) - do not assume
-      2. Call this tool with the chosen platform (and iosDeviceType for iOS)
-      3. If only one device is found, it is auto-selected - proceed to create_session (or prepare_ios_simulator for iOS simulators)
-      4. If multiple devices are found, ask the user which one they want, then call this tool again with deviceUdid
-      5. After selection, proceed to create_session (or prepare_ios_simulator for iOS simulators, then create_session)
-      WORKFLOW FOR REMOTE SERVERS:
-      - SKIP this tool entirely
-      - Device selection should be handled via capabilities in create_session (e.g., appium:deviceName, appium:udid)
-      - The remote Appium server is already configured for specific device(s)
-      `,
-    parameters: z
-      .object({
-        platform: z
-          .enum(['ios', 'android'])
-          .describe(
-            'The platform to list devices for (must match previously selected platform)'
-          ),
-        iosDeviceType: z
-          .enum(['simulator', 'real'])
-          .optional()
-          .describe(
-            "For iOS only: Specify whether to use 'simulator' or 'real' device. REQUIRED when platform is 'ios'."
-          ),
-        deviceUdid: z
-          .string()
-          .optional()
-          .describe(
-            'The UDID of the device selected by the user. If not provided, this tool will list available devices for the user to choose from.'
-          ),
-      })
-      .refine(
-        (data) => data.platform !== 'ios' || data.iosDeviceType !== undefined,
-        {
-          message:
-            "iosDeviceType ('simulator' or 'real') is required when platform is 'ios'",
-          path: ['iosDeviceType'],
-        }
-      ),
-    annotations: {
-      readOnlyHint: false,
-      openWorldHint: false,
-    },
-    execute: async (args: any, _context: any): Promise<any> => {
-      try {
-        const { platform, iosDeviceType, deviceUdid } = args;
-
-        if (platform === 'android') {
-          return await handleAndroidDeviceSelection(deviceUdid);
-        } else if (platform === 'ios') {
-          return await handleIOSDeviceSelection(iosDeviceType, deviceUdid);
-        } else {
-          throw new Error(
-            `Invalid platform: ${platform}. Please choose 'android' or 'ios'.`
-          );
-        }
-      } catch (error: any) {
-        log.error('Error selecting device:', error);
-        throw new Error(`Failed to select device: ${error.message}`);
-      }
-    },
-  });
 }
