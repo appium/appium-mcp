@@ -54,7 +54,9 @@ export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
   if (driver) {
     return (
       !(driver instanceof AndroidUiautomator2Driver) &&
-      !(driver instanceof XCUITestDriver)
+      driver.constructor?.name !== 'AndroidUiautomator2Driver' &&
+      !(driver instanceof XCUITestDriver) &&
+      driver.constructor?.name !== 'XCUITestDriver'
     );
   }
   return false;
@@ -75,7 +77,10 @@ export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
 export function isAndroidUiautomator2DriverSession(
   driver: NullableDriverInstance
 ): driver is AndroidUiautomator2Driver {
-  return driver instanceof AndroidUiautomator2Driver;
+  return (
+    driver instanceof AndroidUiautomator2Driver ||
+    driver?.constructor?.name === 'AndroidUiautomator2Driver'
+  );
 }
 
 /**
@@ -92,7 +97,10 @@ export function isAndroidUiautomator2DriverSession(
 export function isXCUITestDriverSession(
   driver: NullableDriverInstance
 ): driver is XCUITestDriver {
-  return driver instanceof XCUITestDriver;
+  return (
+    driver instanceof XCUITestDriver ||
+    driver?.constructor?.name === 'XCUITestDriver'
+  );
 }
 
 export function setSession(
@@ -352,10 +360,16 @@ function selectNextActiveSessionId(deletedSessionId: string): string | null {
 }
 
 export const getPlatformName = (driver: any): string => {
-  if (driver instanceof AndroidUiautomator2Driver) {
+  if (
+    driver instanceof AndroidUiautomator2Driver ||
+    driver?.constructor?.name === 'AndroidUiautomator2Driver'
+  ) {
     return PLATFORM.android;
   }
-  if (driver instanceof XCUITestDriver) {
+  if (
+    driver instanceof XCUITestDriver ||
+    driver?.constructor?.name === 'XCUITestDriver'
+  ) {
     return PLATFORM.ios;
   }
 
