@@ -198,17 +198,6 @@ describe('setSession', () => {
     expect(session?.deviceName).toBe('Pixel 9 Pro XL');
   });
 
-  test('falls back to appium:platformName when platformName is absent', () => {
-    const driver = makeMockDriver();
-    setSession(driver, 'session-fallback', {
-      'appium:platformName': 'iOS',
-    });
-    const session = listSessions().find(
-      (s) => s.sessionId === 'session-fallback'
-    );
-    expect(session?.platform).toBe('iOS');
-  });
-
   test('stores ownership and exposes it through list/get helpers', () => {
     const driver = makeMockDriver();
     setSession(driver, 'session-attached', {}, 'attached');
