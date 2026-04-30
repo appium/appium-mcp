@@ -93,6 +93,24 @@ export class ADBManager {
   }
 
   /**
+   * Get ADB instance for specific device operations
+   * This method ensures we reuse the singleton instance
+   * @param udid Optional device UDID for device-specific operations
+   * @returns Promise<ADB> The ADB instance
+   */
+  public async getADBForDevice(udid?: string): Promise<ADB> {
+    if (!this.isADBInitialized()) {
+      await this.initialize({ udid });
+    }
+
+    if (!this.adbInstance) {
+      throw new Error('ADB instance not available');
+    }
+
+    return this.adbInstance;
+  }
+
+  /**
    * Create ADB instance with proper error handling
    * @param options ADB configuration options
    * @returns Promise<ADB> The created ADB instance
@@ -117,24 +135,6 @@ export class ADBManager {
       log.error(`Failed to create ADB instance: ${error}`);
       throw new Error(`ADB initialization failed: ${error}`);
     }
-  }
-
-  /**
-   * Get ADB instance for specific device operations
-   * This method ensures we reuse the singleton instance
-   * @param udid Optional device UDID for device-specific operations
-   * @returns Promise<ADB> The ADB instance
-   */
-  public async getADBForDevice(udid?: string): Promise<ADB> {
-    if (!this.isADBInitialized()) {
-      await this.initialize({ udid });
-    }
-
-    if (!this.adbInstance) {
-      throw new Error('ADB instance not available');
-    }
-
-    return this.adbInstance;
   }
 }
 

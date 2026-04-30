@@ -60,7 +60,159 @@ export class ReasoningRAG {
   private isInitialized: boolean = false;
 
   constructor() {
-    this.initializeTransformers();
+    void this.initializeTransformers();
+  }
+
+  /**
+   * Enhanced RAG query with reasoning capabilities
+   */
+  async queryWithReasoning(
+    query: string,
+    options: {
+      topK?: number;
+      reasoningTasks?: ReasoningTask[];
+      customConfigs?: ReasoningConfig[];
+    } = {}
+  ): Promise<EnhancedRAGResponse> {
+    const {
+      topK = 50,
+      reasoningTasks = ['summarization', 'question-answering'],
+      customConfigs,
+    } = options;
+
+    try {
+      log.info(`Starting reasoning-enhanced RAG query: "${query}"`);
+
+      // Step 1: Retrieve relevant chunks using existing RAG
+      log.info(`Retrieving top ${topK} relevant chunks...`);
+      const retrievedChunks = await queryVectorStore(query, topK);
+
+      if (!retrievedChunks || retrievedChunks.length === 0) {
+        return {
+          query,
+          retrievedChunks: [],
+          reasoningResults: [],
+          summary: 'No relevant information found in the documentation.',
+          answer: 'No relevant information found to answer your query.',
+          sources: [],
+        };
+      }
+
+      log.info(`Retrieved ${retrievedChunks.length} chunks for reasoning`);
+
+      // Step 2: Configure reasoning models
+      const configs: ReasoningConfig[] = customConfigs || [
+        // Summarization using T5
+        {
+          task: 'summarization',
+          modelName: 'Xenova/t5-small',
+          maxLength: 150,
+          minLength: 30,
+        },
+        // Question answering using DistilBERT
+        {
+          task: 'question-answering',
+          modelName: 'Xenova/distilbert-base-cased-distilled-squad',
+        },
+      ];
+
+      // Filter configs based on requested tasks
+      const filteredConfigs = configs.filter((config) =>
+        reasoningTasks.includes(config.task)
+      );
+
+      // Step 3: Perform reasoning on retrieved chunks
+      log.info(
+        `Performing reasoning with ${filteredConfigs.length} different models...`
+      );
+      const reasoningResults = await this.processChunksWithReasoning(
+        retrievedChunks,
+        filteredConfigs,
+        query
+      );
+
+      // Step 4: Generate comprehensive summary
+      log.info('Generating comprehensive summary...');
+      const summary = await this.generateComprehensiveSummary(
+        reasoningResults,
+        query
+      );
+
+      // Step 5: Extract best answer from reasoning results
+      const qaResults = reasoningResults.filter(
+        (result) =>
+          result.metadata.task === 'question-answering' &&
+          !result.metadata.error
+      );
+
+      const bestAnswer =
+        qaResults.length > 0
+          ? qaResults.sort(
+              (a, b) => (b.confidence || 0) - (a.confidence || 0)
+            )[0].reasoningOutput
+          : summary;
+
+      // Step 6: Extract sources
+      const sources = retrievedChunks
+        .map(
+          (doc: any) =>
+            doc.metadata?.relativePath ||
+            doc.metadata?.filename ||
+            doc.metadata?.source
+        )
+        .filter(
+          (source: any, index: number, arr: any[]) =>
+            source && arr.indexOf(source) === index
+        );
+
+      log.info(
+        `Reasoning-enhanced RAG completed. Generated ${reasoningResults.length} reasoning results from ${sources.length} sources`
+      );
+
+      return {
+        query,
+        retrievedChunks,
+        reasoningResults,
+        summary,
+        answer: bestAnswer,
+        sources,
+      };
+    } catch (error) {
+      log.error('Error in reasoning-enhanced RAG:', error);
+      throw new Error(
+        `Reasoning-enhanced RAG failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Get available reasoning models and their capabilities
+   */
+  getAvailableModels(): Record<ReasoningTask, string[]> {
+    return {
+      summarization: [
+        'Xenova/t5-small',
+        'Xenova/t5-base',
+        'Xenova/bart-large-cnn',
+      ],
+      'question-answering': [
+        'Xenova/distilbert-base-cased-distilled-squad',
+        'Xenova/roberta-base-squad2',
+      ],
+      analysis: ['Xenova/gpt2', 'Xenova/distilgpt2'],
+      classification: [
+        'Xenova/distilbert-base-uncased-finetuned-sst-2-english',
+        'Xenova/bert-base-uncased',
+      ],
+    };
+  }
+
+  /**
+   * Clean up resources
+   */
+  async cleanup(): Promise<void> {
+    this.models.clear();
+    log.info('Reasoning RAG resources cleaned up');
   }
 
   /**
@@ -276,158 +428,6 @@ export class ReasoningRAG {
     }
 
     return comprehensiveSummary;
-  }
-
-  /**
-   * Enhanced RAG query with reasoning capabilities
-   */
-  async queryWithReasoning(
-    query: string,
-    options: {
-      topK?: number;
-      reasoningTasks?: ReasoningTask[];
-      customConfigs?: ReasoningConfig[];
-    } = {}
-  ): Promise<EnhancedRAGResponse> {
-    const {
-      topK = 50,
-      reasoningTasks = ['summarization', 'question-answering'],
-      customConfigs,
-    } = options;
-
-    try {
-      log.info(`Starting reasoning-enhanced RAG query: "${query}"`);
-
-      // Step 1: Retrieve relevant chunks using existing RAG
-      log.info(`Retrieving top ${topK} relevant chunks...`);
-      const retrievedChunks = await queryVectorStore(query, topK);
-
-      if (!retrievedChunks || retrievedChunks.length === 0) {
-        return {
-          query,
-          retrievedChunks: [],
-          reasoningResults: [],
-          summary: 'No relevant information found in the documentation.',
-          answer: 'No relevant information found to answer your query.',
-          sources: [],
-        };
-      }
-
-      log.info(`Retrieved ${retrievedChunks.length} chunks for reasoning`);
-
-      // Step 2: Configure reasoning models
-      const configs: ReasoningConfig[] = customConfigs || [
-        // Summarization using T5
-        {
-          task: 'summarization',
-          modelName: 'Xenova/t5-small',
-          maxLength: 150,
-          minLength: 30,
-        },
-        // Question answering using DistilBERT
-        {
-          task: 'question-answering',
-          modelName: 'Xenova/distilbert-base-cased-distilled-squad',
-        },
-      ];
-
-      // Filter configs based on requested tasks
-      const filteredConfigs = configs.filter((config) =>
-        reasoningTasks.includes(config.task)
-      );
-
-      // Step 3: Perform reasoning on retrieved chunks
-      log.info(
-        `Performing reasoning with ${filteredConfigs.length} different models...`
-      );
-      const reasoningResults = await this.processChunksWithReasoning(
-        retrievedChunks,
-        filteredConfigs,
-        query
-      );
-
-      // Step 4: Generate comprehensive summary
-      log.info('Generating comprehensive summary...');
-      const summary = await this.generateComprehensiveSummary(
-        reasoningResults,
-        query
-      );
-
-      // Step 5: Extract best answer from reasoning results
-      const qaResults = reasoningResults.filter(
-        (result) =>
-          result.metadata.task === 'question-answering' &&
-          !result.metadata.error
-      );
-
-      const bestAnswer =
-        qaResults.length > 0
-          ? qaResults.sort(
-              (a, b) => (b.confidence || 0) - (a.confidence || 0)
-            )[0].reasoningOutput
-          : summary;
-
-      // Step 6: Extract sources
-      const sources = retrievedChunks
-        .map(
-          (doc: any) =>
-            doc.metadata?.relativePath ||
-            doc.metadata?.filename ||
-            doc.metadata?.source
-        )
-        .filter(
-          (source: any, index: number, arr: any[]) =>
-            source && arr.indexOf(source) === index
-        );
-
-      log.info(
-        `Reasoning-enhanced RAG completed. Generated ${reasoningResults.length} reasoning results from ${sources.length} sources`
-      );
-
-      return {
-        query,
-        retrievedChunks,
-        reasoningResults,
-        summary,
-        answer: bestAnswer,
-        sources,
-      };
-    } catch (error) {
-      log.error('Error in reasoning-enhanced RAG:', error);
-      throw new Error(
-        `Reasoning-enhanced RAG failed: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  /**
-   * Get available reasoning models and their capabilities
-   */
-  getAvailableModels(): Record<ReasoningTask, string[]> {
-    return {
-      summarization: [
-        'Xenova/t5-small',
-        'Xenova/t5-base',
-        'Xenova/bart-large-cnn',
-      ],
-      'question-answering': [
-        'Xenova/distilbert-base-cased-distilled-squad',
-        'Xenova/roberta-base-squad2',
-      ],
-      analysis: ['Xenova/gpt2', 'Xenova/distilgpt2'],
-      classification: [
-        'Xenova/distilbert-base-uncased-finetuned-sst-2-english',
-        'Xenova/bert-base-uncased',
-      ],
-    };
-  }
-
-  /**
-   * Clean up resources
-   */
-  async cleanup(): Promise<void> {
-    this.models.clear();
-    log.info('Reasoning RAG resources cleaned up');
   }
 }
 

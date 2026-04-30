@@ -22,56 +22,6 @@ export class SentenceTransformersEmbeddings {
   }
 
   /**
-   * Initialize the transformers library dynamically
-   */
-  private async initializeTransformers(): Promise<void> {
-    if (this.transformers) {
-      return;
-    }
-
-    try {
-      // Use eval to avoid CommonJS/ESM conflict during compilation
-      const importTransformers = new Function(
-        'return import("@xenova/transformers")'
-      );
-      this.transformers = await importTransformers();
-    } catch (error) {
-      log.error('Error importing @xenova/transformers:', error);
-      throw new Error(
-        `Failed to import @xenova/transformers: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  /**
-   * Initialize the model lazily
-   */
-  private async initializeModel(): Promise<void> {
-    if (this.isInitialized && this.model) {
-      return;
-    }
-
-    await this.initializeTransformers();
-
-    log.info(`Initializing sentence-transformers model: ${this.modelName}`);
-    try {
-      this.model = await this.transformers.pipeline(
-        'feature-extraction',
-        this.modelName
-      );
-      this.isInitialized = true;
-      log.info(
-        `Successfully initialized sentence-transformers model: ${this.modelName}`
-      );
-    } catch (error) {
-      log.error('Error initializing sentence-transformers model:', error);
-      throw new Error(
-        `Failed to initialize sentence-transformers model: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  /**
    * Generate embeddings for a single text (LangChain interface)
    */
   async embedQuery(text: string): Promise<number[]> {
@@ -138,6 +88,56 @@ export class SentenceTransformersEmbeddings {
       log.error('Error generating document embeddings:', error);
       throw new Error(
         `Failed to generate document embeddings: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Initialize the transformers library dynamically
+   */
+  private async initializeTransformers(): Promise<void> {
+    if (this.transformers) {
+      return;
+    }
+
+    try {
+      // Use eval to avoid CommonJS/ESM conflict during compilation
+      const importTransformers = new Function(
+        'return import("@xenova/transformers")'
+      );
+      this.transformers = await importTransformers();
+    } catch (error) {
+      log.error('Error importing @xenova/transformers:', error);
+      throw new Error(
+        `Failed to import @xenova/transformers: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Initialize the model lazily
+   */
+  private async initializeModel(): Promise<void> {
+    if (this.isInitialized && this.model) {
+      return;
+    }
+
+    await this.initializeTransformers();
+
+    log.info(`Initializing sentence-transformers model: ${this.modelName}`);
+    try {
+      this.model = await this.transformers.pipeline(
+        'feature-extraction',
+        this.modelName
+      );
+      this.isInitialized = true;
+      log.info(
+        `Successfully initialized sentence-transformers model: ${this.modelName}`
+      );
+    } catch (error) {
+      log.error('Error initializing sentence-transformers model:', error);
+      throw new Error(
+        `Failed to initialize sentence-transformers model: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }

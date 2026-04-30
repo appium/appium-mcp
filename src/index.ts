@@ -42,4 +42,4 @@ async function startServer(): Promise<void> {
 }
 
 // Start the server
-startServer();
+void startServer();

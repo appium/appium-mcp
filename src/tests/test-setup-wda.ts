@@ -230,7 +230,7 @@ async function main() {
 }
 
 // Run main function
-(async () => {
+void (async () => {
   try {
     await main();
   } catch (error: any) {
