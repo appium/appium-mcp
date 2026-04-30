@@ -242,7 +242,7 @@ export async function elementClick(
   elementUUID: string
 ): Promise<void> {
   if (
-    getPlatformName(driver.sessionId) === PLATFORM.ios &&
+    getPlatformName(driver) === PLATFORM.ios &&
     getStorecCurrentContext(driver.sessionId as string | undefined)?.startsWith(
       'WEBVIEW_'
     )
