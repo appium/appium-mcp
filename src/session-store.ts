@@ -239,17 +239,6 @@ export function hasActiveSession(): boolean {
   return !!session && !session.isDeletingSession;
 }
 
-function selectNextActiveSessionId(deletedSessionId: string): string | null {
-  if (activeSessionId !== deletedSessionId) {
-    return activeSessionId;
-  }
-
-  const nextSession = Array.from(sessions.keys()).find(
-    (id) => id !== deletedSessionId
-  );
-  return nextSession ?? null;
-}
-
 /**
  * Remove an attached session from the in-memory MCP session registry without
  * calling `deleteSession()` on the remote Appium server.
