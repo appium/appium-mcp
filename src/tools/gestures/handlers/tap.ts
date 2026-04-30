@@ -17,52 +17,6 @@ import type { GestureArgs } from '../schema.js';
 
 const AI_ELEMENT_PREFIX = 'ai-element:';
 
-function parseAiElementCoords(
-  uuid: string
-): { x: number; y: number } | { error: string } {
-  const parts = uuid.split(':');
-  if (parts.length < 2) {
-    return { error: 'Invalid AI element UUID format.' };
-  }
-  const coords = parts[1].split(',');
-  if (coords.length < 2) {
-    return { error: 'Invalid AI element coordinates format.' };
-  }
-  const x = parseInt(coords[0], 10);
-  const y = parseInt(coords[1], 10);
-  if (isNaN(x) || isNaN(y)) {
-    return { error: 'Invalid AI element coordinates: not numbers.' };
-  }
-  return { x, y };
-}
-
-function w3cTapAt(x: number, y: number) {
-  return [
-    {
-      type: 'pointer',
-      id: 'finger1',
-      parameters: { pointerType: 'touch' },
-      actions: [
-        { type: 'pointerMove', duration: 0, x, y },
-        { type: 'pointerDown', button: 0 },
-        { type: 'pause', duration: 50 },
-        { type: 'pointerUp', button: 0 },
-      ],
-    },
-  ];
-}
-
-async function resolveCoordsFromElement(
-  driver: DriverInstance,
-  elementUUID: string
-): Promise<{ x: number; y: number }> {
-  const rect = await getElementRect(driver, elementUUID);
-  return {
-    x: Math.floor(rect.x + rect.width / 2),
-    y: Math.floor(rect.y + rect.height / 2),
-  };
-}
-
 export async function handleTap(
   driver: DriverInstance,
   args: GestureArgs
@@ -221,4 +175,50 @@ export async function handleLongPress(
       `Failed to perform long_press. ${toolErrorMessage(err)}`
     );
   }
+}
+
+function parseAiElementCoords(
+  uuid: string
+): { x: number; y: number } | { error: string } {
+  const parts = uuid.split(':');
+  if (parts.length < 2) {
+    return { error: 'Invalid AI element UUID format.' };
+  }
+  const coords = parts[1].split(',');
+  if (coords.length < 2) {
+    return { error: 'Invalid AI element coordinates format.' };
+  }
+  const x = parseInt(coords[0], 10);
+  const y = parseInt(coords[1], 10);
+  if (isNaN(x) || isNaN(y)) {
+    return { error: 'Invalid AI element coordinates: not numbers.' };
+  }
+  return { x, y };
+}
+
+function w3cTapAt(x: number, y: number) {
+  return [
+    {
+      type: 'pointer',
+      id: 'finger1',
+      parameters: { pointerType: 'touch' },
+      actions: [
+        { type: 'pointerMove', duration: 0, x, y },
+        { type: 'pointerDown', button: 0 },
+        { type: 'pause', duration: 50 },
+        { type: 'pointerUp', button: 0 },
+      ],
+    },
+  ];
+}
+
+async function resolveCoordsFromElement(
+  driver: DriverInstance,
+  elementUUID: string
+): Promise<{ x: number; y: number }> {
+  const rect = await getElementRect(driver, elementUUID);
+  return {
+    x: Math.floor(rect.x + rect.width / 2),
+    y: Math.floor(rect.y + rect.height / 2),
+  };
 }

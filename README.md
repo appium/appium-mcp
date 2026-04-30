@@ -55,7 +55,7 @@ Before you begin, ensure you have the following installed:
 1.  Install Xcode from the App Store.
 2.  Install the Xcode Command Line Tools: `xcode-select --install`.
 3.  Install iOS simulators through Xcode.
-4.  For real device testing, configure your provisioning profiles.
+4.  For real device testing, enable Developer Mode on the device and sign in to your Apple ID in Xcode (Settings → Accounts). Use `appium_prepare_ios_real_device` to download and sign WebDriverAgent in a single call - it will guide you through provisioning profile selection and return capabilities for session startup.
 
 ## 🛠️ Installation
 
@@ -192,6 +192,26 @@ Set the `CAPABILITIES_CONFIG` environment variable to point to your configuratio
   - If `CAPABILITIES_CONFIG` is set, it will merge with the `general` section from your capabilities file.
 - This allows custom setups and non-standard platforms to work without changing server logic.
 
+### Integrator notes (sessions, transport, logging)
+
+For **CI**, **device farms**, or **multi-session** setups:
+
+#### Multi-session and `sessionId`
+
+The process keeps one **active** Appium session; tools use it when **`sessionId` is omitted**. If more than one session exists (see **`appium_session_management`** with **`action=list`**), pass **`sessionId` on every tool call** that must target a specific session. Do not assume the active session is stable if other clients or flows can create, select, or delete sessions.
+
+#### Client disconnect
+
+When the MCP **client disconnects**, the server **closes every session** it is tracking (Appium **`deleteSession`** for each). Transports that drop often—**`httpStream`** behind proxies, idle timeouts, or flaky clients—will **wipe automation** in one go. **stdio** is usually safer for a single long-lived operator; if you use **httpStream**, expect reconnects to require **new sessions**.
+
+#### Remote Appium, CI, and device farms
+
+For **grids, cloud labs, or CI**, prefer **`remoteServerUrl`** plus explicit **`capabilities`** on **`appium_session_management`** (**`action=create`**)—for example **`appium:udid`**, app path or id, platform version—rather than depending on local discovery. **`select_device`** is geared toward **local** ADB / simulator picking; use it as a **dev convenience**, not the main path for allocated remote devices.
+
+#### Tool logging and argument size
+
+Tool calls are logged with argument **redaction** implemented via **`JSON.stringify`**. Oversized payloads (especially long **base64 strings**, e.g., screenshot/image payloads, and also very large **`capabilities`** objects) cost **CPU** and **log volume**. Prefer **`CAPABILITIES_CONFIG`** and avoid passing large inline blobs in tool arguments when possible.
+
 ### Screenshots
 
 Set the `SCREENSHOTS_DIR` environment variable to specify where screenshots are saved. If not set, screenshots are saved to the current working directory. Supports both absolute and relative paths (relative paths are resolved from the current working directory). The directory is created automatically if it doesn't exist.
@@ -311,16 +331,17 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | ----------------- | ------------------------------------------------------------------------ |
 | `select_device`   | **REQUIRED FIRST**: Discover available devices and select one. Auto-selects if only one device found |
 | `prepare_ios_simulator` | Boot an iOS/tvOS simulator, download WDA (if not cached), and install/launch WDA in a single call. Each step is skipped if already satisfied (iOS/tvOS only). Set `APPIUM_MCP_WDA_APP_PATH` to skip all downloads and use a local `.app` bundle instead. |
+| `appium_prepare_ios_real_device` | Prepare a real iOS device for Appium testing. **Two-step flow**: (1) call without `provisioningProfileUuid` to list available `.mobileprovision` profiles; (2) call again with the chosen UUID and `isFreeAccount` to download the matching WDA release, package it as an IPA, and resign with the profile. Results are cached per WDA version and profile, so repeat runs are fast. Pass the returned `capabilitiesHint` to `create_session` so Appium installs and launches WDA. macOS + Xcode 16+ required. |
 
 ### Session Management
 
 | Tool             | Description                                                                                                 |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| `appium_session_management` | Unified session management. `action=create`: start a new session for Android, iOS, or `general` capabilities (see 'general' mode above); forwards capabilities to a remote server via WebDriver `newSession` when `remoteServerUrl` is provided. `action=delete`: stop and clean up a session (defaults to active). `action=list`: show all active sessions. `action=select`: switch the active session by `sessionId`. |
+| `appium_session_management` | Unified session management. `action=create`: start a new session for Android, iOS, or `general` capabilities (see 'general' mode above); forwards capabilities to a remote server via WebDriver `newSession` when `remoteServerUrl` is provided. `action=attach`: connect MCP Appium to an already-running remote Appium session without taking ownership. `action=detach`: forget an attached session without deleting the real remote session. `action=delete`: stop and clean up an owned session (defaults to active). `action=list`: show all active sessions, including ownership. `action=select`: switch the active session by `sessionId`. |
 | `appium_mobile_device_control` | Control device behavior: lock/unlock the screen, shake the device, or open the notifications panel (`action`: `lock` \| `unlock` \| `shake` \| `open_notifications`). `shake` is iOS only; `open_notifications` is Android only; `seconds` is optional for timed lock. |
 | `appium_driver_settings` | Read or update Appium driver session settings in one tool. `action=get` returns current settings as JSON; `action=update` merges a `settings` map (driver-specific keys; use `action=get` first to inspect). |
 
-The remote server URL in `appium_session_management` (action=create) can be set via the `remoteServerUrl` parameter.
+The remote server URL in `appium_session_management` (action=create or action=attach) can be set via the `remoteServerUrl` parameter.
 If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
 This allows you to restrict which remote servers can be used with your MCP Appium instance, preventing unauthorized connections.
 The default regex pattern allows any URL that starts with `http://` or `https://`.
@@ -340,11 +361,9 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | `appium_drag_and_drop` | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates) |
 | `appium_perform_actions` | Execute raw W3C Actions API sequences for custom multi-touch gestures (rotate, three-finger swipe, edge swipes, precise timing). Prefer `appium_gesture` for standard gestures. |
 | `appium_set_value`    | Enter text into an input field                                                               |
-| `appium_mobile_hide_keyboard` | Dismiss the on-screen keyboard (`mobile: hideKeyboard`) |
-| `appium_mobile_is_keyboard_shown` | Whether the on-screen keyboard is visible (`mobile: isKeyboardShown`) |
+| `appium_mobile_keyboard` | Hide the on-screen keyboard or query visibility. `action=hide` \| `is_shown` (`keys` optional for hide). |
 | `appium_get_text`     | Get text content from an element                                                             |
-| `appium_get_clipboard` | Get the current clipboard content as plain text from the device            |
-| `appium_set_clipboard` | Set the device clipboard to the provided plain text                        |
+| `appium_mobile_clipboard` | Read or set device clipboard plain text. `action=get` \| `set` (`content` required for set). |
 | `appium_alert` | Handle alerts with `action` = `accept`, `dismiss`, or `get_text` (optional `buttonLabel`) |
 
 ### Screen & Navigation

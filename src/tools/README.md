@@ -19,6 +19,7 @@ This directory contains all MCP tools available in MCP Appium.
 ### iOS Setup (`ios/`)
 
 - `prepare-ios-simulator.ts` - Boot simulator, download, install and launch WebDriverAgent in a single call
+- `prepare-ios-real-device.ts` - Download the matching WDA release and resign it with a local provisioning profile. Discovery mode (no UUID) lists available `.mobileprovision` profiles; build mode (UUID + `isFreeAccount`) runs the signing pipeline with per-version/per-profile caching and returns `usePreinstalledWDA` + `prebuiltWDAPath` capabilities so Appium installs and launches WDA during session startup.
 
 ### Navigation (`navigations/`)
 
@@ -35,7 +36,7 @@ This directory contains all MCP tools available in MCP Appium.
 - `drag-and-drop.ts` - Drag and drop elements or coordinates
 - `press-key.ts` - Press navigation keys or physical buttons
 - `set-value.ts` - Enter text
-- `keyboard.ts` - Soft keyboard: `appium_mobile_hide_keyboard` / `appium_mobile_is_keyboard_shown`
+- `keyboard.ts` - Soft keyboard (`appium_mobile_keyboard`; `action=hide` \| `is_shown`)
 - `get-text.ts` - Get element text
 - `get-page-source.ts` - Get page source (XML) from current screen
 - `screenshot.ts` - Capture screenshots

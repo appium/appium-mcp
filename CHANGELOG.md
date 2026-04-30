@@ -1,3 +1,43 @@
+## [1.71.0](https://github.com/appium/appium-mcp/compare/v1.70.0...v1.71.0) (2026-04-30)
+
+### Features
+
+* **session:** add attach/detach support with owned/attached session … ([#287](https://github.com/appium/appium-mcp/issues/287)) ([d52e1bf](https://github.com/appium/appium-mcp/commit/d52e1bfc2b6b2181cda9190f3a51dadc37277b42)), closes [#274](https://github.com/appium/appium-mcp/issues/274)
+
+## [1.70.0](https://github.com/appium/appium-mcp/compare/v1.69.1...v1.70.0) (2026-04-29)
+
+### Features
+
+* **tools:** single appium_mobile_keyboard tool ([#293](https://github.com/appium/appium-mcp/issues/293)) ([1214950](https://github.com/appium/appium-mcp/commit/1214950819b1b9edc4c73c9ea2ebc120da91ad7b))
+
+## [1.69.1](https://github.com/appium/appium-mcp/compare/v1.69.0...v1.69.1) (2026-04-29)
+
+### Bug Fixes
+
+* apply lint:fix ([#300](https://github.com/appium/appium-mcp/issues/300)) ([f65ee47](https://github.com/appium/appium-mcp/commit/f65ee470ff51e945c5f07c50e9953a4c7f6aa2d4))
+
+## [1.69.0](https://github.com/appium/appium-mcp/compare/v1.68.0...v1.69.0) (2026-04-29)
+
+### Features
+
+* **ios:** add `appium_prepare_ios_real_device` tool ([#297](https://github.com/appium/appium-mcp/issues/297)) ([998c6a1](https://github.com/appium/appium-mcp/commit/998c6a16c988779f2b76ea92433ef59469ac9051))
+
+## [1.68.0](https://github.com/appium/appium-mcp/compare/v1.67.1...v1.68.0) (2026-04-29)
+
+### Features
+
+* **tools:** single appium_mobile_clipboard tool ([#292](https://github.com/appium/appium-mcp/issues/292)) ([ce7c7dc](https://github.com/appium/appium-mcp/commit/ce7c7dc6e20f0dd43b0ebf3f56651065af55fa8c))
+
+### Bug Fixes
+
+* loading mcp server to start ([#298](https://github.com/appium/appium-mcp/issues/298)) ([82414d6](https://github.com/appium/appium-mcp/commit/82414d6dbec351887758aae9414ac9adfc4de22d))
+
+## [1.67.1](https://github.com/appium/appium-mcp/compare/v1.67.0...v1.67.1) (2026-04-27)
+
+### Bug Fixes
+
+* support zoom in/out via custom coords ([#291](https://github.com/appium/appium-mcp/issues/291)) ([251e144](https://github.com/appium/appium-mcp/commit/251e144f9a21ca0909df93ba52bc8b748e4e20b4))
+
 ## [1.67.0](https://github.com/appium/appium-mcp/compare/v1.66.0...v1.67.0) (2026-04-23)
 
 ### Features

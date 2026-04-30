@@ -10,6 +10,19 @@ import { join, isAbsolute } from 'node:path';
 import * as os from 'node:os';
 
 /**
+ * Interface for screenshot dependencies (mirrors screenshot.ts).
+ */
+interface ScreenshotDeps {
+  getDriver: () => {
+    getScreenshot: (elementId?: string) => Promise<string>;
+  } | null;
+  writeFile: (path: string, data: Buffer) => Promise<void>;
+  mkdir: (path: string, options: { recursive: boolean }) => Promise<void>;
+  resolveScreenshotDir: () => string;
+  dateNow: () => number;
+}
+
+/**
  * Local implementation of resolveScreenshotDir for testing.
  * This mirrors the implementation in screenshot.ts to avoid importing
  * the module which has heavy dependencies.
@@ -26,19 +39,6 @@ function resolveScreenshotDir(): string {
   }
 
   return join(process.cwd(), screenshotDir);
-}
-
-/**
- * Interface for screenshot dependencies (mirrors screenshot.ts).
- */
-interface ScreenshotDeps {
-  getDriver: () => {
-    getScreenshot: (elementId?: string) => Promise<string>;
-  } | null;
-  writeFile: (path: string, data: Buffer) => Promise<void>;
-  mkdir: (path: string, options: { recursive: boolean }) => Promise<void>;
-  resolveScreenshotDir: () => string;
-  dateNow: () => number;
 }
 
 /**

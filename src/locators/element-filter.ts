@@ -10,6 +10,46 @@ export interface FilterOptions {
 }
 
 /**
+ * Determines if an element should be included based on all filter criteria
+ */
+export function shouldIncludeElement(
+  element: JSONElement,
+  filters: FilterOptions,
+  isNative: boolean,
+  automationName: string
+): boolean {
+  const {
+    includeTagNames = [],
+    excludeTagNames = ['hierarchy'],
+    requireAttributes = [],
+    minAttributeCount = 0,
+    fetchableOnly = false,
+    clickableOnly = false,
+  } = filters;
+
+  if (!matchesTagFilters(element, includeTagNames, excludeTagNames)) {
+    return false;
+  }
+
+  if (!matchesAttributeFilters(element, requireAttributes, minAttributeCount)) {
+    return false;
+  }
+
+  if (clickableOnly && element.attributes?.clickable !== 'true') {
+    return false;
+  }
+
+  if (
+    fetchableOnly &&
+    !isInteractableElement(element, isNative, automationName)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Determines if an element matches the tag name filters
  */
 function matchesTagFilters(
@@ -93,44 +133,4 @@ function isInteractableElement(
     element.attributes?.clickable === 'true' ||
     element.attributes?.focusable === 'true'
   );
-}
-
-/**
- * Determines if an element should be included based on all filter criteria
- */
-export function shouldIncludeElement(
-  element: JSONElement,
-  filters: FilterOptions,
-  isNative: boolean,
-  automationName: string
-): boolean {
-  const {
-    includeTagNames = [],
-    excludeTagNames = ['hierarchy'],
-    requireAttributes = [],
-    minAttributeCount = 0,
-    fetchableOnly = false,
-    clickableOnly = false,
-  } = filters;
-
-  if (!matchesTagFilters(element, includeTagNames, excludeTagNames)) {
-    return false;
-  }
-
-  if (!matchesAttributeFilters(element, requireAttributes, minAttributeCount)) {
-    return false;
-  }
-
-  if (clickableOnly && element.attributes?.clickable !== 'true') {
-    return false;
-  }
-
-  if (
-    fetchableOnly &&
-    !isInteractableElement(element, isNative, automationName)
-  ) {
-    return false;
-  }
-
-  return true;
 }

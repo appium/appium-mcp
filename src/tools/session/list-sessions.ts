@@ -13,7 +13,7 @@ export async function listSessionsAction(): Promise<any> {
     .map((session, index) => {
       const driver = getDriver(session.sessionId);
       const rawClassName = driver?.constructor?.name;
-      return `${index + 1}. sessionId=${session.sessionId}${session.isActive ? ' (active)' : ''}\n   driverInstance=${rawClassName}, platform=${session.platform}, automationName=${session.automationName}, deviceName=${session.deviceName}, currentContext=${session.currentContext}`;
+      return `${index + 1}. sessionId=${session.sessionId}${session.isActive ? ' (active)' : ''}\n   driverInstance=${rawClassName}, ownership=${session.ownership}, platform=${session.platform}, automationName=${session.automationName}, deviceName=${session.deviceName}, currentContext=${session.currentContext}`;
     })
     .join('\n');
 

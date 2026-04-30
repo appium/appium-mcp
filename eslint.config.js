@@ -26,6 +26,7 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
       'no-case-declarations': 'off',
+      'jsdoc/require-jsdoc': 'off',
     },
   },
   {

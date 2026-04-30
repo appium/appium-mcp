@@ -21,28 +21,6 @@ import { textResult, errorResult, toolErrorMessage } from '../tool-response.js';
 
 const execAsync = promisify(exec);
 
-/** Extract package ids from the `mobile: listApps` result (map or legacy array). */
-function androidListAppsPackageIds(
-  result: Record<string, unknown> | string[]
-): string[] {
-  if (Array.isArray(result)) {
-    return result;
-  }
-  return Object.keys(result);
-}
-
-function normalizeListAppsResult(
-  result: Record<string, Record<string, unknown> | undefined>
-): { packageName: string; appName: string }[] {
-  return Object.entries(result).map(([id, attrs]) => ({
-    packageName: id,
-    appName: (attrs?.CFBundleDisplayName ||
-      attrs?.CFBundleName ||
-      (attrs as any)?.name ||
-      '') as string,
-  }));
-}
-
 export async function listAppsFromDevice(
   applicationType: 'User' | 'System' = 'User',
   sessionId?: string
@@ -121,4 +99,26 @@ export async function list(
   } catch (err: unknown) {
     return errorResult(`Failed to list apps. err: ${toolErrorMessage(err)}`);
   }
+}
+
+/** Extract package ids from the `mobile: listApps` result (map or legacy array). */
+function androidListAppsPackageIds(
+  result: Record<string, unknown> | string[]
+): string[] {
+  if (Array.isArray(result)) {
+    return result;
+  }
+  return Object.keys(result);
+}
+
+function normalizeListAppsResult(
+  result: Record<string, Record<string, unknown> | undefined>
+): { packageName: string; appName: string }[] {
+  return Object.entries(result).map(([id, attrs]) => ({
+    packageName: id,
+    appName: (attrs?.CFBundleDisplayName ||
+      attrs?.CFBundleName ||
+      (attrs as any)?.name ||
+      '') as string,
+  }));
 }

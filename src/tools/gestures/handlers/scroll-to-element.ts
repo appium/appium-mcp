@@ -19,29 +19,6 @@ const PRESET_TO_DISTANCE: Record<
   large: 1,
 };
 
-function resolveScrollDistance(args: GestureArgs): number {
-  if (args.scrollDistancePreset) {
-    return PRESET_TO_DISTANCE[args.scrollDistancePreset];
-  }
-  if (args.scrollDistance !== undefined) {
-    return args.scrollDistance;
-  }
-  return 0.45;
-}
-
-async function tryFindElement(
-  driver: DriverInstance,
-  strategy: string,
-  selector: string
-): Promise<boolean> {
-  try {
-    await driver.findElement(strategy, selector);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function handleScrollToElement(
   driver: DriverInstance,
   args: GestureArgs
@@ -102,5 +79,28 @@ export async function handleScrollToElement(
     );
   } catch (err) {
     return errorResult(`Failed to scroll_to_element. ${toolErrorMessage(err)}`);
+  }
+}
+
+function resolveScrollDistance(args: GestureArgs): number {
+  if (args.scrollDistancePreset) {
+    return PRESET_TO_DISTANCE[args.scrollDistancePreset];
+  }
+  if (args.scrollDistance !== undefined) {
+    return args.scrollDistance;
+  }
+  return 0.45;
+}
+
+async function tryFindElement(
+  driver: DriverInstance,
+  strategy: string,
+  selector: string
+): Promise<boolean> {
+  try {
+    await driver.findElement(strategy, selector);
+    return true;
+  } catch {
+    return false;
   }
 }

@@ -60,127 +60,6 @@ let memoryVectorStore: MemoryVectorStore | null = null;
 const EXCLUDED_MARKDOWN_DIRECTORIES = new Set(['appium-skills']);
 
 /**
- * Save the documents to a file
- * @param documents The documents to save
- * @param append Whether to append to existing documents or overwrite
- */
-async function saveDocuments(
-  documents: Document[],
-  append: boolean = false
-): Promise<void> {
-  try {
-    // Create directory if it doesn't exist
-    const dir = path.dirname(DOCUMENTS_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    // Serialize the new documents
-    const serializedNew = documents.map((doc) => ({
-      pageContent: doc.pageContent,
-      metadata: doc.metadata,
-    }));
-
-    let allSerialized = serializedNew;
-
-    // If appending and file exists, read existing documents and combine
-    if (append && fs.existsSync(DOCUMENTS_PATH)) {
-      try {
-        const existingContent = fs.readFileSync(DOCUMENTS_PATH, 'utf-8');
-        if (existingContent) {
-          const existingSerialized = JSON.parse(existingContent);
-          allSerialized = [...existingSerialized, ...serializedNew];
-          log.info(
-            `Appending ${serializedNew.length} documents to existing ${existingSerialized.length} documents`
-          );
-        }
-      } catch (readError) {
-        log.warn(
-          'Error reading existing documents, overwriting instead:',
-          readError
-        );
-      }
-    }
-
-    // Write to file
-    fs.writeFileSync(DOCUMENTS_PATH, JSON.stringify(allSerialized));
-    log.info(
-      `${
-        append ? 'Appended to' : 'Saved'
-      } documents in ${DOCUMENTS_PATH} (total: ${allSerialized.length})`
-    );
-  } catch (error) {
-    log.error('Error saving documents:', error);
-    throw error;
-  }
-}
-
-/**
- * Clear the documents file
- */
-async function clearDocumentsFile(): Promise<void> {
-  try {
-    if (fs.existsSync(DOCUMENTS_PATH)) {
-      fs.writeFileSync(DOCUMENTS_PATH, JSON.stringify([]));
-      log.info(`Cleared documents file at ${DOCUMENTS_PATH}`);
-    }
-  } catch (error) {
-    log.error('Error clearing documents file:', error);
-    throw error;
-  }
-}
-
-/**
- * Load the documents from a file
- * @returns The loaded documents or null if the file doesn't exist
- */
-async function loadDocuments(): Promise<Document[] | null> {
-  try {
-    if (!fs.existsSync(DOCUMENTS_PATH)) {
-      log.info('No saved documents found');
-      return null;
-    }
-
-    // Read from file
-    const serialized = JSON.parse(fs.readFileSync(DOCUMENTS_PATH, 'utf-8'));
-
-    // Convert to Document objects
-    const documents = serialized.map(
-      (doc: any) =>
-        new Document({
-          pageContent: doc.pageContent,
-          metadata: doc.metadata,
-        })
-    );
-
-    log.info(`${documents.length} documents loaded from ${DOCUMENTS_PATH}`);
-    return documents;
-  } catch (error) {
-    log.error('Error loading documents:', error);
-    return null;
-  }
-}
-
-/**
- * Extract text from a Markdown file
- * @param markdownPath Path to the Markdown file
- * @returns Extracted text as a string
- */
-async function extractTextFromMarkdown(markdownPath: string): Promise<string> {
-  try {
-    const text = fs.readFileSync(markdownPath, 'utf-8');
-    return text;
-  } catch (error) {
-    log.error('Error extracting text from Markdown:', error);
-    throw new Error(
-      `Failed to extract text from Markdown: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
-  }
-}
-
-/**
  * Initialize the vector store with Markdown content
  * @param markdownPath Path to the Markdown file
  * @param chunkSize Size of each chunk in characters
@@ -445,6 +324,127 @@ export async function queryVectorStore(
   } catch (error) {
     log.error('Error querying vector store:', error);
     throw error;
+  }
+}
+
+/**
+ * Save the documents to a file
+ * @param documents The documents to save
+ * @param append Whether to append to existing documents or overwrite
+ */
+async function saveDocuments(
+  documents: Document[],
+  append: boolean = false
+): Promise<void> {
+  try {
+    // Create directory if it doesn't exist
+    const dir = path.dirname(DOCUMENTS_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Serialize the new documents
+    const serializedNew = documents.map((doc) => ({
+      pageContent: doc.pageContent,
+      metadata: doc.metadata,
+    }));
+
+    let allSerialized = serializedNew;
+
+    // If appending and file exists, read existing documents and combine
+    if (append && fs.existsSync(DOCUMENTS_PATH)) {
+      try {
+        const existingContent = fs.readFileSync(DOCUMENTS_PATH, 'utf-8');
+        if (existingContent) {
+          const existingSerialized = JSON.parse(existingContent);
+          allSerialized = [...existingSerialized, ...serializedNew];
+          log.info(
+            `Appending ${serializedNew.length} documents to existing ${existingSerialized.length} documents`
+          );
+        }
+      } catch (readError) {
+        log.warn(
+          'Error reading existing documents, overwriting instead:',
+          readError
+        );
+      }
+    }
+
+    // Write to file
+    fs.writeFileSync(DOCUMENTS_PATH, JSON.stringify(allSerialized));
+    log.info(
+      `${
+        append ? 'Appended to' : 'Saved'
+      } documents in ${DOCUMENTS_PATH} (total: ${allSerialized.length})`
+    );
+  } catch (error) {
+    log.error('Error saving documents:', error);
+    throw error;
+  }
+}
+
+/**
+ * Clear the documents file
+ */
+async function clearDocumentsFile(): Promise<void> {
+  try {
+    if (fs.existsSync(DOCUMENTS_PATH)) {
+      fs.writeFileSync(DOCUMENTS_PATH, JSON.stringify([]));
+      log.info(`Cleared documents file at ${DOCUMENTS_PATH}`);
+    }
+  } catch (error) {
+    log.error('Error clearing documents file:', error);
+    throw error;
+  }
+}
+
+/**
+ * Load the documents from a file
+ * @returns The loaded documents or null if the file doesn't exist
+ */
+async function loadDocuments(): Promise<Document[] | null> {
+  try {
+    if (!fs.existsSync(DOCUMENTS_PATH)) {
+      log.info('No saved documents found');
+      return null;
+    }
+
+    // Read from file
+    const serialized = JSON.parse(fs.readFileSync(DOCUMENTS_PATH, 'utf-8'));
+
+    // Convert to Document objects
+    const documents = serialized.map(
+      (doc: any) =>
+        new Document({
+          pageContent: doc.pageContent,
+          metadata: doc.metadata,
+        })
+    );
+
+    log.info(`${documents.length} documents loaded from ${DOCUMENTS_PATH}`);
+    return documents;
+  } catch (error) {
+    log.error('Error loading documents:', error);
+    return null;
+  }
+}
+
+/**
+ * Extract text from a Markdown file
+ * @param markdownPath Path to the Markdown file
+ * @returns Extracted text as a string
+ */
+async function extractTextFromMarkdown(markdownPath: string): Promise<string> {
+  try {
+    const text = fs.readFileSync(markdownPath, 'utf-8');
+    return text;
+  } catch (error) {
+    log.error('Error extracting text from Markdown:', error);
+    throw new Error(
+      `Failed to extract text from Markdown: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 }
 

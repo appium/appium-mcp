@@ -41,102 +41,6 @@ const TEMPLATE_HEADINGS: Record<string, string> = {
   'troubleshoot:xcuitest': 'Troubleshooting',
 };
 
-/**
- * Get the list of skill names to return based on the input arguments,
- * and determine which optional skills were ignored.
- * @param args
- * @returns
- */
-function getSkillNames(args: {
-  platform: Platform;
-  driver: Driver;
-  mode: Mode;
-  realDevice: boolean;
-  includeOptional: OptionalSkill[];
-}): { skillNames: string[]; ignoredOptional: OptionalSkill[] } {
-  const { platform, driver, mode, realDevice, includeOptional } = args;
-
-  if (realDevice && platform !== 'ios') {
-    throw new Error('realDevice=true is only supported for ios targets');
-  }
-
-  if (mode === 'troubleshoot' && driver === 'espresso') {
-    throw new Error(
-      'Troubleshooting guidance is currently scoped to uiautomator2 or xcuitest, matching the upstream appium/skills repository.'
-    );
-  }
-
-  const baseSkills = SETUP_SKILLS[platform][driver];
-  if (!baseSkills) {
-    throw new Error(
-      platform === 'android'
-        ? 'xcuitest is only valid for iOS local environments'
-        : 'Only xcuitest is valid for iOS local environments'
-    );
-  }
-
-  const skillNames = [...baseSkills];
-  if (realDevice) {
-    skillNames.push('xcuitest-real-device-config');
-  }
-  if (mode === 'troubleshoot') {
-    skillNames.push('appium-troubleshooting');
-  }
-
-  const ignoredOptional: OptionalSkill[] = [];
-  for (const optional of includeOptional) {
-    if (optional === 'ffmpeg') {
-      skillNames.push('environment-setup-ffmpeg');
-      continue;
-    }
-    if (optional === 'bundletool' && platform === 'android') {
-      skillNames.push('environment-setup-bundletool');
-      continue;
-    }
-    ignoredOptional.push(optional);
-  }
-
-  return { skillNames, ignoredOptional };
-}
-
-function getTemplateHeading(
-  mode: Mode,
-  driver: Driver,
-  realDevice: boolean
-): string | null {
-  return (
-    TEMPLATE_HEADINGS[
-      `${mode}:${driver}${realDevice && mode === 'setup' ? ':real' : ''}`
-    ] ?? null
-  );
-}
-
-function getPromptTemplate(
-  agentsMarkdown: string,
-  heading: string | null
-): string | null {
-  if (!heading) {
-    return null;
-  }
-
-  const section = agentsMarkdown.split(`### Template: ${heading}\n`)[1];
-  if (!section) {
-    return null;
-  }
-
-  return section.match(/```text\n([\s\S]*?)```/)?.[1]?.trim() ?? null;
-}
-
-async function readMarkdown(filePath: string): Promise<string> {
-  try {
-    return await readFile(filePath, 'utf8');
-  } catch {
-    throw new Error(
-      `Failed to load ${path.relative(ROOT, filePath)}. Ensure the appium-skills submodule is initialized.`
-    );
-  }
-}
-
 export default function appiumSkills(server: any): void {
   server.addTool({
     name: 'appium_skills',
@@ -252,4 +156,100 @@ export default function appiumSkills(server: any): void {
       };
     },
   });
+}
+
+/**
+ * Get the list of skill names to return based on the input arguments,
+ * and determine which optional skills were ignored.
+ * @param args
+ * @returns
+ */
+function getSkillNames(args: {
+  platform: Platform;
+  driver: Driver;
+  mode: Mode;
+  realDevice: boolean;
+  includeOptional: OptionalSkill[];
+}): { skillNames: string[]; ignoredOptional: OptionalSkill[] } {
+  const { platform, driver, mode, realDevice, includeOptional } = args;
+
+  if (realDevice && platform !== 'ios') {
+    throw new Error('realDevice=true is only supported for ios targets');
+  }
+
+  if (mode === 'troubleshoot' && driver === 'espresso') {
+    throw new Error(
+      'Troubleshooting guidance is currently scoped to uiautomator2 or xcuitest, matching the upstream appium/skills repository.'
+    );
+  }
+
+  const baseSkills = SETUP_SKILLS[platform][driver];
+  if (!baseSkills) {
+    throw new Error(
+      platform === 'android'
+        ? 'xcuitest is only valid for iOS local environments'
+        : 'Only xcuitest is valid for iOS local environments'
+    );
+  }
+
+  const skillNames = [...baseSkills];
+  if (realDevice) {
+    skillNames.push('xcuitest-real-device-config');
+  }
+  if (mode === 'troubleshoot') {
+    skillNames.push('appium-troubleshooting');
+  }
+
+  const ignoredOptional: OptionalSkill[] = [];
+  for (const optional of includeOptional) {
+    if (optional === 'ffmpeg') {
+      skillNames.push('environment-setup-ffmpeg');
+      continue;
+    }
+    if (optional === 'bundletool' && platform === 'android') {
+      skillNames.push('environment-setup-bundletool');
+      continue;
+    }
+    ignoredOptional.push(optional);
+  }
+
+  return { skillNames, ignoredOptional };
+}
+
+function getTemplateHeading(
+  mode: Mode,
+  driver: Driver,
+  realDevice: boolean
+): string | null {
+  return (
+    TEMPLATE_HEADINGS[
+      `${mode}:${driver}${realDevice && mode === 'setup' ? ':real' : ''}`
+    ] ?? null
+  );
+}
+
+function getPromptTemplate(
+  agentsMarkdown: string,
+  heading: string | null
+): string | null {
+  if (!heading) {
+    return null;
+  }
+
+  const section = agentsMarkdown.split(`### Template: ${heading}\n`)[1];
+  if (!section) {
+    return null;
+  }
+
+  return section.match(/```text\n([\s\S]*?)```/)?.[1]?.trim() ?? null;
+}
+
+async function readMarkdown(filePath: string): Promise<string> {
+  try {
+    return await readFile(filePath, 'utf8');
+  } catch {
+    throw new Error(
+      `Failed to load ${path.relative(ROOT, filePath)}. Ensure the appium-skills submodule is initialized.`
+    );
+  }
 }

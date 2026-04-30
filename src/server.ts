@@ -21,11 +21,13 @@ server.on('connect', (event) => {
 
 server.on('disconnect', async (event) => {
   log.info('Client disconnected:', event.session);
-  const sessions = listSessions();
-  if (sessions.length > 0) {
+  const ownedSessions = listSessions().filter(
+    (session) => session.ownership === 'owned'
+  );
+  if (ownedSessions.length > 0) {
     try {
       log.info(
-        `${sessions.length} active session(s) detected on disconnect, cleaning up...`
+        `${ownedSessions.length} owned session(s) detected on disconnect, cleaning up...`
       );
       const deletedCount = await safeDeleteAllSessions();
       log.info(
@@ -35,7 +37,7 @@ server.on('disconnect', async (event) => {
       log.error('Error cleaning up session on disconnect:', error);
     }
   } else {
-    log.info('No active sessions to clean up on disconnect.');
+    log.info('No owned sessions to clean up on disconnect.');
   }
 });
 

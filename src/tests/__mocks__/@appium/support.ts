@@ -66,8 +66,37 @@ export const imageUtil = {
   requireSharp: () => (_input: Buffer) => mockSharpInstance,
 };
 
+export const net = {
+  downloadFile: async (
+    _remoteUrl: string,
+    _dstPath: string,
+    _opts?: unknown
+  ) => {
+    // Silent in tests by default
+  },
+};
+
+export const plist = {
+  parsePlistFile: async (_plistPath: string) => ({}),
+};
+
+export const zip = {
+  extractAllTo: async (_zipPath: string, _destDir: string, _opts?: unknown) => {
+    // Silent in tests by default
+  },
+  readEntries: async (_zipPath: string, _handler: unknown) => {
+    // Silent in tests by default
+  },
+  toArchive: async (_dstPath: string, _src?: unknown, _opts?: unknown) => {
+    // Silent in tests by default
+  },
+};
+
 // Export other commonly used utilities from @appium/support if needed
 export default {
   logger,
   imageUtil,
+  net,
+  plist,
+  zip,
 };

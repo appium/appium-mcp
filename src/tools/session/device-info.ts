@@ -28,20 +28,6 @@ const ANDROID_BATTERY_STATES: Record<number, string> = {
   5: 'full',
 };
 
-function formatBatteryInfo(
-  platform: string,
-  raw: { level?: number; state?: number }
-): Record<string, string> {
-  const levelPercent = Math.round((raw.level ?? 0) * 100);
-  const states =
-    platform === PLATFORM.ios ? IOS_BATTERY_STATES : ANDROID_BATTERY_STATES;
-  return {
-    platform: platform === PLATFORM.ios ? 'iOS' : 'Android',
-    level: `${levelPercent}%`,
-    state: states[raw.state ?? -1] ?? 'unknown',
-  };
-}
-
 export default function deviceInfo(server: FastMCP): void {
   const schema = z.object({
     action: z
@@ -119,4 +105,18 @@ export default function deviceInfo(server: FastMCP): void {
       return errorResult(`Unknown action: ${args.action}`);
     },
   });
+}
+
+function formatBatteryInfo(
+  platform: string,
+  raw: { level?: number; state?: number }
+): Record<string, string> {
+  const levelPercent = Math.round((raw.level ?? 0) * 100);
+  const states =
+    platform === PLATFORM.ios ? IOS_BATTERY_STATES : ANDROID_BATTERY_STATES;
+  return {
+    platform: platform === PLATFORM.ios ? 'iOS' : 'Android',
+    level: `${levelPercent}%`,
+    state: states[raw.state ?? -1] ?? 'unknown',
+  };
 }

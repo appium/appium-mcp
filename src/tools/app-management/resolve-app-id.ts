@@ -16,58 +16,8 @@ interface CacheEntry {
 const CACHE_TTL_MS = 60_000; // 1 minute
 const appListCache = new Map<string, CacheEntry>();
 
-function getCacheKey(sessionId?: string): string {
-  return sessionId ?? getSessionId() ?? '__default__';
-}
-
 export function invalidateAppListCache(sessionId?: string): void {
   appListCache.delete(getCacheKey(sessionId));
-}
-
-async function getInstalledApps(
-  sessionId?: string
-): Promise<{ packageName: string; appName: string }[]> {
-  const key = getCacheKey(sessionId);
-  const cached = appListCache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.apps;
-  }
-
-  const driver = getDriver(sessionId);
-  const platform = driver ? getPlatformName(driver) : null;
-
-  let apps: { packageName: string; appName: string }[];
-  const isSimulator =
-    driver && isXCUITestDriverSession(driver)
-      ? (driver as XCUITestDriver).isSimulator()
-      : false;
-
-  if (platform === PLATFORM.ios && !isSimulator) {
-    // Real iOS device: User and System app lists are separate — fetch both in parallel.
-    // Use allSettled so a failure on one type (e.g. System) doesn't discard the other.
-    const results = await Promise.allSettled([
-      listAppsFromDevice('User', sessionId),
-      listAppsFromDevice('System', sessionId),
-    ]);
-    const seen = new Set<string>();
-    apps = [];
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        for (const app of result.value) {
-          if (!seen.has(app.packageName)) {
-            seen.add(app.packageName);
-            apps.push(app);
-          }
-        }
-      }
-    }
-  } else {
-    // Android or iOS Simulator: single call returns all apps
-    apps = await listAppsFromDevice('User', sessionId);
-  }
-
-  appListCache.set(key, { apps, timestamp: Date.now() });
-  return apps;
 }
 
 /**
@@ -137,4 +87,54 @@ export async function resolveAppId(
 
   scored.sort((a, b) => b.score - a.score);
   return scored[0].packageName;
+}
+
+function getCacheKey(sessionId?: string): string {
+  return sessionId ?? getSessionId() ?? '__default__';
+}
+
+async function getInstalledApps(
+  sessionId?: string
+): Promise<{ packageName: string; appName: string }[]> {
+  const key = getCacheKey(sessionId);
+  const cached = appListCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.apps;
+  }
+
+  const driver = getDriver(sessionId);
+  const platform = driver ? getPlatformName(driver) : null;
+
+  let apps: { packageName: string; appName: string }[];
+  const isSimulator =
+    driver && isXCUITestDriverSession(driver)
+      ? (driver as XCUITestDriver).isSimulator()
+      : false;
+
+  if (platform === PLATFORM.ios && !isSimulator) {
+    // Real iOS device: User and System app lists are separate — fetch both in parallel.
+    // Use allSettled so a failure on one type (e.g. System) doesn't discard the other.
+    const results = await Promise.allSettled([
+      listAppsFromDevice('User', sessionId),
+      listAppsFromDevice('System', sessionId),
+    ]);
+    const seen = new Set<string>();
+    apps = [];
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        for (const app of result.value) {
+          if (!seen.has(app.packageName)) {
+            seen.add(app.packageName);
+            apps.push(app);
+          }
+        }
+      }
+    }
+  } else {
+    // Android or iOS Simulator: single call returns all apps
+    apps = await listAppsFromDevice('User', sessionId);
+  }
+
+  appListCache.set(key, { apps, timestamp: Date.now() });
+  return apps;
 }
