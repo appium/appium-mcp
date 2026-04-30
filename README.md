@@ -143,6 +143,7 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `CAPABILITIES_CONFIG` | Optional | Absolute path to a `capabilities.json` file with per-platform capability presets |
 | `SCREENSHOTS_DIR` | Optional | Directory where screenshots and screen recordings are saved. Defaults to the current working directory |
 | `NO_UI` | Optional | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode) |
+| `APPIUM_MCP_ON_CLIENT_DISCONNECT` | Optional | Session cleanup when the MCP client disconnects: `delete_all` (default) deletes **MCP-owned** Appium sessions (`safeDeleteAllSessions`); `skip` keeps those sessions across disconnects (e.g. HTTP/stream clients that reconnect). Attached/remote sessions are not removed by this path. See [MCP disconnect behavior](#mcp-disconnect-behavior). |
 | `APPIUM_MCP_WDA_APP_PATH` | Optional | Absolute path to a pre-extracted `WebDriverAgentRunner-Runner.app` bundle. When set, `prepare_ios_simulator` skips all GitHub downloads and uses this bundle directly — useful in environments where external downloads are blocked |
 | `REMOTE_SERVER_URL_ALLOW_REGEX` | Optional | Regex pattern that remote Appium server URLs must match. Defaults to `^https?://` |
 | `AI_VISION_API_BASE_URL` | Required for AI Vision | Base URL of the OpenAI-compatible vision model API |
@@ -320,6 +321,14 @@ The following tools return lightweight text-only responses when NO_UI is enabled
 - ✅ Network-constrained environments
 - ✅ Scripted automation where human interaction is not needed
 - ❌ Interactive debugging and exploration (keep UI enabled for better experience)
+
+#### MCP disconnect behavior
+
+By default (`APPIUM_MCP_ON_CLIENT_DISCONNECT` unset or `delete_all`), when the **MCP client disconnects**, this server **deletes every MCP-owned Appium session** (the same sessions `safeDeleteAllSessions` targets) so embedded drivers are not left running after a short-lived assistant run. **Attached** sessions (`ownership=attached`) are unchanged by this teardown.
+
+HTTP and streamable MCP clients may **disconnect briefly** (reconnect, reload, proxy). If that tears down drivers you still need, set `APPIUM_MCP_ON_CLIENT_DISCONNECT` to `skip` in your MCP server `env` (same pattern as `NO_UI` above). With `skip`, sessions **survive** disconnect until you call `appium_session_management` with `action=delete`, or you stop the Appium server / process.
+
+**Tradeoff:** `skip` can leave **orphaned sessions** on your Appium server if nothing cleans up — use it when disconnect is not the same as “automation finished.”
 
 ## 🎯 Available Tools
 
