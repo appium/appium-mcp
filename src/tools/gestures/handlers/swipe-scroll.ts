@@ -111,18 +111,31 @@ const SWIPE_SPEED_PROFILES = {
   fast: { duration: 100, initialPause: 0 },
 } as const;
 
+const FLIPPED_DIRECTION: Record<Direction, Direction> = {
+  up: 'down',
+  down: 'up',
+  left: 'right',
+  right: 'left',
+};
+
 export async function handleScroll(
   driver: DriverInstance,
   args: GestureArgs
 ): Promise<ContentResult> {
   try {
-    const coordsResult = await resolveCoords(driver, args);
+    const platform = getPlatformName(driver);
+    // Android scroll follows the scrollbar convention (down = reveal content below),
+    // so flip the user's direction before computing the W3C drag coords.
+    const coordsArgs =
+      platform === PLATFORM.android && args.direction
+        ? { ...args, direction: FLIPPED_DIRECTION[args.direction] }
+        : args;
+    const coordsResult = await resolveCoords(driver, coordsArgs);
     if ('error' in coordsResult) {
       return errorResult(`scroll: ${coordsResult.error}`);
     }
     const coords = coordsResult;
     const duration = args.duration ?? SCROLL_DURATION_MS;
-    const platform = getPlatformName(driver);
 
     if (platform === PLATFORM.ios && args.direction && !args.elementUUID) {
       await execute(driver, 'mobile: scroll', {
