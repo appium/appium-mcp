@@ -7,6 +7,7 @@ export default function javaTemplatesResource(server: any) {
     name: 'Generate Code With Locators',
     description: `Generate code for the current page with locators which was retrieved from generate_locators tool.
     The code should be generated in the same priorty order as the locators were generated.
+    Always use the actions API code from the template for the gestures.
     For iOS the priority order is:
       'id',
       'accessibility id',
@@ -74,6 +75,35 @@ public class locators {
      */
     public locators(AppiumDriver driver) {
         PageFactory.initElements(new AppiumFieldDecorator(driver, Duration.ofSeconds(10)), this);
+    }
+
+        @Test
+    public void sliderTest() {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(ExpectedConditions.elementToBeClickable(AppiumBy.accessibilityId("login"))).click();
+        wait.until(ExpectedConditions.elementToBeClickable(AppiumBy.accessibilityId("slider1"))).click();
+
+        try { Thread.sleep(1000); } catch (InterruptedException e) {}
+
+        WebElement slider = wait.until(ExpectedConditions.visibilityOfElementLocated(AppiumBy.accessibilityId("slider")));
+
+        Point location = slider.getLocation();
+        Dimension size = slider.getSize();
+
+        // Swipe right: from left side of the slider to the right side
+        int startX = location.getX() + (int)(size.getWidth() * 0.1);
+        int endX = location.getX() + (int)(size.getWidth() * 0.9);
+        int y = location.getY() + size.getHeight() / 2;
+
+        PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
+        Sequence swipe = new Sequence(finger, 1);
+
+        swipe.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), startX, y));
+        swipe.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
+        swipe.addAction(finger.createPointerMove(Duration.ofMillis(600), PointerInput.Origin.viewport(), endX, y));
+        swipe.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
+
+        driver.perform(Collections.singletonList(swipe));
     }
 }
     `,
