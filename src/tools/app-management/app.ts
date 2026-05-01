@@ -11,6 +11,7 @@ import { queryState } from './query-app-state.js';
 import { background, DEFAULT_BACKGROUND_SECONDS } from './background-app.js';
 import { clear } from './clear-app.js';
 import { deepLink } from './deep-link.js';
+import { errorResult, toolErrorMessage } from '../tool-response.js';
 
 const APP_ACTIONS = [
   'activate',
@@ -136,14 +137,28 @@ export default function app(server: FastMCP): void {
             content: [{ type: 'text', text: 'url is required for deep_link' }],
           };
         }
-        const appId =
-          args.id ??
-          (args.name ? await resolveAppId(args.name, sessionId) : undefined);
+        let appId: string | undefined;
+        try {
+          appId =
+            args.id ??
+            (args.name ? await resolveAppId(args.name, sessionId) : undefined);
+        } catch (err: unknown) {
+          return errorResult(
+            `Failed to resolve app id for deep_link: ${toolErrorMessage(err)}`
+          );
+        }
         return deepLink(args.url, appId, args.waitForLaunch, sessionId);
       }
 
       // activate, terminate, uninstall, is_installed, query_state, clear — all require id or name
-      const id = await resolveId(args.id, args.name, sessionId);
+      let id: string;
+      try {
+        id = await resolveId(args.id, args.name, sessionId);
+      } catch (err: unknown) {
+        return errorResult(
+          `Failed to resolve app id for ${action}: ${toolErrorMessage(err)}`
+        );
+      }
 
       if (action === 'activate') {
         return activate(id, sessionId);
