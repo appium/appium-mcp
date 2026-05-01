@@ -3,11 +3,11 @@
  *
  * Two-mode flow:
  *  - Discovery (no provisioningProfileUuid given): returns the list of available
- *    .mobileprovision profiles so the LLM can ask the user which to use plus
- *    whether the underlying account is free or enterprise.
- *  - Build (provisioningProfileUuid + isFreeAccount given): chains
- *    download matching WDA release → package IPA → applesign. Each step is
- *    cached so re-runs are fast.
+ *    .mobileprovision profiles so the LLM can ask the user which to use.
+ *  - Build (provisioningProfileUuid given): chains download matching WDA release
+ *    → package IPA → applesign. Download and unsigned IPA are cached per WDA
+ *    version; the signed IPA is rebuilt every call so profile/cert changes never
+ *    serve a stale signature.
  *
  * After a successful run, create_session calls should pass the returned
  * `capabilitiesHint` so Appium installs and launches the signed prebuilt WDA
@@ -54,14 +54,19 @@ interface ProfileChoice {
   bundleId: string;
   filePath: string;
   expiresAt?: string;
+  recommendedForWda: boolean;
+  isWildcard: boolean;
 }
+
+// default signing bundle ID when the chosen provisioning profile is a wildcard ('*')
+const WDA_RUNNER_BUNDLE_ID_FOR_XCTEST =
+  'com.facebook.WebDriverAgentRunner.xctrunner';
 
 // ── Filesystem helpers ──
 
 interface PipelineInputs {
   udid: string;
   provisioningProfileUuid: string;
-  isFreeAccount: boolean;
   forceRebuild: boolean;
 }
 
@@ -113,6 +118,7 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
     const mp = provision.readFromFile(fullPath);
     // The provision Name typically formats as "iOS Team Provisioning Profile: <bundleId>"
     const bundleIdFromName = mp.Name.split(':')[1]?.trim() ?? '';
+    const isWildcard = bundleIdFromName === '*';
     return {
       uuid: mp.UUID,
       name: mp.Name,
@@ -122,6 +128,11 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
       expiresAt: mp.ExpirationDate
         ? new Date(mp.ExpirationDate).toISOString()
         : undefined,
+      // Wildcards work too, we substitute a concrete .xctrunner bundle ID at sign time.
+      // Specific profiles must already end in .xctrunner since the xcuitest driver re-appends
+      // that suffix on launch (see appium-webdriveragent/lib/constants.ts DEFAULT_TEST_BUNDLE_SUFFIX).
+      recommendedForWda: isWildcard || bundleIdFromName.endsWith('.xctrunner'),
+      isWildcard,
     };
   });
 }
@@ -211,14 +222,17 @@ async function packageAppAsIpa(
 
 async function signIpa(
   ipaPath: string,
-  profile: ProfileChoice,
-  isFreeAccount: boolean
+  profile: ProfileChoice
 ): Promise<string> {
+  // For wildcard profiles, applesign needs a concrete value, substitute the canonical WDA Runner bundle ID,
+  // which the xcuitest driver expects to find at launch.
+  const targetBundleId = profile.isWildcard
+    ? WDA_RUNNER_BUNDLE_ID_FOR_XCTEST
+    : profile.bundleId.trim();
   const opts: Record<string, unknown> = {
     file: ipaPath,
     mobileprovision: profile.filePath,
-    // Free accounts must override the bundle id to match the personal team prefix
-    bundleid: isFreeAccount ? profile.bundleId.trim() : '',
+    bundleid: targetBundleId,
     withGetTaskAllow: true,
     withoutPlugins: true,
   };
@@ -331,8 +345,7 @@ async function runPipeline(
   const versionRoot = resolveAppiumMcpCachePath('wda-real', wdaVersion);
   const downloadDir = path.join(versionRoot, 'downloaded');
   const unsignedIpaPath = path.join(versionRoot, 'Payload.ipa');
-  const flag = inputs.isFreeAccount ? 'free' : 'ent';
-  const signedDir = path.join(versionRoot, 'signed', `${profile.uuid}-${flag}`);
+  const signedDir = path.join(versionRoot, 'signed', profile.uuid);
   const stagedIpaPath = path.join(signedDir, 'Payload.ipa');
   const resignedIpaPath = path.join(signedDir, 'Payload-resigned.ipa');
 
@@ -387,38 +400,28 @@ async function runPipeline(
     return result;
   }
 
-  // ── Step 4: Resign (cached per profile) ──
+  // ── Step 4: Resign (always re-sign; no cache) ──
   let bundleId: string;
   try {
-    if (!inputs.forceRebuild && (await fileExists(resignedIpaPath))) {
-      bundleId = await extractBundleIdFromIpa(resignedIpaPath);
-      result.wda_sign = {
-        status: 'skipped',
-        detail: `Reusing cached signed IPA at ${resignedIpaPath} (bundleId=${bundleId})`,
-      };
-    } else {
-      await mkdir(signedDir, { recursive: true });
-      // applesign mutates / writes alongside the input IPA; copy fresh into the per-profile dir first
-      await cp(unsignedIpaPath, stagedIpaPath);
-      log.info(
-        `Signing IPA with profile ${profile.uuid} (free=${inputs.isFreeAccount})...`
-      );
-      const producedPath = await signIpa(
-        stagedIpaPath,
-        profile,
-        inputs.isFreeAccount
-      );
-      // signIpa returns "<basename>-resigned.ipa" alongside the staged copy — that
-      // already matches resignedIpaPath, but assert to be defensive.
-      if (path.resolve(producedPath) !== path.resolve(resignedIpaPath)) {
-        await cp(producedPath, resignedIpaPath);
-      }
-      bundleId = await extractBundleIdFromIpa(resignedIpaPath);
-      result.wda_sign = {
-        status: 'completed',
-        detail: `Signed IPA at ${resignedIpaPath} (bundleId=${bundleId})`,
-      };
+    // Wipe any prior signed artifacts for this profile so applesign starts clean.
+    await rm(signedDir, { recursive: true, force: true });
+    await mkdir(signedDir, { recursive: true });
+    // applesign mutates / writes alongside the input IPA; copy fresh into the per-profile dir first
+    await cp(unsignedIpaPath, stagedIpaPath);
+    log.info(
+      `Signing IPA with profile ${profile.uuid} (wildcard=${profile.isWildcard})...`
+    );
+    const producedPath = await signIpa(stagedIpaPath, profile);
+    // signIpa returns "<basename>-resigned.ipa" alongside the staged copy — that
+    // already matches resignedIpaPath, but assert to be defensive.
+    if (path.resolve(producedPath) !== path.resolve(resignedIpaPath)) {
+      await cp(producedPath, resignedIpaPath);
     }
+    bundleId = await extractBundleIdFromIpa(resignedIpaPath);
+    result.wda_sign = {
+      status: 'completed',
+      detail: `Signed IPA at ${resignedIpaPath} (bundleId=${bundleId})`,
+    };
   } catch (err) {
     result.wda_sign = { status: 'failed', detail: (err as Error).message };
     return result;
@@ -451,17 +454,11 @@ const prepareRealDeviceSchema = z.object({
     .describe(
       'UUID of the .mobileprovision profile to sign WDA with. If omitted, the tool returns the list of available profiles so you can ask the user to pick one.'
     ),
-  isFreeAccount: z
-    .boolean()
-    .optional()
-    .describe(
-      'Required when provisioningProfileUuid is given. true if the profile belongs to a free Apple ID (7-day expiry, no team prefix), false for a paid/enterprise team. Ask the user — do not infer from the UUID.'
-    ),
   forceRebuild: z
     .boolean()
     .optional()
     .describe(
-      'If true, ignore cached WDA download and signed IPA and start clean. Default: false.'
+      'If true, ignore the cached WDA download and unsigned IPA and start clean. The signed IPA is always rebuilt regardless. Default: false.'
     ),
 });
 
@@ -471,10 +468,10 @@ export default function prepareIosRealDevice(server: FastMCP): void {
     description:
       'Prepare an iOS real device for Appium testing in a single call. Two-mode flow: ' +
       '(1) Call without provisioningProfileUuid to receive the list of available .mobileprovision profiles — ' +
-      'present them to the user and confirm whether the chosen profile belongs to a free Apple ID or a paid/enterprise team. ' +
-      '(2) Call again with the chosen UUID and isFreeAccount to download the matching WebDriverAgent release, package it as an IPA, ' +
-      'and resign it with the chosen profile. ' +
-      'Each step is cached so repeat runs are fast. ' +
+      'present them to the user (highlight any with recommendedForWda=true) and ask them to pick one. ' +
+      '(2) Call again with the chosen UUID to download the matching WebDriverAgent release, package it as an IPA, ' +
+      'and resign it with the chosen profile (wildcard "*" profiles are supported — a concrete WDA bundle ID is substituted at sign time). ' +
+      'WDA download and unsigned IPA are cached per WDA version; the signed IPA is rebuilt every call. ' +
       'Pass the returned capabilitiesHint to create_session so Appium installs and launches the signed prebuilt WDA instead of rebuilding. ' +
       'Requires macOS, Xcode 16+, and a paired developer-mode device.',
     parameters: prepareRealDeviceSchema,
@@ -491,24 +488,25 @@ export default function prepareIosRealDevice(server: FastMCP): void {
         );
       }
 
-      const {
-        udid,
-        provisioningProfileUuid,
-        isFreeAccount,
-        forceRebuild = false,
-      } = args;
+      const { udid, provisioningProfileUuid, forceRebuild = false } = args;
 
       // Discovery mode: no profile chosen yet — return profile list for selection.
       if (!provisioningProfileUuid) {
         const profiles = await listProvisioningProfiles();
+        const recommended = profiles.filter((p) => p.recommendedForWda);
         return textResult(
           JSON.stringify(
             {
               mode: 'discovery',
               udid,
               profiles,
+              recommendedProfiles:
+                recommended.length > 0 ? recommended : undefined,
               instructions:
-                "Present the profiles to the user and ask them to (a) pick one by UUID and (b) confirm whether the profile's Apple ID is free (7-day expiry) or paid/enterprise. Then call this tool again with provisioningProfileUuid and isFreeAccount.",
+                'Prefer profiles with recommendedForWda=true. These are profiles whose bundle ID either ends in .xctrunner ' +
+                '(matches what the xcuitest driver re-appends at launch) or is a wildcard "*" (we substitute a concrete WDA bundle ID at sign time). ' +
+                'Present the profiles to the user, highlight the recommended ones, and ask them to pick one by UUID. ' +
+                'Then call this tool again with provisioningProfileUuid.',
             },
             null,
             2
@@ -516,20 +514,13 @@ export default function prepareIosRealDevice(server: FastMCP): void {
         );
       }
 
-      if (isFreeAccount === undefined) {
-        throw new Error(
-          'isFreeAccount is required when provisioningProfileUuid is provided. Ask the user whether the chosen profile belongs to a free Apple ID or a paid/enterprise team.'
-        );
-      }
-
       log.info(
-        `Preparing iOS real device ${udid} with profile ${provisioningProfileUuid} (free=${isFreeAccount}, forceRebuild=${forceRebuild})`
+        `Preparing iOS real device ${udid} with profile ${provisioningProfileUuid} (forceRebuild=${forceRebuild})`
       );
 
       const result = await runPipeline({
         udid,
         provisioningProfileUuid,
-        isFreeAccount,
         forceRebuild,
       });
       return textResult(JSON.stringify({ mode: 'build', ...result }, null, 2));
