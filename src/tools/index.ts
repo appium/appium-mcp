@@ -47,6 +47,8 @@ import screenRecording from './interactions/screen-recording.js';
 import app from './app-management/app.js';
 import mobilePermissions from './app-management/permissions.js';
 import context from './context/context.js';
+import ai from './ai/ai.js';
+import { isAIEnabled, assertAIConfig } from './ai/config.js';
 
 type RegisteredTool = Parameters<FastMCP['addTool']>[0];
 
@@ -188,6 +190,18 @@ export default function registerTools(server: FastMCP): void {
   // Documentation
   answerAppium(server);
   appiumSkills(server);
+
+  // AI (vision-based fallback) — gated; only registered when explicitly enabled.
+  assertAIConfig();
+  if (isAIEnabled()) {
+    ai(server);
+    log.info('appium_ai tool registered (AI_VISION_ENABLED=true)');
+  } else {
+    log.info(
+      'appium_ai tool NOT registered (set AI_VISION_ENABLED=true to enable)'
+    );
+  }
+
   log.info('All tools registered');
 }
 
