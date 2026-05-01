@@ -1,3 +1,9 @@
+## [1.71.6](https://github.com/appium/appium-mcp/compare/v1.71.5...v1.71.6) (2026-05-01)
+
+### Bug Fixes
+
+* add actions api to the java template ([#310](https://github.com/appium/appium-mcp/issues/310)) ([caebdd4](https://github.com/appium/appium-mcp/commit/caebdd41d21a51dbfaaa790952e2fc9ccc1e0c77))
+
 ## [1.71.5](https://github.com/appium/appium-mcp/compare/v1.71.4...v1.71.5) (2026-04-30)
 
 ### Bug Fixes
