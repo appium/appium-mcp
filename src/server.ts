@@ -51,7 +51,7 @@ server.on('disconnect', async (event) => {
   if (ownedSessions.length > 0 && policy === 'skip') {
     log.info(
       `${ownedSessions.length} owned session(s) retained after MCP disconnect ` +
-        '(APPIUM_MCP_ON_CLIENT_DISCONNECT=skip). Delete explicitly via appium_session_management when finished.'
+        '(APPIUM_MCP_ON_CLIENT_DISCONNECT=skip). Delete explicitly via appium_session_management (action=delete) when finished.'
     );
     return;
   }
