@@ -1,4 +1,5 @@
 import { FastMCP } from 'fastmcp';
+import pkg from '../package.json' with { type: 'json' };
 import registerTools from './tools/index.js';
 import registerResources from './resources/index.js';
 import { listSessions, safeDeleteAllSessions } from './session-store.js';
@@ -26,9 +27,14 @@ function disconnectSessionPolicyFromEnv(): DisconnectSessionPolicy {
 
 const server = new FastMCP({
   name: 'MCP Appium',
-  version: '1.0.0',
+  version: pkg.version as `${number}.${number}.${number}`,
   instructions:
-    'Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation. For local Appium environment setup or troubleshooting, use appium_skills before running installation, doctor, or smoke-test steps.',
+    'Appium mobile automation through MCP. Defaults that avoid broken flows:\n' +
+    '- Establish a driver session first: select_device and appium_session_management (action=create) for local/embedded mode, or attach to a remote session when the user supplies a server URL.\n' +
+    '- Call only tools this server actually registers (appium_find_element, appium_gesture, appium_session_management, etc.); do not invent tool names or aliases.\n' +
+    '- Prefer stable locators: accessibility id and id before long xpath; use xpath only when nothing else works.\n' +
+    '- Use appium_gesture for taps and drags; when something is off-screen, use action=scroll_to_element instead of spamming appium_find_element alone.\n' +
+    '- For local Appium install, doctor, or smoke tests, run appium_skills before guessing commands.',
 });
 
 registerResources(server);
