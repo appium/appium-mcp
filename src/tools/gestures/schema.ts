@@ -20,15 +20,15 @@ export const SCROLL_DISTANCE_PRESETS = ['small', 'medium', 'large'] as const;
 export type ScrollDistancePreset = (typeof SCROLL_DISTANCE_PRESETS)[number];
 
 export const LOCATOR_STRATEGIES = [
-  'xpath',
-  'id',
-  'name',
-  'class name',
   'accessibility id',
-  'css selector',
-  '-android uiautomator',
+  'id',
   '-ios predicate string',
   '-ios class chain',
+  '-android uiautomator',
+  'xpath',
+  'name',
+  'class name',
+  'css selector',
 ] as const;
 
 export const gestureSchema = z.object({
@@ -140,7 +140,11 @@ export const gestureSchema = z.object({
   strategy: z
     .enum(LOCATOR_STRATEGIES)
     .optional()
-    .describe(`Locator strategy. Required for: scroll_to_element.`),
+    .describe(
+      `Locator strategy. Required for: scroll_to_element. ` +
+        `Priority: accessibility id > id > platform-native (-ios predicate string / -ios class chain on iOS, -android uiautomator on Android) > xpath (LAST RESORT — slow on iOS XCUITest, brittle) > name > class name > css selector (webview only). ` +
+        `Same ranking as appium_find_element.`
+    ),
   selector: z
     .string()
     .optional()

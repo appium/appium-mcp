@@ -9,17 +9,31 @@ import {
 } from '../tool-response.js';
 
 export const findElementSchema = z.object({
-  strategy: z.enum([
-    'xpath',
-    'id',
-    'name',
-    'class name',
-    'accessibility id',
-    'css selector',
-    '-android uiautomator',
-    '-ios predicate string',
-    '-ios class chain',
-  ]),
+  strategy: z
+    .enum([
+      'accessibility id',
+      'id',
+      '-ios predicate string',
+      '-ios class chain',
+      '-android uiautomator',
+      'xpath',
+      'name',
+      'class name',
+      'css selector',
+    ])
+    .describe(
+      `Locator strategy. Try in priority order: ` +
+        `(1) accessibility id [cross-platform, fastest, most stable], ` +
+        `(2) id [Android resource-id; iOS aliases accessibility id], ` +
+        `(3) -ios predicate string [iOS native, fast], ` +
+        `(4) -ios class chain [iOS native, hierarchy queries], ` +
+        `(5) -android uiautomator [Android native, expressive UiSelector], ` +
+        `(6) xpath [LAST RESORT — slow on iOS XCUITest, brittle to layout changes], ` +
+        `(7) name [legacy; often aliased on iOS], ` +
+        `(8) class name [too generic, usually multi-match], ` +
+        `(9) css selector [webview/hybrid contexts only]. ` +
+        `Platform tips: iOS prefer (1)→(3)→(4); Android prefer (1)→(2)→(5); xpath last on both.`
+    ),
   selector: z.string().describe('The selector to find the element.'),
   sessionId: z
     .string()
@@ -32,7 +46,9 @@ export default function findElement(server: FastMCP): void {
     name: 'appium_find_element',
     description: `Find a specific element by strategy and selector which will return a uuid that can be used for interactions.
 
-[PRIORITY 2: Use this to search for a target element by xpath, id, accessibility id, etc.]
+[PRIORITY 2: Use this to search for a target element.]
+
+**Strategy priority**: accessibility id > id > platform-native (\`-ios predicate string\` / \`-ios class chain\` on iOS, \`-android uiautomator\` on Android) > xpath (last resort — slow & brittle). See the \`strategy\` parameter for the full ranking.
 
 **Scrolling until an element appears**: use \`appium_gesture\` with \`action=scroll_to_element\` (same strategy + selector), not this tool.`,
     parameters: findElementSchema,

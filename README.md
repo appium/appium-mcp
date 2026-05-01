@@ -362,7 +362,7 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 
 | Tool                  | Description                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------- |
-| `appium_find_element` | Find a specific element using traditional locator strategies (xpath, id, accessibility id, etc.). To scroll until an element appears, use **`appium_gesture`** with **`action=scroll_to_element`** (same `strategy` / `selector` as find). |
+| `appium_find_element` | Find a specific element using traditional locator strategies. **Strategy priority**: `accessibility id` > `id` > platform-native (`-ios predicate string` / `-ios class chain` on iOS, `-android uiautomator` on Android) > `xpath` (last resort — slow & brittle). To scroll until an element appears, use **`appium_gesture`** with **`action=scroll_to_element`** (same `strategy` / `selector` as find). |
 | `appium_ai` | **Opt-in (gated by `AI_VISION_ENABLED=true`).** Vision-based element finding — fallback for when traditional locators don't work. `action=find_element` takes a natural-language `instruction` (e.g., "yellow search button at bottom") and returns a coordinate UUID consumable by **`appium_gesture`** (`tap` / `double_tap` / `long_press`). See [AI Vision Element Finding](#ai-vision-element-finding) for setup. |
 | `appium_gesture`      | Perform a touch gesture. `action` = `tap`, `double_tap`, `long_press`, `scroll`, `swipe`, `pinch_zoom`, or **`scroll_to_element`**. **`scroll_to_element`** scrolls vertically (`direction` = `up` \| `down`) until the locator matches, **page source stops changing** after a scroll (end of list), or **`maxScrollAttempts`** (default 10, max 80). Optional **`scrollDistance`** (0.05–1) or **`scrollDistancePreset`** = `small` \| `medium` \| `large`. Supports element UUIDs and raw coordinates for other actions. For swipe, use `speed` = `slow` \| `normal` \| `fast` (fast for pull-to-refresh). |
 | `appium_drag_and_drop` | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates) |
@@ -428,7 +428,22 @@ This example demonstrates a complete e-commerce checkout flow that can be automa
 
 ### AI-Powered Element Finding Examples
 
-**Traditional Mode (XPath/ID):**
+**Traditional Mode — prefer stable identifiers:**
+
+Try strategies in priority order: `accessibility id` first, then `id`, then platform-native predicates (`-ios predicate string` / `-ios class chain` on iOS, `-android uiautomator` on Android). Reach for `xpath` only when nothing more stable exists.
+
+```json
+{
+  "tool": "appium_find_element",
+  "arguments": {
+    "strategy": "accessibility id",
+    "selector": "search-button"
+  }
+}
+```
+
+`xpath` fallback (when no accessibility id, resource-id, or platform-native predicate works):
+
 ```json
 {
   "tool": "appium_find_element",

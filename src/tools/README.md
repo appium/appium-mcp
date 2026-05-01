@@ -51,7 +51,8 @@ When searching for elements, follow this priority order for efficiency:
    - Best for: Finding what element currently has focus
 
 2. **`appium_find_element`** (PRIORITY 2) - Use this to search for a specific target element
-   - Specify strategy (xpath, id, accessibility id, etc.) and selector
+   - Specify strategy and selector
+   - Strategy priority: `accessibility id` > `id` > platform-native (`-ios predicate string` / `-ios class chain` on iOS, `-android uiautomator` on Android) > `xpath` (last resort)
    - Returns specific element UUID
    - Best for: Targeting a known element
 
