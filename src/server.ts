@@ -13,15 +13,14 @@ type DisconnectSessionPolicy = 'delete_all' | 'skip';
  */
 function disconnectSessionPolicyFromEnv(): DisconnectSessionPolicy {
   const raw = process.env.APPIUM_MCP_ON_CLIENT_DISCONNECT?.trim().toLowerCase();
-  if (!raw || raw === 'delete_all') {
-    return 'delete_all';
-  }
   if (raw === 'skip') {
     return 'skip';
   }
-  log.warn(
-    `APPIUM_MCP_ON_CLIENT_DISCONNECT="${raw}" is not recognized (expected delete_all or skip); defaulting to delete_all`
-  );
+  if (raw !== 'delete_all') {
+    log.warn(
+      `APPIUM_MCP_ON_CLIENT_DISCONNECT="${raw}" is not recognized (expected delete_all or skip); defaulting to delete_all`
+    );
+  }
   return 'delete_all';
 }
 
