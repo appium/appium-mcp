@@ -13,9 +13,15 @@ import {
   textResultWithPrimaryElementId,
   toolErrorMessage,
 } from '../../tool-response.js';
+import { isAIEnabled } from '../../ai/config.js';
 import type { GestureArgs } from '../schema.js';
 
 const AI_ELEMENT_PREFIX = 'ai-element:';
+
+const AI_DISABLED_REJECTION =
+  `Received an ai-element: UUID, but the appium_ai tool is not registered ` +
+  `(AI_VISION_ENABLED is not set to true). Use appium_find_element to get a real ` +
+  `element UUID, or enable AI_VISION_ENABLED=true with the required AI_VISION_* keys.`;
 
 export async function handleTap(
   driver: DriverInstance,
@@ -24,6 +30,9 @@ export async function handleTap(
   try {
     if (args.elementUUID) {
       if (args.elementUUID.startsWith(AI_ELEMENT_PREFIX)) {
+        if (!isAIEnabled()) {
+          return errorResult(AI_DISABLED_REJECTION);
+        }
         const parsed = parseAiElementCoords(args.elementUUID);
         if ('error' in parsed) {
           return errorResult(parsed.error);

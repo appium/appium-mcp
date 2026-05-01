@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { elementUUIDScheme } from '../../schema.js';
+import { isAIEnabled } from '../ai/config.js';
+
+const AI_UUID_HINT = isAIEnabled()
+  ? `Supports AI coordinate UUIDs (format: ai-element:x,y:bbox) returned by appium_ai. `
+  : '';
 
 export const GESTURE_ACTIONS = [
   'tap',
@@ -50,7 +55,8 @@ export const gestureSchema = z.object({
   elementUUID: elementUUIDScheme
     .optional()
     .describe(
-      `UUID of the element to act on. Supports AI coordinate UUIDs (format: ai-element:x,y:bbox). ` +
+      `UUID of the element to act on. ` +
+        AI_UUID_HINT +
         `Used by: tap, double_tap, long_press, pinch_zoom. ` +
         `For scroll/swipe, when provided with direction, the gesture is calculated relative to this element instead of the whole screen.`
     ),
