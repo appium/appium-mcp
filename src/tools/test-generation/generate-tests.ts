@@ -18,7 +18,7 @@ export default function generateTest(server: FastMCP): void {
       `2. prepare_ios_simulator or appium_prepare_ios_real_device — only when iOS local setup requires it; otherwise skip.`,
       `3. appium_session_management with action=create — start a driver session (match platform to select_device unless using remote server mode).`,
       `4. appium_app_lifecycle or other session tools as needed (e.g. activate app, deep link) — only if the scenario requires it.`,
-      `5. Discover the target element — prefer appium_get_active_element when the focused field is enough; otherwise appium_find_element (strategy + selector, or ai_instruction when appropriate). Use generate_locators only for broad inspection/debugging, not for every step.`,
+      `5. Discover the target element — prefer appium_get_active_element when the focused field is enough; otherwise appium_find_element (strategy + selector). If the appium_ai tool is registered (vision-based fallback, opt-in via AI_VISION_ENABLED), use it only when no stable locator works. Use generate_locators only for broad inspection/debugging, not for every step.`,
       `6. Interact using the same tool names the server exposes, for example:`,
       `   - appium_gesture with action=tap (or double_tap, long_press, scroll, swipe, scroll_to_element, pinch_zoom) — use the element id from appium_find_element when required`,
       `   - appium_set_value — type into an element; optionally appium_mobile_press_key for special keys`,
