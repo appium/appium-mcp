@@ -141,8 +141,11 @@ export async function handleScroll(
         ? `Successfully scrolled ${args.direction}.`
         : `Successfully scrolled from (${coords.startX}, ${coords.startY}) to (${coords.endX}, ${coords.endY}).`
     );
-  } catch (err) {
-    return errorResult(`Failed to scroll. ${toolErrorMessage(err)}`);
+  } catch (err: unknown) {
+    return errorResult(
+      `Failed to scroll. ${toolErrorMessage(err)} ` +
+        'Next: confirm direction or x/y/endX/endY, session is active, and the scrollable area is not blocked by an overlay.'
+    );
   }
 }
 
@@ -193,8 +196,11 @@ export async function handleSwipe(
         ? `Successfully swiped ${args.direction} (speed=${speed}).`
         : `Successfully swiped from (${coords.startX}, ${coords.startY}) to (${coords.endX}, ${coords.endY}) (speed=${speed}).`
     );
-  } catch (err) {
-    return errorResult(`Failed to swipe. ${toolErrorMessage(err)}`);
+  } catch (err: unknown) {
+    return errorResult(
+      `Failed to swipe. ${toolErrorMessage(err)} ` +
+        'Next: try speed=fast for pull-to-refresh, adjust direction, or use explicit coordinates if the gesture missed the target.'
+    );
   }
 }
 
@@ -267,7 +273,8 @@ async function resolveCoords(
 
   return {
     error:
-      'Either direction OR custom coordinates (x, y, endX, endY) must be provided.',
+      'Either direction OR custom coordinates (x, y, endX, endY) must be provided for scroll/swipe. ' +
+      'Next: set direction (up|down|left|right) or provide all four coordinates.',
   };
 }
 

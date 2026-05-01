@@ -83,7 +83,7 @@ export async function handlePinchZoom(
 ): Promise<ContentResult> {
   if (args.scale === undefined) {
     return errorResult(
-      'pinch_zoom requires a scale value (e.g. 0.5 to zoom out, 2.0 to zoom in).'
+      'pinch_zoom requires a scale value (e.g. 0.5 to zoom out, 2.0 to zoom in). Next: pass scale in the allowed range from the tool schema.'
     );
   }
   const scale = args.scale;
@@ -91,7 +91,7 @@ export async function handlePinchZoom(
 
   if (!args.elementUUID && (args.x !== undefined) !== (args.y !== undefined)) {
     return errorResult(
-      'pinch_zoom requires both x and y when using custom coordinates.'
+      'pinch_zoom requires both x and y when using custom coordinates. Next: set both x and y, or use elementUUID for pinch on an element.'
     );
   }
   const useCustomCoords =
@@ -232,9 +232,10 @@ export async function handlePinchZoom(
     return textResult(
       `Successfully pinched ${direction} (scale=${scale}) on ${target}.`
     );
-  } catch (err) {
+  } catch (err: unknown) {
     return errorResult(
-      `Failed to perform pinch_zoom. ${toolErrorMessage(err)}`
+      `Failed to perform pinch_zoom. ${toolErrorMessage(err)} ` +
+        'Next: ensure the target is visible, scale/velocity are valid, and retry after animations finish.'
     );
   }
 }
@@ -280,7 +281,10 @@ function resolveCoordinatePinchTarget(
   const bottom = top + windowRect.height;
 
   if (x < left || x >= right || y < top || y >= bottom) {
-    return `pinch_zoom coordinates (${x}, ${y}) are outside window bounds (${windowRect.width}x${windowRect.height}).`;
+    return (
+      `pinch_zoom coordinates (${x}, ${y}) are outside window bounds (${windowRect.width}x${windowRect.height}). ` +
+      'Next: use coordinates inside the visible window or pinch on an elementUUID.'
+    );
   }
 
   const desired = Math.floor(

@@ -25,7 +25,8 @@ export async function handleScrollToElement(
 ): Promise<ContentResult> {
   if (!args.strategy || !args.selector) {
     return errorResult(
-      'scroll_to_element requires both strategy and selector.'
+      'scroll_to_element requires both strategy and selector. ' +
+        'Next: use the same strategy and selector you would pass to appium_find_element.'
     );
   }
   const direction: 'up' | 'down' =
@@ -55,7 +56,8 @@ export async function handleScrollToElement(
         await performVerticalScroll(driver, { direction, distance });
       } catch (scrollErr: unknown) {
         return errorResult(
-          `Scroll failed during scroll_to_element: ${toolErrorMessage(scrollErr)}`
+          `Scroll failed during scroll_to_element: ${toolErrorMessage(scrollErr)} ` +
+            'Next: confirm direction and scrollDistance, dismiss overlays, or try a smaller scrollDistancePreset.'
         );
       }
       const xmlAfter = await getPageSource(driver);
@@ -69,16 +71,21 @@ export async function handleScrollToElement(
 
       if (xmlBefore === xmlAfter) {
         return errorResult(
-          `Element not found; page source did not change after scroll (likely end of scrollable content). selector=${args.selector}`
+          `Element not found; page source did not change after scroll (likely end of scrollable content). selector=${args.selector} ` +
+            'Next: try the opposite direction, a nested scroller, or appium_find_element with a different locator.'
         );
       }
     }
 
     return errorResult(
-      `Element ${args.selector} not found after ${maxScroll} scroll(s) in direction '${direction}'.`
+      `Element ${args.selector} not found after ${maxScroll} scroll(s) in direction '${direction}'. ` +
+        'Next: increase maxScrollAttempts, verify strategy/selector, scroll the parent list first, or use appium_gesture scroll with a different area.'
     );
-  } catch (err) {
-    return errorResult(`Failed to scroll_to_element. ${toolErrorMessage(err)}`);
+  } catch (err: unknown) {
+    return errorResult(
+      `Failed to scroll_to_element. ${toolErrorMessage(err)} ` +
+        'Next: ensure session is active, locator matches the current screen, and try scroll_to_element from the top of the list.'
+    );
   }
 }
 

@@ -78,7 +78,11 @@ export default function findElement(server: FastMCP): void {
         );
       } catch (err: unknown) {
         const errorMessage = toolErrorMessage(err);
-        return errorResult(`Failed to find element. Error: ${errorMessage}`);
+        return errorResult(
+          `Failed to find element. ${errorMessage} ` +
+            'Next: try a more stable locator (accessibility id / resource-id), reveal the control with appium_gesture ' +
+            '(scroll or scroll_to_element), or tune waits via appium_driver_settings.'
+        );
       }
     },
   });

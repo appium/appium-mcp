@@ -52,7 +52,8 @@ export async function handleTap(
 
     if (args.x === undefined || args.y === undefined) {
       return errorResult(
-        'tap requires either elementUUID, or both x and y coordinates.'
+        'tap requires either elementUUID, or both x and y coordinates. ' +
+          'Next: pass elementId from appium_find_element as elementUUID, or set both x and y.'
       );
     }
     await performActions(driver, w3cTapAt(args.x, args.y));
@@ -60,7 +61,10 @@ export async function handleTap(
       `Successfully tapped at coordinates (${args.x}, ${args.y}).`
     );
   } catch (err: unknown) {
-    return errorResult(`Failed to perform tap. ${toolErrorMessage(err)}`);
+    return errorResult(
+      `Failed to perform tap. ${toolErrorMessage(err)} ` +
+        'Next: re-run appium_find_element if elementUUID may be stale, or retry after the UI settles.'
+    );
   }
 }
 
@@ -91,7 +95,8 @@ export async function handleDoubleTap(
       y = args.y;
     } else {
       return errorResult(
-        'double_tap requires either elementUUID, or both x and y coordinates.'
+        'double_tap requires either elementUUID, or both x and y coordinates. ' +
+          'Next: pass elementId from appium_find_element, or set both x and y.'
       );
     }
 
@@ -115,7 +120,8 @@ export async function handleDoubleTap(
     return textResult(`Successfully double tapped at (${x}, ${y}).`);
   } catch (err: unknown) {
     return errorResult(
-      `Failed to perform double_tap. ${toolErrorMessage(err)}`
+      `Failed to perform double_tap. ${toolErrorMessage(err)} ` +
+        'Next: re-run appium_find_element if the target moved, or retry on iOS with a visible element.'
     );
   }
 }
@@ -128,7 +134,7 @@ export async function handleLongPress(
     const duration = args.duration ?? 2000;
     if (duration < 500 || duration > 10000) {
       return errorResult(
-        'long_press duration must be between 500 and 10000 ms.'
+        'long_press duration must be between 500 and 10000 ms. Next: pass duration within that range or omit it for the default.'
       );
     }
 
@@ -159,7 +165,8 @@ export async function handleLongPress(
       y = args.y;
     } else {
       return errorResult(
-        'long_press requires either elementUUID, or both x and y coordinates.'
+        'long_press requires either elementUUID, or both x and y coordinates. ' +
+          'Next: pass elementId from appium_find_element, or set both x and y.'
       );
     }
 
@@ -181,7 +188,8 @@ export async function handleLongPress(
     );
   } catch (err: unknown) {
     return errorResult(
-      `Failed to perform long_press. ${toolErrorMessage(err)}`
+      `Failed to perform long_press. ${toolErrorMessage(err)} ` +
+        'Next: ensure duration is 500–10000 ms, the element is visible, and retry if a system animation is running.'
     );
   }
 }
@@ -191,16 +199,25 @@ function parseAiElementCoords(
 ): { x: number; y: number } | { error: string } {
   const parts = uuid.split(':');
   if (parts.length < 2) {
-    return { error: 'Invalid AI element UUID format.' };
+    return {
+      error:
+        'Invalid AI element UUID format. Next: use the elementId line from appium_find_element (ai-element:x,y:...).',
+    };
   }
   const coords = parts[1].split(',');
   if (coords.length < 2) {
-    return { error: 'Invalid AI element coordinates format.' };
+    return {
+      error:
+        'Invalid AI element coordinates format. Next: call appium_find_element again and pass the returned ai-element token unchanged.',
+    };
   }
   const x = parseInt(coords[0], 10);
   const y = parseInt(coords[1], 10);
   if (isNaN(x) || isNaN(y)) {
-    return { error: 'Invalid AI element coordinates: not numbers.' };
+    return {
+      error:
+        'Invalid AI element coordinates: not numbers. Next: re-run appium_find_element to obtain a fresh ai-element id.',
+    };
   }
   return { x, y };
 }
