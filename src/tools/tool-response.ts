@@ -60,19 +60,24 @@ export function errorResult(text: string): ContentResult {
 }
 
 /**
+ * Standard tool-execution error when no driver is active for the given session.
+ * Keeps copy aligned with the registered `appium_session_management` tool.
+ */
+export function noActiveDriverSessionResult(sessionId?: string): ContentResult {
+  const ctx = sessionId ? ` for session '${sessionId}'` : '';
+  return errorResult(
+    `No active driver session${ctx}. Use appium_session_management (action=create or action=attach), or pass a valid sessionId.`
+  );
+}
+
+/**
  * Resolves the driver for a tool call or returns a standardised error result.
  * Does not throw.
  */
 export function resolveDriver(sessionId?: string): DriverOrError {
   const driver = getDriver(sessionId);
   if (!driver) {
-    const ctx = sessionId ? ` for session '${sessionId}'` : '';
-    return {
-      ok: false,
-      result: errorResult(
-        `No active driver session${ctx}. Call create_session first or pass a valid sessionId.`
-      ),
-    };
+    return { ok: false, result: noActiveDriverSessionResult(sessionId) };
   }
   return { ok: true, driver };
 }

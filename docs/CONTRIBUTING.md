@@ -29,7 +29,7 @@ Before writing or extending a tool, read this section. Tools in MCP Appium are c
 
 1. **One user intent = one tool.** A tool should map to a single, coherent thing the caller wants to accomplish (e.g. "control the device screen", "manage an app's lifecycle", "query device state"). Tools that bundle unrelated intents confuse tool selection.
 2. **Minimal, predictable parameter surface.** Every optional parameter is a potential source of LLM confusion. Prefer ~3–5 required fields and a tight set of optionals. If you need more than ~3 conditional fields (fields that are only valid under a specific `action`), that is a signal to split the tool.
-3. **Errors must teach the LLM what to do next.** The LLM reads error text and uses it to retry with adjusted parameters or to report the failure accurately to the user. `"No driver found"` gives it nothing to work with; `"No active driver session. Call create_session first or pass a valid sessionId."` lets the model recover.
+3. **Errors must teach the LLM what to do next.** The LLM reads error text and uses it to retry with adjusted parameters or to report the failure accurately to the user. `"No driver found"` gives it nothing to work with; `"No active driver session. Use appium_session_management (action=create or action=attach), or pass a valid sessionId."` lets the model recover.
 
 These principles are grounded in the MCP specification (<https://modelcontextprotocol.io/specification/2025-11-25/server/tools>).
 
@@ -65,6 +65,7 @@ import {
   errorResult,     // failure: returns { content: [...], isError: true }
   toolErrorMessage, // normalize unknown error into a string
   resolveDriver,    // returns { ok: true, driver } | { ok: false, result }
+  noActiveDriverSessionResult, // same "no session" copy as resolveDriver's error branch
   platformMismatch, // common "action=X is iOS-only" error helper
 } from '../tool-response.js';
 ```
@@ -142,7 +143,7 @@ The LLM reads your error text and either retries with adjusted parameters or rep
 
 1. **State what failed.** `"Failed to install app"`, not `"Error"`.
 2. **State why.** Include the underlying cause from `toolErrorMessage(err)`.
-3. **State what to try next, when recoverable.** `"Call create_session first"`, `"pass a valid sessionId"`, `"use a string like 'camera' instead of a number"`.
+3. **State what to try next, when recoverable.** `"Use appium_session_management (action=create or action=attach)"`, `"pass a valid sessionId"`, `"use a string like 'camera' instead of a number"`.
 4. **Include the relevant parameter values** when they would help the LLM self-correct: session id, platform name, action name.
 5. **No stack traces.** `toolErrorMessage` strips them; don't re-add them.
 
@@ -150,7 +151,7 @@ The LLM reads your error text and either retries with adjusted parameters or rep
 
 | Bad | Good |
 | --- | --- |
-| `"No driver found"` | `"No active driver session. Call create_session first or pass a valid sessionId."` |
+| `"No driver found"` | `"No active driver session. Use appium_session_management (action=create or action=attach), or pass a valid sessionId."` |
 | `"Unsupported platform"` | `"action=shake is iOS-only. Current session platform is 'Android'."` |
 | `"Failed"` | `"Failed to install app. ${toolErrorMessage(err)}"` |
 | `"Invalid input"` | `"service must be a string name (e.g. 'camera', 'photos'), not a number."` |
@@ -672,7 +673,7 @@ For better readability when descriptions are long, use template literals with pr
 **Bad (hard to read):**
 
 ```typescript
-description: 'REQUIRED: First ASK THE USER which mobile platform they want to use (Android or iOS) before creating a session. DO NOT assume or default to any platform. You MUST explicitly prompt the user to choose between Android or iOS. This is mandatory before proceeding to use the create_session tool.',
+description: 'REQUIRED: First ASK THE USER which mobile platform they want to use (Android or iOS) before creating a session. DO NOT assume or default to any platform. You MUST explicitly prompt the user to choose between Android or iOS. This is mandatory before proceeding to use appium_session_management (action=create).',
 ```
 
 **Good (readable):**
@@ -681,7 +682,7 @@ description: 'REQUIRED: First ASK THE USER which mobile platform they want to us
 description: `REQUIRED: First ASK THE USER which mobile platform they want to use (Android or iOS) before creating a session.
   DO NOT assume or default to any platform.
   You MUST explicitly prompt the user to choose between Android or iOS.
-  This is mandatory before proceeding to use the create_session tool.
+  This is mandatory before proceeding to use appium_session_management (action=create).
   `,
 ```
 

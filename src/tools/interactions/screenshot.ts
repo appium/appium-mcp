@@ -13,7 +13,12 @@ import { getScreenshot } from '../../command.js';
 import z from 'zod';
 import { imageUtil } from '@appium/support';
 import { resolveScreenshotDir } from '../../utils/paths.js';
-import { textResult, errorResult, toolErrorMessage } from '../tool-response.js';
+import {
+  textResult,
+  errorResult,
+  toolErrorMessage,
+  noActiveDriverSessionResult,
+} from '../tool-response.js';
 
 export { resolveScreenshotDir };
 
@@ -43,9 +48,7 @@ export async function executeScreenshot(opts: {
 
   const driver = deps.getDriver(sessionId);
   if (!driver) {
-    return errorResult(
-      `No active driver session. Call create_session first or pass a valid sessionId.`
-    );
+    return noActiveDriverSessionResult(sessionId);
   }
 
   try {

@@ -43,7 +43,7 @@ describe('appium_mobile_device_info tool', () => {
       const result = await tool.execute({ action: 'battery' }, undefined);
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toBe(
-        'No active driver session. Call create_session first or pass a valid sessionId.'
+        'No active driver session. Use appium_session_management (action=create or action=attach), or pass a valid sessionId.'
       );
     });
 
@@ -100,7 +100,7 @@ describe('appium_mobile_device_info tool', () => {
       const result = await tool.execute({ action: 'info' }, undefined);
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toBe(
-        'No active driver session. Call create_session first or pass a valid sessionId.'
+        'No active driver session. Use appium_session_management (action=create or action=attach), or pass a valid sessionId.'
       );
     });
 
@@ -141,7 +141,7 @@ describe('appium_mobile_device_info tool', () => {
       const result = await tool.execute({ action: 'time' }, undefined);
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toBe(
-        'No active driver session. Call create_session first or pass a valid sessionId.'
+        'No active driver session. Use appium_session_management (action=create or action=attach), or pass a valid sessionId.'
       );
     });
 
