@@ -3,6 +3,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import log from '../../logger.js';
 import { resolveAppiumResourcesPath } from '../../utils/paths.js';
+import { textResult } from '../tool-response.js';
 
 type Platform = 'android' | 'ios';
 type Driver = 'uiautomator2' | 'espresso' | 'xcuitest';
@@ -146,14 +147,7 @@ export default function appiumSkills(server: any): void {
         );
       }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: lines.join('\n'),
-          },
-        ],
-      };
+      return textResult(lines.join('\n'));
     },
   });
 }

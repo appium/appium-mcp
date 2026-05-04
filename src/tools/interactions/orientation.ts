@@ -56,7 +56,7 @@ export default function orientation(server: FastMCP): void {
         }
 
         if (!args.orientation) {
-          throw new Error('orientation is required when action is set');
+          return errorResult('orientation is required when action is set');
         }
 
         await _setOrientation(driver, args.orientation);

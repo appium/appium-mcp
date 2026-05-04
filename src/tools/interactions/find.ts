@@ -70,7 +70,7 @@ export default function findElement(server: FastMCP): void {
         const element = await driver.findElement(args.strategy, args.selector);
         const elementId = readWebElementId(element);
         if (!elementId) {
-          throw new Error('Element was returned without a valid element ID');
+          return errorResult('Element was returned without a valid element ID');
         }
         return textResultWithPrimaryElementId(
           elementId,

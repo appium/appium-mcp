@@ -78,7 +78,7 @@ export default function context(server: FastMCP): void {
         }
 
         if (!args.context) {
-          throw new Error('context is required when action is switch');
+          return errorResult('context is required when action is switch');
         }
 
         if (currentContext === args.context) {

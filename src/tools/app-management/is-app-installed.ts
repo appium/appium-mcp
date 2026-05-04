@@ -41,7 +41,7 @@ export async function isInstalled(
         id
       );
     } else {
-      throw new Error('Unsupported driver for is_installed');
+      return errorResult('Unsupported driver for is_installed');
     }
 
     return textResult(

@@ -70,7 +70,7 @@ export default function alert(server: FastMCP): void {
         } else if (platform === PLATFORM.ios) {
           await handleiOSAlert(driver, args.action, args.buttonLabel);
         } else {
-          throw new Error(
+          return errorResult(
             `Unsupported platform: ${platform}. Only Android and iOS are supported.`
           );
         }

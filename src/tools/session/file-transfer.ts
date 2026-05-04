@@ -74,7 +74,7 @@ export default function fileTransfer(server: FastMCP): void {
 
         if (args.action === 'push') {
           if (!args.payloadBase64) {
-            throw new Error('payloadBase64 is required when action is push');
+            return errorResult('payloadBase64 is required when action is push');
           }
 
           if (platform === PLATFORM.android) {
@@ -88,7 +88,7 @@ export default function fileTransfer(server: FastMCP): void {
               payload: args.payloadBase64,
             });
           } else {
-            throw new Error(
+            return errorResult(
               `Unsupported platform: ${platform}. Only Android and iOS are supported.`
             );
           }
@@ -108,7 +108,7 @@ export default function fileTransfer(server: FastMCP): void {
             remotePath: args.remotePath,
           });
         } else {
-          throw new Error(
+          return errorResult(
             `Unsupported platform: ${platform}. Only Android and iOS are supported.`
           );
         }

@@ -128,7 +128,7 @@ async function handleOpenNotifications(
   } else if (isRemoteDriverSession(driver)) {
     await execute(driver, 'mobile: openNotifications', {});
   } else {
-    throw new Error('Unsupported Android driver for open notifications');
+    return errorResult('Unsupported Android driver for open notifications');
   }
 
   return textResult('Successfully opened notifications panel.');

@@ -47,7 +47,7 @@ export async function deepLink(
         }
         await execute(driver, 'mobile: deepLink', params);
       } else {
-        throw new Error(
+        return errorResult(
           `Unsupported platform: ${platform}. Only Android and iOS are supported.`
         );
       }
@@ -60,7 +60,7 @@ export async function deepLink(
     } else if (isXCUITestDriverSession(driver)) {
       await (driver as XCUITestDriver).mobileDeepLink(url, appId ?? undefined);
     } else {
-      throw new Error('Unsupported driver for deep link');
+      return errorResult('Unsupported driver for deep link');
     }
 
     return textResult(

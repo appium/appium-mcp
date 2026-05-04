@@ -111,7 +111,7 @@ export default function pressKey(server: FastMCP): void {
             keyCode ?? (key && ANDROID_KEYCODE_MAP[key]) ?? undefined;
 
           if (resolvedKeyCode == null) {
-            throw new Error(
+            return errorResult(
               `For Android, provide either keyCode or key in [${ANDROID_KEYS_DESCRIPTION}].`
             );
           }
@@ -129,14 +129,14 @@ export default function pressKey(server: FastMCP): void {
               isLongPress: isLongPress ?? false,
             });
           } else {
-            throw new Error('Unsupported Android driver for press_key');
+            return errorResult('Unsupported Android driver for press_key');
           }
         } else if (platform === PLATFORM.ios) {
           const logicalKey = key ?? 'HOME';
           const buttonName = IOS_BUTTON_MAP[logicalKey];
 
           if (!buttonName) {
-            throw new Error(
+            return errorResult(
               `For iOS/tvOS, key must be one of ${IOS_BUTTONS_DESCRIPTION}.`
             );
           }
@@ -150,10 +150,10 @@ export default function pressKey(server: FastMCP): void {
               name: buttonName,
             });
           } else {
-            throw new Error('Unsupported iOS/tvOS driver for press_key');
+            return errorResult('Unsupported iOS/tvOS driver for press_key');
           }
         } else {
-          throw new Error(
+          return errorResult(
             `Unsupported platform: ${platform}. Only Android and iOS are supported.`
           );
         }

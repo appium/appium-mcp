@@ -41,7 +41,7 @@ export default function getPageSource(server: FastMCP): void {
       try {
         const pageSource = await _getPageSource(driver);
         if (!pageSource) {
-          throw new Error('Page source is empty or null');
+          return errorResult('Page source is empty or null');
         }
 
         const textResponse = textResult(

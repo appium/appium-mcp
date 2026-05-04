@@ -1,4 +1,5 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
+import { errorResult } from '../tool-response.js';
 import { z } from 'zod';
 import { resolveAppId, resolveId } from './resolve-app-id.js';
 import { activate } from './activate-app.js';
@@ -123,18 +124,14 @@ export default function app(server: FastMCP): void {
       }
       if (action === 'install') {
         if (!args.path) {
-          return {
-            content: [{ type: 'text', text: 'path is required for install' }],
-          };
+          return errorResult('path is required for install');
         }
         return install(args.path, sessionId);
       }
 
       if (action === 'deep_link') {
         if (!args.url) {
-          return {
-            content: [{ type: 'text', text: 'url is required for deep_link' }],
-          };
+          return errorResult('url is required for deep_link');
         }
         const appId =
           args.id ??
@@ -163,9 +160,7 @@ export default function app(server: FastMCP): void {
       if (action === 'clear') {
         return clear(id, sessionId);
       }
-      return {
-        content: [{ type: 'text', text: `Unknown action: ${action}` }],
-      };
+      return errorResult(`Unknown action: ${action}`);
     },
   });
 }

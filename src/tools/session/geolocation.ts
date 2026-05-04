@@ -99,7 +99,7 @@ async function handleGet(args: GeolocationArgs): Promise<ContentResult> {
   } else if (platform === PLATFORM.android) {
     result = await execute(driver, 'mobile: getGeolocation', {});
   } else {
-    throw new Error(
+    return errorResult(
       `Unsupported platform: ${platform}. Only Android and iOS are supported.`
     );
   }
@@ -113,7 +113,7 @@ async function handleGet(args: GeolocationArgs): Promise<ContentResult> {
 
 async function handleSet(args: GeolocationArgs): Promise<ContentResult> {
   if (args.latitude === undefined || args.longitude === undefined) {
-    throw new Error('latitude and longitude are required for action=set');
+    return errorResult('latitude and longitude are required for action=set');
   }
 
   const resolved = resolveDriver(args.sessionId);
@@ -137,7 +137,7 @@ async function handleSet(args: GeolocationArgs): Promise<ContentResult> {
       ...(altitude !== undefined && { altitude }),
     });
   } else {
-    throw new Error(
+    return errorResult(
       `Unsupported platform: ${platform}. Only Android and iOS are supported.`
     );
   }
@@ -164,7 +164,7 @@ async function handleReset(args: GeolocationArgs): Promise<ContentResult> {
     // Refresh GPS cache
     await execute(driver, 'mobile: refreshGpsCache', {});
   } else {
-    throw new Error(
+    return errorResult(
       `Unsupported platform: ${platform}. Only Android and iOS are supported.`
     );
   }
