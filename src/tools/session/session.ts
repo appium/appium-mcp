@@ -55,11 +55,13 @@ const schema = z.object({
         'For remote servers, infer from context.'
     ),
   capabilities: z
-    .record(z.string(), z.any())
+    .string()
     .optional()
     .describe(
-      'Optional W3C capabilities for create. Applied on top of defaults for ios/android, or used as-is for general. ' +
-        'Common: appium:app, appium:deviceName, appium:platformVersion, appium:bundleId.'
+      'Optional W3C capabilities for create. Provide as a JSON string (e.g. \'{"appium:app":"/path/to/app","appium:platformVersion":"17.0"}\'). ' +
+        'Applied on top of defaults for ios/android, or used as-is for general. ' +
+        'Common: appium:app, appium:deviceName, appium:platformVersion, appium:bundleId. ' +
+        'When passing from a capabilitiesHint result, serialize the full object to JSON — do NOT drop boolean or numeric values.'
     ),
   remoteServerUrl: z
     .string()
@@ -88,13 +90,25 @@ export default function session(server: FastMCP): void {
     },
     execute: async (args: z.infer<typeof schema>): Promise<any> => {
       try {
+        // Parse capabilities: some LLMs (e.g. Gemini) pass a JSON string instead of an object.
+        const parsedCapabilities: Record<string, any> | undefined = (() => {
+          if (typeof args.capabilities === 'string') {
+            try {
+              return JSON.parse(args.capabilities) as Record<string, any>;
+            } catch {
+              return undefined;
+            }
+          }
+          return args.capabilities;
+        })();
+
         if (args.action === 'create') {
           if (!args.platform) {
             return errorResult('platform is required for create action');
           }
           return createSessionAction({
             platform: args.platform,
-            capabilities: args.capabilities,
+            capabilities: parsedCapabilities,
             remoteServerUrl: args.remoteServerUrl,
           });
         }
@@ -109,7 +123,7 @@ export default function session(server: FastMCP): void {
           return attachSessionAction({
             remoteServerUrl: args.remoteServerUrl,
             sessionId: args.sessionId,
-            capabilities: args.capabilities,
+            capabilities: parsedCapabilities,
           });
         }
 

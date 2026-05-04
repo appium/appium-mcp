@@ -1,3 +1,33 @@
+## [1.72.6](https://github.com/appium/appium-mcp/compare/v1.72.5...v1.72.6) (2026-05-04)
+
+### Bug Fixes
+
+* **session:** improve capabilities handling for wider LLMs ([#316](https://github.com/appium/appium-mcp/issues/316)) ([c18f35d](https://github.com/appium/appium-mcp/commit/c18f35d33de4580538a5e02d489e50ce4b79577e))
+
+## [1.72.5](https://github.com/appium/appium-mcp/compare/v1.72.4...v1.72.5) (2026-05-03)
+
+### Miscellaneous Chores
+
+* **tool-response:** align "no active session" error with appium_session_management ([#318](https://github.com/appium/appium-mcp/issues/318)) ([880a787](https://github.com/appium/appium-mcp/commit/880a787f236ba8394376f02d506f9760e3d329f5))
+
+## [1.72.4](https://github.com/appium/appium-mcp/compare/v1.72.3...v1.72.4) (2026-05-02)
+
+### Miscellaneous Chores
+
+* **server:** expand MCP instructions and sync FastMCP version ([#313](https://github.com/appium/appium-mcp/issues/313)) ([5bec5df](https://github.com/appium/appium-mcp/commit/5bec5df45deb8e157a0b534f22788ee2cdffe946))
+
+## [1.72.3](https://github.com/appium/appium-mcp/compare/v1.72.2...v1.72.3) (2026-05-02)
+
+### Bug Fixes
+
+* **scroll:** flip scroll for android ([#312](https://github.com/appium/appium-mcp/issues/312)) ([e0708f7](https://github.com/appium/appium-mcp/commit/e0708f7f2463f3f92b9abb2404ee9322f289a47a))
+
+## [1.72.2](https://github.com/appium/appium-mcp/compare/v1.72.1...v1.72.2) (2026-05-02)
+
+### Bug Fixes
+
+* **prepare-ios-real-device:** enhance handling of wildcard provisioning profiles and improve signing process ([#315](https://github.com/appium/appium-mcp/issues/315)) ([404e715](https://github.com/appium/appium-mcp/commit/404e71598906899a16df5bce26954bbddcff87bb))
+
 ## [1.72.1](https://github.com/appium/appium-mcp/compare/v1.72.0...v1.72.1) (2026-05-01)
 
 ### Bug Fixes
