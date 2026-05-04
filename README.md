@@ -204,7 +204,7 @@ The process keeps one **active** Appium session; tools use it when **`sessionId`
 
 #### Client disconnect
 
-When the MCP **client disconnects**, the server **closes every session** it is tracking (Appium **`deleteSession`** for each). Transports that drop often—**`httpStream`** behind proxies, idle timeouts, or flaky clients—will **wipe automation** in one go. **stdio** is usually safer for a single long-lived operator; if you use **httpStream**, expect reconnects to require **new sessions**.
+When the MCP **client disconnects**, the server **deletes only MCP-owned sessions** it is tracking (Appium **`deleteSession`** for each, via `safeDeleteAllSessions`). **Attached** sessions (`ownership=attached`) are intentionally left on the remote Appium server. Transports that drop often—**`httpStream`** behind proxies, idle timeouts, or flaky clients—can **wipe owned automation** in one go under the default policy. **stdio** is usually safer for a single long-lived operator; if you use **httpStream**, expect reconnects to require **new owned sessions** where applicable.
 
 #### Remote Appium, CI, and device farms
 

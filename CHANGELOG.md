@@ -1,3 +1,9 @@
+## [1.72.5](https://github.com/appium/appium-mcp/compare/v1.72.4...v1.72.5) (2026-05-03)
+
+### Miscellaneous Chores
+
+* **tool-response:** align "no active session" error with appium_session_management ([#318](https://github.com/appium/appium-mcp/issues/318)) ([880a787](https://github.com/appium/appium-mcp/commit/880a787f236ba8394376f02d506f9760e3d329f5))
+
 ## [1.72.4](https://github.com/appium/appium-mcp/compare/v1.72.3...v1.72.4) (2026-05-02)
 
 ### Miscellaneous Chores
