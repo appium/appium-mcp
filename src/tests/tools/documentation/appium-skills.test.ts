@@ -1,5 +1,13 @@
 import { describe, test, expect, jest } from '@jest/globals';
 
+jest.unstable_mockModule('appium-uiautomator2-driver', () => ({
+  AndroidUiautomator2Driver: class {},
+}));
+jest.unstable_mockModule('appium-xcuitest-driver', () => ({
+  XCUITestDriver: class {},
+}));
+jest.unstable_mockModule('webdriver', () => ({ default: {} }));
+
 await jest.unstable_mockModule('../../../logger', () => ({
   default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
 }));
