@@ -14,13 +14,6 @@ import type { AIArgs } from '../schema.js';
 // Module-level singleton: ensures the LRU cache persists across tool calls.
 // Creating a new AIVisionFinder() on every call would reset the cache each time.
 let _finderInstance: AIVisionFinder | null = null;
-function getAIVisionFinder(): AIVisionFinder {
-  if (!_finderInstance) {
-    _finderInstance = new AIVisionFinder();
-  }
-  return _finderInstance;
-}
-
 export async function handleFindElement(
   driver: DriverInstance,
   args: AIArgs
@@ -71,4 +64,11 @@ export async function handleFindElement(
     log.error('AI find_element failed:', errorMessage);
     return errorResult(`AI find_element failed. Error: ${errorMessage}`);
   }
+}
+
+function getAIVisionFinder(): AIVisionFinder {
+  if (!_finderInstance) {
+    _finderInstance = new AIVisionFinder();
+  }
+  return _finderInstance;
 }

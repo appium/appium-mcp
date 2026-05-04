@@ -38,7 +38,9 @@ export default function getActiveElement(server: FastMCP): void {
         const elementId = readWebElementId(element);
 
         if (!elementId) {
-          return errorResult('Active element was returned without a valid element ID');
+          return errorResult(
+            'Active element was returned without a valid element ID'
+          );
         }
 
         return textResultWithPrimaryElementId(
