@@ -8,56 +8,44 @@ import {
   readWebElementId,
 } from '../tool-response.js';
 
-export const findElementSchema = z
-  .object({
-    strategy: z
-      .enum([
-        'accessibility id',
-        'id',
-        '-ios predicate string',
-        '-ios class chain',
-        '-android uiautomator',
-        'xpath',
-        'name',
-        'class name',
-        'css selector',
-      ])
-      .describe(
-        `Locator strategy. Try in priority order: ` +
-          `(1) accessibility id [cross-platform, fastest, most stable], ` +
-          `(2) id [Android resource-id; iOS aliases accessibility id], ` +
-          `(3) -ios predicate string [iOS native, fast], ` +
-          `(4) -ios class chain [iOS native, hierarchy queries], ` +
-          `(5) -android uiautomator [Android native, expressive UiSelector], ` +
-          `(6) xpath [LAST RESORT — slow on iOS XCUITest, brittle to layout changes], ` +
-          `(7) name [legacy; often aliased on iOS], ` +
-          `(8) class name [too generic, usually multi-match], ` +
-          `(9) css selector [webview/hybrid contexts only]. ` +
-          `Platform tips: iOS prefer (1)→(3)→(4); Android prefer (1)→(2)→(5); xpath last on both. ` +
-          `For natural-language / vision-based find, use the appium_ai tool (action=find_element), not this one.`
-      ),
-    selector: z
-      .string()
-      .describe(
-        `Selector string for the chosen strategy. Required and must be non-empty. ` +
-          `Do not pass natural-language descriptions of the target here; use appium_ai (action=find_element) for that.`
-      ),
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.selector.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          'selector must be a non-empty string. ' +
-          'For natural-language / vision-based find, use the appium_ai tool (action=find_element), not appium_find_element.',
-        path: ['selector'],
-      });
-    }
-  });
+export const findElementSchema = z.object({
+  strategy: z
+    .enum([
+      'accessibility id',
+      'id',
+      '-ios predicate string',
+      '-ios class chain',
+      '-android uiautomator',
+      'xpath',
+      'name',
+      'class name',
+      'css selector',
+    ])
+    .describe(
+      `Locator strategy. Try in priority order: ` +
+        `(1) accessibility id [cross-platform, fastest, most stable], ` +
+        `(2) id [Android resource-id; iOS aliases accessibility id], ` +
+        `(3) -ios predicate string [iOS native, fast], ` +
+        `(4) -ios class chain [iOS native, hierarchy queries], ` +
+        `(5) -android uiautomator [Android native, expressive UiSelector], ` +
+        `(6) xpath [LAST RESORT — slow on iOS XCUITest, brittle to layout changes], ` +
+        `(7) name [legacy; often aliased on iOS], ` +
+        `(8) class name [too generic, usually multi-match], ` +
+        `(9) css selector [webview/hybrid contexts only]. ` +
+        `Platform tips: iOS prefer (1)→(3)→(4); Android prefer (1)→(2)→(5); xpath last on both. ` +
+        `For natural-language / vision-based find, use the appium_ai tool (action=find_element), not this one.`
+    ),
+  selector: z
+    .string()
+    .describe(
+      `Selector string for the chosen strategy. ` +
+        `Do not pass natural-language descriptions of the target here; use appium_ai (action=find_element) for that.`
+    ),
+  sessionId: z
+    .string()
+    .optional()
+    .describe('Session ID to target. If omitted, uses the active session.'),
+});
 
 export default function findElement(server: FastMCP): void {
   server.addTool({
@@ -85,6 +73,13 @@ export default function findElement(server: FastMCP): void {
         return resolved.result;
       }
       const { driver } = resolved;
+
+      if (!args.selector.trim()) {
+        return errorResult(
+          'selector must be a non-empty string. ' +
+            'For natural-language / vision-based find, use the appium_ai tool (action=find_element), not appium_find_element.'
+        );
+      }
 
       try {
         const element = await driver.findElement(args.strategy, args.selector);
