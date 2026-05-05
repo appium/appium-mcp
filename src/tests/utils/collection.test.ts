@@ -1,11 +1,20 @@
 import { describe, expect, test } from '@jest/globals';
 import { isEmpty, isNil, omitNilValues } from '../../utils/collection.js';
 
-function createArgumentsObject(...args: unknown[]): IArguments {
-  return (function () {
+function createArgumentsObject(): IArguments;
+function createArgumentsObject(arg0: unknown): IArguments;
+function createArgumentsObject(arg0?: unknown): IArguments {
+  if (arguments.length === 0) {
+    return (function () {
+      // eslint-disable-next-line prefer-rest-params
+      return arguments;
+    })();
+  }
+
+  return (function (_arg0: unknown) {
     // eslint-disable-next-line prefer-rest-params
     return arguments;
-  })(...args);
+  })(arg0);
 }
 
 describe('collection utilities', () => {
