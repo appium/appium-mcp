@@ -1,8 +1,8 @@
-import _ from 'lodash';
 import * as XPath from 'xpath';
 const xpathSelect = XPath.select;
 
 import log from '../logger.js';
+import { isEmpty, omitNilValues } from '../utils/collection.js';
 import {
   childNodesOf,
   domToXML,
@@ -63,7 +63,7 @@ export function areAttrAndValueUnique(
   sourceDoc: XMLDocument
 ): boolean {
   // If no sourceDoc provided, assume it's unique
-  if (!sourceDoc || _.isEmpty(sourceDoc)) {
+  if (!sourceDoc || isEmpty(sourceDoc)) {
     return true;
   }
   const result = xpathSelect(
@@ -132,7 +132,7 @@ export function getComplexSuggestedLocators(
   complexLocators.xpath = getOptimalXPath(sourceDoc, domNode);
 
   // Remove entries for locators where the optimal selector could not be found
-  return _.omitBy(complexLocators, _.isNil) as Record<string, string>;
+  return omitNilValues(complexLocators);
 }
 
 /**
@@ -200,7 +200,7 @@ export function getSuggestedLocators(
   }
 
   // Add any remaining locators that weren't in the priority list (like 'id' for native contexts)
-  for (const [strategy, value] of _.toPairs(allLocators)) {
+  for (const [strategy, value] of Object.entries(allLocators)) {
     if (!priorityOrder.includes(strategy)) {
       sortedLocators.push([strategy, value]);
     }
@@ -338,7 +338,7 @@ export function getOptimalClassChain(
 
     for (const attrName of CHECKED_CLASS_CHAIN_ATTRIBUTES) {
       const attrValue = (domNode as XMLElement).getAttribute?.(attrName);
-      if (_.isEmpty(attrValue)) {
+      if (isEmpty(attrValue)) {
         continue;
       }
       const xpath = `//${domNode.nodeName || '*'}[@${attrName}="${attrValue}"]`;
@@ -415,7 +415,7 @@ export function getOptimalPredicateString(
 
     for (const attrName of CHECKED_PREDICATE_ATTRIBUTES) {
       const attrValue = (domNode as XMLElement).getAttribute?.(attrName);
-      if (_.isEmpty(attrValue)) {
+      if (isEmpty(attrValue)) {
         continue;
       }
 
@@ -465,10 +465,10 @@ export function getOptimalUiAutomatorSelector(
     // hierarchy is the child of doc (which is <xml/>), so need to get the children of its child
     // BASE CASE #2: If there is no hierarchy or its children, return null
     const docChildren = childNodesOf(doc);
-    const hierarchyChildren = _.isEmpty(docChildren)
+    const hierarchyChildren = isEmpty(docChildren)
       ? []
       : childNodesOf(docChildren[0]);
-    if (_.isEmpty(hierarchyChildren)) {
+    if (isEmpty(hierarchyChildren)) {
       return null;
     }
 
@@ -502,7 +502,7 @@ export function getOptimalUiAutomatorSelector(
 
     for (const [attrName, attrTranslation] of CHECKED_UIAUTOMATOR_ATTRIBUTES) {
       const attrValue = (newDomNode as XMLElement).getAttribute?.(attrName);
-      if (_.isEmpty(attrValue)) {
+      if (isEmpty(attrValue)) {
         continue;
       }
 
@@ -585,7 +585,7 @@ function getUniqueXPath(
 ): [string | undefined, boolean | undefined] {
   let uniqueXpath: string | undefined, semiUniqueXpath: string | undefined;
   const tagForXpath = domNode.nodeName || '*';
-  const isPairs = attrs.length > 0 && _.isArray(attrs[0]);
+  const isPairs = attrs.length > 0 && Array.isArray(attrs[0]);
   const isNodeName = attrs.length === 0;
 
   // If we're looking for a unique //<nodetype>, return it only if it's actually unique. No
@@ -637,7 +637,7 @@ function getUniqueXPath(
     // if the xpath wasn't totally unique it might still be our best bet. Store a less unique
     // version qualified by an index for later in semiUniqueXpath. If we can't find a better
     // unique option down the road, we'll fall back to this
-    if (!semiUniqueXpath && !_.isUndefined(indexIfNotUnique)) {
+    if (!semiUniqueXpath && indexIfNotUnique !== undefined) {
       semiUniqueXpath = `(${xpath})[${indexIfNotUnique + 1}]`;
     }
   }

@@ -6,7 +6,6 @@ import {
   Node as XMLNode,
   Element as XMLElement,
 } from '@xmldom/xmldom';
-import _ from 'lodash';
 
 const domParser = new DOMParser();
 const xmlSerializer = new XMLSerializer();
@@ -37,7 +36,9 @@ export function childNodesOf(domNode: XMLNode): XMLNode[] {
   if (!domNode?.hasChildNodes()) {
     return [];
   }
-  return _.filter(domNode.childNodes, ['nodeType', domNode.ELEMENT_NODE]);
+  return Array.from(domNode.childNodes).filter(
+    (childNode) => childNode.nodeType === domNode.ELEMENT_NODE
+  );
 }
 
 /**
@@ -112,9 +113,8 @@ export function xmlToJSON(sourceXML: string): JSONElement {
     }
 
     // Dot Separated path of indices
-    const path = _.isNil(index)
-      ? ''
-      : `${!parentPath ? '' : parentPath + '.'}${index}`;
+    const path =
+      index == null ? '' : `${!parentPath ? '' : parentPath + '.'}${index}`;
 
     return {
       children: childNodesOf(domNode).map((childNode, childIndex) =>

@@ -1,3 +1,9 @@
+## [1.72.7](https://github.com/appium/appium-mcp/compare/v1.72.6...v1.72.7) (2026-05-05)
+
+### Miscellaneous Chores
+
+* remove lodash ([#320](https://github.com/appium/appium-mcp/issues/320)) ([9a82237](https://github.com/appium/appium-mcp/commit/9a822379d333cf94d47b2f1f9dc9e1b83e03b982))
+
 ## [1.72.6](https://github.com/appium/appium-mcp/compare/v1.72.5...v1.72.6) (2026-05-04)
 
 ### Bug Fixes
