@@ -1,6 +1,13 @@
 import { describe, expect, test } from '@jest/globals';
 import { isEmpty, isNil, omitNilValues } from '../../utils/collection.js';
 
+function createArgumentsObject(...args: unknown[]): IArguments {
+  return (function () {
+    // eslint-disable-next-line prefer-rest-params
+    return arguments;
+  })(...args);
+}
+
 describe('collection utilities', () => {
   describe('isNil', () => {
     test('returns true for null and undefined', () => {
@@ -28,11 +35,22 @@ describe('collection utilities', () => {
       expect(isEmpty([1])).toBe(false);
     });
 
-    test('handles objects and array-like objects', () => {
+    test('handles objects and plain objects with length', () => {
       expect(isEmpty({})).toBe(true);
       expect(isEmpty({ a: 1 })).toBe(false);
-      expect(isEmpty({ length: 0 })).toBe(true);
+      expect(isEmpty({ length: 0 })).toBe(false);
       expect(isEmpty({ length: 2, 0: 'x' })).toBe(false);
+    });
+
+    test('handles known array-like collections', () => {
+      expect(isEmpty(new Uint8Array())).toBe(true);
+      expect(isEmpty(new Uint8Array([1]))).toBe(false);
+
+      const emptyArgs = createArgumentsObject();
+      const nonEmptyArgs = createArgumentsObject(1);
+
+      expect(isEmpty(emptyArgs)).toBe(true);
+      expect(isEmpty(nonEmptyArgs)).toBe(false);
     });
 
     test('handles maps and sets by size', () => {

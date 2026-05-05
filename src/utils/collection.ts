@@ -22,7 +22,11 @@ export function isEmpty(value: unknown): boolean {
     return value.length === 0;
   }
 
-  if (Array.isArray(value) || isArrayLike(value)) {
+  if (Array.isArray(value)) {
+    return value.length === 0;
+  }
+
+  if (isArguments(value) || isTypedArrayLike(value)) {
     return value.length === 0;
   }
 
@@ -60,8 +64,12 @@ function isLength(value: unknown): value is number {
   );
 }
 
-function isArrayLike(value: unknown): value is { length: number } {
-  if (value == null || typeof value === 'function') {
+function isArguments(value: unknown): value is IArguments {
+  return Object.prototype.toString.call(value) === '[object Arguments]';
+}
+
+function isTypedArrayLike(value: unknown): value is { length: number } {
+  if (!ArrayBuffer.isView(value)) {
     return false;
   }
   const maybeLength = (value as { length?: unknown }).length;
