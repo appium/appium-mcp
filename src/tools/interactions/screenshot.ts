@@ -1,4 +1,4 @@
-import { FastMCP } from 'fastmcp';
+import type { FastMCP } from 'fastmcp';
 import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { NullableDriverInstance } from '../../session-store.js';

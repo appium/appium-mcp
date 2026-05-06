@@ -338,7 +338,9 @@ export async function createSessionAction(args: {
     return addUIResourceToResponse(textResponse, uiResource);
   } catch (error: any) {
     log.error('Error creating session:', error);
-    throw new Error(`Failed to create session: ${error.message}`);
+    throw new Error(`Failed to create session: ${error.message}`, {
+      cause: error,
+    });
   }
 }
 

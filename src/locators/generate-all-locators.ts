@@ -2,8 +2,10 @@
 // Using existing functions from src/locators directory
 
 import { getSuggestedLocators } from './locator-generation.js';
-import { xmlToJSON, JSONElement } from './source-parsing.js';
-import { shouldIncludeElement, FilterOptions } from './element-filter.js';
+import { xmlToJSON } from './source-parsing.js';
+import type { JSONElement } from './source-parsing.js';
+import { shouldIncludeElement } from './element-filter.js';
+import type { FilterOptions } from './element-filter.js';
 import log from '../logger.js';
 
 export interface ElementWithLocators {

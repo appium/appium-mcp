@@ -98,7 +98,9 @@ export default function selectDevice(server: any): void {
         }
       } catch (error: any) {
         log.error('Error selecting device:', error);
-        throw new Error(`Failed to select device: ${error.message}`);
+        throw new Error(`Failed to select device: ${error.message}`, {
+          cause: error,
+        });
       }
     },
   });

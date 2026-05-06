@@ -1,4 +1,4 @@
-import { JSONElement } from './source-parsing.js';
+import type { JSONElement } from './source-parsing.js';
 
 export interface FilterOptions {
   includeTagNames?: string[];

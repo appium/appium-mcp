@@ -1,11 +1,8 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
-import {
-  DriverInstance,
-  getPlatformName,
-  PLATFORM,
-} from '../../session-store.js';
+import { getPlatformName, PLATFORM } from '../../session-store.js';
+import type { DriverInstance } from '../../session-store.js';
 import { elementClick, execute, getPageSource } from '../../command.js';
 import {
   resolveDriver,

@@ -6,7 +6,7 @@
  * It can perform summarization, question-answering, and analysis on retrieved chunks.
  */
 
-import { Document } from '@langchain/core/documents';
+import type { Document } from '@langchain/core/documents';
 import { queryVectorStore } from './simple-pdf-indexer.js';
 import log from '../../logger.js';
 
@@ -180,7 +180,8 @@ export class ReasoningRAG {
     } catch (error) {
       log.error('Error in reasoning-enhanced RAG:', error);
       throw new Error(
-        `Reasoning-enhanced RAG failed: ${error instanceof Error ? error.message : String(error)}`
+        `Reasoning-enhanced RAG failed: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }
@@ -234,7 +235,8 @@ export class ReasoningRAG {
     } catch (error) {
       log.error('Error importing @xenova/transformers:', error);
       throw new Error(
-        `Failed to import @xenova/transformers: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to import @xenova/transformers: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }
@@ -264,7 +266,8 @@ export class ReasoningRAG {
     } catch (error) {
       log.error(`Error loading model ${config.modelName}:`, error);
       throw new Error(
-        `Failed to load model: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to load model: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }

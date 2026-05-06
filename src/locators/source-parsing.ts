@@ -1,7 +1,5 @@
-import {
-  DOMParser,
-  MIME_TYPE,
-  XMLSerializer,
+import { DOMParser, MIME_TYPE, XMLSerializer } from '@xmldom/xmldom';
+import type {
   Document as XMLDocument,
   Node as XMLNode,
   Element as XMLElement,

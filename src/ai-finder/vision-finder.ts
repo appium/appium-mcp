@@ -376,7 +376,9 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
       if (error instanceof Error && error.name === 'AbortError') {
         const errorMessage = `HTTP timeout after ${timeoutMs}ms`;
         log.error(`AI Vision: API call failed: ${errorMessage}`);
-        throw new Error(`Vision API call failed: ${errorMessage}`);
+        throw new Error(`Vision API call failed: ${errorMessage}`, {
+          cause: error,
+        });
       }
       throw error;
     } finally {
@@ -425,7 +427,9 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
     } catch (error) {
       log.error('AI Vision: Failed to parse bbox:', error);
       log.error('AI Vision: Response was:', response);
-      throw new Error('Failed to parse bbox from vision model response');
+      throw new Error('Failed to parse bbox from vision model response', {
+        cause: error,
+      });
     }
   }
 

@@ -171,7 +171,7 @@ async function postChatCompletions(
     };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`HTTP timeout after ${timeoutMs}ms`);
+      throw new Error(`HTTP timeout after ${timeoutMs}ms`, { cause: error });
     }
     throw error;
   } finally {

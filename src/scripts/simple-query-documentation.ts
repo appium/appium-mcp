@@ -24,7 +24,7 @@ async function main(): Promise<void> {
   console.log('process.argv:', process.argv);
   const args = process.argv.slice(2);
   console.log('args:', args);
-  let query = '';
+  let query: string;
 
   if (args.length > 0) {
     query = args.join(' ');

@@ -43,7 +43,8 @@ export class SentenceTransformersEmbeddings {
     } catch (error) {
       log.error('Error generating embeddings:', error);
       throw new Error(
-        `Failed to generate embeddings: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to generate embeddings: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }
@@ -87,7 +88,8 @@ export class SentenceTransformersEmbeddings {
     } catch (error) {
       log.error('Error generating document embeddings:', error);
       throw new Error(
-        `Failed to generate document embeddings: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to generate document embeddings: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }
@@ -109,7 +111,8 @@ export class SentenceTransformersEmbeddings {
     } catch (error) {
       log.error('Error importing @xenova/transformers:', error);
       throw new Error(
-        `Failed to import @xenova/transformers: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to import @xenova/transformers: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }
@@ -137,7 +140,8 @@ export class SentenceTransformersEmbeddings {
     } catch (error) {
       log.error('Error initializing sentence-transformers model:', error);
       throw new Error(
-        `Failed to initialize sentence-transformers model: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to initialize sentence-transformers model: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }

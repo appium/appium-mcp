@@ -9,7 +9,12 @@ import {
   getSessionInfo,
 } from './session-store.js';
 import type { DriverInstance } from './session-store.js';
-import type { StringRecord, Element as AppiumElement } from '@appium/types';
+import type {
+  ActionSequence,
+  Element as AppiumElement,
+  Rect,
+  StringRecord,
+} from '@appium/types';
 import { util } from '@appium/support';
 import type {
   IOSRecordingOptions,
@@ -283,7 +288,7 @@ export async function elementClick(
 export async function getElementRect(
   driver: DriverInstance,
   elementUUID: string
-): Promise<import('@appium/types').Rect> {
+): Promise<Rect> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.getElementRect(elementUUID);
   } else if (isXCUITestDriverSession(driver)) {
@@ -300,7 +305,7 @@ export async function getElementRect(
  */
 export async function getWindowRect(
   driver: DriverInstance
-): Promise<import('@appium/types').Rect> {
+): Promise<Rect> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.getWindowRect();
   } else if (isXCUITestDriverSession(driver)) {
@@ -317,14 +322,12 @@ export async function getWindowRect(
  */
 export async function performActions(
   driver: DriverInstance,
-  operation: StringRecord<any>[] | import('@appium/types').ActionSequence[]
+  operation: StringRecord<any>[] | ActionSequence[]
 ): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.performActions(operation);
   } else if (isXCUITestDriverSession(driver)) {
-    return await driver.performActions(
-      operation as import('@appium/types').ActionSequence[]
-    );
+    return await driver.performActions(operation as ActionSequence[]);
   }
   return await driver.performActions(operation);
 }

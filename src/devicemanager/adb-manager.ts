@@ -133,7 +133,7 @@ export class ADBManager {
       return adb;
     } catch (error) {
       log.error(`Failed to create ADB instance: ${error}`);
-      throw new Error(`ADB initialization failed: ${error}`);
+      throw new Error(`ADB initialization failed: ${error}`, { cause: error });
     }
   }
 }

@@ -40,7 +40,8 @@ function getEmbeddings(): SentenceTransformersEmbeddings {
     throw new Error(
       `Failed to initialize embeddings: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
+      { cause: error }
     );
   }
 
@@ -443,7 +444,8 @@ async function extractTextFromMarkdown(markdownPath: string): Promise<string> {
     throw new Error(
       `Failed to extract text from Markdown: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
+      { cause: error }
     );
   }
 }
