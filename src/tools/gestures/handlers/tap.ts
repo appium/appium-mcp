@@ -72,17 +72,11 @@ export async function handleDoubleTap(
     let x: number;
     let y: number;
 
+    // The XCUITest native `mobile: doubleTap` recognizer doesn't reliably
+    // surface as two distinct touch sequences to React Native (and likely
+    // other JS-bridged) gesture handlers. Resolve elements to coordinates
+    // and use the same W3C sequence everywhere, verified against vodqa.
     if (args.elementUUID) {
-      const platform = getPlatformName(driver);
-      if (platform === PLATFORM.ios) {
-        await execute(driver, 'mobile: doubleTap', {
-          elementId: args.elementUUID,
-        });
-        return textResultWithPrimaryElementId(
-          args.elementUUID,
-          `Successfully double tapped element ${args.elementUUID}.`
-        );
-      }
       const coords = await resolveCoordsFromElement(driver, args.elementUUID);
       x = coords.x;
       y = coords.y;
@@ -101,13 +95,11 @@ export async function handleDoubleTap(
         id: 'finger1',
         parameters: { pointerType: 'touch' },
         actions: [
-          { type: 'pointerMove', duration: 0, x, y },
+          { type: 'pointerMove', duration: 10, x, y },
           { type: 'pointerDown', button: 0 },
-          { type: 'pause', duration: 50 },
           { type: 'pointerUp', button: 0 },
           { type: 'pause', duration: 100 },
           { type: 'pointerDown', button: 0 },
-          { type: 'pause', duration: 50 },
           { type: 'pointerUp', button: 0 },
         ],
       },
