@@ -74,13 +74,6 @@ export default function findElement(server: FastMCP): void {
       }
       const { driver } = resolved;
 
-      if (!args.selector.trim()) {
-        return errorResult(
-          'selector must be a non-empty string. ' +
-            'For natural-language / vision-based find, use the appium_ai tool (action=find_element), not appium_find_element.'
-        );
-      }
-
       try {
         const element = await driver.findElement(args.strategy, args.selector);
         const elementId = readWebElementId(element);
