@@ -303,9 +303,7 @@ export async function getElementRect(
  * @param driver - The driver instance to query.
  * @returns A `Rect` describing the window bounds.
  */
-export async function getWindowRect(
-  driver: DriverInstance
-): Promise<Rect> {
+export async function getWindowRect(driver: DriverInstance): Promise<Rect> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.getWindowRect();
   } else if (isXCUITestDriverSession(driver)) {

@@ -9,10 +9,7 @@ import {
   findDOMNodeByPath,
   xmlToDOM,
 } from './source-parsing.js';
-import type {
-  JSONElement,
-  ElementAttributes,
-} from './source-parsing.js';
+import type { JSONElement, ElementAttributes } from './source-parsing.js';
 import type {
   Document as XMLDocument,
   Node as XMLNode,
