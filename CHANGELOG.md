@@ -1,3 +1,9 @@
+## [1.72.11](https://github.com/appium/appium-mcp/compare/v1.72.10...v1.72.11) (2026-05-06)
+
+### Bug Fixes
+
+* **find-element:** steer ai locators to appium_ai ([#317](https://github.com/appium/appium-mcp/issues/317)) ([818bc18](https://github.com/appium/appium-mcp/commit/818bc18d1ab5e3fd52522fe6fe31fb6d5dc40fec))
+
 ## [1.72.10](https://github.com/appium/appium-mcp/compare/v1.72.9...v1.72.10) (2026-05-06)
 
 ### Miscellaneous Chores
