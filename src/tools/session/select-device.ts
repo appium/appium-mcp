@@ -43,12 +43,12 @@ export default function selectDevice(server: any): void {
       WORKFLOW FOR LOCAL SERVERS:
       1. ASK THE USER which platform they want (Android or iOS) - do not assume
       2. Call this tool with the chosen platform (and iosDeviceType for iOS)
-      3. If only one device is found, it is auto-selected - proceed to create_session (or prepare_ios_simulator for iOS simulators)
+      3. If only one device is found, it is auto-selected - proceed to appium_session_management (action=create) (or prepare_ios_simulator for iOS simulators)
       4. If multiple devices are found, ask the user which one they want, then call this tool again with deviceUdid
-      5. After selection, proceed to create_session (or prepare_ios_simulator for iOS simulators, then create_session)
+      5. After selection, proceed to appium_session_management (action=create) (or prepare_ios_simulator for iOS simulators, then appium_session_management with action=create)
       WORKFLOW FOR REMOTE SERVERS:
       - SKIP this tool entirely
-      - Device selection should be handled via capabilities in create_session (e.g., appium:deviceName, appium:udid)
+      - Device selection should be handled via capabilities on appium_session_management (action=create) (e.g., appium:deviceName, appium:udid)
       - The remote Appium server is already configured for specific device(s)
       `,
     parameters: z
@@ -144,7 +144,7 @@ function formatAndroidSelectionResponse(deviceUdid: string): any {
       {
         message: `✅ Device selected: ${deviceUdid}`,
         instructions:
-          '🚀 You can now create a session using the create_session tool with:',
+          '🚀 You can now create a session by calling appium_session_management with action=create and:',
         platform: 'android',
         capabilities: {
           'appium:udid': deviceUdid,

@@ -9,9 +9,9 @@
  *    version; the signed IPA is rebuilt every call so profile/cert changes never
  *    serve a stale signature.
  *
- * After a successful run, create_session calls should pass the returned
- * `capabilitiesHint` so Appium installs and launches the signed prebuilt WDA
- * bundle instead of rebuilding it.
+ * After a successful run, appium_session_management (action=create) calls
+ * should pass the returned `capabilitiesHint` so Appium installs and launches
+ * the signed prebuilt WDA bundle instead of rebuilding it.
  */
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
@@ -472,7 +472,7 @@ export default function prepareIosRealDevice(server: FastMCP): void {
       '(2) Call again with the chosen UUID to download the matching WebDriverAgent release, package it as an IPA, ' +
       'and resign it with the chosen profile (wildcard "*" profiles are supported — a concrete WDA bundle ID is substituted at sign time). ' +
       'WDA download and unsigned IPA are cached per WDA version; the signed IPA is rebuilt every call. ' +
-      'Pass the returned capabilitiesHint to create_session so Appium installs and launches the signed prebuilt WDA instead of rebuilding. ' +
+      'Pass the returned capabilitiesHint to appium_session_management (action=create) so Appium installs and launches the signed prebuilt WDA instead of rebuilding. ' +
       'Requires macOS, Xcode 16+, and a paired developer-mode device.',
     parameters: prepareRealDeviceSchema,
     annotations: {

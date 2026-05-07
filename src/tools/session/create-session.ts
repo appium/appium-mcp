@@ -201,34 +201,26 @@ export function validateRemoteServerUrl(
 }
 
 /**
- * Registers a tool for creating a new mobile session with Android or iOS devices.
+ * Create a new mobile session with Android or iOS device.
  *
- * This function adds a 'create_session' tool to the provided server that handles
- * mobile session creation with support for both local and remote Appium servers.
+ * Backs the `appium_session_management` tool when called with `action=create`.
+ * Requires prior platform selection via the `select_device` tool for local
+ * servers. Supports both local and remote Appium server connections.
  *
- * @param server - The server instance to which the create_session tool will be added
- *
- * @tool create_session
- * @description Creates a new mobile session with Android or iOS device. Requires prior
- * platform selection via the select_device tool. Supports both local and remote
- * Appium server connections.
- *
- * @param {Object} args - Tool execution arguments
- * @param {'ios' | 'android'} args.platform - REQUIRED. The target platform, must match
- * the platform explicitly selected via select_device tool
- * @param {Object} [args.capabilities] - Optional custom W3C format capabilities
+ * @param {Object} args - Action arguments
+ * @param {'ios' | 'android' | 'general'} args.platform - REQUIRED. The target
+ * platform. For local servers, must match the platform explicitly selected via
+ * `select_device`. Use 'general' only with `remoteServerUrl` for non-Android/iOS
+ * drivers.
+ * @param {Object} [args.capabilities] - Optional custom W3C-format capabilities
  * @param {string} [args.remoteServerUrl] - Optional remote Appium server URL
- * (e.g., http://localhost:4723). If not provided, uses local Appium server
+ * (e.g., http://localhost:4723). If not provided, uses the local embedded driver.
  *
  * @returns {Promise<Object>} Response object containing:
  * - text: Success message with session ID and device details
  * - ui: Interactive session dashboard UI component
  *
  * @throws {Error} If session creation fails or platform capabilities cannot be loaded
- *
- * @example
- * // Register the tool
- * createSession(server);
  */
 export async function createSessionAction(args: {
   platform: 'ios' | 'android' | 'general';
