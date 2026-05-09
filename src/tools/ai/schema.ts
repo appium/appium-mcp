@@ -33,7 +33,8 @@ export const aiSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message:
-            'instruction is required and must be non-empty when action is find_element',
+            'instruction is required and must be non-empty when action is find_element. ' +
+            'Example: { "action": "find_element", "instruction": "yellow search button at bottom" }',
           path: ['instruction'],
         });
       }
