@@ -103,20 +103,26 @@ async function getInstalledApps(
   }
 
   const driver = getDriver(sessionId);
-  const platform = driver ? getPlatformName(driver) : null;
+  if (!driver) {
+    const ctx = sessionId ? ` for session '${sessionId}'` : '';
+    throw new Error(
+      `No active driver session${ctx}. Call create_session first or pass a valid sessionId.`
+    );
+  }
+
+  const platform = getPlatformName(driver);
 
   let apps: { packageName: string; appName: string }[];
-  const isSimulator =
-    driver && isXCUITestDriverSession(driver)
-      ? (driver as XCUITestDriver).isSimulator()
-      : false;
+  const isSimulator = isXCUITestDriverSession(driver)
+    ? (driver as XCUITestDriver).isSimulator()
+    : false;
 
   if (platform === PLATFORM.ios && !isSimulator) {
     // Real iOS device: User and System app lists are separate — fetch both in parallel.
     // Use allSettled so a failure on one type (e.g. System) doesn't discard the other.
     const results = await Promise.allSettled([
-      listAppsFromDevice('User', sessionId),
-      listAppsFromDevice('System', sessionId),
+      listAppsFromDevice(driver, 'User'),
+      listAppsFromDevice(driver, 'System'),
     ]);
     const seen = new Set<string>();
     apps = [];
@@ -132,7 +138,7 @@ async function getInstalledApps(
     }
   } else {
     // Android or iOS Simulator: single call returns all apps
-    apps = await listAppsFromDevice('User', sessionId);
+    apps = await listAppsFromDevice(driver, 'User');
   }
 
   appListCache.set(key, { apps, timestamp: Date.now() });
