@@ -153,7 +153,8 @@ export async function buildIOSCapabilities(
   additionalCaps['appium:newCommandTimeout'] = 300;
   additionalCaps['appium:settings[animationCoolOffTimeout]'] = 0.5;
   additionalCaps['appium:settings[maxTypingFrequency]'] = 45;
-  additionalCaps['appium:settings[pageSourceExcludedAttributes]'] = 'visible,accessible';
+  additionalCaps['appium:settings[pageSourceExcludedAttributes]'] =
+    'visible,accessible';
 
   log.debug('Platform version:', platformVersion);
 
