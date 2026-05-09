@@ -7,6 +7,7 @@ import {
 } from '../../session-store.js';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
 import { listAppsFromDevice } from './list-apps.js';
+import { noActiveDriverSessionMessage } from '../tool-response.js';
 
 interface CacheEntry {
   apps: { packageName: string; appName: string }[];
@@ -81,7 +82,7 @@ export async function resolveAppId(
 
   if (scored.length === 0) {
     throw new Error(
-      `No installed app matched the name "${name}". Use appium_app_lifecycle with action=list" action to see available apps.`
+      `No installed app matched the name "${name}". Use appium_app_lifecycle with action=list to see available apps.`
     );
   }
 
@@ -104,10 +105,7 @@ async function getInstalledApps(
 
   const driver = getDriver(sessionId);
   if (!driver) {
-    const ctx = sessionId ? ` for session '${sessionId}'` : '';
-    throw new Error(
-      `No active driver session${ctx}. Call create_session first or pass a valid sessionId.`
-    );
+    throw new Error(noActiveDriverSessionMessage(sessionId));
   }
 
   const platform = getPlatformName(driver);

@@ -59,15 +59,18 @@ export function errorResult(text: string): ContentResult {
   return { content: [{ type: 'text', text }], isError: true };
 }
 
+/** Message body for {@link noActiveDriverSessionResult} (shared when throwing from helpers). */
+export function noActiveDriverSessionMessage(sessionId?: string): string {
+  const ctx = sessionId ? ` for session '${sessionId}'` : '';
+  return `No active driver session${ctx}. Use appium_session_management (action=create or action=attach), or pass a valid sessionId.`;
+}
+
 /**
  * Standard tool-execution error when no driver is active for the given session.
  * Keeps copy aligned with the registered `appium_session_management` tool.
  */
 export function noActiveDriverSessionResult(sessionId?: string): ContentResult {
-  const ctx = sessionId ? ` for session '${sessionId}'` : '';
-  return errorResult(
-    `No active driver session${ctx}. Use appium_session_management (action=create or action=attach), or pass a valid sessionId.`
-  );
+  return errorResult(noActiveDriverSessionMessage(sessionId));
 }
 
 /**
