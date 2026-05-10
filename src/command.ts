@@ -68,10 +68,12 @@ export async function queryAppState(
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.queryAppState(appId);
   }
+  const params =
+    getPlatformName(driver) === PLATFORM.android
+      ? { appId }
+      : { bundleId: appId };
   return Number(
-    await (driver as Client).executeScript('mobile: queryAppState', [
-      { bundleId: appId },
-    ])
+    await (driver as Client).executeScript('mobile: queryAppState', [params])
   );
 }
 
