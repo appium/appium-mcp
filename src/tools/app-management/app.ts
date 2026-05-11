@@ -1,5 +1,5 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
-import { errorResult } from '../tool-response.js';
+import { errorResult, toolErrorMessage } from '../tool-response.js';
 import { z } from 'zod';
 import { resolveAppId, resolveId } from './resolve-app-id.js';
 import { activate } from './activate-app.js';
@@ -111,56 +111,62 @@ export default function app(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const { action, sessionId } = args;
+      try {
+        const { action, sessionId } = args;
 
-      if (action === 'list') {
-        return list(args.applicationType, sessionId);
-      }
-      if (action === 'background') {
-        return background(
-          args.seconds ?? DEFAULT_BACKGROUND_SECONDS,
-          sessionId
+        if (action === 'list') {
+          return list(args.applicationType, sessionId);
+        }
+        if (action === 'background') {
+          return background(
+            args.seconds ?? DEFAULT_BACKGROUND_SECONDS,
+            sessionId
+          );
+        }
+        if (action === 'install') {
+          if (!args.path) {
+            return errorResult('path is required for install');
+          }
+          return install(args.path, sessionId);
+        }
+
+        if (action === 'deep_link') {
+          if (!args.url) {
+            return errorResult('url is required for deep_link');
+          }
+          const appId =
+            args.id ??
+            (args.name ? await resolveAppId(args.name, sessionId) : undefined);
+          return deepLink(args.url, appId, args.waitForLaunch, sessionId);
+        }
+
+        // activate, terminate, uninstall, is_installed, query_state, clear — all require id or name
+        const id = await resolveId(args.id, args.name, sessionId);
+
+        if (action === 'activate') {
+          return activate(id, sessionId);
+        }
+        if (action === 'terminate') {
+          return terminate(id, sessionId);
+        }
+        if (action === 'uninstall') {
+          return uninstall(id, args.keepData, sessionId);
+        }
+        if (action === 'is_installed') {
+          return isInstalled(id, sessionId);
+        }
+        if (action === 'query_state') {
+          return queryState(id, sessionId);
+        }
+        if (action === 'clear') {
+          return clear(id, sessionId);
+        }
+        return errorResult(`Unknown action: ${action}`);
+      } catch (err: unknown) {
+        return errorResult(
+          `appium_app_lifecycle failed: ${toolErrorMessage(err)}`
         );
       }
-      if (action === 'install') {
-        if (!args.path) {
-          return errorResult('path is required for install');
-        }
-        return install(args.path, sessionId);
-      }
-
-      if (action === 'deep_link') {
-        if (!args.url) {
-          return errorResult('url is required for deep_link');
-        }
-        const appId =
-          args.id ??
-          (args.name ? await resolveAppId(args.name, sessionId) : undefined);
-        return deepLink(args.url, appId, args.waitForLaunch, sessionId);
-      }
-
-      // activate, terminate, uninstall, is_installed, query_state, clear — all require id or name
-      const id = await resolveId(args.id, args.name, sessionId);
-
-      if (action === 'activate') {
-        return activate(id, sessionId);
-      }
-      if (action === 'terminate') {
-        return terminate(id, sessionId);
-      }
-      if (action === 'uninstall') {
-        return uninstall(id, args.keepData, sessionId);
-      }
-      if (action === 'is_installed') {
-        return isInstalled(id, sessionId);
-      }
-      if (action === 'query_state') {
-        return queryState(id, sessionId);
-      }
-      if (action === 'clear') {
-        return clear(id, sessionId);
-      }
-      return errorResult(`Unknown action: ${action}`);
     },
   });
 }
