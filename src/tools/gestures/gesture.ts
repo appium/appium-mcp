@@ -1,5 +1,9 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
-import { resolveDriver } from '../tool-response.js';
+import {
+  errorResult,
+  resolveDriver,
+  toolErrorMessage,
+} from '../tool-response.js';
 import { GESTURE_ACTIONS, gestureSchema, type GestureArgs } from './schema.js';
 import { handleTap, handleDoubleTap, handleLongPress } from './handlers/tap.js';
 import { handleScroll, handleSwipe } from './handlers/swipe-scroll.js';
@@ -29,21 +33,27 @@ export default function gesture(server: FastMCP): void {
       }
       const { driver } = resolved;
 
-      switch (args.action) {
-        case 'tap':
-          return handleTap(driver, args);
-        case 'double_tap':
-          return handleDoubleTap(driver, args);
-        case 'long_press':
-          return handleLongPress(driver, args);
-        case 'scroll':
-          return handleScroll(driver, args);
-        case 'swipe':
-          return handleSwipe(driver, args);
-        case 'pinch_zoom':
-          return handlePinchZoom(driver, args);
-        case 'scroll_to_element':
-          return handleScrollToElement(driver, args);
+      try {
+        switch (args.action) {
+          case 'tap':
+            return await handleTap(driver, args);
+          case 'double_tap':
+            return await handleDoubleTap(driver, args);
+          case 'long_press':
+            return await handleLongPress(driver, args);
+          case 'scroll':
+            return await handleScroll(driver, args);
+          case 'swipe':
+            return await handleSwipe(driver, args);
+          case 'pinch_zoom':
+            return await handlePinchZoom(driver, args);
+          case 'scroll_to_element':
+            return await handleScrollToElement(driver, args);
+        }
+      } catch (err: unknown) {
+        return errorResult(
+          `appium_gesture failed (${args.action}): ${toolErrorMessage(err)}`
+        );
       }
     },
   });
