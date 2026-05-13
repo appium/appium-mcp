@@ -111,62 +111,74 @@ export default function app(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      try {
-        const { action, sessionId } = args;
+      const { action, sessionId } = args;
 
-        if (action === 'list') {
-          return list(args.applicationType, sessionId);
-        }
-        if (action === 'background') {
-          return background(
-            args.seconds ?? DEFAULT_BACKGROUND_SECONDS,
-            sessionId
-          );
-        }
-        if (action === 'install') {
-          if (!args.path) {
-            return errorResult('path is required for install');
-          }
-          return install(args.path, sessionId);
-        }
-
-        if (action === 'deep_link') {
-          if (!args.url) {
-            return errorResult('url is required for deep_link');
-          }
-          const appId =
-            args.id ??
-            (args.name ? await resolveAppId(args.name, sessionId) : undefined);
-          return deepLink(args.url, appId, args.waitForLaunch, sessionId);
-        }
-
-        // activate, terminate, uninstall, is_installed, query_state, clear — all require id or name
-        const id = await resolveId(args.id, args.name, sessionId);
-
-        if (action === 'activate') {
-          return activate(id, sessionId);
-        }
-        if (action === 'terminate') {
-          return terminate(id, sessionId);
-        }
-        if (action === 'uninstall') {
-          return uninstall(id, args.keepData, sessionId);
-        }
-        if (action === 'is_installed') {
-          return isInstalled(id, sessionId);
-        }
-        if (action === 'query_state') {
-          return queryState(id, sessionId);
-        }
-        if (action === 'clear') {
-          return clear(id, sessionId);
-        }
-        return errorResult(`Unknown action: ${action}`);
-      } catch (err: unknown) {
-        return errorResult(
-          `appium_app_lifecycle failed: ${toolErrorMessage(err)}`
+      if (action === 'list') {
+        return list(args.applicationType, sessionId);
+      }
+      if (action === 'background') {
+        return background(
+          args.seconds ?? DEFAULT_BACKGROUND_SECONDS,
+          sessionId
         );
       }
+      if (action === 'install') {
+        if (!args.path) {
+          return errorResult('path is required for install');
+        }
+        return install(args.path, sessionId);
+      }
+
+      if (action === 'deep_link') {
+        if (!args.url) {
+          return errorResult('url is required for deep_link');
+        }
+        let appId: string | undefined;
+        if (args.id !== undefined) {
+          appId = args.id;
+        } else if (args.name) {
+          try {
+            appId = await resolveAppId(args.name, sessionId);
+          } catch (err: unknown) {
+            return errorResult(
+              `deep_link: failed to resolve app by name: ${toolErrorMessage(err)}`
+            );
+          }
+        } else {
+          appId = undefined;
+        }
+        return deepLink(args.url, appId, args.waitForLaunch, sessionId);
+      }
+
+      // activate, terminate, uninstall, is_installed, query_state, clear — all require id or name
+      let id: string;
+      try {
+        id = await resolveId(args.id, args.name, sessionId);
+      } catch (err: unknown) {
+        return errorResult(
+          `${action}: failed to resolve app id: ${toolErrorMessage(err)}`
+        );
+      }
+
+      if (action === 'activate') {
+        return activate(id, sessionId);
+      }
+      if (action === 'terminate') {
+        return terminate(id, sessionId);
+      }
+      if (action === 'uninstall') {
+        return uninstall(id, args.keepData, sessionId);
+      }
+      if (action === 'is_installed') {
+        return isInstalled(id, sessionId);
+      }
+      if (action === 'query_state') {
+        return queryState(id, sessionId);
+      }
+      if (action === 'clear') {
+        return clear(id, sessionId);
+      }
+      return errorResult(`Unknown action: ${action}`);
     },
   });
 }
