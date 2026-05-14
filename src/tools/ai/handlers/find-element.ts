@@ -14,21 +14,17 @@ import type { AIArgs } from '../schema.js';
 // Module-level singleton: ensures the LRU cache persists across tool calls.
 // Creating a new AIVisionFinder() on every call would reset the cache each time.
 let _finderInstance: AIVisionFinder | null = null;
+
 export async function handleFindElement(
   driver: DriverInstance,
   args: AIArgs
 ): Promise<ContentResult> {
-  if (!args.instruction) {
-    return errorResult(
-      'instruction is required for action=find_element. ' +
-        'Example: { action: "find_element", instruction: "yellow search button at bottom" }'
-    );
-  }
+  // `instruction` presence/non-emptiness is enforced at schema level via
+  // `aiSchema.superRefine`. Narrow the optional type here for downstream calls.
+  const instruction = args.instruction as string;
 
   try {
-    log.info(
-      `Finding element using AI with instruction: "${args.instruction}"`
-    );
+    log.info(`Finding element using AI with instruction: "${instruction}"`);
 
     const screenshotBase64 = await getScreenshot(driver);
 
@@ -45,7 +41,7 @@ export async function handleFindElement(
     const finder = getAIVisionFinder();
     const result = await finder.findElement(
       screenshotBase64,
-      args.instruction,
+      instruction,
       width,
       height
     );
