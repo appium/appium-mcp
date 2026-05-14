@@ -304,7 +304,9 @@ async function runEval(): Promise<void> {
   }
 }
 
-runEval().catch((err) => {
+try {
+  await runEval();
+} catch (err) {
   console.error('Eval failed:', err);
   process.exit(1);
-});
+}
