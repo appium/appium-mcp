@@ -1,5 +1,5 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
-import { errorResult } from '../tool-response.js';
+import { errorResult, toolErrorMessage } from '../tool-response.js';
 import { z } from 'zod';
 import { resolveAppId, resolveId } from './resolve-app-id.js';
 import { activate } from './activate-app.js';
@@ -133,14 +133,32 @@ export default function app(server: FastMCP): void {
         if (!args.url) {
           return errorResult('url is required for deep_link');
         }
-        const appId =
-          args.id ??
-          (args.name ? await resolveAppId(args.name, sessionId) : undefined);
+        let appId: string | undefined;
+        if (args.id !== undefined) {
+          appId = args.id;
+        } else if (args.name) {
+          try {
+            appId = await resolveAppId(args.name, sessionId);
+          } catch (err: unknown) {
+            return errorResult(
+              `deep_link: failed to resolve app by name: ${toolErrorMessage(err)}`
+            );
+          }
+        } else {
+          appId = undefined;
+        }
         return deepLink(args.url, appId, args.waitForLaunch, sessionId);
       }
 
       // activate, terminate, uninstall, is_installed, query_state, clear — all require id or name
-      const id = await resolveId(args.id, args.name, sessionId);
+      let id: string;
+      try {
+        id = await resolveId(args.id, args.name, sessionId);
+      } catch (err: unknown) {
+        return errorResult(
+          `${action}: failed to resolve app id: ${toolErrorMessage(err)}`
+        );
+      }
 
       if (action === 'activate') {
         return activate(id, sessionId);
