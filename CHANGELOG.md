@@ -1,3 +1,9 @@
+## [1.73.0](https://github.com/appium/appium-mcp/compare/v1.72.16...v1.73.0) (2026-05-14)
+
+### Features
+
+* **rag:** upgrade to BGE-small-v1.5 + add retrieval eval harness ([#334](https://github.com/appium/appium-mcp/issues/334)) ([bcfe254](https://github.com/appium/appium-mcp/commit/bcfe2542e2f270d0a2fe314c64e7c54e752933ff))
+
 ## [1.72.16](https://github.com/appium/appium-mcp/compare/v1.72.15...v1.72.16) (2026-05-14)
 
 ### Bug Fixes
