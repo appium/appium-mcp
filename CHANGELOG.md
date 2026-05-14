@@ -1,3 +1,9 @@
+## [1.72.16](https://github.com/appium/appium-mcp/compare/v1.72.15...v1.72.16) (2026-05-14)
+
+### Bug Fixes
+
+* **ai:** enforce find_element instruction via Zod schema ([#329](https://github.com/appium/appium-mcp/issues/329)) ([a3bfe83](https://github.com/appium/appium-mcp/commit/a3bfe83576c6be9ec1ffa9371ab67b44cc86cc80))
+
 ## [1.72.15](https://github.com/appium/appium-mcp/compare/v1.72.14...v1.72.15) (2026-05-14)
 
 ### Bug Fixes
