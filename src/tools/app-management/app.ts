@@ -134,14 +134,18 @@ export default function app(server: FastMCP): void {
           return errorResult('url is required for deep_link');
         }
         let appId: string | undefined;
-        try {
-          appId =
-            args.id ??
-            (args.name ? await resolveAppId(args.name, sessionId) : undefined);
-        } catch (err: unknown) {
-          return errorResult(
-            `Failed to resolve app id for deep_link: ${toolErrorMessage(err)}`
-          );
+        if (args.id !== undefined) {
+          appId = args.id;
+        } else if (args.name) {
+          try {
+            appId = await resolveAppId(args.name, sessionId);
+          } catch (err: unknown) {
+            return errorResult(
+              `deep_link: failed to resolve app by name: ${toolErrorMessage(err)}`
+            );
+          }
+        } else {
+          appId = undefined;
         }
         return deepLink(args.url, appId, args.waitForLaunch, sessionId);
       }
@@ -152,7 +156,7 @@ export default function app(server: FastMCP): void {
         id = await resolveId(args.id, args.name, sessionId);
       } catch (err: unknown) {
         return errorResult(
-          `Failed to resolve app id for ${action}: ${toolErrorMessage(err)}`
+          `${action}: failed to resolve app id: ${toolErrorMessage(err)}`
         );
       }
 

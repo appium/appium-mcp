@@ -1,3 +1,9 @@
+## [1.72.15](https://github.com/appium/appium-mcp/compare/v1.72.14...v1.72.15) (2026-05-14)
+
+### Bug Fixes
+
+* **app-management:** surface resolve by name failures in app lifecycle ([#332](https://github.com/appium/appium-mcp/issues/332)) ([85fe2b9](https://github.com/appium/appium-mcp/commit/85fe2b9de2e42165786813332146fc0c77bbe362))
+
 ## [1.72.14](https://github.com/appium/appium-mcp/compare/v1.72.13...v1.72.14) (2026-05-09)
 
 ### Miscellaneous Chores
