@@ -1,0 +1,218 @@
+{
+  "version": 1,
+  "description": "Realistic user queries for the Appium documentation RAG tool. Each query maps to one or more source files that should appear in the retrieved sources (substring match against the chunk's relativePath metadata). Difficulty buckets: easy (specific terms that should be near-trivial to retrieve), medium (real-world phrasing), vague (natural human phrasing with less direct cues).",
+  "matchMode": "endsWith",
+  "queries": [
+    {
+      "id": "q01",
+      "query": "How do I install Appium?",
+      "expectedSources": ["appium/quickstart/install.md"],
+      "difficulty": "easy",
+      "category": "setup"
+    },
+    {
+      "id": "q02",
+      "query": "What capabilities does the XCUITest driver support?",
+      "expectedSources": ["appium-xcuitest-driver/reference/capabilities.md"],
+      "difficulty": "easy",
+      "category": "capabilities"
+    },
+    {
+      "id": "q03",
+      "query": "how to run iOS tests in parallel",
+      "expectedSources": ["appium-xcuitest-driver/guides/parallel-tests.md"],
+      "difficulty": "easy",
+      "category": "ios"
+    },
+    {
+      "id": "q04",
+      "query": "push and pull files from an iOS device",
+      "expectedSources": ["appium-xcuitest-driver/guides/file-transfer.md"],
+      "difficulty": "easy",
+      "category": "ios"
+    },
+    {
+      "id": "q05",
+      "query": "read and write the clipboard on iOS",
+      "expectedSources": ["appium-xcuitest-driver/guides/clipboard.md"],
+      "difficulty": "easy",
+      "category": "ios"
+    },
+    {
+      "id": "q06",
+      "query": "what locator strategies are supported by XCUITest",
+      "expectedSources": [
+        "appium-xcuitest-driver/reference/locator-strategies.md"
+      ],
+      "difficulty": "easy",
+      "category": "locators"
+    },
+    {
+      "id": "q07",
+      "query": "how do I use iOS predicate strings to find elements",
+      "expectedSources": ["appium-xcuitest-driver/reference/ios-predicate.md"],
+      "difficulty": "easy",
+      "category": "locators"
+    },
+    {
+      "id": "q08",
+      "query": "uiautomator2 driver capabilities",
+      "expectedSources": ["appium-uiautomator2-driver/capability-sets.md"],
+      "difficulty": "easy",
+      "category": "android"
+    },
+    {
+      "id": "q09",
+      "query": "Appium server command line arguments",
+      "expectedSources": ["appium/cli/args.md"],
+      "difficulty": "easy",
+      "category": "cli"
+    },
+    {
+      "id": "q10",
+      "query": "install a root certificate on an iOS device",
+      "expectedSources": [
+        "appium-xcuitest-driver/guides/install-certificate.md"
+      ],
+      "difficulty": "easy",
+      "category": "ios"
+    },
+
+    {
+      "id": "q11",
+      "query": "I'm new to Appium, where should I start?",
+      "expectedSources": [
+        "appium/quickstart/index.md",
+        "appium/intro/index.md",
+        "appium/quickstart/requirements.md"
+      ],
+      "difficulty": "medium",
+      "category": "intro"
+    },
+    {
+      "id": "q12",
+      "query": "which driver should I use to automate android",
+      "expectedSources": [
+        "appium/quickstart/uiauto2-driver.md",
+        "appium/intro/drivers.md",
+        "appium/ecosystem/drivers.md"
+      ],
+      "difficulty": "medium",
+      "category": "android"
+    },
+    {
+      "id": "q13",
+      "query": "how do I switch to a webview in an iOS hybrid app",
+      "expectedSources": [
+        "appium-xcuitest-driver/guides/hybrid.md",
+        "appium/guides/context.md"
+      ],
+      "difficulty": "medium",
+      "category": "hybrid"
+    },
+    {
+      "id": "q14",
+      "query": "how to set up code signing for real iPhone testing",
+      "expectedSources": [
+        "appium-xcuitest-driver/preparation/real-device-config.md",
+        "appium-xcuitest-driver/preparation/prov-profile-basic-auto.md",
+        "appium-xcuitest-driver/preparation/prov-profile-basic-manual.md"
+      ],
+      "difficulty": "medium",
+      "category": "ios-real-device"
+    },
+    {
+      "id": "q15",
+      "query": "swipe gesture on android",
+      "expectedSources": [
+        "appium-uiautomator2-driver/android-mobile-gestures.md"
+      ],
+      "difficulty": "medium",
+      "category": "gestures"
+    },
+    {
+      "id": "q16",
+      "query": "running tests against an .aab Android App Bundle",
+      "expectedSources": ["appium-uiautomator2-driver/android-appbundle.md"],
+      "difficulty": "medium",
+      "category": "android"
+    },
+    {
+      "id": "q17",
+      "query": "differences between Appium 1 and Appium 2",
+      "expectedSources": ["appium/guides/migrating-1-to-2.md"],
+      "difficulty": "medium",
+      "category": "migration"
+    },
+    {
+      "id": "q18",
+      "query": "enable Touch ID in an iOS simulator test",
+      "expectedSources": ["appium-xcuitest-driver/guides/touch-id.md"],
+      "difficulty": "medium",
+      "category": "ios"
+    },
+    {
+      "id": "q19",
+      "query": "use a custom WebDriverAgent server",
+      "expectedSources": [
+        "appium-xcuitest-driver/guides/wda-custom-server.md",
+        "appium-xcuitest-driver/guides/run-prebuilt-wda.md"
+      ],
+      "difficulty": "medium",
+      "category": "wda"
+    },
+    {
+      "id": "q20",
+      "query": "setting up Appium on a CI server",
+      "expectedSources": ["appium-xcuitest-driver/guides/ci-setup.md"],
+      "difficulty": "medium",
+      "category": "ci"
+    },
+
+    {
+      "id": "q21",
+      "query": "my tests are super slow on iOS, what's going on",
+      "expectedSources": [
+        "appium-xcuitest-driver/guides/wda-slowness.md",
+        "appium-xcuitest-driver/guides/troubleshooting.md"
+      ],
+      "difficulty": "vague",
+      "category": "troubleshooting"
+    },
+    {
+      "id": "q22",
+      "query": "appium can't find my button",
+      "expectedSources": [
+        "appium-xcuitest-driver/guides/elements-lookup-troubleshooting.md",
+        "appium-xcuitest-driver/reference/locator-strategies.md"
+      ],
+      "difficulty": "vague",
+      "category": "troubleshooting"
+    },
+    {
+      "id": "q23",
+      "query": "I switched xcode versions and now nothing works",
+      "expectedSources": [
+        "appium-xcuitest-driver/guides/multiple-xcode-versions.md"
+      ],
+      "difficulty": "vague",
+      "category": "troubleshooting"
+    },
+    {
+      "id": "q24",
+      "query": "can I reuse a WebDriverAgent that's already running",
+      "expectedSources": [
+        "appium-xcuitest-driver/guides/attach-to-running-wda.md"
+      ],
+      "difficulty": "vague",
+      "category": "wda"
+    },
+    {
+      "id": "q25",
+      "query": "show me how to write a test in python",
+      "expectedSources": ["appium/quickstart/test-py.md"],
+      "difficulty": "vague",
+      "category": "clients"
+    }
+  ]
+}
