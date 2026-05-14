@@ -13,16 +13,20 @@ import log from '../../logger.js';
 export class SentenceTransformersEmbeddings {
   private model: any = null;
   private modelName: string;
+  private queryInstruction: string;
   private isInitialized: boolean = false;
   private transformers: any = null;
 
-  constructor(options: { modelName?: string } = {}) {
-    // Use a lightweight, fast model by default
+  constructor(options: { modelName?: string; queryInstruction?: string } = {}) {
     this.modelName = options.modelName || 'Xenova/all-MiniLM-L6-v2';
+    // Optional prefix prepended only to queries (not documents).
+    // BGE models use this to close the question/passage style gap.
+    this.queryInstruction = options.queryInstruction ?? '';
   }
 
   /**
-   * Generate embeddings for a single text (LangChain interface)
+   * Generate embeddings for a single text (LangChain interface).
+   * Applies queryInstruction prefix when set.
    */
   async embedQuery(text: string): Promise<number[]> {
     await this.initializeModel();
@@ -32,7 +36,10 @@ export class SentenceTransformersEmbeddings {
     }
 
     try {
-      const result = await this.model(text, {
+      const input = this.queryInstruction
+        ? `${this.queryInstruction}${text}`
+        : text;
+      const result = await this.model(input, {
         pooling: 'mean',
         normalize: true,
       });
