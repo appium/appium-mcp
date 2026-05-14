@@ -33,8 +33,17 @@ function getEmbeddings(): SentenceTransformersEmbeddings {
     // Use local sentence-transformers (no API key required)
     log.info('Using local sentence-transformers embeddings');
     const modelName =
-      process.env.SENTENCE_TRANSFORMERS_MODEL || 'Xenova/all-MiniLM-L6-v2';
-    embeddings = new SentenceTransformersEmbeddings({ modelName });
+      process.env.SENTENCE_TRANSFORMERS_MODEL || 'Xenova/bge-small-en-v1.5';
+    // BGE models benefit from a query instruction prefix to align the
+    // embedding space between short questions and longer document passages.
+    // Applied to embedQuery() only; embedDocuments() is unchanged.
+    const queryInstruction = modelName.includes('bge')
+      ? 'Represent this sentence for searching relevant passages: '
+      : '';
+    embeddings = new SentenceTransformersEmbeddings({
+      modelName,
+      queryInstruction,
+    });
     log.info(`Using sentence-transformers model: ${modelName}`);
   } catch (error) {
     throw new Error(

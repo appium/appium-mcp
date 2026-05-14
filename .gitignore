@@ -9,6 +9,7 @@ build
 ./test-results
 .DS_Store
 src/tools/robot.ts
+src/scripts/eval-results/
 package-lock.json
 .idea
 .vscode
