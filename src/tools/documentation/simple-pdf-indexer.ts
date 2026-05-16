@@ -9,10 +9,9 @@
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Document } from '@langchain/core/documents';
 import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
+import { fs } from '@appium/support';
 import * as crypto from 'node:crypto';
-import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 // Initialize embeddings using sentence-transformers (no API key required)
@@ -101,7 +100,8 @@ function sanitizeForFilename(name: string): string {
 function getEmbeddingsCachePath(modelName: string): string {
   return path.join(
     __dirname,
-    `./uploads/embeddings-${sanitizeForFilename(modelName)}.json`
+    'uploads',
+    `embeddings-${sanitizeForFilename(modelName)}.json`
   );
 }
 
@@ -146,13 +146,13 @@ async function loadEmbeddingsCache(
   modelName: string
 ): Promise<number[][] | null> {
   const cachePath = getEmbeddingsCachePath(modelName);
-  if (!fs.existsSync(cachePath)) {
+  if (!(await fs.exists(cachePath))) {
     log.info(`No embeddings cache found at ${cachePath}`);
     return null;
   }
   try {
-    const raw = fs.readFileSync(cachePath, 'utf-8');
-    const cache = JSON.parse(raw) as EmbeddingsCacheFile;
+    const raw = await fs.readFile(cachePath, 'utf-8');
+    const cache = JSON.parse(raw as string) as EmbeddingsCacheFile;
     if (cache.version !== CACHE_VERSION) {
       log.warn(
         `Embeddings cache version mismatch (got ${cache.version}, want ${CACHE_VERSION}). Invalidating.`
@@ -190,8 +190,10 @@ async function loadEmbeddingsCache(
 
 /**
  * Persist embedding vectors for the given documents under the given model name.
- * Writes atomically via a .tmp file + rename so a killed process can't leave
- * a partially-written cache behind.
+ * Writes to a .tmp file then moves into place; the finally block sweeps the
+ * tmp file if anything between writeFile and mv throws. Uses fs.mv so the
+ * overwrite works across platforms (Windows rename-over-existing can be flaky
+ * in edge cases involving file locks).
  */
 async function saveEmbeddingsCache(
   documents: Document[],
@@ -208,21 +210,34 @@ async function saveEmbeddingsCache(
     return;
   }
   const cachePath = getEmbeddingsCachePath(modelName);
-  const dir = path.dirname(cachePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  await fs.mkdirp(path.dirname(cachePath));
   const cache: EmbeddingsCacheFile = {
     version: CACHE_VERSION,
     fingerprint: makeFingerprint(documents, modelName),
     embeddings: vectors,
   };
   const tmpPath = `${cachePath}.tmp`;
-  fs.writeFileSync(tmpPath, JSON.stringify(cache));
-  fs.renameSync(tmpPath, cachePath);
-  log.info(
-    `Saved embeddings cache (${vectors.length} vectors) to ${cachePath}`
-  );
+  try {
+    await fs.writeFile(tmpPath, JSON.stringify(cache));
+    await fs.mv(tmpPath, cachePath, { clobber: true, mkdirp: true });
+    log.info(
+      `Saved embeddings cache (${vectors.length} vectors) to ${cachePath}`
+    );
+  } finally {
+    if (await fs.exists(tmpPath)) {
+      try {
+        await fs.unlink(tmpPath);
+      } catch (cleanupErr) {
+        log.warn(
+          `Failed to clean up tmp cache file ${tmpPath}: ${
+            cleanupErr instanceof Error
+              ? cleanupErr.message
+              : String(cleanupErr)
+          }`
+        );
+      }
+    }
+  }
 }
 
 /**
@@ -298,11 +313,8 @@ export async function getMarkdownFilesInDirectory(
   dirPath: string
 ): Promise<string[]> {
   try {
-    const readdir = promisify(fs.readdir);
-    const stat = promisify(fs.stat);
-
     // Check if directory exists
-    if (!fs.existsSync(dirPath)) {
+    if (!(await fs.exists(dirPath))) {
       log.error(`Directory does not exist: ${dirPath}`);
       return [];
     }
@@ -310,11 +322,11 @@ export async function getMarkdownFilesInDirectory(
     const markdownFiles: string[] = [];
 
     async function scanDirectory(currentPath: string): Promise<void> {
-      const files = await readdir(currentPath);
+      const files = await fs.readdir(currentPath);
 
       for (const file of files) {
         const filePath = path.join(currentPath, file);
-        const stats = await stat(filePath);
+        const stats = await fs.stat(filePath);
 
         if (stats.isDirectory()) {
           if (EXCLUDED_MARKDOWN_DIRECTORIES.has(file)) {
@@ -399,6 +411,10 @@ export async function indexAllMarkdownFiles(
     const allVectors: number[][] = [];
     const allDocuments: Document[] = [];
 
+    // Initialize the in-memory store up-front so a failure on the first file
+    // can't leave subsequent iterations with a null store.
+    memoryVectorStore = new MemoryVectorStore(embeddingsProvider);
+
     // Index each Markdown file
     const indexedFiles: string[] = [];
     for (let i = 0; i < markdownFiles.length; i++) {
@@ -443,17 +459,13 @@ export async function indexAllMarkdownFiles(
           documents.map((d) => d.pageContent)
         );
 
-        log.info('Storing documents in memory vector store...');
-        if (i === 0) {
-          memoryVectorStore = new MemoryVectorStore(embeddingsProvider);
-        }
-        await memoryVectorStore!.addVectors(vectors, documents);
+        // Persist documents.json first
+        await saveDocuments(documents, i > 0);
 
+        log.info('Storing documents in memory vector store...');
+        await memoryVectorStore.addVectors(vectors, documents);
         allVectors.push(...vectors);
         allDocuments.push(...documents);
-
-        // Save documents to file (append for all Markdown files except the first one)
-        await saveDocuments(documents, i > 0);
 
         indexedFiles.push(markdownFile);
         log.info(`Successfully indexed Markdown: ${filename}`);
@@ -548,10 +560,7 @@ async function saveDocuments(
 ): Promise<void> {
   try {
     // Create directory if it doesn't exist
-    const dir = path.dirname(DOCUMENTS_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    await fs.mkdirp(path.dirname(DOCUMENTS_PATH));
 
     // Serialize the new documents
     const serializedNew = documents.map((doc) => ({
@@ -562,9 +571,12 @@ async function saveDocuments(
     let allSerialized = serializedNew;
 
     // If appending and file exists, read existing documents and combine
-    if (append && fs.existsSync(DOCUMENTS_PATH)) {
+    if (append && (await fs.exists(DOCUMENTS_PATH))) {
       try {
-        const existingContent = fs.readFileSync(DOCUMENTS_PATH, 'utf-8');
+        const existingContent = (await fs.readFile(
+          DOCUMENTS_PATH,
+          'utf-8'
+        )) as string;
         if (existingContent) {
           const existingSerialized = JSON.parse(existingContent);
           allSerialized = [...existingSerialized, ...serializedNew];
@@ -581,7 +593,7 @@ async function saveDocuments(
     }
 
     // Write to file
-    fs.writeFileSync(DOCUMENTS_PATH, JSON.stringify(allSerialized));
+    await fs.writeFile(DOCUMENTS_PATH, JSON.stringify(allSerialized));
     log.info(
       `${
         append ? 'Appended to' : 'Saved'
@@ -598,8 +610,8 @@ async function saveDocuments(
  */
 async function clearDocumentsFile(): Promise<void> {
   try {
-    if (fs.existsSync(DOCUMENTS_PATH)) {
-      fs.writeFileSync(DOCUMENTS_PATH, JSON.stringify([]));
+    if (await fs.exists(DOCUMENTS_PATH)) {
+      await fs.writeFile(DOCUMENTS_PATH, JSON.stringify([]));
       log.info(`Cleared documents file at ${DOCUMENTS_PATH}`);
     }
   } catch (error) {
@@ -614,13 +626,14 @@ async function clearDocumentsFile(): Promise<void> {
  */
 async function loadDocuments(): Promise<Document[] | null> {
   try {
-    if (!fs.existsSync(DOCUMENTS_PATH)) {
+    if (!(await fs.exists(DOCUMENTS_PATH))) {
       log.info('No saved documents found');
       return null;
     }
 
     // Read from file
-    const serialized = JSON.parse(fs.readFileSync(DOCUMENTS_PATH, 'utf-8'));
+    const raw = (await fs.readFile(DOCUMENTS_PATH, 'utf-8')) as string;
+    const serialized = JSON.parse(raw);
 
     // Convert to Document objects
     const documents = serialized.map(
@@ -646,8 +659,7 @@ async function loadDocuments(): Promise<Document[] | null> {
  */
 async function extractTextFromMarkdown(markdownPath: string): Promise<string> {
   try {
-    const text = fs.readFileSync(markdownPath, 'utf-8');
-    return text;
+    return (await fs.readFile(markdownPath, 'utf-8')) as string;
   } catch (error) {
     log.error('Error extracting text from Markdown:', error);
     throw new Error(
@@ -674,7 +686,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     markdownPath = path.resolve(process.cwd(), args[0]);
 
     // Check if the provided path is a file or directory
-    if (fs.existsSync(markdownPath) && fs.statSync(markdownPath).isFile()) {
+    if (
+      (await fs.exists(markdownPath)) &&
+      (await fs.stat(markdownPath)).isFile()
+    ) {
       indexSingleFile = true;
     }
   } else {
