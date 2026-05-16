@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "rimraf dist tsconfig.tsbuildinfo && tsc -b && chmod +x dist/index.js && npm run copy-docs",
-    "copy-docs": "mkdir -p dist/tools/documentation/uploads dist/scripts && cp -f src/tools/documentation/uploads/documents.json dist/tools/documentation/uploads/documents.json 2>/dev/null || true && cp -f src/scripts/rag-eval-dataset.json dist/scripts/rag-eval-dataset.json 2>/dev/null || true",
+    "copy-docs": "mkdir -p dist/tools/documentation/uploads dist/scripts && cp -f src/tools/documentation/uploads/documents.json dist/tools/documentation/uploads/documents.json 2>/dev/null || true && cp -f src/tools/documentation/uploads/embeddings-*.json dist/tools/documentation/uploads/ 2>/dev/null || true && cp -f src/scripts/rag-eval-dataset.json dist/scripts/rag-eval-dataset.json 2>/dev/null || true",
     "start": "node dist/index.js",
     "start:stdio": "node dist/index.js",
     "start:httpStream": "node dist/index.js --httpStream",
@@ -37,6 +37,8 @@
     "query-docs": "node dist/scripts/simple-query-documentation.js",
     "eval-docs": "node dist/scripts/eval-documentation-rag.js",
     "eval-docs:save": "node dist/scripts/eval-documentation-rag.js --save",
+    "generate-cache": "node dist/scripts/generate-embeddings-cache.js",
+    "prepublishOnly": "npm run build && npm run generate-cache",
     "sync-version": "node scripts/sync-version.mjs",
     "version": "npm run sync-version",
     "zip-assets": "node scripts/zip-assets.mjs zip",

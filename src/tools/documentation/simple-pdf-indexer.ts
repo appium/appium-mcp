@@ -9,9 +9,9 @@
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Document } from '@langchain/core/documents';
 import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
-import * as fs from 'node:fs';
+import { fs } from '@appium/support';
+import * as crypto from 'node:crypto';
 import * as path from 'node:path';
-import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 // Initialize embeddings using sentence-transformers (no API key required)
@@ -70,6 +70,177 @@ let memoryVectorStore: MemoryVectorStore | null = null;
 const EXCLUDED_MARKDOWN_DIRECTORIES = new Set(['appium-skills']);
 
 /**
+ * Embeddings cache: vectors persisted alongside documents.json so the
+ * server doesn't re-embed all chunks on every cold start.
+ *
+ * Invariants:
+ *   - One cache file per model, so multiple models can coexist on disk.
+ *   - Fingerprint embeds (modelName, chunkCount, contentHash of documents).
+ *     Any drift in the corpus or model means the cache invalidates and gets
+ *     re-embedded automatically.
+ */
+const CACHE_VERSION = 1;
+
+interface EmbeddingsCacheFingerprint {
+  modelName: string;
+  chunkCount: number;
+  contentHash: string;
+}
+
+interface EmbeddingsCacheFile {
+  version: number;
+  fingerprint: EmbeddingsCacheFingerprint;
+  embeddings: number[][];
+}
+
+function sanitizeForFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '-');
+}
+
+function getEmbeddingsCachePath(modelName: string): string {
+  return path.join(
+    __dirname,
+    'uploads',
+    `embeddings-${sanitizeForFilename(modelName)}.json`
+  );
+}
+
+function computeContentHash(documents: Document[]): string {
+  const hash = crypto.createHash('sha256');
+  for (const doc of documents) {
+    hash.update(doc.pageContent);
+    hash.update('\x00'); // separator avoids concat collisions across chunks
+  }
+  return hash.digest('hex');
+}
+
+function makeFingerprint(
+  documents: Document[],
+  modelName: string
+): EmbeddingsCacheFingerprint {
+  return {
+    modelName,
+    chunkCount: documents.length,
+    contentHash: computeContentHash(documents),
+  };
+}
+
+function fingerprintsMatch(
+  a: EmbeddingsCacheFingerprint,
+  b: EmbeddingsCacheFingerprint
+): boolean {
+  return (
+    a.modelName === b.modelName &&
+    a.chunkCount === b.chunkCount &&
+    a.contentHash === b.contentHash
+  );
+}
+
+/**
+ * Try to load a valid embeddings cache for the given documents + model.
+ * Returns null if no cache file exists, the file is corrupt, or its
+ * fingerprint disagrees with what we'd compute now.
+ */
+async function loadEmbeddingsCache(
+  documents: Document[],
+  modelName: string
+): Promise<number[][] | null> {
+  const cachePath = getEmbeddingsCachePath(modelName);
+  if (!(await fs.exists(cachePath))) {
+    log.info(`No embeddings cache found at ${cachePath}`);
+    return null;
+  }
+  try {
+    const raw = await fs.readFile(cachePath, 'utf-8');
+    const cache = JSON.parse(raw as string) as EmbeddingsCacheFile;
+    if (cache.version !== CACHE_VERSION) {
+      log.warn(
+        `Embeddings cache version mismatch (got ${cache.version}, want ${CACHE_VERSION}). Invalidating.`
+      );
+      return null;
+    }
+    const expected = makeFingerprint(documents, modelName);
+    if (!fingerprintsMatch(cache.fingerprint, expected)) {
+      log.info(
+        `Embeddings cache fingerprint mismatch — will re-embed. ` +
+          `Cached: ${JSON.stringify(cache.fingerprint)}; expected: ${JSON.stringify(expected)}`
+      );
+      return null;
+    }
+    if (
+      !Array.isArray(cache.embeddings) ||
+      cache.embeddings.length !== documents.length
+    ) {
+      log.warn(
+        `Embeddings cache length (${cache.embeddings?.length}) does not match documents length (${documents.length}). Invalidating.`
+      );
+      return null;
+    }
+    log.info(
+      `Embeddings cache hit: ${cache.embeddings.length} vectors loaded from ${cachePath}`
+    );
+    return cache.embeddings;
+  } catch (err) {
+    log.warn(
+      `Failed to read embeddings cache (${err instanceof Error ? err.message : String(err)}). Will re-embed.`
+    );
+    return null;
+  }
+}
+
+/**
+ * Persist embedding vectors for the given documents under the given model name.
+ * Writes to a .tmp file then moves into place; the finally block sweeps the
+ * tmp file if anything between writeFile and mv throws. Uses fs.mv so the
+ * overwrite works across platforms (Windows rename-over-existing can be flaky
+ * in edge cases involving file locks).
+ */
+async function saveEmbeddingsCache(
+  documents: Document[],
+  vectors: number[][],
+  modelName: string
+): Promise<void> {
+  if (vectors.length === 0) {
+    return;
+  }
+  if (vectors.length !== documents.length) {
+    log.warn(
+      `Refusing to write embeddings cache: ${vectors.length} vectors vs ${documents.length} documents`
+    );
+    return;
+  }
+  const cachePath = getEmbeddingsCachePath(modelName);
+  await fs.mkdirp(path.dirname(cachePath));
+  const cache: EmbeddingsCacheFile = {
+    version: CACHE_VERSION,
+    fingerprint: makeFingerprint(documents, modelName),
+    embeddings: vectors,
+  };
+  const tmpPath = `${cachePath}.tmp`;
+  try {
+    await fs.writeFile(tmpPath, JSON.stringify(cache));
+    await fs.mv(tmpPath, cachePath, { clobber: true, mkdirp: true });
+    log.info(
+      `Saved embeddings cache (${vectors.length} vectors) to ${cachePath}`
+    );
+  } finally {
+    if (await fs.exists(tmpPath)) {
+      try {
+        await fs.unlink(tmpPath);
+      } catch (cleanupErr) {
+        log.warn(
+          `Failed to clean up tmp cache file ${tmpPath}: ${
+            cleanupErr instanceof Error
+              ? cleanupErr.message
+              : String(cleanupErr)
+          }`
+        );
+      }
+    }
+  }
+}
+
+/**
  * Initialize the vector store with Markdown content
  * @param markdownPath Path to the Markdown file
  * @param chunkSize Size of each chunk in characters
@@ -101,18 +272,29 @@ export async function initializeVectorStore(
     const documents = await textSplitter.createDocuments([markdownText]);
     log.info(`Created ${documents.length} document chunks`);
 
-    // Store documents in memory vector store
-    log.info('Storing documents in memory vector store...');
-    const vectorStore = await MemoryVectorStore.fromDocuments(
-      documents,
-      getEmbeddings()
+    // Embed once; reuse the vectors for both the in-memory store and the cache.
+    log.info('Embedding chunks...');
+    const embeddingsProvider = getEmbeddings();
+    const vectors = await embeddingsProvider.embedDocuments(
+      documents.map((d) => d.pageContent)
     );
+
+    log.info('Storing documents in memory vector store...');
+    const vectorStore = new MemoryVectorStore(embeddingsProvider);
+    await vectorStore.addVectors(vectors, documents);
 
     // Save the vector store in the global variable for later use
     memoryVectorStore = vectorStore;
 
     // Save documents to file for persistence
     await saveDocuments(documents, false); // Don't append for single file indexing
+
+    // Persist the embeddings cache so the next cold start can skip embedding.
+    await saveEmbeddingsCache(
+      documents,
+      vectors,
+      embeddingsProvider.getModelName()
+    );
 
     log.info('Successfully stored documents in memory vector store');
     return vectorStore;
@@ -131,11 +313,8 @@ export async function getMarkdownFilesInDirectory(
   dirPath: string
 ): Promise<string[]> {
   try {
-    const readdir = promisify(fs.readdir);
-    const stat = promisify(fs.stat);
-
     // Check if directory exists
-    if (!fs.existsSync(dirPath)) {
+    if (!(await fs.exists(dirPath))) {
       log.error(`Directory does not exist: ${dirPath}`);
       return [];
     }
@@ -143,11 +322,11 @@ export async function getMarkdownFilesInDirectory(
     const markdownFiles: string[] = [];
 
     async function scanDirectory(currentPath: string): Promise<void> {
-      const files = await readdir(currentPath);
+      const files = await fs.readdir(currentPath);
 
       for (const file of files) {
         const filePath = path.join(currentPath, file);
-        const stats = await stat(filePath);
+        const stats = await fs.stat(filePath);
 
         if (stats.isDirectory()) {
           if (EXCLUDED_MARKDOWN_DIRECTORIES.has(file)) {
@@ -226,6 +405,16 @@ export async function indexAllMarkdownFiles(
     // Clear the documents file before starting
     await clearDocumentsFile();
 
+    // Accumulate vectors + documents across all files so we can write a single
+    // embeddings cache at the end, parallel-aligned with documents.json.
+    const embeddingsProvider = getEmbeddings();
+    const allVectors: number[][] = [];
+    const allDocuments: Document[] = [];
+
+    // Initialize the in-memory store up-front so a failure on the first file
+    // can't leave subsequent iterations with a null store.
+    memoryVectorStore = new MemoryVectorStore(embeddingsProvider);
+
     // Index each Markdown file
     const indexedFiles: string[] = [];
     for (let i = 0; i < markdownFiles.length; i++) {
@@ -263,21 +452,20 @@ export async function indexAllMarkdownFiles(
           };
         });
 
-        // Store documents in memory vector store
-        log.info('Storing documents in memory vector store...');
-        if (i === 0) {
-          // For the first Markdown file, create a new vector store
-          memoryVectorStore = await MemoryVectorStore.fromDocuments(
-            documents,
-            getEmbeddings()
-          );
-        } else {
-          // For subsequent Markdown files, add to the existing vector store
-          await memoryVectorStore?.addDocuments(documents);
-        }
+        // Embed this file's chunks once; reuse the vectors for both the
+        // in-memory store and the on-disk cache.
+        log.info('Embedding chunks...');
+        const vectors = await embeddingsProvider.embedDocuments(
+          documents.map((d) => d.pageContent)
+        );
 
-        // Save documents to file (append for all Markdown files except the first one)
+        // Persist documents.json first
         await saveDocuments(documents, i > 0);
+
+        log.info('Storing documents in memory vector store...');
+        await memoryVectorStore.addVectors(vectors, documents);
+        allVectors.push(...vectors);
+        allDocuments.push(...documents);
 
         indexedFiles.push(markdownFile);
         log.info(`Successfully indexed Markdown: ${filename}`);
@@ -286,6 +474,14 @@ export async function indexAllMarkdownFiles(
         // Continue with next file even if one fails
       }
     }
+
+    // Persist the embeddings cache once, after all files are indexed.
+    // The cache is keyed by model name and ordered to match documents.json.
+    await saveEmbeddingsCache(
+      allDocuments,
+      allVectors,
+      embeddingsProvider.getModelName()
+    );
 
     log.info(
       `Successfully indexed ${indexedFiles.length} out of ${markdownFiles.length} Markdown files`
@@ -308,29 +504,45 @@ export async function queryVectorStore(
   topK: number = 25
 ): Promise<Document[]> {
   try {
-    // Check if the vector store has been initialized in memory
     if (!memoryVectorStore) {
-      // Try to load documents from file
       const documents = await loadDocuments();
-
-      // If documents exist, create a new vector store
-      if (documents && documents.length > 0) {
-        log.info('Creating vector store from saved documents...');
-        memoryVectorStore = await MemoryVectorStore.fromDocuments(
-          documents,
-          getEmbeddings()
-        );
-      } else {
+      if (!documents || documents.length === 0) {
         throw new Error(
-          'Vector store has not been initialized. Please index a PDF first.'
+          'Vector store has not been initialized. Please index docs first.'
         );
+      }
+
+      const embeddingsProvider = getEmbeddings();
+      const modelName = embeddingsProvider.getModelName();
+
+      // Fast path: load pre-computed vectors and build the store via addVectors.
+      // Skips the ~30-60s document-embedding step entirely.
+      const cached = await loadEmbeddingsCache(documents, modelName);
+      if (cached) {
+        log.info('Building vector store from cached embeddings (fast path)');
+        memoryVectorStore = new MemoryVectorStore(embeddingsProvider);
+        await memoryVectorStore.addVectors(cached, documents);
+      } else {
+        // Slow path: embed all documents now, then persist a cache so the
+        // next cold start is fast. Also covers model changes (different
+        // cache filename, no hit) and corpus changes (fingerprint mismatch).
+        log.info(
+          `Embedding ${documents.length} documents for model ${modelName} (this may take a while)...`
+        );
+        const start = Date.now();
+        const vectors = await embeddingsProvider.embedDocuments(
+          documents.map((d) => d.pageContent)
+        );
+        log.info(`Embedding completed in ${Date.now() - start}ms`);
+
+        memoryVectorStore = new MemoryVectorStore(embeddingsProvider);
+        await memoryVectorStore.addVectors(vectors, documents);
+
+        await saveEmbeddingsCache(documents, vectors, modelName);
       }
     }
 
-    // Query the vector store
-    const results = await memoryVectorStore.similaritySearch(query, topK);
-
-    return results;
+    return await memoryVectorStore.similaritySearch(query, topK);
   } catch (error) {
     log.error('Error querying vector store:', error);
     throw error;
@@ -348,10 +560,7 @@ async function saveDocuments(
 ): Promise<void> {
   try {
     // Create directory if it doesn't exist
-    const dir = path.dirname(DOCUMENTS_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    await fs.mkdirp(path.dirname(DOCUMENTS_PATH));
 
     // Serialize the new documents
     const serializedNew = documents.map((doc) => ({
@@ -362,9 +571,12 @@ async function saveDocuments(
     let allSerialized = serializedNew;
 
     // If appending and file exists, read existing documents and combine
-    if (append && fs.existsSync(DOCUMENTS_PATH)) {
+    if (append && (await fs.exists(DOCUMENTS_PATH))) {
       try {
-        const existingContent = fs.readFileSync(DOCUMENTS_PATH, 'utf-8');
+        const existingContent = (await fs.readFile(
+          DOCUMENTS_PATH,
+          'utf-8'
+        )) as string;
         if (existingContent) {
           const existingSerialized = JSON.parse(existingContent);
           allSerialized = [...existingSerialized, ...serializedNew];
@@ -381,7 +593,7 @@ async function saveDocuments(
     }
 
     // Write to file
-    fs.writeFileSync(DOCUMENTS_PATH, JSON.stringify(allSerialized));
+    await fs.writeFile(DOCUMENTS_PATH, JSON.stringify(allSerialized));
     log.info(
       `${
         append ? 'Appended to' : 'Saved'
@@ -398,8 +610,8 @@ async function saveDocuments(
  */
 async function clearDocumentsFile(): Promise<void> {
   try {
-    if (fs.existsSync(DOCUMENTS_PATH)) {
-      fs.writeFileSync(DOCUMENTS_PATH, JSON.stringify([]));
+    if (await fs.exists(DOCUMENTS_PATH)) {
+      await fs.writeFile(DOCUMENTS_PATH, JSON.stringify([]));
       log.info(`Cleared documents file at ${DOCUMENTS_PATH}`);
     }
   } catch (error) {
@@ -414,13 +626,14 @@ async function clearDocumentsFile(): Promise<void> {
  */
 async function loadDocuments(): Promise<Document[] | null> {
   try {
-    if (!fs.existsSync(DOCUMENTS_PATH)) {
+    if (!(await fs.exists(DOCUMENTS_PATH))) {
       log.info('No saved documents found');
       return null;
     }
 
     // Read from file
-    const serialized = JSON.parse(fs.readFileSync(DOCUMENTS_PATH, 'utf-8'));
+    const raw = (await fs.readFile(DOCUMENTS_PATH, 'utf-8')) as string;
+    const serialized = JSON.parse(raw);
 
     // Convert to Document objects
     const documents = serialized.map(
@@ -446,8 +659,7 @@ async function loadDocuments(): Promise<Document[] | null> {
  */
 async function extractTextFromMarkdown(markdownPath: string): Promise<string> {
   try {
-    const text = fs.readFileSync(markdownPath, 'utf-8');
-    return text;
+    return (await fs.readFile(markdownPath, 'utf-8')) as string;
   } catch (error) {
     log.error('Error extracting text from Markdown:', error);
     throw new Error(
@@ -474,7 +686,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     markdownPath = path.resolve(process.cwd(), args[0]);
 
     // Check if the provided path is a file or directory
-    if (fs.existsSync(markdownPath) && fs.statSync(markdownPath).isFile()) {
+    if (
+      (await fs.exists(markdownPath)) &&
+      (await fs.stat(markdownPath)).isFile()
+    ) {
       indexSingleFile = true;
     }
   } else {
