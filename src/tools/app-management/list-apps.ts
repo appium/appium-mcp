@@ -127,19 +127,12 @@ function normalizeListAppsResult(
   }));
 }
 
-/**
- * Pick the first non-empty string from the well-known iOS metadata fields.
- * `||` keeps the original fall-through behavior when a field is `""`.
- */
+/** First non-empty iOS display field; `||` skips empty strings like the legacy path. */
 function pickDisplayName(attrs: Record<string, unknown> | undefined): string {
-  const display =
-    readString(attrs?.CFBundleDisplayName) ||
-    readString(attrs?.CFBundleName) ||
-    readString(attrs?.name) ||
-    '';
-  return display;
-}
-
-function readString(value: unknown): string {
-  return typeof value === 'string' ? value : '';
+  return (
+    (attrs?.CFBundleDisplayName ||
+      attrs?.CFBundleName ||
+      attrs?.name ||
+      '') as string
+  );
 }
