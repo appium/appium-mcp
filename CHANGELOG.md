@@ -1,3 +1,9 @@
+## [1.74.0](https://github.com/appium/appium-mcp/compare/v1.73.0...v1.74.0) (2026-05-16)
+
+### Features
+
+* **embeddings:** cache vector embeddings and ship warm cache ([#335](https://github.com/appium/appium-mcp/issues/335)) ([52c8fd3](https://github.com/appium/appium-mcp/commit/52c8fd326a7e67f2769a10e00c9c5516bd86e0bf))
+
 ## [1.73.0](https://github.com/appium/appium-mcp/compare/v1.72.16...v1.73.0) (2026-05-14)
 
 ### Features
