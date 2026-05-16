@@ -93,153 +93,6 @@ interface EmbeddingsCacheFile {
   embeddings: number[][];
 }
 
-function sanitizeForFilename(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, '-');
-}
-
-function getEmbeddingsCachePath(modelName: string): string {
-  return path.join(
-    __dirname,
-    'uploads',
-    `embeddings-${sanitizeForFilename(modelName)}.json`
-  );
-}
-
-function computeContentHash(documents: Document[]): string {
-  const hash = crypto.createHash('sha256');
-  for (const doc of documents) {
-    hash.update(doc.pageContent);
-    hash.update('\x00'); // separator avoids concat collisions across chunks
-  }
-  return hash.digest('hex');
-}
-
-function makeFingerprint(
-  documents: Document[],
-  modelName: string
-): EmbeddingsCacheFingerprint {
-  return {
-    modelName,
-    chunkCount: documents.length,
-    contentHash: computeContentHash(documents),
-  };
-}
-
-function fingerprintsMatch(
-  a: EmbeddingsCacheFingerprint,
-  b: EmbeddingsCacheFingerprint
-): boolean {
-  return (
-    a.modelName === b.modelName &&
-    a.chunkCount === b.chunkCount &&
-    a.contentHash === b.contentHash
-  );
-}
-
-/**
- * Try to load a valid embeddings cache for the given documents + model.
- * Returns null if no cache file exists, the file is corrupt, or its
- * fingerprint disagrees with what we'd compute now.
- */
-async function loadEmbeddingsCache(
-  documents: Document[],
-  modelName: string
-): Promise<number[][] | null> {
-  const cachePath = getEmbeddingsCachePath(modelName);
-  if (!(await fs.exists(cachePath))) {
-    log.info(`No embeddings cache found at ${cachePath}`);
-    return null;
-  }
-  try {
-    const raw = await fs.readFile(cachePath, 'utf-8');
-    const cache = JSON.parse(raw as string) as EmbeddingsCacheFile;
-    if (cache.version !== CACHE_VERSION) {
-      log.warn(
-        `Embeddings cache version mismatch (got ${cache.version}, want ${CACHE_VERSION}). Invalidating.`
-      );
-      return null;
-    }
-    const expected = makeFingerprint(documents, modelName);
-    if (!fingerprintsMatch(cache.fingerprint, expected)) {
-      log.info(
-        `Embeddings cache fingerprint mismatch — will re-embed. ` +
-          `Cached: ${JSON.stringify(cache.fingerprint)}; expected: ${JSON.stringify(expected)}`
-      );
-      return null;
-    }
-    if (
-      !Array.isArray(cache.embeddings) ||
-      cache.embeddings.length !== documents.length
-    ) {
-      log.warn(
-        `Embeddings cache length (${cache.embeddings?.length}) does not match documents length (${documents.length}). Invalidating.`
-      );
-      return null;
-    }
-    log.info(
-      `Embeddings cache hit: ${cache.embeddings.length} vectors loaded from ${cachePath}`
-    );
-    return cache.embeddings;
-  } catch (err) {
-    log.warn(
-      `Failed to read embeddings cache (${err instanceof Error ? err.message : String(err)}). Will re-embed.`
-    );
-    return null;
-  }
-}
-
-/**
- * Persist embedding vectors for the given documents under the given model name.
- * Writes to a .tmp file then moves into place; the finally block sweeps the
- * tmp file if anything between writeFile and mv throws. Uses fs.mv so the
- * overwrite works across platforms (Windows rename-over-existing can be flaky
- * in edge cases involving file locks).
- */
-async function saveEmbeddingsCache(
-  documents: Document[],
-  vectors: number[][],
-  modelName: string
-): Promise<void> {
-  if (vectors.length === 0) {
-    return;
-  }
-  if (vectors.length !== documents.length) {
-    log.warn(
-      `Refusing to write embeddings cache: ${vectors.length} vectors vs ${documents.length} documents`
-    );
-    return;
-  }
-  const cachePath = getEmbeddingsCachePath(modelName);
-  await fs.mkdirp(path.dirname(cachePath));
-  const cache: EmbeddingsCacheFile = {
-    version: CACHE_VERSION,
-    fingerprint: makeFingerprint(documents, modelName),
-    embeddings: vectors,
-  };
-  const tmpPath = `${cachePath}.tmp`;
-  try {
-    await fs.writeFile(tmpPath, JSON.stringify(cache));
-    await fs.mv(tmpPath, cachePath, { clobber: true, mkdirp: true });
-    log.info(
-      `Saved embeddings cache (${vectors.length} vectors) to ${cachePath}`
-    );
-  } finally {
-    if (await fs.exists(tmpPath)) {
-      try {
-        await fs.unlink(tmpPath);
-      } catch (cleanupErr) {
-        log.warn(
-          `Failed to clean up tmp cache file ${tmpPath}: ${
-            cleanupErr instanceof Error
-              ? cleanupErr.message
-              : String(cleanupErr)
-          }`
-        );
-      }
-    }
-  }
-}
-
 /**
  * Initialize the vector store with Markdown content
  * @param markdownPath Path to the Markdown file
@@ -546,6 +399,153 @@ export async function queryVectorStore(
   } catch (error) {
     log.error('Error querying vector store:', error);
     throw error;
+  }
+}
+
+function sanitizeForFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '-');
+}
+
+function getEmbeddingsCachePath(modelName: string): string {
+  return path.join(
+    __dirname,
+    'uploads',
+    `embeddings-${sanitizeForFilename(modelName)}.json`
+  );
+}
+
+function computeContentHash(documents: Document[]): string {
+  const hash = crypto.createHash('sha256');
+  for (const doc of documents) {
+    hash.update(doc.pageContent);
+    hash.update('\x00'); // separator avoids concat collisions across chunks
+  }
+  return hash.digest('hex');
+}
+
+function makeFingerprint(
+  documents: Document[],
+  modelName: string
+): EmbeddingsCacheFingerprint {
+  return {
+    modelName,
+    chunkCount: documents.length,
+    contentHash: computeContentHash(documents),
+  };
+}
+
+function fingerprintsMatch(
+  a: EmbeddingsCacheFingerprint,
+  b: EmbeddingsCacheFingerprint
+): boolean {
+  return (
+    a.modelName === b.modelName &&
+    a.chunkCount === b.chunkCount &&
+    a.contentHash === b.contentHash
+  );
+}
+
+/**
+ * Try to load a valid embeddings cache for the given documents + model.
+ * Returns null if no cache file exists, the file is corrupt, or its
+ * fingerprint disagrees with what we'd compute now.
+ */
+async function loadEmbeddingsCache(
+  documents: Document[],
+  modelName: string
+): Promise<number[][] | null> {
+  const cachePath = getEmbeddingsCachePath(modelName);
+  if (!(await fs.exists(cachePath))) {
+    log.info(`No embeddings cache found at ${cachePath}`);
+    return null;
+  }
+  try {
+    const raw = await fs.readFile(cachePath, 'utf-8');
+    const cache = JSON.parse(raw as string) as EmbeddingsCacheFile;
+    if (cache.version !== CACHE_VERSION) {
+      log.warn(
+        `Embeddings cache version mismatch (got ${cache.version}, want ${CACHE_VERSION}). Invalidating.`
+      );
+      return null;
+    }
+    const expected = makeFingerprint(documents, modelName);
+    if (!fingerprintsMatch(cache.fingerprint, expected)) {
+      log.info(
+        `Embeddings cache fingerprint mismatch — will re-embed. ` +
+          `Cached: ${JSON.stringify(cache.fingerprint)}; expected: ${JSON.stringify(expected)}`
+      );
+      return null;
+    }
+    if (
+      !Array.isArray(cache.embeddings) ||
+      cache.embeddings.length !== documents.length
+    ) {
+      log.warn(
+        `Embeddings cache length (${cache.embeddings?.length}) does not match documents length (${documents.length}). Invalidating.`
+      );
+      return null;
+    }
+    log.info(
+      `Embeddings cache hit: ${cache.embeddings.length} vectors loaded from ${cachePath}`
+    );
+    return cache.embeddings;
+  } catch (err) {
+    log.warn(
+      `Failed to read embeddings cache (${err instanceof Error ? err.message : String(err)}). Will re-embed.`
+    );
+    return null;
+  }
+}
+
+/**
+ * Persist embedding vectors for the given documents under the given model name.
+ * Writes to a .tmp file then moves into place; the finally block sweeps the
+ * tmp file if anything between writeFile and mv throws. Uses fs.mv so the
+ * overwrite works across platforms (Windows rename-over-existing can be flaky
+ * in edge cases involving file locks).
+ */
+async function saveEmbeddingsCache(
+  documents: Document[],
+  vectors: number[][],
+  modelName: string
+): Promise<void> {
+  if (vectors.length === 0) {
+    return;
+  }
+  if (vectors.length !== documents.length) {
+    log.warn(
+      `Refusing to write embeddings cache: ${vectors.length} vectors vs ${documents.length} documents`
+    );
+    return;
+  }
+  const cachePath = getEmbeddingsCachePath(modelName);
+  await fs.mkdirp(path.dirname(cachePath));
+  const cache: EmbeddingsCacheFile = {
+    version: CACHE_VERSION,
+    fingerprint: makeFingerprint(documents, modelName),
+    embeddings: vectors,
+  };
+  const tmpPath = `${cachePath}.tmp`;
+  try {
+    await fs.writeFile(tmpPath, JSON.stringify(cache));
+    await fs.mv(tmpPath, cachePath, { clobber: true, mkdirp: true });
+    log.info(
+      `Saved embeddings cache (${vectors.length} vectors) to ${cachePath}`
+    );
+  } finally {
+    if (await fs.exists(tmpPath)) {
+      try {
+        await fs.unlink(tmpPath);
+      } catch (cleanupErr) {
+        log.warn(
+          `Failed to clean up tmp cache file ${tmpPath}: ${
+            cleanupErr instanceof Error
+              ? cleanupErr.message
+              : String(cleanupErr)
+          }`
+        );
+      }
+    }
   }
 }
 
