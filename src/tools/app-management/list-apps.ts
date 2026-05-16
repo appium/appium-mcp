@@ -123,16 +123,9 @@ function normalizeListAppsResult(
 ): { packageName: string; appName: string }[] {
   return Object.entries(result).map(([id, attrs]) => ({
     packageName: id,
-    appName: pickDisplayName(attrs),
-  }));
-}
-
-/** First non-empty iOS display field; `||` skips empty strings like the legacy path. */
-function pickDisplayName(attrs: Record<string, unknown> | undefined): string {
-  return (
-    (attrs?.CFBundleDisplayName ||
+    appName: (attrs?.CFBundleDisplayName ||
       attrs?.CFBundleName ||
-      attrs?.name ||
-      '') as string
-  );
+      (attrs as any)?.name ||
+      '') as string,
+  }));
 }
