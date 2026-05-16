@@ -24,6 +24,11 @@ export class SentenceTransformersEmbeddings {
     this.queryInstruction = options.queryInstruction ?? '';
   }
 
+  /** Name of the underlying model (used to namespace the embeddings cache file). */
+  getModelName(): string {
+    return this.modelName;
+  }
+
   /**
    * Generate embeddings for a single text (LangChain interface).
    * Applies queryInstruction prefix when set.
