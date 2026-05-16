@@ -36,6 +36,28 @@ export type ParsedAiElement = {
   rect: Rect;
 };
 
+/**
+ * When centre-only AI UUIDs have no bbox, direction-based swipe/scroll uses
+ * `rect.width` / `rect.height` with 0.2 / 0.8 edges; an effective 1x1 rect
+ * makes start/end identical after rounding. Keep a minimum inset area so those
+ * gestures still move visibly while staying centred on the parsed point.
+ *
+ * Values are screenshot pixels; callers can clamp against the window if needed.
+ */
+const AI_FALLBACK_RECT_WIDTH = 100;
+const AI_FALLBACK_RECT_HEIGHT = 100;
+
+function rectAroundCenter(cx: number, cy: number): Rect {
+  const w = AI_FALLBACK_RECT_WIDTH;
+  const h = AI_FALLBACK_RECT_HEIGHT;
+  return {
+    x: cx - Math.floor(w / 2),
+    y: cy - Math.floor(h / 2),
+    width: w,
+    height: h,
+  };
+}
+
 export function isAiElementUUID(uuid: string | undefined): uuid is string {
   return typeof uuid === 'string' && uuid.startsWith(AI_ELEMENT_PREFIX);
 }
@@ -44,8 +66,8 @@ export function isAiElementUUID(uuid: string | undefined): uuid is string {
  * Parse an `ai-element:` UUID into a centre point and a synthetic rect.
  *
  * If the bbox segment is present and well-formed, the rect describes the
- * full bounding box. Otherwise we fall back to a 1×1 rect at the centre,
- * so callers that only need a single point still work.
+ * full bounding box. Otherwise we fall back to a small rect centred on
+ * `(cx, cy)`, so directional swipe/scroll still has usable start/end deltas.
  */
 export function parseAiElement(
   uuid: string
@@ -64,7 +86,7 @@ export function parseAiElement(
     };
   }
 
-  let rect: Rect = { x: cx, y: cy, width: 1, height: 1 };
+  let rect = rectAroundCenter(cx, cy);
   if (parts[2]) {
     const bbox = parts[2].split(',').map((v) => Number.parseInt(v, 10));
     if (
@@ -87,11 +109,11 @@ export function parseAiElement(
 
 /**
  * Single dispatcher for "give me a rect for this UUID":
- *   - ai-element UUID → rect synthesised from the bbox/centre, no driver call
- *   - traditional UUID → driver.getElementRect, as before
+ *   - ai-element UUID → rect synthesised from the bbox / centre fallback, no driver call
+ *   - traditional UUID → `getElementRect` on the driver
  *
- * Returning `{ error }` instead of throwing keeps the handler call sites
- * consistent with how they already shape their other failure modes.
+ * Returns `{ error }` for malformed AI UUIDs or for driver lookup failures (`getElementRect`
+ * rejects). Call sites avoid try/catch and handle both cases the same way.
  */
 export async function resolveTargetRect(
   driver: DriverInstance,
@@ -104,7 +126,13 @@ export async function resolveTargetRect(
     }
     return parsed.rect;
   }
-  return getElementRect(driver, elementUUID);
+  try {
+    return await getElementRect(driver, elementUUID);
+  } catch (err: unknown) {
+    return {
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 export function aiDisabledResult(): ContentResult {
