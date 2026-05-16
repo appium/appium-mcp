@@ -1,3 +1,21 @@
+## [1.74.0](https://github.com/appium/appium-mcp/compare/v1.73.0...v1.74.0) (2026-05-16)
+
+### Features
+
+* **embeddings:** cache vector embeddings and ship warm cache ([#335](https://github.com/appium/appium-mcp/issues/335)) ([52c8fd3](https://github.com/appium/appium-mcp/commit/52c8fd326a7e67f2769a10e00c9c5516bd86e0bf))
+
+## [1.73.0](https://github.com/appium/appium-mcp/compare/v1.72.16...v1.73.0) (2026-05-14)
+
+### Features
+
+* **rag:** upgrade to BGE-small-v1.5 + add retrieval eval harness ([#334](https://github.com/appium/appium-mcp/issues/334)) ([bcfe254](https://github.com/appium/appium-mcp/commit/bcfe2542e2f270d0a2fe314c64e7c54e752933ff))
+
+## [1.72.16](https://github.com/appium/appium-mcp/compare/v1.72.15...v1.72.16) (2026-05-14)
+
+### Bug Fixes
+
+* **ai:** enforce find_element instruction via Zod schema ([#329](https://github.com/appium/appium-mcp/issues/329)) ([a3bfe83](https://github.com/appium/appium-mcp/commit/a3bfe83576c6be9ec1ffa9371ab67b44cc86cc80))
+
 ## [1.72.15](https://github.com/appium/appium-mcp/compare/v1.72.14...v1.72.15) (2026-05-14)
 
 ### Bug Fixes

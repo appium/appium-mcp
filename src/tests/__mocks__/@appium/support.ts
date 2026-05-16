@@ -1,6 +1,8 @@
 // Mock @appium/support for Jest tests
 // This avoids the ESM/CommonJS mismatch with uuid dependency
 
+import { promises as fsPromises, existsSync } from 'node:fs';
+
 export const logger = {
   getLogger: (_name: string) =>
     // Simple logger implementation for tests
@@ -92,6 +94,28 @@ export const zip = {
   },
 };
 
+/**
+ * Minimal `fs` mock that delegates to node:fs/promises so test code touching
+ * the real filesystem continues to work.
+ */
+export const fs = {
+  exists: async (p: string) => existsSync(p),
+  readdir: (p: string) => fsPromises.readdir(p),
+  stat: (p: string) => fsPromises.stat(p),
+  readFile: (p: string, encoding?: BufferEncoding) =>
+    fsPromises.readFile(p, encoding),
+  writeFile: (p: string, data: string | Buffer) =>
+    fsPromises.writeFile(p, data),
+  unlink: (p: string) => fsPromises.unlink(p),
+  rename: (from: string, to: string) => fsPromises.rename(from, to),
+  mkdir: (p: string, opts?: { recursive?: boolean }) =>
+    fsPromises.mkdir(p, opts),
+  mkdirp: (p: string) => fsPromises.mkdir(p, { recursive: true }),
+  mv: async (from: string, to: string) => {
+    await fsPromises.rename(from, to);
+  },
+};
+
 // Export other commonly used utilities from @appium/support if needed
 export default {
   logger,
@@ -99,4 +123,5 @@ export default {
   net,
   plist,
   zip,
+  fs,
 };
