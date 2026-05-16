@@ -1,8 +1,8 @@
 import type { ContentResult } from 'fastmcp';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
+import type { DriverInstance } from '../../session-store.js';
 import {
-  getDriver,
   getPlatformName,
   isRemoteDriverSession,
   isAndroidUiautomator2DriverSession,
@@ -17,19 +17,19 @@ import {
 import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
 import { execute } from '../../command.js';
-import { textResult, errorResult, toolErrorMessage } from '../tool-response.js';
+import {
+  resolveDriver,
+  textResult,
+  errorResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 
 const execAsync = promisify(exec);
 
 export async function listAppsFromDevice(
-  applicationType: 'User' | 'System' = 'User',
-  sessionId?: string
+  driver: DriverInstance,
+  applicationType: 'User' | 'System' = 'User'
 ): Promise<{ packageName: string; appName: string }[]> {
-  const driver = getDriver(sessionId);
-  if (!driver) {
-    throw new Error('No driver found');
-  }
-
   const platform = getPlatformName(driver);
 
   if (isRemoteDriverSession(driver)) {
@@ -86,8 +86,15 @@ export async function list(
   applicationType?: 'User' | 'System',
   sessionId?: string
 ): Promise<ContentResult> {
+  const resolved = resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
+  }
   try {
-    const apps = await listAppsFromDevice(applicationType, sessionId);
+    const apps = await listAppsFromDevice(
+      resolved.driver,
+      applicationType ?? 'User'
+    );
     const textResponse = textResult(
       `Installed apps: ${JSON.stringify(apps, null, 2)}`
     );

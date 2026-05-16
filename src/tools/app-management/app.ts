@@ -1,5 +1,4 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
-import { errorResult, toolErrorMessage } from '../tool-response.js';
 import { z } from 'zod';
 import { resolveAppId, resolveId } from './resolve-app-id.js';
 import { activate } from './activate-app.js';
@@ -12,6 +11,7 @@ import { queryState } from './query-app-state.js';
 import { background, DEFAULT_BACKGROUND_SECONDS } from './background-app.js';
 import { clear } from './clear-app.js';
 import { deepLink } from './deep-link.js';
+import { errorResult, toolErrorMessage } from '../tool-response.js';
 
 const APP_ACTIONS = [
   'activate',
