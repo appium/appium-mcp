@@ -1,17 +1,18 @@
 import type { ContentResult } from 'fastmcp';
 import type { DriverInstance } from '../../../session-store.js';
 import { getPlatformName, PLATFORM } from '../../../session-store.js';
-import {
-  execute,
-  getElementRect,
-  getWindowRect,
-  performActions,
-} from '../../../command.js';
+import { execute, getWindowRect, performActions } from '../../../command.js';
 import {
   errorResult,
   textResult,
   toolErrorMessage,
 } from '../../tool-response.js';
+import { isAIEnabled } from '../../ai/config.js';
+import {
+  aiDisabledResult,
+  isAiElementUUID,
+  resolveTargetRect,
+} from './ai-element.js';
 import type { GestureArgs } from '../schema.js';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -123,6 +124,9 @@ export async function handleScroll(
   args: GestureArgs
 ): Promise<ContentResult> {
   try {
+    if (isAiElementUUID(args.elementUUID) && !isAIEnabled()) {
+      return aiDisabledResult();
+    }
     const platform = getPlatformName(driver);
     // Android scroll follows the scrollbar convention (down = reveal content below),
     // so flip the user's direction before computing the W3C drag coords.
@@ -164,6 +168,9 @@ export async function handleSwipe(
   args: GestureArgs
 ): Promise<ContentResult> {
   try {
+    if (isAiElementUUID(args.elementUUID) && !isAIEnabled()) {
+      return aiDisabledResult();
+    }
     const coordsResult = await resolveCoords(driver, args);
     if ('error' in coordsResult) {
       return errorResult(`swipe: ${coordsResult.error}`);
@@ -252,7 +259,13 @@ async function resolveCoords(
 ): Promise<Coords | { error: string }> {
   if (args.direction) {
     if (args.elementUUID) {
-      const rect = await getElementRect(driver, args.elementUUID);
+      // ai-element UUIDs are coordinate UUIDs, not real element ids; their
+      // rect is synthesised from the bbox in the UUID itself rather than
+      // fetched from the driver.
+      const rect = await resolveTargetRect(driver, args.elementUUID);
+      if ('error' in rect) {
+        return rect;
+      }
       return coordsForDirection(args.direction, {
         x: rect.x,
         y: rect.y,

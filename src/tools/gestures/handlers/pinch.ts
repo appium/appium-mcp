@@ -1,17 +1,18 @@
 import type { ContentResult } from 'fastmcp';
 import type { DriverInstance } from '../../../session-store.js';
 import { getPlatformName, PLATFORM } from '../../../session-store.js';
-import {
-  execute,
-  getElementRect,
-  getWindowRect,
-  performActions,
-} from '../../../command.js';
+import { execute, getWindowRect, performActions } from '../../../command.js';
 import {
   errorResult,
   textResult,
   toolErrorMessage,
 } from '../../tool-response.js';
+import { isAIEnabled } from '../../ai/config.js';
+import {
+  aiDisabledResult,
+  isAiElementUUID,
+  resolveTargetRect,
+} from './ai-element.js';
 import type { GestureArgs } from '../schema.js';
 
 const DEFAULT_VELOCITY = 2.2;
@@ -96,6 +97,14 @@ export async function handlePinchZoom(
   }
   const useCustomCoords =
     !args.elementUUID && args.x !== undefined && args.y !== undefined;
+  // ai-element UUIDs are coordinate UUIDs, not real element ids: drive the
+  // gesture from the bbox and skip the iOS/Android native paths that need
+  // a real `elementId`.
+  const isAiUUID = isAiElementUUID(args.elementUUID);
+  if (isAiUUID && !isAIEnabled()) {
+    return aiDisabledResult();
+  }
+  const useCoordPath = useCustomCoords || isAiUUID;
 
   try {
     const platform = getPlatformName(driver);
@@ -107,7 +116,10 @@ export async function handlePinchZoom(
 
     if (args.elementUUID) {
       windowRect = await getWindowRect(driver);
-      const rect = await getElementRect(driver, args.elementUUID);
+      const rect = await resolveTargetRect(driver, args.elementUUID);
+      if ('error' in rect) {
+        return errorResult(rect.error);
+      }
       ({ cx, cy, spread } = resolveElementPinchTarget(rect, windowRect));
     } else if (useCustomCoords) {
       windowRect = await getWindowRect(driver);
@@ -151,10 +163,11 @@ export async function handlePinchZoom(
           ],
         },
       ]);
-    } else if (useCustomCoords && platform === PLATFORM.android) {
-      // Zoom in at a custom center on Android: use the native pinchOpenGesture
-      // with a region centered at (cx, cy). spread is pre-clamped so the region
-      // fits within the window.
+    } else if (useCoordPath && platform === PLATFORM.android) {
+      // Zoom in at a coordinate-driven center on Android: use the native
+      // pinchOpenGesture with a region centered at (cx, cy). spread is
+      // pre-clamped so the region fits within the window. Also covers
+      // ai-element UUIDs, whose synthetic rect is used to pick the region.
       const percent = Math.min(0.99, 1 - 1 / scale);
       await execute(driver, 'mobile: pinchOpenGesture', {
         left: cx - spread,
@@ -163,8 +176,10 @@ export async function handlePinchZoom(
         height: 2 * spread,
         percent,
       });
-    } else if (useCustomCoords) {
-      // Zoom in at a custom center on iOS using W3C Actions
+    } else if (useCoordPath) {
+      // Zoom in at a coordinate-driven center on iOS using W3C Actions.
+      // Same path is used for ai-element UUIDs because `mobile: pinch`
+      // requires a real elementId we don't have.
       const startSpread = Math.max(1, Math.floor(spread / scale));
       const endSpread = spread;
       const duration = Math.floor((1 / Math.abs(velocity)) * 1000);
@@ -224,11 +239,13 @@ export async function handlePinchZoom(
     }
 
     const direction = scale < 1 ? 'out' : 'in';
-    const target = args.elementUUID
-      ? `element ${args.elementUUID}`
-      : useCustomCoords
-        ? `coordinates (${cx}, ${cy})`
-        : 'screen';
+    const target = isAiUUID
+      ? `AI element coordinates (${cx}, ${cy})`
+      : args.elementUUID
+        ? `element ${args.elementUUID}`
+        : useCustomCoords
+          ? `coordinates (${cx}, ${cy})`
+          : 'screen';
     return textResult(
       `Successfully pinched ${direction} (scale=${scale}) on ${target}.`
     );
