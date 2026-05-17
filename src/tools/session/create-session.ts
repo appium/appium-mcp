@@ -142,7 +142,7 @@ export async function buildIOSCapabilities(
       ? selectedDeviceInfo.platform
       : undefined;
 
-  const additionalCaps =
+  const additionalCaps: Record<string, any> =
     deviceType === 'simulator'
       ? {
           'appium:usePrebuiltWDA': true,
@@ -236,7 +236,7 @@ export async function createSessionAction(args: {
     } = args;
 
     const configCapabilities = await loadCapabilitiesConfig();
-    let finalCapabilities;
+    let finalCapabilities: Capabilities;
     if (platform === 'android') {
       finalCapabilities = buildAndroidCapabilities(
         configCapabilities.android,
@@ -253,7 +253,7 @@ export async function createSessionAction(args: {
       finalCapabilities = {
         ...configCapabilities.general,
         ...customCapabilities,
-      };
+      } as Capabilities;
     }
 
     log.info(
