@@ -1,5 +1,10 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
-import { resolveDriver, textResult } from '../tool-response.js';
+import {
+  errorResult,
+  resolveDriver,
+  textResult,
+  toolErrorMessage,
+} from '../tool-response.js';
 import { GESTURE_ACTIONS, gestureSchema, type GestureArgs } from './schema.js';
 import { handleTap, handleDoubleTap, handleLongPress } from './handlers/tap.js';
 import { handleScroll, handleSwipe } from './handlers/swipe-scroll.js';
@@ -32,8 +37,14 @@ export default function gesture(server: FastMCP): void {
 
       switch (args.action) {
         case 'back':
-          await back(driver);
-          return textResult('Successfully performed back action.');
+          try {
+            await back(driver);
+            return textResult('Successfully performed back action.');
+          } catch (err: unknown) {
+            return errorResult(
+              `Failed to perform back action. ${toolErrorMessage(err)}`
+            );
+          }
         case 'tap':
           return handleTap(driver, args);
         case 'double_tap':
