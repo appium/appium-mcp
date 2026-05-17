@@ -47,17 +47,6 @@ export type ParsedAiElement = {
 const AI_FALLBACK_RECT_WIDTH = 100;
 const AI_FALLBACK_RECT_HEIGHT = 100;
 
-function rectAroundCenter(cx: number, cy: number): Rect {
-  const w = AI_FALLBACK_RECT_WIDTH;
-  const h = AI_FALLBACK_RECT_HEIGHT;
-  return {
-    x: cx - Math.floor(w / 2),
-    y: cy - Math.floor(h / 2),
-    width: w,
-    height: h,
-  };
-}
-
 export function isAiElementUUID(uuid: string | undefined): uuid is string {
   return typeof uuid === 'string' && uuid.startsWith(AI_ELEMENT_PREFIX);
 }
@@ -137,4 +126,15 @@ export async function resolveTargetRect(
 
 export function aiDisabledResult(): ContentResult {
   return errorResult(AI_DISABLED_REJECTION);
+}
+
+function rectAroundCenter(cx: number, cy: number): Rect {
+  const w = AI_FALLBACK_RECT_WIDTH;
+  const h = AI_FALLBACK_RECT_HEIGHT;
+  return {
+    x: cx - Math.floor(w / 2),
+    y: cy - Math.floor(h / 2),
+    width: w,
+    height: h,
+  };
 }
