@@ -566,9 +566,9 @@ export async function setClipboard(
  */
 export async function back(driver: DriverInstance): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    await driver.back();
+    return await driver.back();
   } else if (isXCUITestDriverSession(driver)) {
-    await driver.back();
+    return await driver.back();
   }
   return await (driver as Client).back();
 }
