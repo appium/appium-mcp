@@ -7,6 +7,7 @@ import {
 } from '../../session-store.js';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
 import { listAppsFromDevice } from './list-apps.js';
+import { noActiveDriverSessionMessage } from '../tool-response.js';
 
 interface CacheEntry {
   apps: { packageName: string; appName: string }[];
@@ -81,7 +82,7 @@ export async function resolveAppId(
 
   if (scored.length === 0) {
     throw new Error(
-      `No installed app matched the name "${name}". Use appium_app_lifecycle with action=list" action to see available apps.`
+      `No installed app matched the name "${name}". Use appium_app_lifecycle with action=list to see available apps.`
     );
   }
 
@@ -103,20 +104,23 @@ async function getInstalledApps(
   }
 
   const driver = getDriver(sessionId);
-  const platform = driver ? getPlatformName(driver) : null;
+  if (!driver) {
+    throw new Error(noActiveDriverSessionMessage(sessionId));
+  }
+
+  const platform = getPlatformName(driver);
 
   let apps: { packageName: string; appName: string }[];
-  const isSimulator =
-    driver && isXCUITestDriverSession(driver)
-      ? (driver as XCUITestDriver).isSimulator()
-      : false;
+  const isSimulator = isXCUITestDriverSession(driver)
+    ? (driver as XCUITestDriver).isSimulator()
+    : false;
 
   if (platform === PLATFORM.ios && !isSimulator) {
     // Real iOS device: User and System app lists are separate — fetch both in parallel.
     // Use allSettled so a failure on one type (e.g. System) doesn't discard the other.
     const results = await Promise.allSettled([
-      listAppsFromDevice('User', sessionId),
-      listAppsFromDevice('System', sessionId),
+      listAppsFromDevice(driver, 'User'),
+      listAppsFromDevice(driver, 'System'),
     ]);
     const seen = new Set<string>();
     apps = [];
@@ -132,7 +136,7 @@ async function getInstalledApps(
     }
   } else {
     // Android or iOS Simulator: single call returns all apps
-    apps = await listAppsFromDevice('User', sessionId);
+    apps = await listAppsFromDevice(driver, 'User');
   }
 
   appListCache.set(key, { apps, timestamp: Date.now() });

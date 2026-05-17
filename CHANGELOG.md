@@ -1,3 +1,9 @@
+## [1.74.2](https://github.com/appium/appium-mcp/compare/v1.74.1...v1.74.2) (2026-05-16)
+
+### Bug Fixes
+
+* **app-management:** use resolveDriver and errorResult for lifecycle tools ([#328](https://github.com/appium/appium-mcp/issues/328)) ([b1091d9](https://github.com/appium/appium-mcp/commit/b1091d96020e5437afb147d5c2e52ce4c93b0285))
+
 ## [1.74.1](https://github.com/appium/appium-mcp/compare/v1.74.0...v1.74.1) (2026-05-16)
 
 ### Bug Fixes
