@@ -14,6 +14,7 @@ export const GESTURE_ACTIONS = [
   'swipe',
   'pinch_zoom',
   'scroll_to_element',
+  'back',
 ] as const;
 
 export type GestureAction = (typeof GESTURE_ACTIONS)[number];
@@ -49,7 +50,8 @@ export const gestureSchema = z.object({
         `pinch_zoom: zoom in (scale > 1) or out (scale < 1) on maps, images, or any zoomable view. ` +
         `scroll_to_element: scroll until a specific element is on screen (strategy + selector + direction up|down). ` +
         `Stops when the element is found, page source is unchanged after a scroll (end of scrollable content), or maxScrollAttempts is reached. ` +
-        `Optional scrollDistance (0.05–1) or scrollDistancePreset (small|medium|large).`
+        `Optional scrollDistance (0.05–1) or scrollDistancePreset (small|medium|large). ` +
+        `back: triggers the system back navigation (e.g., Android back button or iOS navigation controller pop).`
     ),
 
   elementUUID: elementUUIDScheme

@@ -1,10 +1,11 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
-import { resolveDriver } from '../tool-response.js';
+import { resolveDriver, textResult } from '../tool-response.js';
 import { GESTURE_ACTIONS, gestureSchema, type GestureArgs } from './schema.js';
 import { handleTap, handleDoubleTap, handleLongPress } from './handlers/tap.js';
 import { handleScroll, handleSwipe } from './handlers/swipe-scroll.js';
 import { handlePinchZoom } from './handlers/pinch.js';
 import { handleScrollToElement } from './handlers/scroll-to-element.js';
+import { back } from '../../command.js';
 
 export default function gesture(server: FastMCP): void {
   server.addTool({
@@ -30,6 +31,9 @@ export default function gesture(server: FastMCP): void {
       const { driver } = resolved;
 
       switch (args.action) {
+        case 'back':
+          await back(driver);
+          return textResult('Successfully performed back action.');
         case 'tap':
           return handleTap(driver, args);
         case 'double_tap':
