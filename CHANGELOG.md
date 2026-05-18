@@ -1,3 +1,9 @@
+## [1.74.3](https://github.com/appium/appium-mcp/compare/v1.74.2...v1.74.3) (2026-05-17)
+
+### Bug Fixes
+
+* **gestures:** handle appium_ai coordinate UUIDs in all gesture handlers ([#321](https://github.com/appium/appium-mcp/issues/321)) ([1f3714d](https://github.com/appium/appium-mcp/commit/1f3714de4856a83ba4a7d9e04f82068cbf90351f))
+
 ## [1.74.2](https://github.com/appium/appium-mcp/compare/v1.74.1...v1.74.2) (2026-05-16)
 
 ### Bug Fixes
