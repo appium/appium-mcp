@@ -1,3 +1,9 @@
+## [1.75.2](https://github.com/appium/appium-mcp/compare/v1.75.1...v1.75.2) (2026-05-19)
+
+### Bug Fixes
+
+* add appId for Android in queryAppState ([#347](https://github.com/appium/appium-mcp/issues/347)) ([8530d13](https://github.com/appium/appium-mcp/commit/8530d1342dfcd80fe9bfc9b4eebf7afa290f015b))
+
 ## [1.75.1](https://github.com/appium/appium-mcp/compare/v1.75.0...v1.75.1) (2026-05-19)
 
 ### Bug Fixes
