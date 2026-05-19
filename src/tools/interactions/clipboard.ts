@@ -64,7 +64,7 @@ export default function clipboard(server: FastMCP): void {
 }
 
 async function handleGet(sessionId?: string): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
+  const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
@@ -81,7 +81,7 @@ async function handleSet(
   sessionId: string | undefined,
   content: string
 ): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
+  const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }

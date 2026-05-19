@@ -71,7 +71,7 @@ export default function driverSettings(server: FastMCP): void {
 }
 
 async function handleGet(sessionId?: string): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
+  const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
@@ -85,7 +85,7 @@ async function handleUpdate(
   sessionId: string | undefined,
   settings: Record<string, unknown>
 ): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
+  const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }

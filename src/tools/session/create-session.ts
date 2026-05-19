@@ -288,11 +288,11 @@ export async function createSessionAction(args: {
         capabilities: finalCapabilities,
       });
       sessionId = client.sessionId;
-      setSession(client, client.sessionId, finalCapabilities, 'owned');
+      setSession(client, client.sessionId, finalCapabilities, 'owned', args.remoteServerUrl ?? null);
     } else {
       if (platform === 'general') {
         throw new Error(
-          'platform="general" requires a remoteServerUrl — local drivers are not supported for general sessions.'
+          'platform="general" requires a remoteServerUrl â€” local drivers are not supported for general sessions.'
         );
       }
       const driver = createDriverForPlatform(platform);

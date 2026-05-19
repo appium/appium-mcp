@@ -1,6 +1,9 @@
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
 import type { Client } from 'webdriver';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import log from './logger.js';
 
 // Type aliases for driver variants used throughout the project.
@@ -26,7 +29,75 @@ interface SessionInfo {
   isDeletingSession: boolean;
   ownership: SessionOwnership;
   metadata: SessionMetadata;
+  remoteServerUrl: string | null;
 }
+
+export interface PersistedSession {
+  sessionId: string;
+  remoteServerUrl: string;
+  capabilities: SessionCapabilities;
+  platform: string | null;
+  automationName: string | null;
+  deviceName: string | null;
+}
+
+const PERSIST_DIR = path.join(os.homedir(), '.appium-mcp');
+const PERSIST_FILE = path.join(PERSIST_DIR, 'attached-sessions.json');
+
+function safeReadPersisted(): PersistedSession[] {
+  try {
+    if (!fs.existsSync(PERSIST_FILE)) return [];
+    const raw = fs.readFileSync(PERSIST_FILE, 'utf8');
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    log.warn(`Failed to read persisted sessions: ${(err as Error).message}`);
+    return [];
+  }
+}
+
+function safeWritePersisted(entries: PersistedSession[]): void {
+  try {
+    fs.mkdirSync(PERSIST_DIR, { recursive: true });
+    fs.writeFileSync(PERSIST_FILE, JSON.stringify(entries, null, 2), 'utf8');
+  } catch (err) {
+    log.warn(`Failed to write persisted sessions: ${(err as Error).message}`);
+  }
+}
+
+function persistAttachedNow(): void {
+  // Merge in-memory remote sessions with what is already on disk so other
+  // running MCP processes (or persisted entries not yet rehydrated in this
+  // process) are not silently dropped.
+  const byId = new Map<string, PersistedSession>();
+  for (const entry of safeReadPersisted()) {
+    byId.set(entry.sessionId, entry);
+  }
+  for (const session of sessions.values()) {
+    if (!session.remoteServerUrl) continue;
+    byId.set(session.sessionId, {
+      sessionId: session.sessionId,
+      remoteServerUrl: session.remoteServerUrl,
+      capabilities: session.metadata.capabilities,
+      platform: session.metadata.platform,
+      automationName: session.metadata.automationName,
+      deviceName: session.metadata.deviceName,
+    });
+  }
+  safeWritePersisted([...byId.values()]);
+}
+
+export function listPersistedSessions(): PersistedSession[] {
+  return safeReadPersisted();
+}
+
+export function removePersistedSession(sessionId: string): void {
+  const remaining = safeReadPersisted().filter(
+    (e) => e.sessionId !== sessionId
+  );
+  safeWritePersisted(remaining);
+}
+
 
 /**
  * In-memory store for active Appium sessions and their associated drivers.
@@ -107,7 +178,8 @@ export function setSession(
   d: DriverInstance,
   id: string | null,
   capabilities: SessionCapabilities = {},
-  ownership: SessionOwnership = 'owned'
+  ownership: SessionOwnership = 'owned',
+  remoteServerUrl: string | null = null
 ) {
   if (!id) {
     activeSessionId = null;
@@ -136,8 +208,13 @@ export function setSession(
     isDeletingSession: false,
     ownership,
     metadata,
+    remoteServerUrl,
   });
   activeSessionId = id;
+
+  if (remoteServerUrl) {
+    persistAttachedNow();
+  }
 }
 
 export function getDriver(sessionId?: string): NullableDriverInstance {
@@ -278,6 +355,7 @@ export function detachSession(sessionId?: string): void {
 
   sessions.delete(id);
   activeSessionId = selectNextActiveSessionId(id);
+  removePersistedSession(id);
   log.info(`Session ${id} detached successfully.`);
 }
 
@@ -313,6 +391,7 @@ export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
     // Clear the session from store
     sessions.delete(id);
     activeSessionId = selectNextActiveSessionId(id);
+    removePersistedSession(id);
 
     log.info(`Session ${id} deleted successfully.`);
     return true;
@@ -384,6 +463,18 @@ export const getPlatformName = (driver: any): string => {
   const session = listSessions().find((s) => s.sessionId === client.sessionId);
   if (session && session.platform) {
     return session.platform;
+  }
+
+  // Fallback: check by sessionId directly on the map (covers attached sessions
+  // where isAndroid/isIOS flags aren't set on the raw webdriver Client).
+  if (client.sessionId) {
+    const info = sessions.get(client.sessionId);
+    const platformName = info?.metadata.platform;
+    if (platformName) {
+      if (/android/i.test(platformName)) return PLATFORM.android;
+      if (/ios/i.test(platformName)) return PLATFORM.ios;
+      return platformName;
+    }
   }
 
   throw new Error('Unknown driver type');

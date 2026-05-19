@@ -1,6 +1,14 @@
 import type { ContentResult } from 'fastmcp';
 import type { DriverInstance } from '../session-store.js';
-import { getDriver } from '../session-store.js';
+import {
+  getDriver,
+  listPersistedSessions,
+  removePersistedSession,
+  setSession,
+} from '../session-store.js';
+import WebDriver, { type Client } from 'webdriver';
+import { URL } from 'node:url';
+import log from '../logger.js';
 
 const W3C_ELEMENT_ID = 'element-6066-11e4-a52e-4f735466cecf';
 
@@ -75,14 +83,91 @@ export function noActiveDriverSessionResult(sessionId?: string): ContentResult {
 
 /**
  * Resolves the driver for a tool call or returns a standardised error result.
+ * On cache miss, transparently re-attaches to any persisted attached session
+ * matching the requested id, so tools survive MCP process recycles.
  * Does not throw.
  */
-export function resolveDriver(sessionId?: string): DriverOrError {
-  const driver = getDriver(sessionId);
+export async function resolveDriver(
+  sessionId?: string
+): Promise<DriverOrError> {
+  let driver = getDriver(sessionId);
+  if (!driver) {
+    const rehydrated = await rehydrateAttachedSession(sessionId);
+    if (rehydrated) {
+      driver = getDriver(sessionId ?? rehydrated.sessionId);
+    }
+  }
   if (!driver) {
     return { ok: false, result: noActiveDriverSessionResult(sessionId) };
   }
   return { ok: true, driver };
+}
+
+async function rehydrateAttachedSession(
+  sessionId?: string
+): Promise<{ sessionId: string } | null> {
+  const persisted = listPersistedSessions();
+  if (persisted.length === 0) return null;
+  const candidates = sessionId
+    ? persisted.filter((p) => p.sessionId === sessionId)
+    : persisted;
+  for (const entry of candidates) {
+    try {
+      const url = new URL(entry.remoteServerUrl);
+      const protocol = url.protocol.replace(':', '');
+      const port = url.port
+        ? parseInt(url.port, 10)
+        : protocol === 'https'
+          ? 443
+          : 80;
+      const client = await WebDriver.attachToSession({
+        sessionId: entry.sessionId,
+        protocol,
+        hostname: url.hostname,
+        port,
+        path: url.pathname,
+        capabilities: entry.capabilities,
+      });
+      // attachToSession does not verify liveness on the remote server. Issue
+      // a cheap call to confirm the session is still valid before adopting it.
+      try {
+        await (client as Client).getTimeouts();
+      } catch (verifyErr) {
+        log.warn(
+          `Persisted session ${entry.sessionId} failed liveness check (${
+            (verifyErr as Error).message
+          }); pruning.`
+        );
+        removePersistedSession(entry.sessionId);
+        continue;
+      }
+      const seedCaps = {
+        ...(entry.capabilities ?? {}),
+        platformName: entry.platform ?? undefined,
+        'appium:automationName': entry.automationName ?? undefined,
+        'appium:deviceName': entry.deviceName ?? undefined,
+      };
+      setSession(
+        client,
+        entry.sessionId,
+        seedCaps,
+        'attached',
+        entry.remoteServerUrl
+      );
+      log.info(
+        `Rehydrated attached session ${entry.sessionId} from persisted store.`
+      );
+      return { sessionId: entry.sessionId };
+    } catch (err) {
+      log.warn(
+        `Persisted session ${entry.sessionId} no longer attachable (${
+          (err as Error).message
+        }); pruning.`
+      );
+      removePersistedSession(entry.sessionId);
+    }
+  }
+  return null;
 }
 
 /**
