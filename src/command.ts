@@ -70,7 +70,7 @@ export async function queryAppState(
   }
   return Number(
     await (driver as Client).executeScript('mobile: queryAppState', [
-      { bundleId: appId },
+      { appId, bundleId: appId },
     ])
   );
 }
