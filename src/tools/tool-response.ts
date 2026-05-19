@@ -39,7 +39,7 @@ export function textResult(text: string): ContentResult {
 }
 
 /**
- * Canonical first line: machine-parseable `elementId:<value>`, then human-readable detail.
+ * Canonical first line: machine-parseable `elementId '<value>'`, then human-readable detail.
  * Strips newlines from elementId so the first line stays one logical field for parsers.
  */
 export function textResultWithPrimaryElementId(
@@ -48,7 +48,7 @@ export function textResultWithPrimaryElementId(
 ): ContentResult {
   const safeId = sanitizePrimaryElementIdLine(elementId);
   const d = detail.replace(/^\s+/, '');
-  return textResult(`elementId:${safeId}\n${d}`);
+  return textResult(`elementId '${safeId}'\n${d}`);
 }
 
 /**
