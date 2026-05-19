@@ -1,3 +1,9 @@
+## [1.75.1](https://github.com/appium/appium-mcp/compare/v1.75.0...v1.75.1) (2026-05-19)
+
+### Bug Fixes
+
+* confusing result message ([#346](https://github.com/appium/appium-mcp/issues/346)) ([201e285](https://github.com/appium/appium-mcp/commit/201e285f7828c0132cd591e5a28815000c9a92ae))
+
 ## [1.75.0](https://github.com/appium/appium-mcp/compare/v1.74.3...v1.75.0) (2026-05-19)
 
 ### Features
