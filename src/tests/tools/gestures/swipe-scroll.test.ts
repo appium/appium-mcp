@@ -17,12 +17,10 @@ jest.unstable_mockModule('../../../tools/ai/config', () => ({
   isAIEnabled: jest.fn(() => false),
 }));
 
-const { parseAiElement } = await import(
-  '../../../tools/gestures/handlers/ai-element.js'
-);
-const { clampDirectionCoordsToWindow, rectVisibleWithinWindow } = await import(
-  '../../../tools/gestures/handlers/swipe-scroll.js'
-);
+const { parseAiElement } =
+  await import('../../../tools/gestures/handlers/ai-element.js');
+const { clampDirectionCoordsToWindow, rectVisibleWithinWindow } =
+  await import('../../../tools/gestures/handlers/swipe-scroll.js');
 
 const PHONE_WINDOW = { x: 0, y: 0, width: 400, height: 800 };
 
@@ -38,9 +36,7 @@ describe('rectVisibleWithinWindow', () => {
     expect(visible.x).toBeGreaterThanOrEqual(0);
     expect(visible.y).toBeGreaterThanOrEqual(0);
     expect(visible.x + visible.width).toBeLessThanOrEqual(PHONE_WINDOW.width);
-    expect(visible.y + visible.height).toBeLessThanOrEqual(
-      PHONE_WINDOW.height
-    );
+    expect(visible.y + visible.height).toBeLessThanOrEqual(PHONE_WINDOW.height);
     expect(visible.width).toBeGreaterThan(0);
     expect(visible.height).toBeGreaterThan(0);
   });
