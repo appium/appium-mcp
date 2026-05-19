@@ -1,3 +1,9 @@
+## [1.75.0](https://github.com/appium/appium-mcp/compare/v1.74.3...v1.75.0) (2026-05-19)
+
+### Features
+
+* add back action ([#337](https://github.com/appium/appium-mcp/issues/337)) ([464f935](https://github.com/appium/appium-mcp/commit/464f935f3c1429b59977588100bbcb5eabbe3ad0))
+
 ## [1.74.3](https://github.com/appium/appium-mcp/compare/v1.74.2...v1.74.3) (2026-05-17)
 
 ### Bug Fixes
