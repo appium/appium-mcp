@@ -44,6 +44,19 @@ export interface PersistedSession {
 const PERSIST_DIR = path.join(os.homedir(), '.appium-mcp');
 const PERSIST_FILE = path.join(PERSIST_DIR, 'attached-sessions.json');
 
+/**
+ * Whether remote-session persistence is enabled.
+ *
+ * Off by default to avoid leaving a file in the user's home directory.
+ * Set `APPIUM_MCP_PERSIST_REMOTE_SESSIONS=true` to opt in. Useful for MCP
+ * hosts that recycle the server process between tool calls (e.g. Claude
+ * desktop's Cowork mode).
+ */
+export function isSessionPersistenceEnabled(): boolean {
+  const raw = process.env.APPIUM_MCP_PERSIST_REMOTE_SESSIONS?.trim().toLowerCase();
+  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+}
+
 function safeReadPersisted(): PersistedSession[] {
   try {
     if (!fs.existsSync(PERSIST_FILE)) return [];
@@ -66,6 +79,7 @@ function safeWritePersisted(entries: PersistedSession[]): void {
 }
 
 function persistAttachedNow(): void {
+  if (!isSessionPersistenceEnabled()) return;
   // Merge in-memory remote sessions with what is already on disk so other
   // running MCP processes (or persisted entries not yet rehydrated in this
   // process) are not silently dropped.
@@ -88,10 +102,12 @@ function persistAttachedNow(): void {
 }
 
 export function listPersistedSessions(): PersistedSession[] {
+  if (!isSessionPersistenceEnabled()) return [];
   return safeReadPersisted();
 }
 
 export function removePersistedSession(sessionId: string): void {
+  if (!isSessionPersistenceEnabled()) return;
   const remaining = safeReadPersisted().filter(
     (e) => e.sessionId !== sessionId
   );
