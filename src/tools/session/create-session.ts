@@ -288,7 +288,13 @@ export async function createSessionAction(args: {
         capabilities: finalCapabilities,
       });
       sessionId = client.sessionId;
-      setSession(client, client.sessionId, finalCapabilities, 'owned', args.remoteServerUrl ?? null);
+      setSession(
+        client,
+        client.sessionId,
+        finalCapabilities,
+        'owned',
+        args.remoteServerUrl ?? null
+      );
     } else {
       if (platform === 'general') {
         throw new Error(

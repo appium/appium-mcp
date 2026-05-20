@@ -2,10 +2,7 @@ import { fs } from '@appium/support';
 import path from 'node:path';
 import log from './logger.js';
 import { resolveAppiumMcpSessionsDir } from './utils/paths.js';
-import type {
-  SessionCapabilities,
-  SessionOwnership,
-} from './session-store.js';
+import type { SessionCapabilities, SessionOwnership } from './session-store.js';
 
 /**
  * On-disk representation of a remote Appium session.

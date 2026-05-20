@@ -33,9 +33,6 @@ interface SessionInfo {
   remoteServerUrl: string | null;
 }
 
-
-
-
 /**
  * In-memory store for active Appium sessions and their associated drivers.
  */
@@ -416,8 +413,12 @@ export const getPlatformName = (driver: any): string => {
     const info = sessions.get(client.sessionId);
     const platformName = info?.metadata.platform;
     if (platformName) {
-      if (/android/i.test(platformName)) {return PLATFORM.android;}
-      if (/ios/i.test(platformName)) {return PLATFORM.ios;}
+      if (/android/i.test(platformName)) {
+        return PLATFORM.android;
+      }
+      if (/ios/i.test(platformName)) {
+        return PLATFORM.ios;
+      }
       return platformName;
     }
   }

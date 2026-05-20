@@ -125,7 +125,9 @@ async function rehydrateAttachedSession(
   sessionId?: string
 ): Promise<{ sessionId: string } | null> {
   const persisted = await readAllPersistedSessions();
-  if (persisted.length === 0) {return null;}
+  if (persisted.length === 0) {
+    return null;
+  }
   const candidates = sessionId
     ? persisted.filter((p) => p.sessionId === sessionId)
     : persisted;

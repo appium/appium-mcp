@@ -120,7 +120,13 @@ export async function attachSessionAction(args: {
       }
     }
 
-    setSession(client, args.sessionId, capabilities, 'attached', args.remoteServerUrl);
+    setSession(
+      client,
+      args.sessionId,
+      capabilities,
+      'attached',
+      args.remoteServerUrl
+    );
 
     return textResult(
       `Attached to existing session ${args.sessionId}. Active sessions: ${listSessions().length}`
