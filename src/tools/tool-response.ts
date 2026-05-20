@@ -103,11 +103,25 @@ export async function resolveDriver(
   return { ok: true, driver };
 }
 
+/**
+ * Returns a standard error result for platform-mismatch cases
+ * (e.g. shake is iOS-only, open-notifications is Android-only).
+ */
+export function platformMismatch(
+  action: string,
+  expected: string,
+  actual: string
+): ContentResult {
+  return errorResult(
+    `action=${action} is ${expected}-only. Current session platform is '${actual}'.`
+  );
+}
+
 async function rehydrateAttachedSession(
   sessionId?: string
 ): Promise<{ sessionId: string } | null> {
   const persisted = listPersistedSessions();
-  if (persisted.length === 0) return null;
+  if (persisted.length === 0) {return null;}
   const candidates = sessionId
     ? persisted.filter((p) => p.sessionId === sessionId)
     : persisted;
@@ -168,20 +182,6 @@ async function rehydrateAttachedSession(
     }
   }
   return null;
-}
-
-/**
- * Returns a standard error result for platform-mismatch cases
- * (e.g. shake is iOS-only, open-notifications is Android-only).
- */
-export function platformMismatch(
-  action: string,
-  expected: string,
-  actual: string
-): ContentResult {
-  return errorResult(
-    `action=${action} is ${expected}-only. Current session platform is '${actual}'.`
-  );
 }
 
 function sanitizePrimaryElementIdLine(elementId: string): string {

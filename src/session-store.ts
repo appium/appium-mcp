@@ -15,6 +15,15 @@ export type NullableDriverInstance = DriverInstance | null;
 export type SessionCapabilities = Record<string, any>;
 export type SessionOwnership = 'owned' | 'attached';
 
+export interface PersistedSession {
+  sessionId: string;
+  remoteServerUrl: string;
+  capabilities: SessionCapabilities;
+  platform: string | null;
+  automationName: string | null;
+  deviceName: string | null;
+}
+
 interface SessionMetadata {
   platform: string | null;
   automationName: string | null;
@@ -30,15 +39,6 @@ interface SessionInfo {
   ownership: SessionOwnership;
   metadata: SessionMetadata;
   remoteServerUrl: string | null;
-}
-
-export interface PersistedSession {
-  sessionId: string;
-  remoteServerUrl: string;
-  capabilities: SessionCapabilities;
-  platform: string | null;
-  automationName: string | null;
-  deviceName: string | null;
 }
 
 const PERSIST_DIR = path.join(os.homedir(), '.appium-mcp');
@@ -57,9 +57,22 @@ export function isSessionPersistenceEnabled(): boolean {
   return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
 }
 
+export function listPersistedSessions(): PersistedSession[] {
+  if (!isSessionPersistenceEnabled()) {return [];}
+  return safeReadPersisted();
+}
+
+export function removePersistedSession(sessionId: string): void {
+  if (!isSessionPersistenceEnabled()) {return;}
+  const remaining = safeReadPersisted().filter(
+    (e) => e.sessionId !== sessionId
+  );
+  safeWritePersisted(remaining);
+}
+
 function safeReadPersisted(): PersistedSession[] {
   try {
-    if (!fs.existsSync(PERSIST_FILE)) return [];
+    if (!fs.existsSync(PERSIST_FILE)) {return [];}
     const raw = fs.readFileSync(PERSIST_FILE, 'utf8');
     const data = JSON.parse(raw);
     return Array.isArray(data) ? data : [];
@@ -79,7 +92,7 @@ function safeWritePersisted(entries: PersistedSession[]): void {
 }
 
 function persistAttachedNow(): void {
-  if (!isSessionPersistenceEnabled()) return;
+  if (!isSessionPersistenceEnabled()) {return;}
   // Merge in-memory remote sessions with what is already on disk so other
   // running MCP processes (or persisted entries not yet rehydrated in this
   // process) are not silently dropped.
@@ -88,7 +101,7 @@ function persistAttachedNow(): void {
     byId.set(entry.sessionId, entry);
   }
   for (const session of sessions.values()) {
-    if (!session.remoteServerUrl) continue;
+    if (!session.remoteServerUrl) {continue;}
     byId.set(session.sessionId, {
       sessionId: session.sessionId,
       remoteServerUrl: session.remoteServerUrl,
@@ -99,19 +112,6 @@ function persistAttachedNow(): void {
     });
   }
   safeWritePersisted([...byId.values()]);
-}
-
-export function listPersistedSessions(): PersistedSession[] {
-  if (!isSessionPersistenceEnabled()) return [];
-  return safeReadPersisted();
-}
-
-export function removePersistedSession(sessionId: string): void {
-  if (!isSessionPersistenceEnabled()) return;
-  const remaining = safeReadPersisted().filter(
-    (e) => e.sessionId !== sessionId
-  );
-  safeWritePersisted(remaining);
 }
 
 
@@ -487,8 +487,8 @@ export const getPlatformName = (driver: any): string => {
     const info = sessions.get(client.sessionId);
     const platformName = info?.metadata.platform;
     if (platformName) {
-      if (/android/i.test(platformName)) return PLATFORM.android;
-      if (/ios/i.test(platformName)) return PLATFORM.ios;
+      if (/android/i.test(platformName)) {return PLATFORM.android;}
+      if (/ios/i.test(platformName)) {return PLATFORM.ios;}
       return platformName;
     }
   }
