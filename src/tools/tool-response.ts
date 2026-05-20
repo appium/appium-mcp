@@ -1,11 +1,15 @@
 import type { ContentResult } from 'fastmcp';
-import type { DriverInstance } from '../session-store.js';
 import {
   getDriver,
-  listPersistedSessions,
-  removePersistedSession,
   setSession,
+  type DriverInstance,
+  type SessionCapabilities,
 } from '../session-store.js';
+import {
+  readAllPersistedSessions,
+  removePersistedSession,
+} from '../persistence.js';
+import { getPortFromUrl } from '../utils/url.js';
 import WebDriver, { type Client } from 'webdriver';
 import { URL } from 'node:url';
 import log from '../logger.js';
@@ -120,7 +124,7 @@ export function platformMismatch(
 async function rehydrateAttachedSession(
   sessionId?: string
 ): Promise<{ sessionId: string } | null> {
-  const persisted = listPersistedSessions();
+  const persisted = await readAllPersistedSessions();
   if (persisted.length === 0) {return null;}
   const candidates = sessionId
     ? persisted.filter((p) => p.sessionId === sessionId)
@@ -129,11 +133,7 @@ async function rehydrateAttachedSession(
     try {
       const url = new URL(entry.remoteServerUrl);
       const protocol = url.protocol.replace(':', '');
-      const port = url.port
-        ? parseInt(url.port, 10)
-        : protocol === 'https'
-          ? 443
-          : 80;
+      const port = getPortFromUrl(url);
       const client = await WebDriver.attachToSession({
         sessionId: entry.sessionId,
         protocol,
@@ -152,20 +152,24 @@ async function rehydrateAttachedSession(
             (verifyErr as Error).message
           }); pruning.`
         );
-        removePersistedSession(entry.sessionId);
+        await removePersistedSession(entry.sessionId);
         continue;
       }
-      const seedCaps = {
-        ...(entry.capabilities ?? {}),
-        platformName: entry.platform ?? undefined,
-        'appium:automationName': entry.automationName ?? undefined,
-        'appium:deviceName': entry.deviceName ?? undefined,
-      };
+      const seedCaps: SessionCapabilities = { ...(entry.capabilities ?? {}) };
+      if (entry.platform) {
+        seedCaps.platformName = entry.platform;
+      }
+      if (entry.automationName) {
+        seedCaps['appium:automationName'] = entry.automationName;
+      }
+      if (entry.deviceName) {
+        seedCaps['appium:deviceName'] = entry.deviceName;
+      }
       setSession(
         client,
         entry.sessionId,
         seedCaps,
-        'attached',
+        entry.ownership,
         entry.remoteServerUrl
       );
       log.info(
@@ -178,7 +182,7 @@ async function rehydrateAttachedSession(
           (err as Error).message
         }); pruning.`
       );
-      removePersistedSession(entry.sessionId);
+      await removePersistedSession(entry.sessionId);
     }
   }
   return null;

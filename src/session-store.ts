@@ -1,10 +1,11 @@
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
 import type { Client } from 'webdriver';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import log from './logger.js';
+import {
+  removePersistedSession,
+  writePersistedSession,
+} from './persistence.js';
 
 // Type aliases for driver variants used throughout the project.
 export type DriverInstance =
@@ -14,15 +15,6 @@ export type DriverInstance =
 export type NullableDriverInstance = DriverInstance | null;
 export type SessionCapabilities = Record<string, any>;
 export type SessionOwnership = 'owned' | 'attached';
-
-export interface PersistedSession {
-  sessionId: string;
-  remoteServerUrl: string;
-  capabilities: SessionCapabilities;
-  platform: string | null;
-  automationName: string | null;
-  deviceName: string | null;
-}
 
 interface SessionMetadata {
   platform: string | null;
@@ -41,78 +33,7 @@ interface SessionInfo {
   remoteServerUrl: string | null;
 }
 
-const PERSIST_DIR = path.join(os.homedir(), '.appium-mcp');
-const PERSIST_FILE = path.join(PERSIST_DIR, 'attached-sessions.json');
 
-/**
- * Whether remote-session persistence is enabled.
- *
- * Off by default to avoid leaving a file in the user's home directory.
- * Set `APPIUM_MCP_PERSIST_REMOTE_SESSIONS=true` to opt in. Useful for MCP
- * hosts that recycle the server process between tool calls (e.g. Claude
- * desktop's Cowork mode).
- */
-export function isSessionPersistenceEnabled(): boolean {
-  const raw = process.env.APPIUM_MCP_PERSIST_REMOTE_SESSIONS?.trim().toLowerCase();
-  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
-}
-
-export function listPersistedSessions(): PersistedSession[] {
-  if (!isSessionPersistenceEnabled()) {return [];}
-  return safeReadPersisted();
-}
-
-export function removePersistedSession(sessionId: string): void {
-  if (!isSessionPersistenceEnabled()) {return;}
-  const remaining = safeReadPersisted().filter(
-    (e) => e.sessionId !== sessionId
-  );
-  safeWritePersisted(remaining);
-}
-
-function safeReadPersisted(): PersistedSession[] {
-  try {
-    if (!fs.existsSync(PERSIST_FILE)) {return [];}
-    const raw = fs.readFileSync(PERSIST_FILE, 'utf8');
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : [];
-  } catch (err) {
-    log.warn(`Failed to read persisted sessions: ${(err as Error).message}`);
-    return [];
-  }
-}
-
-function safeWritePersisted(entries: PersistedSession[]): void {
-  try {
-    fs.mkdirSync(PERSIST_DIR, { recursive: true });
-    fs.writeFileSync(PERSIST_FILE, JSON.stringify(entries, null, 2), 'utf8');
-  } catch (err) {
-    log.warn(`Failed to write persisted sessions: ${(err as Error).message}`);
-  }
-}
-
-function persistAttachedNow(): void {
-  if (!isSessionPersistenceEnabled()) {return;}
-  // Merge in-memory remote sessions with what is already on disk so other
-  // running MCP processes (or persisted entries not yet rehydrated in this
-  // process) are not silently dropped.
-  const byId = new Map<string, PersistedSession>();
-  for (const entry of safeReadPersisted()) {
-    byId.set(entry.sessionId, entry);
-  }
-  for (const session of sessions.values()) {
-    if (!session.remoteServerUrl) {continue;}
-    byId.set(session.sessionId, {
-      sessionId: session.sessionId,
-      remoteServerUrl: session.remoteServerUrl,
-      capabilities: session.metadata.capabilities,
-      platform: session.metadata.platform,
-      automationName: session.metadata.automationName,
-      deviceName: session.metadata.deviceName,
-    });
-  }
-  safeWritePersisted([...byId.values()]);
-}
 
 
 /**
@@ -229,7 +150,15 @@ export function setSession(
   activeSessionId = id;
 
   if (remoteServerUrl) {
-    persistAttachedNow();
+    void writePersistedSession({
+      sessionId: id,
+      remoteServerUrl,
+      capabilities,
+      platform: metadata.platform,
+      automationName: metadata.automationName,
+      deviceName: metadata.deviceName,
+      ownership,
+    });
   }
 }
 
@@ -371,7 +300,7 @@ export function detachSession(sessionId?: string): void {
 
   sessions.delete(id);
   activeSessionId = selectNextActiveSessionId(id);
-  removePersistedSession(id);
+  void removePersistedSession(id);
   log.info(`Session ${id} detached successfully.`);
 }
 
@@ -407,7 +336,7 @@ export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
     // Clear the session from store
     sessions.delete(id);
     activeSessionId = selectNextActiveSessionId(id);
-    removePersistedSession(id);
+    void removePersistedSession(id);
 
     log.info(`Session ${id} deleted successfully.`);
     return true;

@@ -1,6 +1,12 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 import type { DriverInstance } from '../../../session-store.js';
 
+jest.unstable_mockModule('../../../persistence', () => ({
+  isSessionPersistenceEnabled: jest.fn(() => false),
+  readAllPersistedSessions: jest.fn(async () => []),
+  removePersistedSession: jest.fn(async () => {}),
+  writePersistedSession: jest.fn(async () => {}),
+}));
 jest.unstable_mockModule('../../../session-store', () => ({
   listPersistedSessions: jest.fn(() => []),
   removePersistedSession: jest.fn(),

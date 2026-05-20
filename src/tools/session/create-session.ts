@@ -292,7 +292,7 @@ export async function createSessionAction(args: {
     } else {
       if (platform === 'general') {
         throw new Error(
-          'platform="general" requires a remoteServerUrl â€” local drivers are not supported for general sessions.'
+          'platform="general" requires a remoteServerUrl — local drivers are not supported for general sessions.'
         );
       }
       const driver = createDriverForPlatform(platform);

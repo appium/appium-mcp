@@ -33,3 +33,12 @@ export function resolveAppiumResourcesPath(...segments: string[]): string {
 export function resolveAppiumMcpCachePath(...segments: string[]): string {
   return join(os.homedir(), '.cache', 'appium-mcp', ...segments);
 }
+
+/**
+ * Returns the directory where remote-session persistence files live.
+ * Each session is persisted to its own `<sessionId>.json` file beneath this
+ * directory so writes never collide across sessions.
+ */
+export function resolveAppiumMcpSessionsDir(): string {
+  return resolveAppiumMcpCachePath('sessions');
+}
