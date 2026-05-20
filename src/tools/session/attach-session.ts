@@ -6,7 +6,9 @@ import {
   listSessions,
   setSession,
   type SessionCapabilities,
+  type SessionOwnership,
 } from '../../session-store.js';
+import { readAllPersistedSessions } from '../../persistence.js';
 import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 import { getPortFromUrl, validateRemoteServerUrl } from './create-session.js';
 
@@ -120,11 +122,25 @@ export async function attachSessionAction(args: {
       }
     }
 
+    // If a persisted entry exists for this sessionId from a previous process
+    // that owned it, preserve 'owned' so the disconnect handler still cleans
+    // it up after this process exits. Users explicitly calling action=attach
+    // get the default 'attached' semantics otherwise.
+    let desiredOwnership: SessionOwnership = 'attached';
+    try {
+      const persisted = await readAllPersistedSessions();
+      const prior = persisted.find((p) => p.sessionId === args.sessionId);
+      if (prior?.ownership === 'owned') {
+        desiredOwnership = 'owned';
+      }
+    } catch {
+      // ignore — falling back to 'attached' is safe
+    }
     setSession(
       client,
       args.sessionId,
       capabilities,
-      'attached',
+      desiredOwnership,
       args.remoteServerUrl
     );
 
