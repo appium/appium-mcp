@@ -9,9 +9,8 @@ import {
   readAllPersistedSessions,
   removePersistedSession,
 } from '../persistence.js';
-import { getPortFromUrl } from '../utils/url.js';
-import WebDriver, { type Client } from 'webdriver';
-import { URL } from 'node:url';
+import { attachToRemoteSession } from '../utils/url.js';
+import { type Client } from 'webdriver';
 import log from '../logger.js';
 
 const W3C_ELEMENT_ID = 'element-6066-11e4-a52e-4f735466cecf';
@@ -133,15 +132,9 @@ async function rehydrateAttachedSession(
     : persisted;
   for (const entry of candidates) {
     try {
-      const url = new URL(entry.remoteServerUrl);
-      const protocol = url.protocol.replace(':', '');
-      const port = getPortFromUrl(url);
-      const client = await WebDriver.attachToSession({
+      const client = await attachToRemoteSession({
+        remoteServerUrl: entry.remoteServerUrl,
         sessionId: entry.sessionId,
-        protocol,
-        hostname: url.hostname,
-        port,
-        path: url.pathname,
         capabilities: entry.capabilities,
       });
       // attachToSession does not verify liveness on the remote server. Issue

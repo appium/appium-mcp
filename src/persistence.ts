@@ -26,15 +26,23 @@ export interface PersistedSession {
 }
 
 /**
- * Whether remote-session persistence is enabled.
+ * Return the directory where persisted sessions live, or `null` when the
+ * feature is disabled.
  *
- * Off by default to avoid leaving files on disk for users who do not need
- * the feature. Set `APPIUM_MCP_PERSIST_REMOTE_SESSIONS=true` to opt in.
+ * Configured by the `APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH` environment
+ * variable: set the variable to a path to opt in. When unset, persistence is
+ * dormant and no files are read or written.
+ */
+export function getPersistenceDir(): string | null {
+  return resolveAppiumMcpSessionsDir();
+}
+
+/**
+ * Convenience boolean for callers that only need to know whether the feature
+ * is enabled; the actual path lookup is done by `getPersistenceDir`.
  */
 export function isSessionPersistenceEnabled(): boolean {
-  const raw =
-    process.env.APPIUM_MCP_PERSIST_REMOTE_SESSIONS?.trim().toLowerCase();
-  return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+  return getPersistenceDir() !== null;
 }
 
 /**
@@ -46,10 +54,10 @@ export function isSessionPersistenceEnabled(): boolean {
  * whole feature.
  */
 export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
-  if (!isSessionPersistenceEnabled()) {
+  const dir = getPersistenceDir();
+  if (!dir) {
     return [];
   }
-  const dir = resolveAppiumMcpSessionsDir();
   if (!(await fs.hasAccess(dir))) {
     return [];
   }
@@ -91,11 +99,11 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
 export async function writePersistedSession(
   entry: PersistedSession
 ): Promise<void> {
-  if (!isSessionPersistenceEnabled()) {
+  const dir = getPersistenceDir();
+  if (!dir) {
     return;
   }
-  const dir = resolveAppiumMcpSessionsDir();
-  const target = sessionFilePath(entry.sessionId);
+  const target = sessionFilePath(entry.sessionId, dir);
   const tmp = `${target}.${process.pid}.tmp`;
   try {
     await fs.mkdir(dir, { recursive: true });
@@ -120,11 +128,12 @@ export async function writePersistedSession(
  * No-op when the feature is disabled or the file does not exist.
  */
 export async function removePersistedSession(sessionId: string): Promise<void> {
-  if (!isSessionPersistenceEnabled()) {
+  const dir = getPersistenceDir();
+  if (!dir) {
     return;
   }
   try {
-    await fs.unlink(sessionFilePath(sessionId));
+    await fs.unlink(sessionFilePath(sessionId, dir));
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       return;
@@ -137,6 +146,6 @@ export async function removePersistedSession(sessionId: string): Promise<void> {
   }
 }
 
-function sessionFilePath(sessionId: string): string {
-  return path.join(resolveAppiumMcpSessionsDir(), `${sessionId}.json`);
+function sessionFilePath(sessionId: string, dir: string): string {
+  return path.join(dir, `${sessionId}.json`);
 }

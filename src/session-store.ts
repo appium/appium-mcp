@@ -30,7 +30,7 @@ interface SessionInfo {
   isDeletingSession: boolean;
   ownership: SessionOwnership;
   metadata: SessionMetadata;
-  remoteServerUrl: string | null;
+  remoteServerUrl?: string;
 }
 
 /**
@@ -113,7 +113,7 @@ export function setSession(
   id: string | null,
   capabilities: SessionCapabilities = {},
   ownership: SessionOwnership = 'owned',
-  remoteServerUrl: string | null = null
+  remoteServerUrl?: string
 ) {
   if (!id) {
     activeSessionId = null;
