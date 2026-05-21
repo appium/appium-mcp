@@ -7,7 +7,7 @@
  *   npx ts-node examples/plugin-example.ts
  */
 
-import { createAppiumMcpServer } from '../src/create-server.js';
+import { createAppiumMcpServer } from '../dist/create-server.js';
 import type {
   AppiumMcpPlugin,
   PluginContext,

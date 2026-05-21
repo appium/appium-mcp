@@ -1,10 +1,9 @@
 /**
  * Plugin system for Appium MCP.
  *
- * This module exposes a stable plugin API for registering custom tools,
- * prompts, resources, and resource templates while preserving the existing
- * `tool(name, description, schema, handler)` style that plugin authors have
- * been using.
+ * This module defines the `AppiumMcpPlugin` interface and related types, as well
+ * as the `PluginManager` class which handles plugin registration, lifecycle, and
+ * tool call interception.
  */
 
 import type { ContentResult, FastMCP } from 'fastmcp';
@@ -199,6 +198,9 @@ export class PluginManager {
         continue;
       }
       this.pluginMap.set(plugin.name, plugin);
+      log.info(
+        `[PluginManager] Registered plugin "${plugin.name}" v${plugin.version}`
+      );
     }
     this.installAddToolInterceptor();
   }
