@@ -77,7 +77,6 @@ type DisconnectSessionPolicy = 'delete_all' | 'skip';
 export function createAppiumMcpServer(
   options: CreateAppiumMcpServerOptions = {}
 ): FastMCP {
-  console.log(`Starting MCP Appium server (version ${SERVER_VERSION})...`);
   const {
     plugins = [],
     serverName = 'MCP Appium',
