@@ -28,10 +28,13 @@ const config = {
 Object.defineProperty(config, 'process', {
   enumerable: false,
   value(sourceText, sourcePath) {
+    const isSupportMock = typeof sourcePath === 'string' && sourcePath.includes('__mocks__/@appium/support.ts');
+    const moduleKind = isSupportMock ? ts.ModuleKind.CommonJS : ts.ModuleKind.ESNext;
+
     const { outputText } = ts.transpileModule(sourceText, {
       fileName: sourcePath,
       compilerOptions: {
-        module: ts.ModuleKind.ESNext,
+        module: moduleKind,
         moduleResolution: ts.ModuleResolutionKind.NodeNext,
         target: ts.ScriptTarget.ES2022,
         inlineSourceMap: true,
