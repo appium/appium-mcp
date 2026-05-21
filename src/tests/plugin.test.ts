@@ -1,11 +1,10 @@
 import { describe, test, expect } from '@jest/globals';
-import { PluginManager, ToolRegistry } from '../plugin.js';
 import type {
   AppiumMcpPlugin,
-  McpRegistry,
   ToolCallContext,
   ToolCallResult,
 } from '../plugin.js';
+import { PluginManager, McpRegistry } from '../plugin.js';
 
 // ---------------------------------------------------------------------------
 // Minimal FastMCP mock
@@ -30,12 +29,12 @@ function makeMockServer() {
 }
 
 // ---------------------------------------------------------------------------
-// ToolRegistry
+// McpRegistry
 // ---------------------------------------------------------------------------
-describe('ToolRegistry', () => {
+describe('McpRegistry', () => {
   test('delegates tool rgit egistration to server.addTool', () => {
     const mockServer = makeMockServer();
-    const registry = new ToolRegistry(mockServer);
+    const registry = new McpRegistry(mockServer);
 
     registry.addTool('my_tool', 'A test tool', {} as any, async () => ({
       content: [{ type: 'text', text: 'ok' }],

@@ -170,8 +170,6 @@ export class McpRegistry {
   }
 }
 
-export const ToolRegistry = McpRegistry;
-
 export class AppiumMcpCore {
   getDriver(sessionId?: string): DriverInstance | null {
     return getDriver(sessionId);
