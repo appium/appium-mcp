@@ -13,8 +13,8 @@ import type {
   PluginContext,
   ToolCallContext,
   ToolCallResult,
-  ToolRegistry,
   AppiumMcpCore,
+  McpRegistry,
 } from '../src/plugin.js';
 import { z } from 'zod';
 
@@ -25,8 +25,8 @@ class CheckoutPlugin implements AppiumMcpPlugin {
   readonly name = 'checkout-plugin';
   readonly version = '1.0.0';
 
-  registerTools(registry: ToolRegistry, _core: AppiumMcpCore): void {
-    registry.tool(
+  registerTools(registry: McpRegistry, _core: AppiumMcpCore): void {
+    registry.addTool(
       'assert_checkout_summary',
       'Assert that the checkout summary screen shows the expected order ID.',
       z.object({ orderId: z.string().describe('The order ID to look for on screen') }),

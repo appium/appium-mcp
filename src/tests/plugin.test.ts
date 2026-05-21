@@ -2,6 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import { PluginManager, ToolRegistry } from '../plugin.js';
 import type {
   AppiumMcpPlugin,
+  McpRegistry,
   ToolCallContext,
   ToolCallResult,
 } from '../plugin.js';
@@ -36,7 +37,7 @@ describe('ToolRegistry', () => {
     const mockServer = makeMockServer();
     const registry = new ToolRegistry(mockServer);
 
-    registry.tool('my_tool', 'A test tool', {} as any, async () => ({
+    registry.addTool('my_tool', 'A test tool', {} as any, async () => ({
       content: [{ type: 'text', text: 'ok' }],
     }));
 
@@ -221,11 +222,16 @@ describe('PluginManager.registerPluginTools', () => {
     const plugin: AppiumMcpPlugin = {
       name: 'tool-registrar',
       version: '1.0.0',
-      registerTools(registry: ToolRegistry) {
+      registerTools(registry: McpRegistry) {
         called = true;
-        registry.tool('custom_tool', 'A custom tool', {} as any, async () => ({
-          content: [{ type: 'text', text: 'custom' }],
-        }));
+        registry.addTool(
+          'custom_tool',
+          'A custom tool',
+          {} as any,
+          async () => ({
+            content: [{ type: 'text', text: 'custom' }],
+          })
+        );
       },
     };
 
