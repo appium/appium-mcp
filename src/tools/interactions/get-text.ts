@@ -8,6 +8,7 @@ import {
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
+import { aiElementWebDriverRejectionIfNeeded } from '../gestures/handlers/ai-element.js';
 
 export default function getText(server: FastMCP): void {
   const getTextSchema = z.object({
@@ -35,6 +36,11 @@ export default function getText(server: FastMCP): void {
         return resolved.result;
       }
       const { driver } = resolved;
+
+      const aiRejection = aiElementWebDriverRejectionIfNeeded(args.elementUUID);
+      if (aiRejection) {
+        return aiRejection;
+      }
 
       try {
         const text = await getElementText(driver, args.elementUUID);
