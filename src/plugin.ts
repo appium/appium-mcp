@@ -90,6 +90,10 @@ export class McpRegistry {
 
   /**
    * Register one MCP tool. Tool calls are wrapped by plugin call hooks.
+   *
+   * Delegates to FastMCP `addTool`.
+   *
+   * @see https://github.com/punkpeye/fastmcp#tools
    */
   addTool<Params extends ToolParameters>(
     name: string,
@@ -102,6 +106,10 @@ export class McpRegistry {
 
   /**
    * Register multiple MCP tools.
+   *
+   * Delegates to FastMCP `addTool` for each definition.
+   *
+   * @see https://github.com/punkpeye/fastmcp#tools
    */
   addTools(
     defs: Array<{
@@ -118,6 +126,10 @@ export class McpRegistry {
 
   /**
    * Register one MCP prompt.
+   *
+   * Delegates to FastMCP `addPrompt`.
+   *
+   * @see https://github.com/punkpeye/fastmcp#prompts
    */
   addPrompt(prompt: AddPromptParam): void {
     this.server.addPrompt(prompt);
@@ -125,6 +137,10 @@ export class McpRegistry {
 
   /**
    * Register multiple MCP prompts.
+   *
+   * Delegates to FastMCP `addPrompt` for each definition.
+   *
+   * @see https://github.com/punkpeye/fastmcp#prompts
    */
   addPrompts(prompts: AddPromptParam[]): void {
     for (const prompt of prompts) {
@@ -134,6 +150,10 @@ export class McpRegistry {
 
   /**
    * Register one MCP resource.
+   *
+   * Delegates to FastMCP `addResource`.
+   *
+   * @see https://github.com/punkpeye/fastmcp#resources
    */
   addResource(resource: AddResourceParam): void {
     this.server.addResource(resource);
@@ -141,6 +161,10 @@ export class McpRegistry {
 
   /**
    * Register multiple MCP resources.
+   *
+   * Delegates to FastMCP `addResource` for each definition.
+   *
+   * @see https://github.com/punkpeye/fastmcp#resources
    */
   addResources(resources: AddResourceParam[]): void {
     for (const resource of resources) {
@@ -150,6 +174,10 @@ export class McpRegistry {
 
   /**
    * Register one MCP resource template.
+   *
+   * Delegates to FastMCP `addResourceTemplate`.
+   *
+   * @see https://github.com/punkpeye/fastmcp#resource-templates
    */
   addResourceTemplate(resourceTemplate: AddResourceTemplateParam): void {
     this.server.addResourceTemplate(resourceTemplate);
@@ -157,6 +185,10 @@ export class McpRegistry {
 
   /**
    * Register multiple MCP resource templates.
+   *
+   * Delegates to FastMCP `addResourceTemplate` for each definition.
+   *
+   * @see https://github.com/punkpeye/fastmcp#resource-templates
    */
   addResourceTemplates(resourceTemplates: AddResourceTemplateParam[]): void {
     for (const resourceTemplate of resourceTemplates) {
