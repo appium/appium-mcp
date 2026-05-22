@@ -183,6 +183,7 @@ export class PluginManager {
   private readonly pluginMap = new Map<string, AppiumMcpPlugin>();
   private readonly server: FastMCP;
   private readonly core: AppiumMcpCore;
+  private addToolInterceptorInstalled = false;
 
   constructor(server: FastMCP) {
     this.server = server;
@@ -235,6 +236,11 @@ export class PluginManager {
   }
 
   private installAddToolInterceptor(): void {
+    if (this.addToolInterceptorInstalled) {
+      return;
+    }
+    this.addToolInterceptorInstalled = true;
+
     const originalAddTool = this.server.addTool.bind(this.server);
 
     this.server.addTool = (toolDef: AddToolParam): void => {

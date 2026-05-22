@@ -1,10 +1,29 @@
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect, jest } from '@jest/globals';
 import type {
   AppiumMcpPlugin,
+  McpRegistry as McpRegistryType,
   ToolCallContext,
   ToolCallResult,
 } from '../plugin.js';
-import { PluginManager, McpRegistry } from '../plugin.js';
+
+await jest.unstable_mockModule('appium-uiautomator2-driver', () => ({
+  AndroidUiautomator2Driver: class MockAndroidUiautomator2Driver {},
+}));
+
+await jest.unstable_mockModule('appium-xcuitest-driver', () => ({
+  XCUITestDriver: class MockXCUITestDriver {},
+}));
+
+await jest.unstable_mockModule('../logger', () => ({
+  default: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+const { PluginManager, McpRegistry } = await import('../plugin.js');
 
 // ---------------------------------------------------------------------------
 // Minimal FastMCP mock
@@ -32,7 +51,7 @@ function makeMockServer() {
 // McpRegistry
 // ---------------------------------------------------------------------------
 describe('McpRegistry', () => {
-  test('delegates tool rgit egistration to server.addTool', () => {
+  test('delegates tool registration to server.addTool', () => {
     const mockServer = makeMockServer();
     const registry = new McpRegistry(mockServer);
 
@@ -67,6 +86,41 @@ describe('PluginManager.register', () => {
     manager.register([plugin, plugin]);
 
     // Should not throw.
+  });
+
+  test('installs the tool interceptor only once', async () => {
+    const server = makeMockServer();
+    const manager = new PluginManager(server);
+    let beforeCallCount = 0;
+
+    const pluginA: AppiumMcpPlugin = {
+      name: 'plugin-a',
+      version: '1.0.0',
+      async beforeToolCall(): Promise<void> {
+        beforeCallCount += 1;
+      },
+    };
+    const pluginB: AppiumMcpPlugin = {
+      name: 'plugin-b',
+      version: '1.0.0',
+    };
+
+    manager.register([pluginA]);
+    manager.register([pluginB]);
+
+    server.addTool({
+      name: 'target_tool',
+      description: 'test',
+      parameters: {},
+      execute: async () => ({
+        content: [{ type: 'text', text: 'original' }],
+      }),
+    });
+
+    const wrappedTool = server._tools[0];
+    await wrappedTool.execute({}, {});
+
+    expect(beforeCallCount).toBe(1);
   });
 });
 
@@ -156,6 +210,37 @@ describe('PluginManager afterToolCall hook', () => {
 
     expect(result.content[0].text).toBe('modified: original result');
   });
+
+  test('passes through the result when after-hook returns nothing', async () => {
+    const server = makeMockServer();
+    const manager = new PluginManager(server);
+    let afterHookCalled = false;
+
+    const plugin: AppiumMcpPlugin = {
+      name: 'pass-through',
+      version: '1.0.0',
+      async afterToolCall(): Promise<void> {
+        afterHookCalled = true;
+      },
+    };
+
+    manager.register([plugin]);
+
+    server.addTool({
+      name: 'tool_to_pass_through',
+      description: 'test',
+      parameters: {},
+      execute: async () => ({
+        content: [{ type: 'text', text: 'original result' }],
+      }),
+    });
+
+    const wrappedTool = server._tools[0];
+    const result: any = await wrappedTool.execute({}, {});
+
+    expect(afterHookCalled).toBe(true);
+    expect(result.content[0].text).toBe('original result');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -221,7 +306,7 @@ describe('PluginManager.registerPluginTools', () => {
     const plugin: AppiumMcpPlugin = {
       name: 'tool-registrar',
       version: '1.0.0',
-      registerTools(registry: McpRegistry) {
+      registerTools(registry: McpRegistryType) {
         called = true;
         registry.addTool(
           'custom_tool',

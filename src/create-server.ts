@@ -119,6 +119,7 @@ export function createAppiumMcpServer(
   // 4. Initialize plugins (after all tools are registered so plugins can look
   //    up built-in tools via the PluginContext if needed).
   // -------------------------------------------------------------------------
+  let activeClientCount = 0;
   let pluginInitialized = false;
 
   // -------------------------------------------------------------------------
@@ -126,16 +127,22 @@ export function createAppiumMcpServer(
   // -------------------------------------------------------------------------
   server.on('connect', async (event) => {
     log.info('Client connected:', event.session);
+    activeClientCount += 1;
 
     // Lazy plugin initialization on first connection.
     if (!pluginInitialized && plugins.length > 0) {
-      pluginInitialized = true;
       await manager.initialize();
+      pluginInitialized = true;
     }
   });
 
   server.on('disconnect', async (event) => {
     log.info('Client disconnected:', event.session);
+    activeClientCount = Math.max(0, activeClientCount - 1);
+
+    if (activeClientCount > 0) {
+      return;
+    }
 
     const policy = disconnectSessionPolicyFromEnv();
     const ownedSessions = listSessions().filter(
@@ -147,10 +154,7 @@ export function createAppiumMcpServer(
         `${ownedSessions.length} owned session(s) retained after MCP disconnect ` +
           '(APPIUM_MCP_ON_CLIENT_DISCONNECT=skip).'
       );
-      return;
-    }
-
-    if (ownedSessions.length > 0) {
+    } else if (ownedSessions.length > 0) {
       try {
         log.info(
           `${ownedSessions.length} owned session(s) detected on disconnect, cleaning up...`
@@ -164,8 +168,8 @@ export function createAppiumMcpServer(
       }
     }
 
-    // Destroy plugins on last disconnect.
-    if (plugins.length > 0) {
+    // Destroy plugins when the last MCP client disconnects.
+    if (pluginInitialized && plugins.length > 0) {
       await manager.destroy();
       pluginInitialized = false;
     }
