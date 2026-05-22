@@ -17,25 +17,47 @@ import type { DriverInstance } from './session-store.js';
 import { getDriver, listSessions } from './session-store.js';
 import log from './logger.js';
 
+/**
+ * Context passed to plugin lifecycle methods.
+ *
+ * This is intentionally smaller than the underlying FastMCP server. Plugins
+ * should use `McpRegistry` during `register()` for MCP capabilities and
+ * `AppiumMcpCore` for Appium MCP state.
+ */
 export interface PluginContext {
-  readonly server: FastMCP;
+  readonly core: AppiumMcpCore;
   readonly plugins: ReadonlyMap<string, AppiumMcpPlugin>;
 }
+
+/**
+ * Session helpers available to call hooks.
+ */
 export interface PluginSessionContext {
   getSessionId(): string | null;
   getDriver(sessionId?: string): DriverInstance | null;
   listSessions(): ReturnType<typeof listSessions>;
 }
+
+/**
+ * Context passed to `beforeCall` and `afterCall` for each MCP tool execution.
+ */
 export interface ToolCallContext {
   readonly toolName: string;
   readonly args: Readonly<Record<string, unknown>>;
   readonly session: PluginSessionContext;
 }
+
+/**
+ * Tool result shape plugins may return to short-circuit or modify a tool call.
+ */
 export interface ToolCallResult {
   isError: boolean;
   content: ContentResult['content'];
 }
 
+/**
+ * Extension point for composing app-specific behavior into Appium MCP.
+ */
 export interface AppiumMcpPlugin {
   readonly name: string;
   readonly version: string;
@@ -60,6 +82,9 @@ type AddResourceTemplateParam = Parameters<FastMCP['addResourceTemplate']>[0];
 export class McpRegistry {
   constructor(private readonly server: FastMCP) {}
 
+  /**
+   * Register one MCP tool. Tool calls are wrapped by plugin call hooks.
+   */
   addTool<Params extends ToolParameters>(
     name: string,
     description: string,
@@ -69,6 +94,9 @@ export class McpRegistry {
     this.server.addTool({ name, description, parameters, execute });
   }
 
+  /**
+   * Register multiple MCP tools.
+   */
   addTools(
     defs: Array<{
       name: string;
@@ -82,30 +110,48 @@ export class McpRegistry {
     }
   }
 
+  /**
+   * Register one MCP prompt.
+   */
   addPrompt(prompt: AddPromptParam): void {
     this.server.addPrompt(prompt);
   }
 
+  /**
+   * Register multiple MCP prompts.
+   */
   addPrompts(prompts: AddPromptParam[]): void {
     for (const prompt of prompts) {
       this.addPrompt(prompt);
     }
   }
 
+  /**
+   * Register one MCP resource.
+   */
   addResource(resource: AddResourceParam): void {
     this.server.addResource(resource);
   }
 
+  /**
+   * Register multiple MCP resources.
+   */
   addResources(resources: AddResourceParam[]): void {
     for (const resource of resources) {
       this.addResource(resource);
     }
   }
 
+  /**
+   * Register one MCP resource template.
+   */
   addResourceTemplate(resourceTemplate: AddResourceTemplateParam): void {
     this.server.addResourceTemplate(resourceTemplate);
   }
 
+  /**
+   * Register multiple MCP resource templates.
+   */
   addResourceTemplates(resourceTemplates: AddResourceTemplateParam[]): void {
     for (const resourceTemplate of resourceTemplates) {
       this.addResourceTemplate(resourceTemplate);
@@ -113,11 +159,20 @@ export class McpRegistry {
   }
 }
 
+/**
+ * Safe Appium MCP primitives exposed to plugins.
+ */
 export class AppiumMcpCore {
+  /**
+   * Return the active driver, or a driver for a specific Appium session id.
+   */
   getDriver(sessionId?: string): DriverInstance | null {
     return getDriver(sessionId);
   }
 
+  /**
+   * Return metadata for all Appium sessions tracked by this server.
+   */
   listSessions(): ReturnType<typeof listSessions> {
     return listSessions();
   }
@@ -161,7 +216,7 @@ export class PluginManager {
 
   async initialize(): Promise<void> {
     const ctx: PluginContext = {
-      server: this.server,
+      core: this.core,
       plugins: this.pluginMap as ReadonlyMap<string, AppiumMcpPlugin>,
     };
     for (const plugin of this.pluginMap.values()) {

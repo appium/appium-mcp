@@ -387,7 +387,20 @@ Plugin lifecycle:
 - `afterCall(ctx, result)`: called after a registered MCP tool executes. Return a modified `ToolCallResult` to decorate or replace the response.
 - `destroy()`: called after the last MCP client disconnects.
 
-`AppiumMcpCore` gives plugins access to shared Appium MCP primitives such as `getDriver(sessionId?)` and `listSessions()`. See [examples/plugin-example.ts](examples/plugin-example.ts) for a fuller cookbook with tools, prompts, resources, resource templates, call hooks, and lifecycle setup.
+### Safe plugin surface
+
+The supported plugin API is intentionally small:
+
+| Surface                   | Safe methods                                                                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `McpRegistry`             | `addTool`, `addTools`, `addPrompt`, `addPrompts`, `addResource`, `addResources`, `addResourceTemplate`, `addResourceTemplates` |
+| `AppiumMcpCore`           | `getDriver(sessionId?)`, `listSessions()`                                                                                      |
+| `ToolCallContext.session` | `getSessionId()`, `getDriver(sessionId?)`, `listSessions()`                                                                    |
+| `PluginContext`           | `core`, `plugins`                                                                                                              |
+
+Treat anything outside `appium-mcp/core` as internal. In particular, plugins should not rely on private server internals, internal session-store modules, tool implementation files, or the raw FastMCP server instance. If a plugin needs another stable primitive, open an issue so it can be added to `AppiumMcpCore` or `McpRegistry` deliberately.
+
+See [examples/plugin-example.ts](examples/plugin-example.ts) for a fuller cookbook with tools, prompts, resources, resource templates, call hooks, and lifecycle setup.
 
 ## 🎯 Available Tools
 
