@@ -23,7 +23,10 @@ await jest.unstable_mockModule('../logger', () => ({
   },
 }));
 
-const { PluginManager, McpRegistry } = await import('../plugin.js');
+const { AppiumMcpCore, PluginManager, McpRegistry } =
+  await import('../plugin.js');
+const { setSession, safeDeleteAllSessions } =
+  await import('../session-store.js');
 
 // ---------------------------------------------------------------------------
 // Minimal FastMCP mock
@@ -104,6 +107,30 @@ describe('McpRegistry', () => {
     expect(mockServer._prompts).toHaveLength(1);
     expect(mockServer._resources).toHaveLength(1);
     expect(mockServer._resourceTemplates).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AppiumMcpCore
+// ---------------------------------------------------------------------------
+describe('AppiumMcpCore', () => {
+  test('exposes session identity and ownership state', async () => {
+    const core = new AppiumMcpCore();
+    const driver = { deleteSession: async () => {} } as any;
+
+    await safeDeleteAllSessions();
+    expect(core.getSessionId()).toBeNull();
+    expect(core.hasActiveSession()).toBe(false);
+    expect(core.getSessionOwnership()).toBeNull();
+
+    setSession(driver, 'session-1', { platformName: 'Android' }, 'owned');
+
+    expect(core.getSessionId()).toBe('session-1');
+    expect(core.hasActiveSession()).toBe(true);
+    expect(core.getSessionOwnership()).toBe('owned');
+    expect(core.getSessionOwnership('session-1')).toBe('owned');
+
+    await safeDeleteAllSessions();
   });
 });
 

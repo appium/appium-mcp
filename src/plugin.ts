@@ -13,8 +13,14 @@ import type {
   Tool,
   ToolParameters,
 } from 'fastmcp';
-import type { DriverInstance } from './session-store.js';
-import { getDriver, listSessions } from './session-store.js';
+import {
+  getDriver,
+  getSessionId,
+  getSessionOwnership,
+  hasActiveSession,
+  listSessions,
+} from './session-store.js';
+import type { DriverInstance, SessionOwnership } from './session-store.js';
 import log from './logger.js';
 
 /**
@@ -163,6 +169,32 @@ export class McpRegistry {
  * Safe Appium MCP primitives exposed to plugins.
  */
 export class AppiumMcpCore {
+  /**
+   * Return the currently active Appium session id, if one exists.
+   */
+  getSessionId(): string | null {
+    return getSessionId();
+  }
+
+  /**
+   * Return whether the server currently has an active non-deleting session.
+   */
+  hasActiveSession(): boolean {
+    return hasActiveSession();
+  }
+
+  /**
+   * Return whether a session is owned by MCP Appium ('owned') or
+   * attached externally ('attached').
+   * If `sessionId` is not provided, return ownership of the active session if one
+   * exists, otherwise `null`. Note that attached sessions are not automatically
+   * tracked by MCP Appium and thus will not appear in `listSessions()`, but their
+   * ownership can still be queried.
+   */
+  getSessionOwnership(sessionId?: string): SessionOwnership | null {
+    return getSessionOwnership(sessionId);
+  }
+
   /**
    * Return the active driver, or a driver for a specific Appium session id.
    */

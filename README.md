@@ -394,7 +394,7 @@ The supported plugin API is intentionally small:
 | Surface                   | Safe methods                                                                                                                   |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `McpRegistry`             | `addTool`, `addTools`, `addPrompt`, `addPrompts`, `addResource`, `addResources`, `addResourceTemplate`, `addResourceTemplates` |
-| `AppiumMcpCore`           | `getDriver(sessionId?)`, `listSessions()`                                                                                      |
+| `AppiumMcpCore`           | `getSessionId()`, `hasActiveSession()`, `getSessionOwnership(sessionId?)`, `getDriver(sessionId?)`, `listSessions()`           |
 | `ToolCallContext.session` | `getSessionId()`, `getDriver(sessionId?)`, `listSessions()`                                                                    |
 | `PluginContext`           | `core`, `plugins`                                                                                                              |
 
