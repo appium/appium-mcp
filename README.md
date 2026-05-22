@@ -400,6 +400,8 @@ The supported plugin API is intentionally small:
 
 `McpRegistry` methods delegate to the matching FastMCP registration APIs, so their object shapes follow FastMCP's documented tool, prompt, resource, and resource-template definitions. Appium MCP wraps registered tools with plugin call hooks, but prompts and resources are registered directly with FastMCP.
 
+Each tool name must be unique across all plugins and the core server. If a plugin registers a tool with the same name as an existing tool, it will be ignored and an error message will be logged during registration. Appium MCP tools usually have an `appium_` prefix, so plugin tool names should avoid that pattern to reduce the chance of collisions with future core tools.
+
 Treat anything outside `appium-mcp/core` as internal. In particular, plugins should not rely on private server internals, internal session-store modules, tool implementation files, or the raw FastMCP server instance. If a plugin needs another stable primitive, open an issue so it can be added to `AppiumMcpCore` or `McpRegistry` deliberately.
 
 See [examples/plugin-example.ts](examples/plugin-example.ts) for a fuller cookbook with tools, prompts, resources, resource templates, call hooks, and lifecycle setup.
