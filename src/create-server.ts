@@ -96,7 +96,7 @@ export function createAppiumMcpServer(
 
   // -------------------------------------------------------------------------
   // 1. Install plugin hooks BEFORE registering any tools so that every built-in
-  //    and plugin tool is wrapped with beforeToolCall / afterToolCall.
+  //    and plugin tool is wrapped with beforeCall / afterCall.
   // -------------------------------------------------------------------------
   const manager = new PluginManager(server);
   if (plugins.length > 0) {
@@ -107,7 +107,7 @@ export function createAppiumMcpServer(
   // 2. Register plugin tools (before built-ins so plugins appear first in the
   //    tool list, but either order is fine – adjust if needed).
   // -------------------------------------------------------------------------
-  manager.registerPluginTools();
+  manager.registerPluginCapabilities();
 
   // -------------------------------------------------------------------------
   // 3. Register built-in Appium MCP resources and tools.

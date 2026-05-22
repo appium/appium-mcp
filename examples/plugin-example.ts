@@ -25,7 +25,7 @@ class CheckoutPlugin implements AppiumMcpPlugin {
   readonly name = 'checkout-plugin';
   readonly version = '1.0.0';
 
-  registerTools(registry: McpRegistry, _core: AppiumMcpCore): void {
+  register(registry: McpRegistry, _core: AppiumMcpCore): void {
     registry.addTool(
       'assert_checkout_summary',
       'Assert that the checkout summary screen shows the expected order ID.',
@@ -55,7 +55,7 @@ class LoginGuardPlugin implements AppiumMcpPlugin {
   readonly name = 'login-guard';
   readonly version = '1.0.0';
 
-  async beforeToolCall(ctx: ToolCallContext): Promise<ToolCallResult | void> {
+  async beforeCall(ctx: ToolCallContext): Promise<ToolCallResult | void> {
     if (
       ctx.toolName === 'appium_gesture' &&
       (ctx.args as { action?: string }).action === 'tap'
@@ -65,7 +65,7 @@ class LoginGuardPlugin implements AppiumMcpPlugin {
     }
   }
 
-  async afterToolCall(
+  async afterCall(
     ctx: ToolCallContext,
     result: ToolCallResult
   ): Promise<ToolCallResult | void> {

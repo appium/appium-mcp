@@ -96,7 +96,7 @@ describe('PluginManager.register', () => {
     const pluginA: AppiumMcpPlugin = {
       name: 'plugin-a',
       version: '1.0.0',
-      async beforeToolCall(): Promise<void> {
+      async beforeCall(): Promise<void> {
         beforeCallCount += 1;
       },
     };
@@ -125,9 +125,9 @@ describe('PluginManager.register', () => {
 });
 
 // ---------------------------------------------------------------------------
-// PluginManager – beforeToolCall short-circuit
+// PluginManager – beforeCall short-circuit
 // ---------------------------------------------------------------------------
-describe('PluginManager beforeToolCall hook', () => {
+describe('PluginManager beforeCall hook', () => {
   test('allows before-hook to short-circuit tool execution', async () => {
     const server = makeMockServer();
     const manager = new PluginManager(server);
@@ -137,7 +137,7 @@ describe('PluginManager beforeToolCall hook', () => {
     const plugin: AppiumMcpPlugin = {
       name: 'short-circuit-plugin',
       version: '1.0.0',
-      async beforeToolCall(_ctx: ToolCallContext): Promise<ToolCallResult> {
+      async beforeCall(_ctx: ToolCallContext): Promise<ToolCallResult> {
         return {
           isError: false,
           content: [{ type: 'text', text: 'intercepted' }],
@@ -168,9 +168,9 @@ describe('PluginManager beforeToolCall hook', () => {
 });
 
 // ---------------------------------------------------------------------------
-// PluginManager – afterToolCall result modification
+// PluginManager – afterCall result modification
 // ---------------------------------------------------------------------------
-describe('PluginManager afterToolCall hook', () => {
+describe('PluginManager afterCall hook', () => {
   test('allows after-hook to modify the result', async () => {
     const server = makeMockServer();
     const manager = new PluginManager(server);
@@ -178,7 +178,7 @@ describe('PluginManager afterToolCall hook', () => {
     const plugin: AppiumMcpPlugin = {
       name: 'result-modifier',
       version: '1.0.0',
-      async afterToolCall(
+      async afterCall(
         _ctx: ToolCallContext,
         result: ToolCallResult
       ): Promise<ToolCallResult> {
@@ -219,7 +219,7 @@ describe('PluginManager afterToolCall hook', () => {
     const plugin: AppiumMcpPlugin = {
       name: 'pass-through',
       version: '1.0.0',
-      async afterToolCall(): Promise<void> {
+      async afterCall(): Promise<void> {
         afterHookCalled = true;
       },
     };
@@ -295,10 +295,10 @@ describe('PluginManager lifecycle', () => {
 });
 
 // ---------------------------------------------------------------------------
-// PluginManager – registerTools delegation
+// PluginManager – register delegation
 // ---------------------------------------------------------------------------
-describe('PluginManager.registerPluginTools', () => {
-  test('calls registerTools on plugins that implement it', () => {
+describe('PluginManager.registerPluginCapabilities', () => {
+  test('calls register on plugins that implement it', () => {
     const server = makeMockServer();
     const manager = new PluginManager(server);
 
@@ -306,7 +306,7 @@ describe('PluginManager.registerPluginTools', () => {
     const plugin: AppiumMcpPlugin = {
       name: 'tool-registrar',
       version: '1.0.0',
-      registerTools(registry: McpRegistryType) {
+      register(registry: McpRegistryType) {
         called = true;
         registry.addTool(
           'custom_tool',
@@ -320,7 +320,7 @@ describe('PluginManager.registerPluginTools', () => {
     };
 
     manager.register([plugin]);
-    manager.registerPluginTools();
+    manager.registerPluginCapabilities();
 
     expect(called).toBe(true);
     // The interceptor wraps addTool, so our custom_tool is in server._tools

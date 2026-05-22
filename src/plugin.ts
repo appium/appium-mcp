@@ -34,9 +34,9 @@ export interface AppiumMcpPlugin {
   readonly name: string;
   readonly version: string;
   initialize?(ctx: PluginContext): Promise<void>;
-  registerTools?(registry: McpRegistry, core: AppiumMcpCore): void;
-  beforeToolCall?(ctx: ToolCallContext): Promise<ToolCallResult | void>;
-  afterToolCall?(
+  register?(registry: McpRegistry, core: AppiumMcpCore): void;
+  beforeCall?(ctx: ToolCallContext): Promise<ToolCallResult | void>;
+  afterCall?(
     ctx: ToolCallContext,
     result: ToolCallResult
   ): Promise<ToolCallResult | void>;
@@ -206,11 +206,11 @@ export class PluginManager {
     this.installAddToolInterceptor();
   }
 
-  registerPluginTools(): void {
+  registerPluginCapabilities(): void {
     const registry = new McpRegistry(this.server);
     for (const plugin of this.pluginMap.values()) {
-      if (typeof plugin.registerTools === 'function') {
-        plugin.registerTools(registry, this.core);
+      if (typeof plugin.register === 'function') {
+        plugin.register(registry, this.core);
       }
     }
   }
@@ -259,10 +259,10 @@ export class PluginManager {
         };
 
         for (const plugin of this.pluginMap.values()) {
-          if (typeof plugin.beforeToolCall !== 'function') {
+          if (typeof plugin.beforeCall !== 'function') {
             continue;
           }
-          const override = await plugin.beforeToolCall(toolCtx);
+          const override = await plugin.beforeCall(toolCtx);
           if (override != null) {
             return {
               content: override.content,
@@ -281,10 +281,10 @@ export class PluginManager {
         };
 
         for (const plugin of this.pluginMap.values()) {
-          if (typeof plugin.afterToolCall !== 'function') {
+          if (typeof plugin.afterCall !== 'function') {
             continue;
           }
-          const modified = await plugin.afterToolCall(toolCtx, hookResult);
+          const modified = await plugin.afterCall(toolCtx, hookResult);
           if (modified != null) {
             hookResult = modified;
           }
