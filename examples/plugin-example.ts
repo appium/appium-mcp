@@ -8,7 +8,7 @@
  *   npx ts-node examples/plugin-example.ts
  */
 
-import { createAppiumMcpServer } from '../src/core.js';
+import { createAppiumMcpServer } from '../dist/core.js';
 import type {
   AppiumMcpCore,
   AppiumMcpPlugin,
@@ -16,7 +16,7 @@ import type {
   PluginContext,
   ToolCallContext,
   ToolCallResult,
-} from '../src/core.js';
+} from '../dist/core.js';
 import { z } from 'zod';
 
 const text = (value: string) => ({ type: 'text' as const, text: value });
