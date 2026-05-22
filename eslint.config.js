@@ -3,7 +3,14 @@ import appiumConfig from '@appium/eslint-config-appium-ts';
 export default [
   ...appiumConfig,
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'examples/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ['examples/*.ts'],
+        },
+      },
+    },
     rules: {
       'no-console': 'off',
       'import/no-named-as-default': 'off',

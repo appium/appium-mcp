@@ -30,7 +30,7 @@ class CheckoutPlugin implements AppiumMcpPlugin {
       'assert_checkout_summary',
       'Assert that the checkout summary screen shows the expected order ID.',
       z.object({ orderId: z.string().describe('The order ID to look for on screen') }),
-      async ({ orderId }, ctx) => {
+      async ({ orderId }, _ctx) => {
         // In a real plugin you would call the Appium driver via core.getDriver()
         // and inspect the page source.  This is a stub.
         const onScreen = false; // replace with real assertion
