@@ -6,7 +6,13 @@
  * tool call interception.
  */
 
-import type { ContentResult, FastMCP } from 'fastmcp';
+import type {
+  ContentResult,
+  FastMCP,
+  FastMCPSessionAuth,
+  Tool,
+  ToolParameters,
+} from 'fastmcp';
 import type { DriverInstance } from './session-store.js';
 import { getDriver, listSessions } from './session-store.js';
 import log from './logger.js';
@@ -54,11 +60,11 @@ type AddResourceTemplateParam = Parameters<FastMCP['addResourceTemplate']>[0];
 export class McpRegistry {
   constructor(private readonly server: FastMCP) {}
 
-  addTool(
+  addTool<Params extends ToolParameters>(
     name: string,
     description: string,
-    parameters: AddToolParam['parameters'],
-    execute: AddToolParam['execute']
+    parameters: Params,
+    execute: Tool<FastMCPSessionAuth, Params>['execute']
   ): void {
     this.server.addTool({ name, description, parameters, execute });
   }
@@ -67,7 +73,7 @@ export class McpRegistry {
     defs: Array<{
       name: string;
       description: string;
-      parameters: AddToolParam['parameters'];
+      parameters: ToolParameters;
       execute: AddToolParam['execute'];
     }>
   ): void {

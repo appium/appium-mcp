@@ -20,6 +20,9 @@ import type {
 import { z } from 'zod';
 
 const text = (value: string) => ({ type: 'text' as const, text: value });
+type PageSourceDriver = {
+  getPageSource(): Promise<string>;
+};
 
 // ---------------------------------------------------------------------------
 // Example 1: Register custom tools and use AppiumMcpCore
@@ -36,11 +39,15 @@ class CheckoutPlugin implements AppiumMcpPlugin {
         orderId: z.string().describe('The order ID to look for on screen'),
       }),
       async ({ orderId }) => {
-        const driver = core.getDriver();
+        const driver = core.getDriver() as PageSourceDriver | null;
         if (!driver) {
           return {
             isError: true,
-            content: [text('No active Appium session. Create or attach to a session first.')],
+            content: [
+              text(
+                'No active Appium session. Create or attach to a session first.'
+              ),
+            ],
           };
         }
 
@@ -82,12 +89,15 @@ class CheckoutPlugin implements AppiumMcpPlugin {
       },
       {
         name: 'assert_active_session_platform',
-        description: 'Assert that the active Appium session is on the expected platform.',
+        description:
+          'Assert that the active Appium session is on the expected platform.',
         parameters: z.object({
           platform: z.enum(['Android', 'iOS']),
         }),
         execute: async ({ platform }) => {
-          const activeSession = core.listSessions().find((session) => session.isActive);
+          const activeSession = core
+            .listSessions()
+            .find((session) => session.isActive);
           if (!activeSession) {
             return {
               isError: true,
@@ -245,7 +255,9 @@ class LoginGuardPlugin implements AppiumMcpPlugin {
       (ctx.args as { action?: string }).action === 'tap'
     ) {
       const sessionId = ctx.session.getSessionId();
-      console.error(`[login-guard] Pre-tap check passed for session ${sessionId ?? 'none'}`);
+      console.error(
+        `[login-guard] Pre-tap check passed for session ${sessionId ?? 'none'}`
+      );
     }
 
     if (
@@ -297,9 +309,9 @@ class ArtifactPipelinePlugin implements AppiumMcpPlugin {
   async initialize(ctx: PluginContext): Promise<void> {
     this.connected = true;
     console.error(
-      `[artifact-pipeline] Connected. Loaded plugins: ${Array.from(ctx.plugins.keys()).join(
-        ', '
-      )}`
+      `[artifact-pipeline] Connected. Loaded plugins: ${Array.from(
+        ctx.plugins.keys()
+      ).join(', ')}`
     );
   }
 
@@ -308,7 +320,9 @@ class ArtifactPipelinePlugin implements AppiumMcpPlugin {
     result: ToolCallResult
   ): Promise<ToolCallResult | void> {
     if (this.connected && result.isError) {
-      console.error(`[artifact-pipeline] Upload failure artifacts for ${ctx.toolName}`);
+      console.error(
+        `[artifact-pipeline] Upload failure artifacts for ${ctx.toolName}`
+      );
     }
   }
 
