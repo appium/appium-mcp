@@ -76,95 +76,33 @@ export class McpRegistry {
     }
   }
 
-  addPrompt(
-    name: string,
-    description: string,
-    argumentsSchema: AddPromptParam['arguments'],
-    // @ts-ignore -- FastMCP's prompt type is currently very loose (string | array | object) so we can't enforce this as well as we'd like, but at least require plugins to explicitly opt in to the loose typing via AddPromptParam.
-    prompt: AddPromptParam['prompt']
-  ): void {
-    (this.server as any).addPrompt({
-      name,
-      description,
-      arguments: argumentsSchema,
-      prompt,
-    });
+  addPrompt(prompt: AddPromptParam): void {
+    this.server.addPrompt(prompt);
   }
 
-  addPrompts(
-    defs: Array<{
-      name: string;
-      description: string;
-      argumentsSchema: AddPromptParam['arguments'];
-      // @ts-ignore -- see above
-      prompt: AddPromptParam['prompt'];
-    }>
-  ): void {
-    for (const def of defs) {
-      this.addPrompt(
-        def.name,
-        def.description,
-        def.argumentsSchema,
-        def.prompt
-      );
+  addPrompts(prompts: AddPromptParam[]): void {
+    for (const prompt of prompts) {
+      this.addPrompt(prompt);
     }
   }
 
-  addResource(
-    uri: string,
-    name: string,
-    description: string,
-    // @ts-ignore -- FastMCP's resource type is currently very loose (string | array | object) so we can't enforce this as well as we'd like, but at least require plugins to explicitly opt in to the loose typing via AddResourceParam.
-    resource: AddResourceParam['resource']
-  ): void {
-    (this.server as any).addResource({ uri, name, description, resource });
+  addResource(resource: AddResourceParam): void {
+    this.server.addResource(resource);
   }
 
-  addResources(
-    defs: Array<{
-      uri: string;
-      name: string;
-      description: string;
-      // @ts-ignore -- see above
-      resource: AddResourceParam['resource'];
-    }>
-  ): void {
-    for (const def of defs) {
-      this.addResource(def.uri, def.name, def.description, def.resource);
+  addResources(resources: AddResourceParam[]): void {
+    for (const resource of resources) {
+      this.addResource(resource);
     }
   }
 
-  addResourceTemplate(
-    uriTemplate: string,
-    name: string,
-    description: string,
-    // @ts-ignore -- FastMCP's resource type is currently very loose (string | array | object) so we can't enforce this as well as we'd like, but at least require plugins to explicitly opt in to the loose typing via AddResourceTemplateParam.
-    resourceTemplate: AddResourceTemplateParam['resourceTemplate']
-  ): void {
-    (this.server as any).addResourceTemplate({
-      uriTemplate,
-      name,
-      description,
-      resourceTemplate,
-    });
+  addResourceTemplate(resourceTemplate: AddResourceTemplateParam): void {
+    this.server.addResourceTemplate(resourceTemplate);
   }
 
-  addResourceTemplates(
-    defs: Array<{
-      uriTemplate: string;
-      name: string;
-      description: string;
-      // @ts-ignore -- see above
-      resourceTemplate: AddResourceTemplateParam['resourceTemplate'];
-    }>
-  ): void {
-    for (const def of defs) {
-      this.addResourceTemplate(
-        def.uriTemplate,
-        def.name,
-        def.description,
-        def.resourceTemplate
-      );
+  addResourceTemplates(resourceTemplates: AddResourceTemplateParam[]): void {
+    for (const resourceTemplate of resourceTemplates) {
+      this.addResourceTemplate(resourceTemplate);
     }
   }
 }

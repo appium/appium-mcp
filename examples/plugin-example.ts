@@ -1,7 +1,8 @@
 /**
- * Example plugins for appium-mcp/core plugin API.
+ * Example plugins for the appium-mcp/core plugin API.
  *
- * These are illustrative only – not shipped as production code.
+ * These examples are illustrative only. They show how a custom server can add
+ * business-specific MCP capabilities and wrap the default Appium MCP tools.
  *
  * Run the custom server:
  *   npx ts-node examples/plugin-example.ts
@@ -9,47 +10,230 @@
 
 import { createAppiumMcpServer } from '../src/core.js';
 import type {
+  AppiumMcpCore,
   AppiumMcpPlugin,
+  McpRegistry,
   PluginContext,
   ToolCallContext,
   ToolCallResult,
-  AppiumMcpCore,
-  McpRegistry,
 } from '../src/core.js';
 import { z } from 'zod';
 
+const text = (value: string) => ({ type: 'text' as const, text: value });
+
 // ---------------------------------------------------------------------------
-// Example 1: Plugin that registers a custom tool
+// Example 1: Register custom tools and use AppiumMcpCore
 // ---------------------------------------------------------------------------
 class CheckoutPlugin implements AppiumMcpPlugin {
   readonly name = 'checkout-plugin';
   readonly version = '1.0.0';
 
-  register(registry: McpRegistry, _core: AppiumMcpCore): void {
+  register(registry: McpRegistry, core: AppiumMcpCore): void {
     registry.addTool(
       'assert_checkout_summary',
       'Assert that the checkout summary screen shows the expected order ID.',
-      z.object({ orderId: z.string().describe('The order ID to look for on screen') }),
-      async ({ orderId }, _ctx) => {
-        // In a real plugin you would call the Appium driver via core.getDriver()
-        // and inspect the page source.  This is a stub.
-        const onScreen = false; // replace with real assertion
-        if (!onScreen) {
+      z.object({
+        orderId: z.string().describe('The order ID to look for on screen'),
+      }),
+      async ({ orderId }) => {
+        const driver = core.getDriver();
+        if (!driver) {
           return {
             isError: true,
-            content: [{ type: 'text' as const, text: `Order ${orderId} not found on screen` }],
+            content: [text('No active Appium session. Create or attach to a session first.')],
           };
         }
+
+        const pageSource = await driver.getPageSource();
+        if (!pageSource.includes(orderId)) {
+          return {
+            isError: true,
+            content: [text(`Order ${orderId} not found on screen`)],
+          };
+        }
+
         return {
-          content: [{ type: 'text' as const, text: `Checkout summary correct for ${orderId}` }],
+          content: [text(`Checkout summary correct for ${orderId}`)],
         };
       }
     );
+
+    registry.addTools([
+      {
+        name: 'list_business_sessions',
+        description: 'Return Appium session IDs with simple business metadata.',
+        parameters: z.object({}),
+        execute: async () => {
+          const sessions = core.listSessions();
+          const summary =
+            sessions.length === 0
+              ? 'No active Appium sessions.'
+              : sessions
+                  .map(
+                    (session) =>
+                      `${session.sessionId}: ${session.platform ?? 'unknown'} / ${
+                        session.deviceName ?? 'unknown device'
+                      }${session.isActive ? ' (active)' : ''}`
+                  )
+                  .join('\n');
+
+          return { content: [text(summary)] };
+        },
+      },
+      {
+        name: 'assert_active_session_platform',
+        description: 'Assert that the active Appium session is on the expected platform.',
+        parameters: z.object({
+          platform: z.enum(['Android', 'iOS']),
+        }),
+        execute: async ({ platform }) => {
+          const activeSession = core.listSessions().find((session) => session.isActive);
+          if (!activeSession) {
+            return {
+              isError: true,
+              content: [text('No active Appium session.')],
+            };
+          }
+
+          if (activeSession.platform !== platform) {
+            return {
+              isError: true,
+              content: [
+                text(
+                  `Expected ${platform}, but active session is ${
+                    activeSession.platform ?? 'unknown'
+                  }.`
+                ),
+              ],
+            };
+          }
+
+          return {
+            content: [text(`Active session is ${platform}.`)],
+          };
+        },
+      },
+    ]);
   }
 }
 
 // ---------------------------------------------------------------------------
-// Example 2: Plugin that wraps existing tools via lifecycle hooks
+// Example 2: Register prompts, resources, and resource templates
+// ---------------------------------------------------------------------------
+class TestAssetsPlugin implements AppiumMcpPlugin {
+  readonly name = 'test-assets';
+  readonly version = '1.0.0';
+
+  register(registry: McpRegistry): void {
+    registry.addPrompt({
+      name: 'mobile-bug-report',
+      description: 'Create a concise mobile automation bug report.',
+      arguments: [
+        {
+          name: 'screen',
+          description: 'Screen or feature where the bug was observed',
+          required: true,
+        },
+        {
+          name: 'symptom',
+          description: 'Observed failure or unexpected behavior',
+          required: true,
+        },
+      ],
+      load: async ({ screen, symptom }) =>
+        [
+          `Write a concise mobile bug report for the ${screen} screen.`,
+          `Observed symptom: ${symptom}.`,
+          'Include expected behavior, actual behavior, reproduction steps, and useful Appium artifacts.',
+        ].join('\n'),
+    });
+
+    registry.addPrompts([
+      {
+        name: 'screen-model',
+        description: 'Generate a simple screen model from observed controls.',
+        arguments: [
+          {
+            name: 'platform',
+            description: 'Mobile platform',
+            required: true,
+            enum: ['Android', 'iOS'],
+          },
+        ],
+        load: async ({ platform }) =>
+          `Create a ${platform} screen model with stable locators and high-level actions.`,
+      },
+    ]);
+
+    registry.addResource({
+      uri: 'business://policies/checkout',
+      name: 'Checkout Automation Policy',
+      description: 'Business rules for checkout automation.',
+      mimeType: 'text/markdown',
+      load: async () => ({
+        text: [
+          '# Checkout Automation Policy',
+          '',
+          '- Prefer accessibility id locators.',
+          '- Confirm the order ID before completing payment.',
+          '- Capture a screenshot whenever checkout assertions fail.',
+        ].join('\n'),
+      }),
+    });
+
+    registry.addResources([
+      {
+        uri: 'business://test-data/users',
+        name: 'Example Test Users',
+        description: 'Example user roles for app-specific tests.',
+        mimeType: 'application/json',
+        load: async () => ({
+          text: JSON.stringify(
+            {
+              users: [
+                { role: 'guest', username: 'guest@example.test' },
+                { role: 'member', username: 'member@example.test' },
+              ],
+            },
+            null,
+            2
+          ),
+        }),
+      },
+    ]);
+
+    registry.addResourceTemplate({
+      uriTemplate: 'business://screens/{screen}',
+      name: 'Screen Playbook',
+      description: 'Screen-specific automation guidance.',
+      mimeType: 'text/markdown',
+      arguments: [
+        {
+          name: 'screen',
+          description: 'Screen name',
+          required: true,
+          complete: async (value) => ({
+            values: ['login', 'checkout', 'settings'].filter((screen) =>
+              screen.startsWith(value)
+            ),
+          }),
+        },
+      ],
+      load: async ({ screen }) => ({
+        text: [
+          `# ${screen} Screen Playbook`,
+          '',
+          '- Inspect the page source before choosing fallback locators.',
+          '- Prefer high-level plugin tools when they exist.',
+          '- Use appium_gesture for taps, swipes, and scrolls.',
+        ].join('\n'),
+      }),
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Example 3: Wrap existing tools with beforeCall / afterCall
 // ---------------------------------------------------------------------------
 class LoginGuardPlugin implements AppiumMcpPlugin {
   readonly name = 'login-guard';
@@ -60,8 +244,22 @@ class LoginGuardPlugin implements AppiumMcpPlugin {
       ctx.toolName === 'appium_gesture' &&
       (ctx.args as { action?: string }).action === 'tap'
     ) {
-      // Insert pre-conditions here (e.g. ensure user is logged in before tapping checkout).
-      console.error(`[login-guard] Pre-tap check passed for ${ctx.toolName}`);
+      const sessionId = ctx.session.getSessionId();
+      console.error(`[login-guard] Pre-tap check passed for session ${sessionId ?? 'none'}`);
+    }
+
+    if (
+      ctx.toolName === 'mobile_clear_app' &&
+      process.env.ALLOW_CLEAR_APP !== 'true'
+    ) {
+      return {
+        isError: true,
+        content: [
+          text(
+            'Blocked mobile_clear_app. Set ALLOW_CLEAR_APP=true to allow destructive app cleanup.'
+          ),
+        ],
+      };
     }
   }
 
@@ -69,29 +267,56 @@ class LoginGuardPlugin implements AppiumMcpPlugin {
     ctx: ToolCallContext,
     result: ToolCallResult
   ): Promise<ToolCallResult | void> {
-    if (result.isError) {
-      // Capture artifacts on failure.
-      console.error(`[login-guard] Tool ${ctx.toolName} failed – capturing artifacts`);
+    if (!result.isError) {
+      return;
     }
-    // Return nothing to pass through the original result.
+
+    const sessionId = ctx.session.getSessionId();
+    return {
+      ...result,
+      content: [
+        ...result.content,
+        text(
+          `[login-guard] ${ctx.toolName} failed for session ${
+            sessionId ?? 'none'
+          }. Capture artifacts here in a real plugin.`
+        ),
+      ],
+    };
   }
 }
 
 // ---------------------------------------------------------------------------
-// Example 3: Plugin with async initialisation and teardown
+// Example 4: Async initialization and teardown
 // ---------------------------------------------------------------------------
 class ArtifactPipelinePlugin implements AppiumMcpPlugin {
   readonly name = 'artifact-pipeline';
   readonly version = '1.0.0';
+  private connected = false;
 
-  async initialize(_ctx: PluginContext): Promise<void> {
-    console.error('[artifact-pipeline] Connecting to artifact storage...');
-    // await artifactStorage.connect();
+  async initialize(ctx: PluginContext): Promise<void> {
+    this.connected = true;
+    console.error(
+      `[artifact-pipeline] Connected. Loaded plugins: ${Array.from(ctx.plugins.keys()).join(
+        ', '
+      )}`
+    );
+  }
+
+  async afterCall(
+    ctx: ToolCallContext,
+    result: ToolCallResult
+  ): Promise<ToolCallResult | void> {
+    if (this.connected && result.isError) {
+      console.error(`[artifact-pipeline] Upload failure artifacts for ${ctx.toolName}`);
+    }
   }
 
   async destroy(): Promise<void> {
-    console.error('[artifact-pipeline] Disconnecting from artifact storage...');
-    // await artifactStorage.disconnect();
+    if (this.connected) {
+      console.error('[artifact-pipeline] Disconnected from artifact storage.');
+      this.connected = false;
+    }
   }
 }
 
@@ -101,13 +326,16 @@ class ArtifactPipelinePlugin implements AppiumMcpPlugin {
 const server = createAppiumMcpServer({
   plugins: [
     new CheckoutPlugin(),
+    new TestAssetsPlugin(),
     new LoginGuardPlugin(),
     new ArtifactPipelinePlugin(),
   ],
-  additionalInstructions: 'Custom checkout and login-guard policies are active.',
+  additionalInstructions: [
+    'Custom checkout policies, screen playbooks, and artifact hooks are active.',
+    'Use plugin tools for business-level assertions when they match the task.',
+  ].join('\n'),
 });
 
-// Start with stdio (default) or HTTP stream
 const args = process.argv.slice(2);
 void server.start({
   transportType: args.includes('--httpStream') ? 'httpStream' : 'stdio',

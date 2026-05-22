@@ -37,13 +37,31 @@ type ToolDef = {
 
 function makeMockServer() {
   const registeredTools: ToolDef[] = [];
+  const registeredPrompts: unknown[] = [];
+  const registeredResources: unknown[] = [];
+  const registeredResourceTemplates: unknown[] = [];
   const server: any = {
     addTool(toolDef: ToolDef) {
       registeredTools.push(toolDef);
     },
+    addPrompt(promptDef: unknown) {
+      registeredPrompts.push(promptDef);
+    },
+    addResource(resourceDef: unknown) {
+      registeredResources.push(resourceDef);
+    },
+    addResourceTemplate(resourceTemplateDef: unknown) {
+      registeredResourceTemplates.push(resourceTemplateDef);
+    },
     _tools: registeredTools,
+    _prompts: registeredPrompts,
+    _resources: registeredResources,
+    _resourceTemplates: registeredResourceTemplates,
   };
   server.addTool = server.addTool.bind(server);
+  server.addPrompt = server.addPrompt.bind(server);
+  server.addResource = server.addResource.bind(server);
+  server.addResourceTemplate = server.addResourceTemplate.bind(server);
   return server;
 }
 
@@ -61,6 +79,31 @@ describe('McpRegistry', () => {
 
     expect(mockServer._tools).toHaveLength(1);
     expect(mockServer._tools[0].name).toBe('my_tool');
+  });
+
+  test('delegates prompt and resource registration to server methods', () => {
+    const mockServer = makeMockServer();
+    const registry = new McpRegistry(mockServer);
+
+    registry.addPrompt({
+      name: 'my_prompt',
+      load: async () => 'Prompt text',
+    });
+    registry.addResource({
+      uri: 'example://resource',
+      name: 'Example Resource',
+      load: async () => ({ text: 'Resource text' }),
+    });
+    registry.addResourceTemplate({
+      uriTemplate: 'example://resource/{name}',
+      name: 'Example Resource Template',
+      arguments: [{ name: 'name', required: true }],
+      load: async ({ name }) => ({ text: `Resource ${name}` }),
+    });
+
+    expect(mockServer._prompts).toHaveLength(1);
+    expect(mockServer._resources).toHaveLength(1);
+    expect(mockServer._resourceTemplates).toHaveLength(1);
   });
 });
 
