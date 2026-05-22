@@ -316,24 +316,24 @@ async function resolveCoords(
       if ('error' in rect) {
         return rect;
       }
-      let targetRect: Rect = {
+      const targetRect: Rect = {
         x: rect.x,
         y: rect.y,
         width: rect.width,
         height: rect.height,
       };
-      if (isAiElementUUID(args.elementUUID)) {
-        const window = await getWindowRect(driver);
-        targetRect = rectVisibleWithinWindow(targetRect, {
-          x: 0,
-          y: 0,
-          width: window.width,
-          height: window.height,
-        });
-        const coords = coordsForDirection(args.direction, targetRect);
-        return clampDirectionCoordsToWindow(coords, window);
+      if (!isAiElementUUID(args.elementUUID)) {
+        return coordsForDirection(args.direction, targetRect);
       }
-      return coordsForDirection(args.direction, targetRect);
+      const window = await getWindowRect(driver);
+      const clippedRect = rectVisibleWithinWindow(targetRect, {
+        x: 0,
+        y: 0,
+        width: window.width,
+        height: window.height,
+      });
+      const coords = coordsForDirection(args.direction, clippedRect);
+      return clampDirectionCoordsToWindow(coords, window);
     }
     const window = await getWindowRect(driver);
     return coordsForDirection(args.direction, {
