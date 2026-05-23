@@ -1,3 +1,9 @@
+## [1.75.7](https://github.com/appium/appium-mcp/compare/v1.75.6...v1.75.7) (2026-05-23)
+
+### Bug Fixes
+
+* apply npm pkg fix to tweak package.json ([#362](https://github.com/appium/appium-mcp/issues/362)) ([412cae1](https://github.com/appium/appium-mcp/commit/412cae1f722d64ee3b73a2f3f050e022607fe0c1))
+
 ## [1.75.6](https://github.com/appium/appium-mcp/compare/v1.75.5...v1.75.6) (2026-05-23)
 
 ### Bug Fixes
