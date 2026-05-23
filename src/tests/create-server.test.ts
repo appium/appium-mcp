@@ -72,8 +72,7 @@ await jest.unstable_mockModule('../resources/index', () => ({
 await jest.unstable_mockModule('../session-store', () => ({
   getDriver: jest.fn(() => null),
   getSessionId: jest.fn(() => null),
-  getSessionOwnership: jest.fn(() => null),
-  hasActiveSession: jest.fn(() => false),
+  getSessionInfo: jest.fn(() => null),
   listSessions: jest.fn(() => sessions),
   safeDeleteAllSessions,
 }));
@@ -106,7 +105,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       version: '1.0.0',
       register(_registry, core) {
         registerCalled = true;
-        expect(core.hasActiveSession()).toBe(false);
+        expect(core.getSessionId()).toBeNull();
       },
       async initialize() {
         initialized = true;

@@ -120,15 +120,12 @@ describe('AppiumMcpCore', () => {
 
     await safeDeleteAllSessions();
     expect(core.getSessionId()).toBeNull();
-    expect(core.hasActiveSession()).toBe(false);
-    expect(core.getSessionOwnership()).toBeNull();
+    expect(core.getSessionInfo()).toBeNull();
 
     setSession(driver, 'session-1', { platformName: 'Android' }, 'owned');
 
     expect(core.getSessionId()).toBe('session-1');
-    expect(core.hasActiveSession()).toBe(true);
-    expect(core.getSessionOwnership()).toBe('owned');
-    expect(core.getSessionOwnership('session-1')).toBe('owned');
+    expect(core.getSessionInfo('session-1')).not.toBeNull();
 
     await safeDeleteAllSessions();
   });

@@ -17,15 +17,9 @@ import {
   getDriver,
   getSessionId,
   getSessionInfo,
-  getSessionOwnership,
-  hasActiveSession,
   listSessions,
 } from './session-store.js';
-import type {
-  DriverInstance,
-  SessionOwnership,
-  SessionInfo,
-} from './session-store.js';
+import type { DriverInstance, SessionInfo } from './session-store.js';
 import log from './logger.js';
 
 /**
@@ -45,7 +39,6 @@ export interface PluginContext {
  */
 export interface PluginSessionContext {
   getSessionInfo(sessionId?: string): SessionInfo | null;
-  getSessionId(): string | null;
   getDriver(sessionId?: string): DriverInstance | null;
   listSessions(): ReturnType<typeof listSessions>;
 }
@@ -215,29 +208,10 @@ export class AppiumMcpCore {
   }
 
   /**
-   *
+   * Return metadata for a specific session, or the active session if `sessionId` is not provided.
    */
   getSessionInfo(sessionId?: string): SessionInfo | null {
     return getSessionInfo(sessionId);
-  }
-
-  /**
-   * Return whether the server currently has an active non-deleting session.
-   */
-  hasActiveSession(): boolean {
-    return hasActiveSession();
-  }
-
-  /**
-   * Return whether a session is owned by MCP Appium ('owned') or
-   * attached externally ('attached').
-   * If `sessionId` is not provided, return ownership of the active session if one
-   * exists, otherwise `null`. Note that attached sessions are not automatically
-   * tracked by MCP Appium and thus will not appear in `listSessions()`, but their
-   * ownership can still be queried.
-   */
-  getSessionOwnership(sessionId?: string): SessionOwnership | null {
-    return getSessionOwnership(sessionId);
   }
 
   /**
