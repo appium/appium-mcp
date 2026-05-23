@@ -221,10 +221,11 @@ export function setCurrentContext(
 }
 
 export function getSessionInfo(sessionId?: string): SessionInfo | null {
-  if (!sessionId) {
+  const id = sessionId ?? activeSessionId;
+  if (!id) {
     return null;
   }
-  return sessions.get(sessionId) ?? null;
+  return sessions.get(id) ?? null;
 }
 
 export function getCurrentContext(sessionId?: string): string | null {
