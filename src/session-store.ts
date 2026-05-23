@@ -12,20 +12,20 @@ export type NullableDriverInstance = DriverInstance | null;
 export type SessionCapabilities = Record<string, any>;
 export type SessionOwnership = 'owned' | 'attached';
 
-interface SessionMetadata {
-  platform: string | null;
-  automationName: string | null;
-  deviceName: string | null;
-  capabilities: SessionCapabilities;
-}
-
-interface SessionInfo {
+export interface SessionInfo {
   driver: DriverInstance;
   sessionId: string;
   currentContext: string | null;
   isDeletingSession: boolean;
   ownership: SessionOwnership;
   metadata: SessionMetadata;
+}
+
+interface SessionMetadata {
+  platform: string | null;
+  automationName: string | null;
+  deviceName: string | null;
+  capabilities: SessionCapabilities;
 }
 
 /**
@@ -220,7 +220,7 @@ export function setCurrentContext(
   return true;
 }
 
-export function getSessionInfo(sessionId: string | null): SessionInfo | null {
+export function getSessionInfo(sessionId?: string): SessionInfo | null {
   if (!sessionId) {
     return null;
   }

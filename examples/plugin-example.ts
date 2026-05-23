@@ -254,9 +254,9 @@ class LoginGuardPlugin implements AppiumMcpPlugin {
       ctx.toolName === 'appium_gesture' &&
       (ctx.args as { action?: string }).action === 'tap'
     ) {
-      const sessionId = ctx.session.getSessionId();
+      const sessionInfo = ctx.session.getSessionInfo();
       console.error(
-        `[login-guard] Pre-tap check passed for session ${sessionId ?? 'none'}`
+        `[login-guard] Pre-tap check passed for session ${sessionInfo?.id ?? 'none'}`
       );
     }
 

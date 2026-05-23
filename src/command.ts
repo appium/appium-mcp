@@ -252,7 +252,7 @@ export async function elementClick(
       'WEBVIEW_'
     )
   ) {
-    const caps = getSessionInfo(driver.sessionId);
+    const caps = getSessionInfo(driver.sessionId || undefined);
     const settings = await getSessionDriverSettings(driver);
     // nativeWebTap === true means we should use the native tap (elementClick) even in webview context
     if (

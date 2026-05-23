@@ -16,11 +16,16 @@ import type {
 import {
   getDriver,
   getSessionId,
+  getSessionInfo,
   getSessionOwnership,
   hasActiveSession,
   listSessions,
 } from './session-store.js';
-import type { DriverInstance, SessionOwnership } from './session-store.js';
+import type {
+  DriverInstance,
+  SessionOwnership,
+  SessionInfo,
+} from './session-store.js';
 import log from './logger.js';
 
 /**
@@ -39,6 +44,7 @@ export interface PluginContext {
  * Session helpers available to call hooks.
  */
 export interface PluginSessionContext {
+  getSessionInfo(sessionId?: string): SessionInfo | null;
   getSessionId(): string | null;
   getDriver(sessionId?: string): DriverInstance | null;
   listSessions(): ReturnType<typeof listSessions>;
@@ -209,6 +215,13 @@ export class AppiumMcpCore {
   }
 
   /**
+   *
+   */
+  getSessionInfo(sessionId?: string): SessionInfo | null {
+    return getSessionInfo(sessionId);
+  }
+
+  /**
    * Return whether the server currently has an active non-deleting session.
    */
   hasActiveSession(): boolean {
@@ -311,6 +324,7 @@ export class PluginManager {
         const sessionCtx: PluginSessionContext = {
           getSessionId: () =>
             listSessions().find((s) => s.isActive)?.sessionId ?? null,
+          getSessionInfo: (sessionId?: string) => getSessionInfo(sessionId),
           getDriver: (sessionId?: string) => getDriver(sessionId),
           listSessions,
         };
