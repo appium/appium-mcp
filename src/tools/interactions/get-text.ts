@@ -24,7 +24,7 @@ export default function getText(server: FastMCP): void {
     description: 'Get text from an element',
     parameters: getTextSchema,
     annotations: {
-      readOnlyHint: false,
+      readOnlyHint: true,
       openWorldHint: false,
     },
     execute: async (

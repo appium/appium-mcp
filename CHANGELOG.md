@@ -1,3 +1,21 @@
+## [1.75.5](https://github.com/appium/appium-mcp/compare/v1.75.4...v1.75.5) (2026-05-23)
+
+### Bug Fixes
+
+* **gestures:** clamp direction gestures to window for ai-element targets ([#350](https://github.com/appium/appium-mcp/issues/350)) ([6f8db0b](https://github.com/appium/appium-mcp/commit/6f8db0bfa1462b8e54757d154b951425b8e8fbdd))
+
+## [1.75.4](https://github.com/appium/appium-mcp/compare/v1.75.3...v1.75.4) (2026-05-23)
+
+### Miscellaneous Chores
+
+* **deps:** bump appium-adb from 14.6.1 to 15.0.0 ([#356](https://github.com/appium/appium-mcp/issues/356)) ([5685814](https://github.com/appium/appium-mcp/commit/5685814b59deff79d020f4a2ff09e256fa334c7d))
+
+## [1.75.3](https://github.com/appium/appium-mcp/compare/v1.75.2...v1.75.3) (2026-05-23)
+
+### Bug Fixes
+
+* **interactions:** mark appium_get_text as read-only ([#359](https://github.com/appium/appium-mcp/issues/359)) ([089b9f2](https://github.com/appium/appium-mcp/commit/089b9f2ac8ab145e2f0826dd5404491226084f69))
+
 ## [1.75.2](https://github.com/appium/appium-mcp/compare/v1.75.1...v1.75.2) (2026-05-19)
 
 ### Bug Fixes

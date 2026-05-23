@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.75.2",
+  "version": "1.75.5",
   "type": "module",
   "repository": {
     "type": "git",
@@ -56,7 +56,7 @@
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@xenova/transformers": "^2.17.2",
     "@xmldom/xmldom": "^0.9.8",
-    "appium-adb": "^14.1.8",
+    "appium-adb": "^15.0.0",
     "appium-ios-device": "^3.1.0",
     "appium-uiautomator2-driver": "^7.0.0",
     "appium-webdriveragent": "^12.1.1",
