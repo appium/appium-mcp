@@ -8,14 +8,14 @@
  *   npx ts-node examples/plugin-example.ts
  */
 
-import { createAppiumMcpServer } from '../dist/core.js';
-import type {
-  AppiumMcpCore,
-  AppiumMcpPlugin,
-  McpRegistry,
-  PluginContext,
-  ToolCallContext,
-  ToolCallResult,
+import {
+  createAppiumMcpServer,
+  type AppiumMcpCore,
+  type AppiumMcpPlugin,
+  type McpRegistry,
+  type PluginContext,
+  type ToolCallContext,
+  type ToolCallResult,
 } from '../dist/core.js';
 import { z } from 'zod';
 
