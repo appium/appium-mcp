@@ -39,6 +39,7 @@ export interface PluginContext {
  */
 export interface PluginSessionContext {
   getSessionInfo(sessionId?: string): SessionInfo | null;
+  getSessionId(): string | null;
   getDriver(sessionId?: string): DriverInstance | null;
   listSessions(): ReturnType<typeof listSessions>;
 }
@@ -296,8 +297,7 @@ export class PluginManager {
     this.server.addTool = (toolDef: AddToolParam): void => {
       const wrappedExecute: AddToolParam['execute'] = async (args, mcpCtx) => {
         const sessionCtx: PluginSessionContext = {
-          getSessionId: () =>
-            listSessions().find((s) => s.isActive)?.sessionId ?? null,
+          getSessionId: () => getSessionId(),
           getSessionInfo: (sessionId?: string) => getSessionInfo(sessionId),
           getDriver: (sessionId?: string) => getDriver(sessionId),
           listSessions,
