@@ -1,4 +1,7 @@
 import ts from 'typescript';
+import crypto from 'node:crypto';
+
+const TRANSFORM_CACHE_VERSION = 'appium-mcp-ts-transform-esm-v2';
 
 const config = {
   testEnvironment: 'node',
@@ -11,6 +14,9 @@ const config = {
     // Mock @appium/support to avoid ESM/CommonJS issues with uuid
     '^@appium/support$': '<rootDir>/src/tests/__mocks__/@appium/support.ts',
   },
+  modulePathIgnorePatterns: [
+    '<rootDir>/src/resources/submodules/', // Ignores everything in submodules
+  ],
   // Ignore compiled files under dist to prevent duplicate test discovery
   testPathIgnorePatterns: ['/dist/', '/node_modules/', '/src/resources/submodules'],
   transform: {
@@ -28,13 +34,10 @@ const config = {
 Object.defineProperty(config, 'process', {
   enumerable: false,
   value(sourceText, sourcePath) {
-    const isSupportMock = typeof sourcePath === 'string' && sourcePath.includes('__mocks__/@appium/support.ts');
-    const moduleKind = isSupportMock ? ts.ModuleKind.CommonJS : ts.ModuleKind.ESNext;
-
     const { outputText } = ts.transpileModule(sourceText, {
       fileName: sourcePath,
       compilerOptions: {
-        module: moduleKind,
+        module: ts.ModuleKind.ESNext,
         moduleResolution: ts.ModuleResolutionKind.NodeNext,
         target: ts.ScriptTarget.ES2022,
         inlineSourceMap: true,
@@ -46,6 +49,22 @@ Object.defineProperty(config, 'process', {
     return {
       code: outputText,
     };
+  },
+});
+
+Object.defineProperty(config, 'getCacheKey', {
+  enumerable: false,
+  value(sourceText, sourcePath, transformOptions) {
+    return crypto
+      .createHash('sha256')
+      .update(TRANSFORM_CACHE_VERSION)
+      .update('\0')
+      .update(sourcePath)
+      .update('\0')
+      .update(sourceText)
+      .update('\0')
+      .update(transformOptions.configString)
+      .digest('hex');
   },
 });
 
