@@ -1,3 +1,9 @@
+## [1.75.6](https://github.com/appium/appium-mcp/compare/v1.75.5...v1.75.6) (2026-05-23)
+
+### Bug Fixes
+
+* **interactions:** reject ai-element tokens in get and set tools ([#358](https://github.com/appium/appium-mcp/issues/358)) ([ac630a3](https://github.com/appium/appium-mcp/commit/ac630a3881bc58e262bac73e8fc687e13e57c286))
+
 ## [1.75.5](https://github.com/appium/appium-mcp/compare/v1.75.4...v1.75.5) (2026-05-23)
 
 ### Bug Fixes
