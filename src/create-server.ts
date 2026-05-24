@@ -122,6 +122,71 @@ export function createAppiumMcpServer(
   let activeClientCount = 0;
   let pluginInitialized = false;
 
+  // Track plugin initialization and destruction promises to avoid race conditions
+  // when clients connect/disconnect in quick succession.
+  let pluginInitializePromise: Promise<void> | null = null;
+  let pluginDestroyPromise: Promise<void> | null = null;
+
+  /**
+   * To avoid unnecessary plugin initialization and destruction when clients connect and disconnect,
+   * we lazily initialize plugins on the first client connection, and only destroy plugins
+   * after the last client disconnects.
+   * @returns
+   */
+  const ensurePluginsInitialized = async (): Promise<void> => {
+    if (plugins.length === 0) {
+      return;
+    }
+
+    if (pluginDestroyPromise != null) {
+      await pluginDestroyPromise;
+    }
+
+    if (pluginInitialized) {
+      return;
+    }
+
+    pluginInitializePromise ??= (async () => {
+      try {
+        await manager.initialize();
+        pluginInitialized = true;
+      } finally {
+        pluginInitializePromise = null;
+      }
+    })();
+
+    await pluginInitializePromise;
+  };
+
+  /**
+   * Destroys plugins only if there are no active clients and plugins have been initialized.
+   * @returns
+   */
+  const destroyPluginsIfIdle = async (): Promise<void> => {
+    if (plugins.length === 0) {
+      return;
+    }
+
+    if (pluginInitializePromise != null) {
+      await pluginInitializePromise;
+    }
+
+    if (activeClientCount > 0 || !pluginInitialized) {
+      return;
+    }
+
+    pluginDestroyPromise ??= (async () => {
+      try {
+        await manager.destroy();
+        pluginInitialized = false;
+      } finally {
+        pluginDestroyPromise = null;
+      }
+    })();
+
+    await pluginDestroyPromise;
+  };
+
   // -------------------------------------------------------------------------
   // 5. Wire connect / disconnect lifecycle events.
   // -------------------------------------------------------------------------
@@ -130,10 +195,7 @@ export function createAppiumMcpServer(
     activeClientCount += 1;
 
     // Lazy plugin initialization on first connection.
-    if (!pluginInitialized && plugins.length > 0) {
-      await manager.initialize();
-      pluginInitialized = true;
-    }
+    await ensurePluginsInitialized();
   });
 
   server.on('disconnect', async (event) => {
@@ -169,10 +231,7 @@ export function createAppiumMcpServer(
     }
 
     // Destroy plugins when the last MCP client disconnects.
-    if (pluginInitialized && plugins.length > 0) {
-      await manager.destroy();
-      pluginInitialized = false;
-    }
+    await destroyPluginsIfIdle();
   });
 
   return server;

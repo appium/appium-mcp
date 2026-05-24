@@ -186,6 +186,115 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     expect(destroyCount).toBe(1);
   });
 
+  test('initializes plugins once when clients connect concurrently', async () => {
+    let initializeCount = 0;
+    let resolveInitialize: (() => void) | undefined;
+    let markInitializeStarted: (() => void) | undefined;
+    const initializeStarted = new Promise<void>((resolve) => {
+      markInitializeStarted = resolve;
+    });
+    const plugin: AppiumMcpPlugin = {
+      name: 'concurrent-plugin',
+      version: '1.0.0',
+      async initialize() {
+        initializeCount += 1;
+        markInitializeStarted?.();
+        await new Promise<void>((resolve) => {
+          resolveInitialize = resolve;
+        });
+      },
+    };
+
+    const server = createAppiumMcpServer({
+      plugins: [plugin],
+    }) as unknown as MockFastMCP;
+
+    const connectA = server.emitTest('connect', { session: 'client-1' });
+    const connectB = server.emitTest('connect', { session: 'client-2' });
+
+    await initializeStarted;
+    expect(initializeCount).toBe(1);
+
+    resolveInitialize?.();
+    await Promise.all([connectA, connectB]);
+    expect(initializeCount).toBe(1);
+  });
+
+  test('re-initializes only after an in-flight destroy finishes', async () => {
+    const calls: string[] = [];
+    let resolveDestroy: (() => void) | undefined;
+    const plugin: AppiumMcpPlugin = {
+      name: 'destroy-race-plugin',
+      version: '1.0.0',
+      async initialize() {
+        calls.push('initialize');
+      },
+      async destroy() {
+        calls.push('destroy-start');
+        await new Promise<void>((resolve) => {
+          resolveDestroy = resolve;
+        });
+        calls.push('destroy-end');
+      },
+    };
+
+    const server = createAppiumMcpServer({
+      plugins: [plugin],
+    }) as unknown as MockFastMCP;
+
+    await server.emitTest('connect', { session: 'client-1' });
+    const disconnect = server.emitTest('disconnect', { session: 'client-1' });
+    await Promise.resolve();
+    const reconnect = server.emitTest('connect', { session: 'client-2' });
+
+    expect(calls).toEqual(['initialize', 'destroy-start']);
+
+    resolveDestroy?.();
+    await Promise.all([disconnect, reconnect]);
+
+    expect(calls).toEqual([
+      'initialize',
+      'destroy-start',
+      'destroy-end',
+      'initialize',
+    ]);
+  });
+
+  test('destroys plugins after final disconnect during pending initialization', async () => {
+    let initializeCount = 0;
+    let destroyCount = 0;
+    let resolveInitialize: (() => void) | undefined;
+    const plugin: AppiumMcpPlugin = {
+      name: 'pending-init-plugin',
+      version: '1.0.0',
+      async initialize() {
+        initializeCount += 1;
+        await new Promise<void>((resolve) => {
+          resolveInitialize = resolve;
+        });
+      },
+      async destroy() {
+        destroyCount += 1;
+      },
+    };
+
+    const server = createAppiumMcpServer({
+      plugins: [plugin],
+    }) as unknown as MockFastMCP;
+
+    const connect = server.emitTest('connect', { session: 'client-1' });
+    await Promise.resolve();
+    const disconnect = server.emitTest('disconnect', { session: 'client-1' });
+
+    expect(initializeCount).toBe(1);
+    expect(destroyCount).toBe(0);
+
+    resolveInitialize?.();
+    await Promise.all([connect, disconnect]);
+
+    expect(destroyCount).toBe(1);
+  });
+
   test('destroys plugins on final disconnect when session cleanup policy is skip', async () => {
     process.env.APPIUM_MCP_ON_CLIENT_DISCONNECT = 'skip';
     sessions = [{ sessionId: 'session-1', isActive: true, ownership: 'owned' }];
