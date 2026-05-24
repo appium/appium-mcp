@@ -25,7 +25,9 @@ await jest.unstable_mockModule('../logger', () => ({
 
 const { AppiumMcpCore, PluginManager, McpRegistry } =
   await import('../plugin.js');
-const log = (await import('../logger')).default as { warn: jest.Mock };
+const log = (await import('../logger.js')).default as unknown as {
+  warn: jest.Mock;
+};
 const { setSession, safeDeleteAllSessions } =
   await import('../session-store.js');
 
