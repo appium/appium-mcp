@@ -9,6 +9,7 @@ import {
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
+import { aiElementWebDriverRejectionIfNeeded } from '../gestures/handlers/ai-element.js';
 
 export default function setValue(server: FastMCP): void {
   const setValueSchema = z
@@ -49,6 +50,15 @@ export default function setValue(server: FastMCP): void {
         return resolved.result;
       }
       const { driver } = resolved;
+
+      if (!args.w3cActions) {
+        const aiRejection = aiElementWebDriverRejectionIfNeeded(
+          args.elementUUID
+        );
+        if (aiRejection) {
+          return aiRejection;
+        }
+      }
 
       try {
         await _setValue(
