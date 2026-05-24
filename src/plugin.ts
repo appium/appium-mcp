@@ -65,6 +65,12 @@ export interface ToolCallResult {
  * Extension point for composing app-specific behavior into Appium MCP.
  */
 export interface AppiumMcpPlugin {
+  /**
+   * Unique plugin identifier within a server instance.
+   *
+   * Duplicate plugin names are skipped with a warning, so prefer stable
+   * package-style or organization-prefixed names.
+   */
   readonly name: string;
   readonly version: string;
   initialize?(ctx: PluginContext): Promise<void>;
@@ -234,6 +240,7 @@ export class PluginManager {
   private readonly pluginMap = new Map<string, AppiumMcpPlugin>();
   private readonly server: FastMCP;
   private readonly core: AppiumMcpCore;
+  private readonly capabilityPluginNames = new Set<string>();
   private addToolInterceptorInstalled = false;
 
   constructor(server: FastMCP) {
@@ -260,6 +267,14 @@ export class PluginManager {
   registerPluginCapabilities(): void {
     const registry = new McpRegistry(this.server);
     for (const plugin of this.pluginMap.values()) {
+      if (this.capabilityPluginNames.has(plugin.name)) {
+        log.warn(
+          `[PluginManager] Duplicate plugin name "${plugin.name}" – skipping.`
+        );
+        continue;
+      }
+      this.capabilityPluginNames.add(plugin.name);
+
       if (typeof plugin.register === 'function') {
         plugin.register(registry, this.core);
       }

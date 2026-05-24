@@ -36,6 +36,7 @@ const SERVER_INSTRUCTIONS = [
 export interface CreateAppiumMcpServerOptions {
   /**
    * List of plugins to register with the server.
+   * Plugin names should be unique; duplicate names are skipped with a warning.
    * Plugins are initialized in registration order.
    */
   plugins?: AppiumMcpPlugin[];

@@ -25,6 +25,7 @@ await jest.unstable_mockModule('../logger', () => ({
 
 const { AppiumMcpCore, PluginManager, McpRegistry } =
   await import('../plugin.js');
+const log = (await import('../logger')).default as { warn: jest.Mock };
 const { setSession, safeDeleteAllSessions } =
   await import('../session-store.js');
 
@@ -393,5 +394,38 @@ describe('PluginManager.registerPluginCapabilities', () => {
     // The interceptor wraps addTool, so our custom_tool is in server._tools
     const names = server._tools.map((t: ToolDef) => t.name);
     expect(names).toContain('custom_tool');
+  });
+
+  test('skips duplicate capability registration by plugin name', () => {
+    const server = makeMockServer();
+    const manager = new PluginManager(server);
+
+    let registerCount = 0;
+    const plugin: AppiumMcpPlugin = {
+      name: 'repeat-registrar',
+      version: '1.0.0',
+      register(registry: McpRegistryType) {
+        registerCount += 1;
+        registry.addTool(
+          'repeat_tool',
+          'A repeat tool',
+          {} as any,
+          async () => ({
+            content: [{ type: 'text', text: 'repeat' }],
+          })
+        );
+      },
+    };
+
+    log.warn.mockClear();
+    manager.register([plugin]);
+    manager.registerPluginCapabilities();
+    manager.registerPluginCapabilities();
+
+    expect(registerCount).toBe(1);
+    expect(server._tools).toHaveLength(1);
+    expect(log.warn).toHaveBeenCalledWith(
+      '[PluginManager] Duplicate plugin name "repeat-registrar" – skipping.'
+    );
   });
 });
