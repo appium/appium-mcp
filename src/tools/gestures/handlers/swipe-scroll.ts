@@ -218,6 +218,56 @@ export async function handleSwipe(
   }
 }
 
+/**
+ * Clip an element rect to the visible window. Used for ai-element targets whose
+ * bbox or fallback rect can extend past the screenshot edges.
+ */
+export function rectVisibleWithinWindow(elementRect: Rect, window: Rect): Rect {
+  const windowLeft = window.x ?? 0;
+  const windowTop = window.y ?? 0;
+  const windowRight = windowLeft + window.width;
+  const windowBottom = windowTop + window.height;
+
+  const visibleLeft = Math.max(windowLeft, elementRect.x);
+  const visibleTop = Math.max(windowTop, elementRect.y);
+  const visibleRight = Math.min(windowRight, elementRect.x + elementRect.width);
+  const visibleBottom = Math.min(
+    windowBottom,
+    elementRect.y + elementRect.height
+  );
+
+  const width = Math.max(0, visibleRight - visibleLeft);
+  const height = Math.max(0, visibleBottom - visibleTop);
+
+  if (width > 0 && height > 0) {
+    return { x: visibleLeft, y: visibleTop, width, height };
+  }
+
+  const cx = elementRect.x + elementRect.width / 2;
+  const cy = elementRect.y + elementRect.height / 2;
+  return {
+    x: Math.floor(clamp(cx, windowLeft, windowRight - 1)),
+    y: Math.floor(clamp(cy, windowTop, windowBottom - 1)),
+    width: 1,
+    height: 1,
+  };
+}
+
+/** Keep swipe/scroll pointer coords inside the window (inclusive pixel indices). */
+export function clampDirectionCoordsToWindow(
+  coords: Coords,
+  window: { width: number; height: number }
+): Coords {
+  const maxX = Math.max(0, window.width - 1);
+  const maxY = Math.max(0, window.height - 1);
+  return {
+    startX: Math.floor(clamp(coords.startX, 0, maxX)),
+    startY: Math.floor(clamp(coords.startY, 0, maxY)),
+    endX: Math.floor(clamp(coords.endX, 0, maxX)),
+    endY: Math.floor(clamp(coords.endY, 0, maxY)),
+  };
+}
+
 function coordsForDirection(direction: Direction, rect: Rect): Coords {
   const centerX = Math.floor(rect.x + rect.width / 2);
   const centerY = Math.floor(rect.y + rect.height / 2);
@@ -266,12 +316,24 @@ async function resolveCoords(
       if ('error' in rect) {
         return rect;
       }
-      return coordsForDirection(args.direction, {
+      const targetRect: Rect = {
         x: rect.x,
         y: rect.y,
         width: rect.width,
         height: rect.height,
+      };
+      if (!isAiElementUUID(args.elementUUID)) {
+        return coordsForDirection(args.direction, targetRect);
+      }
+      const window = await getWindowRect(driver);
+      const clippedRect = rectVisibleWithinWindow(targetRect, {
+        x: 0,
+        y: 0,
+        width: window.width,
+        height: window.height,
       });
+      const coords = coordsForDirection(args.direction, clippedRect);
+      return clampDirectionCoordsToWindow(coords, window);
     }
     const window = await getWindowRect(driver);
     return coordsForDirection(args.direction, {
@@ -295,6 +357,10 @@ async function resolveCoords(
     error:
       'Either direction OR custom coordinates (x, y, endX, endY) must be provided.',
   };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 async function performW3CDrag(
