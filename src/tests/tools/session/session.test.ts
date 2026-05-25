@@ -41,7 +41,16 @@ jest.unstable_mockModule('webdriver', () => ({
   },
 }));
 
+jest.unstable_mockModule('../../../persistence', () => ({
+  isSessionPersistenceEnabled: jest.fn(() => false),
+  readAllPersistedSessions: jest.fn(async () => []),
+  removePersistedSession: jest.fn(async () => {}),
+  writePersistedSession: jest.fn(async () => {}),
+}));
 jest.unstable_mockModule('../../../session-store', () => ({
+  listPersistedSessions: jest.fn(() => []),
+  removePersistedSession: jest.fn(),
+  setSession: jest.fn(),
   getDriver: jest.fn(),
   getSessionOwnership: jest.fn(),
   getSessionId: jest.fn(),
@@ -49,7 +58,6 @@ jest.unstable_mockModule('../../../session-store', () => ({
   detachSession: jest.fn(),
   setActiveSession: jest.fn(),
   safeDeleteSession: jest.fn(),
-  setSession: jest.fn(),
   getPlatformName: jest.fn(),
   PLATFORM: { ios: 'iOS', android: 'Android' },
 }));
@@ -321,7 +329,8 @@ describe('appium_session_management tool', () => {
           'appium:automationName': 'UiAutomator2',
           'appium:deviceName': 'Ignored Device',
         },
-        'attached'
+        'attached',
+        expect.any(String)
       );
     });
 
@@ -361,7 +370,8 @@ describe('appium_session_management tool', () => {
           'appium:automationName': 'UiAutomator2',
           'appium:deviceName': 'Pixel 9 Pro XL',
         },
-        'attached'
+        'attached',
+        expect.any(String)
       );
     });
 
@@ -396,7 +406,8 @@ describe('appium_session_management tool', () => {
           'appium:automationName': 'UiAutomator2',
           'appium:deviceName': 'Pixel 9 Pro XL',
         },
-        'attached'
+        'attached',
+        expect.any(String)
       );
     });
 

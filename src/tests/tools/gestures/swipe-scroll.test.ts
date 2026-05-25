@@ -1,9 +1,17 @@
 import { describe, test, expect, jest } from '@jest/globals';
 
+jest.unstable_mockModule('../../../persistence', () => ({
+  isSessionPersistenceEnabled: jest.fn(() => false),
+  getPersistenceDir: jest.fn(() => null),
+  readAllPersistedSessions: jest.fn(async () => []),
+  removePersistedSession: jest.fn(async () => {}),
+  writePersistedSession: jest.fn(async () => {}),
+}));
 jest.unstable_mockModule('../../../session-store', () => ({
   getDriver: jest.fn(),
   getPlatformName: jest.fn(),
   PLATFORM: { ios: 'iOS', android: 'Android' },
+  setSession: jest.fn(),
 }));
 
 jest.unstable_mockModule('../../../command', () => ({

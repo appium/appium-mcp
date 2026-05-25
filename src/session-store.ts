@@ -2,6 +2,10 @@ import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
 import type { Client } from 'webdriver';
 import log from './logger.js';
+import {
+  removePersistedSession,
+  writePersistedSession,
+} from './persistence.js';
 
 // Type aliases for driver variants used throughout the project.
 export type DriverInstance =
@@ -26,6 +30,7 @@ interface SessionInfo {
   isDeletingSession: boolean;
   ownership: SessionOwnership;
   metadata: SessionMetadata;
+  remoteServerUrl?: string;
 }
 
 /**
@@ -107,7 +112,8 @@ export function setSession(
   d: DriverInstance,
   id: string | null,
   capabilities: SessionCapabilities = {},
-  ownership: SessionOwnership = 'owned'
+  ownership: SessionOwnership = 'owned',
+  remoteServerUrl?: string
 ) {
   if (!id) {
     activeSessionId = null;
@@ -136,8 +142,21 @@ export function setSession(
     isDeletingSession: false,
     ownership,
     metadata,
+    remoteServerUrl,
   });
   activeSessionId = id;
+
+  if (remoteServerUrl) {
+    void writePersistedSession({
+      sessionId: id,
+      remoteServerUrl,
+      capabilities,
+      platform: metadata.platform,
+      automationName: metadata.automationName,
+      deviceName: metadata.deviceName,
+      ownership,
+    });
+  }
 }
 
 export function getDriver(sessionId?: string): NullableDriverInstance {
@@ -278,6 +297,7 @@ export function detachSession(sessionId?: string): void {
 
   sessions.delete(id);
   activeSessionId = selectNextActiveSessionId(id);
+  void removePersistedSession(id);
   log.info(`Session ${id} detached successfully.`);
 }
 
@@ -313,6 +333,7 @@ export async function safeDeleteSession(sessionId?: string): Promise<boolean> {
     // Clear the session from store
     sessions.delete(id);
     activeSessionId = selectNextActiveSessionId(id);
+    void removePersistedSession(id);
 
     log.info(`Session ${id} deleted successfully.`);
     return true;
@@ -384,6 +405,22 @@ export const getPlatformName = (driver: any): string => {
   const session = listSessions().find((s) => s.sessionId === client.sessionId);
   if (session && session.platform) {
     return session.platform;
+  }
+
+  // Fallback: check by sessionId directly on the map (covers attached sessions
+  // where isAndroid/isIOS flags aren't set on the raw webdriver Client).
+  if (client.sessionId) {
+    const info = sessions.get(client.sessionId);
+    const platformName = info?.metadata.platform;
+    if (platformName) {
+      if (/android/i.test(platformName)) {
+        return PLATFORM.android;
+      }
+      if (/ios/i.test(platformName)) {
+        return PLATFORM.ios;
+      }
+      return platformName;
+    }
   }
 
   throw new Error('Unknown driver type');

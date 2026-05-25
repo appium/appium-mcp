@@ -89,7 +89,7 @@ export default function mobilePermissions(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
+      const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }

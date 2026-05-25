@@ -29,7 +29,7 @@ export default function gesture(server: FastMCP): void {
       args: GestureArgs,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
+      const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }

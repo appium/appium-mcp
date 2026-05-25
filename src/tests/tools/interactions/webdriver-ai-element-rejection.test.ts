@@ -1,7 +1,15 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 
+jest.unstable_mockModule('../../../persistence.js', () => ({
+  isSessionPersistenceEnabled: jest.fn(() => false),
+  getPersistenceDir: jest.fn(() => null),
+  readAllPersistedSessions: jest.fn(async () => []),
+  removePersistedSession: jest.fn(async () => {}),
+  writePersistedSession: jest.fn(async () => {}),
+}));
 jest.unstable_mockModule('../../../session-store.js', () => ({
   getDriver: jest.fn(),
+  setSession: jest.fn(),
 }));
 
 jest.unstable_mockModule('../../../command.js', () => ({

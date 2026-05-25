@@ -12,7 +12,7 @@ export async function clear(
   id: string,
   sessionId?: string
 ): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
+  const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
