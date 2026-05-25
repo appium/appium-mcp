@@ -154,6 +154,7 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `AI_VISION_IMAGE_MAX_WIDTH` | Optional | Max image width in pixels before compression (default: `1080`) |
 | `AI_VISION_IMAGE_QUALITY` | Optional | JPEG quality 1–100 for compressed screenshots sent to the vision API (default: `80`) |
 | `SENTENCE_TRANSFORMERS_MODEL` | Optional | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`) |
+| `APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH` | Optional | Absolute file path to persist attached remote session info across server restarts (JSON format) |
 
 ### Capabilities
 
