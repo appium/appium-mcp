@@ -47,7 +47,7 @@ export default function generateLocators(server: any): void {
       { log }: any
     ): Promise<any> => {
       log.info('Getting page source');
-      const resolved = resolveDriver(args.sessionId);
+      const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }

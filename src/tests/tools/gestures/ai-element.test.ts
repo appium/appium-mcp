@@ -1,7 +1,16 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 import type { DriverInstance } from '../../../session-store.js';
 
+jest.unstable_mockModule('../../../persistence', () => ({
+  isSessionPersistenceEnabled: jest.fn(() => false),
+  readAllPersistedSessions: jest.fn(async () => []),
+  removePersistedSession: jest.fn(async () => {}),
+  writePersistedSession: jest.fn(async () => {}),
+}));
 jest.unstable_mockModule('../../../session-store', () => ({
+  listPersistedSessions: jest.fn(() => []),
+  removePersistedSession: jest.fn(),
+  setSession: jest.fn(),
   getDriver: jest.fn(),
   getPlatformName: jest.fn(),
   PLATFORM: { ios: 'iOS', android: 'Android' },
@@ -13,9 +22,11 @@ jest.unstable_mockModule('../../../command', () => ({
 
 const {
   AI_ELEMENT_PREFIX,
+  AI_WEBDRIVER_REJECTION,
   isAiElementUUID,
   parseAiElement,
   resolveTargetRect,
+  aiElementWebDriverRejectionIfNeeded,
 } = await import('../../../tools/gestures/handlers/ai-element.js');
 
 const fakeDriver = {} as DriverInstance;
@@ -30,6 +41,24 @@ describe('isAiElementUUID', () => {
     expect(isAiElementUUID('11111111-2222-3333-4444-555555555555')).toBe(false);
     expect(isAiElementUUID('')).toBe(false);
     expect(isAiElementUUID(undefined)).toBe(false);
+  });
+});
+
+describe('aiElementWebDriverRejectionIfNeeded', () => {
+  test('returns isError for ai-element UUIDs', () => {
+    const result = aiElementWebDriverRejectionIfNeeded(
+      'ai-element:100,200:50,150,150,250'
+    );
+    expect(result?.isError).toBe(true);
+    const block = result?.content[0];
+    expect(block && 'text' in block && block.text).toBe(AI_WEBDRIVER_REJECTION);
+  });
+
+  test('returns undefined for real element ids and missing values', () => {
+    expect(
+      aiElementWebDriverRejectionIfNeeded('aaaaaaaa-bbbb-cccc-dddd')
+    ).toBeUndefined();
+    expect(aiElementWebDriverRejectionIfNeeded(undefined)).toBeUndefined();
   });
 });
 

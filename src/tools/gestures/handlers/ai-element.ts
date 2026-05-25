@@ -31,6 +31,11 @@ export const AI_DISABLED_REJECTION =
   `(AI_VISION_ENABLED is not set to true). Use appium_find_element to get a real ` +
   `element UUID, or enable AI_VISION_ENABLED=true with the required AI_VISION_* keys.`;
 
+export const AI_WEBDRIVER_REJECTION =
+  `That is an ai-element token from appium_ai, not a WebDriver element id. ` +
+  `Use appium_gesture to tap it, or appium_find_element for a real id. ` +
+  `To type after a tap, use appium_set_value with w3cActions on the focused field.`;
+
 export type ParsedAiElement = {
   center: { x: number; y: number };
   rect: Rect;
@@ -126,6 +131,19 @@ export async function resolveTargetRect(
 
 export function aiDisabledResult(): ContentResult {
   return errorResult(AI_DISABLED_REJECTION);
+}
+
+export function aiElementWebDriverRejectedResult(): ContentResult {
+  return errorResult(AI_WEBDRIVER_REJECTION);
+}
+
+export function aiElementWebDriverRejectionIfNeeded(
+  elementUUID: string | undefined
+): ContentResult | undefined {
+  if (isAiElementUUID(elementUUID)) {
+    return aiElementWebDriverRejectedResult();
+  }
+  return undefined;
 }
 
 function rectAroundCenter(cx: number, cy: number): Rect {

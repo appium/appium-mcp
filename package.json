@@ -1,11 +1,11 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.75.5",
+  "version": "1.76.0",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/appium/appium-mcp.git"
+    "url": "git+https://github.com/appium/appium-mcp.git"
   },
   "bugs": {
     "url": "https://github.com/appium/appium-mcp/issues"

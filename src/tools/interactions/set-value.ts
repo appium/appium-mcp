@@ -9,6 +9,7 @@ import {
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
+import { aiElementWebDriverRejectionIfNeeded } from '../gestures/handlers/ai-element.js';
 
 export default function setValue(server: FastMCP): void {
   const setValueSchema = z
@@ -44,11 +45,20 @@ export default function setValue(server: FastMCP): void {
       args: z.infer<typeof setValueSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
+      const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
       const { driver } = resolved;
+
+      if (!args.w3cActions) {
+        const aiRejection = aiElementWebDriverRejectionIfNeeded(
+          args.elementUUID
+        );
+        if (aiRejection) {
+          return aiRejection;
+        }
+      }
 
       try {
         await _setValue(

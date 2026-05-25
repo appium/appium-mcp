@@ -27,7 +27,7 @@ export default function getActiveElement(server: FastMCP): void {
       openWorldHint: false,
     },
     execute: async (args: z.infer<typeof schema>): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
+      const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }

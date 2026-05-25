@@ -69,7 +69,7 @@ async function handleHide(
   sessionId: string | undefined,
   keys: string[] | undefined
 ): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
+  const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
@@ -81,7 +81,7 @@ async function handleHide(
 }
 
 async function handleIsShown(sessionId?: string): Promise<ContentResult> {
-  const resolved = resolveDriver(sessionId);
+  const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }

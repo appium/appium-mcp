@@ -8,6 +8,7 @@ import {
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
+import { aiElementWebDriverRejectionIfNeeded } from '../gestures/handlers/ai-element.js';
 
 export default function getElementAttributeTool(server: FastMCP): void {
   const schema = z.object({
@@ -36,11 +37,16 @@ export default function getElementAttributeTool(server: FastMCP): void {
       args: z.infer<typeof schema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
+      const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
       const { driver } = resolved;
+
+      const aiRejection = aiElementWebDriverRejectionIfNeeded(args.elementUUID);
+      if (aiRejection) {
+        return aiRejection;
+      }
 
       try {
         const value = await getElementAttribute(
