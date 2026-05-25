@@ -8,6 +8,7 @@ jest.unstable_mockModule('../../tools/tool-response', () => ({
   readWebElementId: jest.fn(),
   resolveDriver: jest.fn(),
   textResultWithPrimaryElementId: jest.fn(),
+  // fixme: '11:29  warning  Avoid callbacks. Prefer Async/Await  promise/prefer-await-to-callbacks'
   toolErrorMessage: jest.fn((err: unknown) =>
     err instanceof Error ? err.message : String(err)
   ),
