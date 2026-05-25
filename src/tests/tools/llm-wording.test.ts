@@ -1,5 +1,9 @@
 import { describe, expect, jest, test } from '@jest/globals';
 
+function mockToolErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 jest.unstable_mockModule('../../tools/tool-response', () => ({
   errorResult: jest.fn((text: string) => ({
     content: [{ type: 'text', text }],
@@ -8,9 +12,7 @@ jest.unstable_mockModule('../../tools/tool-response', () => ({
   readWebElementId: jest.fn(),
   resolveDriver: jest.fn(),
   textResultWithPrimaryElementId: jest.fn(),
-  toolErrorMessage: jest.fn((err: unknown) =>
-    err instanceof Error ? err.message : String(err)
-  ),
+  toolErrorMessage: jest.fn(mockToolErrorMessage),
 }));
 
 jest.unstable_mockModule('../../tools/session/attach-session', () => ({
