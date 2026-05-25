@@ -1,3 +1,9 @@
+## [1.76.0](https://github.com/appium/appium-mcp/compare/v1.75.7...v1.76.0) (2026-05-25)
+
+### Features
+
+* **session:** persist remote sessions and auto-rehydrate on cache with APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH ([#349](https://github.com/appium/appium-mcp/issues/349)) ([81c605e](https://github.com/appium/appium-mcp/commit/81c605eb848aeda7f3813b003c2acf7376dfba85)), closes [#9](https://github.com/appium/appium-mcp/issues/9) [#4](https://github.com/appium/appium-mcp/issues/4) [#5](https://github.com/appium/appium-mcp/issues/5) [#7](https://github.com/appium/appium-mcp/issues/7) [#1](https://github.com/appium/appium-mcp/issues/1) [#2](https://github.com/appium/appium-mcp/issues/2) [#3](https://github.com/appium/appium-mcp/issues/3) [#6](https://github.com/appium/appium-mcp/issues/6)
+
 ## [1.75.7](https://github.com/appium/appium-mcp/compare/v1.75.6...v1.75.7) (2026-05-23)
 
 ### Bug Fixes
