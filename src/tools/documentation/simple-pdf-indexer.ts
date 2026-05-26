@@ -303,7 +303,6 @@ export async function indexAllMarkdownFiles(
         documents.forEach((doc) => {
           doc.metadata = {
             ...doc.metadata,
-            source: markdownFile,
             filename,
             relativePath,
           };
