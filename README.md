@@ -405,6 +405,49 @@ Each plugin name should be unique within the server. If two plugins use the same
 
 Each tool name should also be unique across all plugins and the core server. FastMCP registers the latest tool definition for a name, so a duplicate name can replace an earlier tool definition. Appium MCP registers plugin tools before built-in tools, which means a plugin tool that uses the same name as a built-in tool can be replaced by the built-in tool. Appium MCP tools usually have an `appium_` prefix, so plugin tool names should avoid that pattern to reduce the chance of collisions with future core tools.
 
+### Verify plugin and tool names
+
+Use the `verify` command before publishing or deploying a custom plugin setup. It registers plugin capabilities into a lightweight collector, registers the Appium MCP core tools, and reports duplicate plugin names, duplicate tool names, and registration/load errors without starting the MCP server.
+
+```bash
+# Check only the Appium MCP core tools shipped by this package
+npx appium-mcp verify
+
+# Check Appium MCP plus one external plugin
+npx appium-mcp verify --plugin ./dist/my-plugin.js
+
+# Check multiple plugins together
+npx appium-mcp verify --plugin ./dist/plugin-a.js --plugin @my-org/appium-mcp-plugin
+```
+
+The report labels this package's own shipped tools as `appium-mcp core`. External plugin sources are labeled as `plugin:<name>` after loading, or `plugin:<module-or-path>` if the module cannot be loaded.
+
+Plugin modules used with `--plugin` may export any of these shapes:
+
+```ts
+export default new MyPlugin();
+export default MyPlugin;
+export const plugin = new MyPlugin();
+export const plugins = [new PluginA(), new PluginB()];
+```
+
+For CI or custom server tests, the same verifier is available from `appium-mcp/core`:
+
+```ts
+import {
+  formatVerificationReport,
+  verifyAppiumMcpNames,
+} from 'appium-mcp/core';
+import MyPlugin from './my-plugin.js';
+
+const report = verifyAppiumMcpNames({
+  plugins: [new MyPlugin()],
+});
+
+console.log(formatVerificationReport(report));
+process.exit(report.ok ? 0 : 1);
+```
+
 Treat anything outside `appium-mcp/core` as internal. In particular, plugins should not rely on private server internals, internal session-store modules, tool implementation files, or the raw FastMCP server instance. If a plugin needs another stable primitive, open an issue so it can be added to `AppiumMcpCore` or `McpRegistry` deliberately.
 
 See [examples/plugin-example.ts](examples/plugin-example.ts) for a fuller cookbook with tools, prompts, resources, resource templates, call hooks, and lifecycle setup.
