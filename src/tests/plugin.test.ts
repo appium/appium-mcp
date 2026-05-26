@@ -23,6 +23,10 @@ await jest.unstable_mockModule('../logger', () => ({
   },
 }));
 
+await jest.unstable_mockModule('../tools/index', () => ({
+  default: jest.fn(),
+}));
+
 const { AppiumMcpCore, PluginManager, McpRegistry } =
   await import('../plugin.js');
 const log = (await import('../logger.js')).default as unknown as {
