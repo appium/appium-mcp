@@ -109,7 +109,7 @@ interface EmbeddingsCacheFile {
  */
 export async function initializeVectorStore(
   markdownPath: string,
-  chunkSize: number = 1000,
+  chunkSize: number = 2500,
   chunkOverlap: number = 200
 ): Promise<MemoryVectorStore> {
   try {
@@ -221,7 +221,7 @@ export async function getMarkdownFilesInDirectory(
  */
 export async function indexMarkdown(
   markdownPath: string,
-  chunkSize: number = 1000,
+  chunkSize: number = 2500,
   chunkOverlap: number = 200
 ): Promise<void> {
   try {
@@ -246,7 +246,7 @@ export async function indexMarkdown(
  */
 export async function indexAllMarkdownFiles(
   dirPath: string,
-  chunkSize: number = 1000,
+  chunkSize: number = 2500,
   chunkOverlap: number = 200
 ): Promise<string[]> {
   try {
@@ -679,7 +679,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   // Parse command line arguments
   const args = process.argv.slice(2);
   let markdownPath: string;
-  let chunkSize = 1000; // Default chunk size
+  let chunkSize = 2500; // Default chunk size
   let chunkOverlap = 200; // Default overlap
   let indexSingleFile = false;
 
