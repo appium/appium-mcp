@@ -4,12 +4,19 @@ import type {
   ToolCallContext,
   ToolCallResult,
 } from '../plugin.js';
+import { z } from 'zod';
 
 type ToolDef = {
   name: string;
   description?: string;
   parameters?: unknown;
   execute: (args: unknown, ctx: unknown) => Promise<unknown>;
+};
+
+type ResourceDef = {
+  uri: string;
+  name?: string;
+  load: () => Promise<unknown>;
 };
 
 const registeredServers: MockFastMCP[] = [];
@@ -19,9 +26,11 @@ let sessions: Array<{
   isActive: boolean;
   ownership: string;
 }> = [];
+const testToolParameters = z.object({});
 
 class MockFastMCP {
   readonly tools: ToolDef[] = [];
+  readonly resources: ResourceDef[] = [];
   private readonly handlers = new Map<
     string,
     Array<(event: unknown) => unknown>
@@ -33,6 +42,14 @@ class MockFastMCP {
 
   addTool(toolDef: ToolDef): void {
     this.tools.push(toolDef);
+  }
+
+  addResource(resourceDef: ResourceDef): void {
+    this.resources.push(resourceDef);
+  }
+
+  addResourceTemplate(resourceDef: ResourceDef): void {
+    this.resources.push(resourceDef);
   }
 
   on(eventName: string, handler: (event: unknown) => unknown): void {
@@ -62,11 +79,34 @@ await jest.unstable_mockModule('../tools/index', () => ({
         content: [{ type: 'text', text: 'builtin result' }],
       }),
     });
+    server.addTool({
+      name: 'blocked_tool',
+      description: 'Blocked test tool',
+      parameters: {},
+      execute: async () => ({
+        content: [{ type: 'text', text: 'blocked result' }],
+      }),
+    });
   },
 }));
 
 await jest.unstable_mockModule('../resources/index', () => ({
-  default: jest.fn(),
+  default: (server: MockFastMCP) => {
+    server.addResource({
+      uri: 'generate://code-with-locators',
+      name: 'Generate Code With Locators',
+      load: async () => ({
+        text: 'allowed resource',
+      }),
+    });
+    server.addResource({
+      uri: 'device://state',
+      name: 'Device State',
+      load: async () => ({
+        text: 'blocked resource',
+      }),
+    });
+  },
 }));
 
 await jest.unstable_mockModule('../session-store', () => ({
@@ -154,6 +194,67 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       type: 'text',
       text: 'modified builtin result',
     });
+  });
+
+  test('hides nonmatching built-in tools and resources from registration', () => {
+    const server = createAppiumMcpServer({
+      policy: {
+        allowTools: [/^builtin_tool$/],
+        allowResources: [/^Generate Code With Locators$/],
+      },
+    }) as unknown as MockFastMCP;
+
+    expect(server.tools.map((tool) => tool.name)).toEqual(['builtin_tool']);
+    expect(server.resources.map((resource) => resource.uri)).toEqual([
+      'generate://code-with-locators',
+    ]);
+  });
+
+  test('applies policy to plugin tools before registration', () => {
+    const plugin: AppiumMcpPlugin = {
+      name: 'policy-plugin',
+      version: '1.0.0',
+      register(registry) {
+        registry.addTool(
+          'plugin_allowed',
+          'Allowed plugin tool',
+          testToolParameters,
+          async () => ({
+            content: [{ type: 'text', text: 'allowed' }],
+          })
+        );
+        registry.addTool(
+          'plugin_blocked',
+          'Blocked plugin tool',
+          testToolParameters,
+          async () => ({
+            content: [{ type: 'text', text: 'blocked' }],
+          })
+        );
+      },
+    };
+
+    const server = createAppiumMcpServer({
+      plugins: [plugin],
+      policy: {
+        allowTools: [/^plugin_allowed$/, /^builtin_tool$/],
+      },
+    }) as unknown as MockFastMCP;
+
+    expect(server.tools.map((tool) => tool.name)).toEqual([
+      'plugin_allowed',
+      'builtin_tool',
+    ]);
+  });
+
+  test('fails during construction when policy allowlists are invalid', () => {
+    expect(() =>
+      createAppiumMcpServer({
+        policy: {
+          allowTools: ['builtin_tool'] as unknown as RegExp[],
+        },
+      })
+    ).toThrow('policy.allowTools must contain only RegExp values');
   });
 
   test('destroys plugins only after the last client disconnects', async () => {
