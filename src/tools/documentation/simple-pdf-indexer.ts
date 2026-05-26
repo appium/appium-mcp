@@ -77,6 +77,15 @@ const EXCLUDED_MARKDOWN_DIRECTORIES = new Set([
 ]);
 
 /**
+ * Exclude specific filenames regardless of where they appear in the tree.
+ *
+ * CHANGELOG.md files are semantic-release templates dominated by version
+ * headers, commit hashes, and PR numbers. They have negligible instructional
+ * value.
+ */
+const EXCLUDED_MARKDOWN_FILENAMES = new Set(['CHANGELOG.md']);
+
+/**
  * Embeddings cache: vectors persisted alongside documents.json so the
  * server doesn't re-embed all chunks on every cold start.
  *
@@ -197,7 +206,8 @@ export async function getMarkdownFilesInDirectory(
           await scanDirectory(filePath);
         } else if (
           stats.isFile() &&
-          path.extname(file).toLowerCase() === '.md'
+          path.extname(file).toLowerCase() === '.md' &&
+          !EXCLUDED_MARKDOWN_FILENAMES.has(file)
         ) {
           markdownFiles.push(filePath);
         }
