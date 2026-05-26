@@ -1,3 +1,9 @@
+## [1.77.0](https://github.com/appium/appium-mcp/compare/v1.76.0...v1.77.0) (2026-05-26)
+
+### Features
+
+* add initial plugin support ([#352](https://github.com/appium/appium-mcp/issues/352)) ([5551ca4](https://github.com/appium/appium-mcp/commit/5551ca46012900968a129eb44bfe92d348db60eb))
+
 ## [1.76.0](https://github.com/appium/appium-mcp/compare/v1.75.7...v1.76.0) (2026-05-25)
 
 ### Features
