@@ -246,7 +246,7 @@ function formatIOSSelectionResponse(
       {
         message: `✅ Device selected: ${deviceName} (${deviceUdid})`,
         instructions:
-          '🚀 You can now call the prepare_ios_simulator tool to boot and setup WDA on the simulator.',
+          '🚀 You can now call the prepare_ios_simulator tool to boot and setup WDA on the simulator or the appium_prepare_ios_real_device tool to setup WDA on ios real device.',
         platform: 'ios',
         capabilities: {
           'appium:udid': deviceUdid,
