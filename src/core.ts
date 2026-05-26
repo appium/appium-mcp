@@ -7,11 +7,22 @@
  */
 export { createAppiumMcpServer } from './create-server.js';
 export type { CreateAppiumMcpServerOptions } from './create-server.js';
-export { AppiumMcpCore, McpRegistry, PluginManager } from './plugin.js';
+export {
+  AppiumMcpCore,
+  formatVerificationReport,
+  McpRegistry,
+  PluginManager,
+  verifyAppiumMcpNames,
+} from './plugin.js';
 export type {
   AppiumMcpPlugin,
   PluginContext,
   PluginSessionContext,
   ToolCallContext,
   ToolCallResult,
+  VerificationDuplicate,
+  VerificationDuplicateKind,
+  VerificationEntry,
+  VerificationReport,
+  VerifyAppiumMcpNamesOptions,
 } from './plugin.js';
