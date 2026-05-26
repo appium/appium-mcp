@@ -137,23 +137,23 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 
 > **Note:** Appium driver prerequisites (`ANDROID_HOME`, `JAVA_HOME`, UiAutomator2/XCUITest driver setup) are not listed here, they are system-level requirements. Once this MCP server is configured, ask your AI assistant to set up the environment for you using the built-in `appium_skills` tool.
 
-| Variable                          | Required                               | Description                                                                                                                                                                                                                                                                                                                                        |
-| --------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CAPABILITIES_CONFIG`             | Optional                               | Absolute path to a `capabilities.json` file with per-platform capability presets                                                                                                                                                                                                                                                                   |
-| `SCREENSHOTS_DIR`                 | Optional                               | Directory where screenshots and screen recordings are saved. Defaults to the current working directory                                                                                                                                                                                                                                             |
-| `NO_UI`                           | Optional                               | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode)                                                                                                                                                                                                                                 |
-| `APPIUM_MCP_ON_CLIENT_DISCONNECT` | Optional                               | Session cleanup when the MCP client disconnects: `delete_all` (default) deletes **MCP-owned** Appium sessions (`safeDeleteAllSessions`); `skip` keeps those sessions across disconnects (e.g. HTTP/stream clients that reconnect). Attached/remote sessions are not removed by this path. See [MCP disconnect behavior](#mcp-disconnect-behavior). |
-| `APPIUM_MCP_WDA_APP_PATH`         | Optional                               | Absolute path to a pre-extracted `WebDriverAgentRunner-Runner.app` bundle. When set, `prepare_ios_simulator` skips all GitHub downloads and uses this bundle directly — useful in environments where external downloads are blocked                                                                                                                |
-| `REMOTE_SERVER_URL_ALLOW_REGEX`   | Optional                               | Regex pattern that remote Appium server URLs must match. Defaults to `^https?://`                                                                                                                                                                                                                                                                  |
-| `AI_VISION_ENABLED`               | Optional                               | Set to `true` to register the `appium_ai` tool (vision-based element finding). When unset or `false`, the AI tool is **not registered** and the LLM has no way to invoke vision-based finding. Requires `AI_VISION_API_BASE_URL` and `AI_VISION_API_KEY` to also be set, otherwise the server fails to start.                                      |
-| `AI_VISION_API_BASE_URL`          | Required when `AI_VISION_ENABLED=true` | Base URL of the OpenAI-compatible vision model API                                                                                                                                                                                                                                                                                                 |
-| `AI_VISION_API_KEY`               | Required when `AI_VISION_ENABLED=true` | API key for the vision model provider                                                                                                                                                                                                                                                                                                              |
-| `AI_VISION_MODEL`                 | Optional                               | Vision model name (default: `Qwen3-VL-235B-A22B-Instruct`)                                                                                                                                                                                                                                                                                         |
-| `AI_VISION_COORD_TYPE`            | Optional                               | Coordinate type: `normalized` (default) or `absolute`                                                                                                                                                                                                                                                                                              |
-| `AI_VISION_IMAGE_MAX_WIDTH`       | Optional                               | Max image width in pixels before compression (default: `1080`)                                                                                                                                                                                                                                                                                     |
-| `AI_VISION_IMAGE_QUALITY`         | Optional                               | JPEG quality 1–100 for compressed screenshots sent to the vision API (default: `80`)                                                                                                                                                                                                                                                               |
-| `SENTENCE_TRANSFORMERS_MODEL`     | Optional                               | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`)                                                                                                                                                                                                                                   |
-| `APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH` | Optional | Absolute file path to persist attached remote session info across server restarts (JSON format) |
+| Variable                                  | Required                               | Description                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CAPABILITIES_CONFIG`                     | Optional                               | Absolute path to a `capabilities.json` file with per-platform capability presets                                                                                                                                                                                                                                                                   |
+| `SCREENSHOTS_DIR`                         | Optional                               | Directory where screenshots and screen recordings are saved. Defaults to the current working directory                                                                                                                                                                                                                                             |
+| `NO_UI`                                   | Optional                               | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode)                                                                                                                                                                                                                                 |
+| `APPIUM_MCP_ON_CLIENT_DISCONNECT`         | Optional                               | Session cleanup when the MCP client disconnects: `delete_all` (default) deletes **MCP-owned** Appium sessions (`safeDeleteAllSessions`); `skip` keeps those sessions across disconnects (e.g. HTTP/stream clients that reconnect). Attached/remote sessions are not removed by this path. See [MCP disconnect behavior](#mcp-disconnect-behavior). |
+| `APPIUM_MCP_WDA_APP_PATH`                 | Optional                               | Absolute path to a pre-extracted `WebDriverAgentRunner-Runner.app` bundle. When set, `prepare_ios_simulator` skips all GitHub downloads and uses this bundle directly — useful in environments where external downloads are blocked                                                                                                                |
+| `REMOTE_SERVER_URL_ALLOW_REGEX`           | Optional                               | Regex pattern that remote Appium server URLs must match. Defaults to `^https?://`                                                                                                                                                                                                                                                                  |
+| `AI_VISION_ENABLED`                       | Optional                               | Set to `true` to register the `appium_ai` tool (vision-based element finding). When unset or `false`, the AI tool is **not registered** and the LLM has no way to invoke vision-based finding. Requires `AI_VISION_API_BASE_URL` and `AI_VISION_API_KEY` to also be set, otherwise the server fails to start.                                      |
+| `AI_VISION_API_BASE_URL`                  | Required when `AI_VISION_ENABLED=true` | Base URL of the OpenAI-compatible vision model API                                                                                                                                                                                                                                                                                                 |
+| `AI_VISION_API_KEY`                       | Required when `AI_VISION_ENABLED=true` | API key for the vision model provider                                                                                                                                                                                                                                                                                                              |
+| `AI_VISION_MODEL`                         | Optional                               | Vision model name (default: `Qwen3-VL-235B-A22B-Instruct`)                                                                                                                                                                                                                                                                                         |
+| `AI_VISION_COORD_TYPE`                    | Optional                               | Coordinate type: `normalized` (default) or `absolute`                                                                                                                                                                                                                                                                                              |
+| `AI_VISION_IMAGE_MAX_WIDTH`               | Optional                               | Max image width in pixels before compression (default: `1080`)                                                                                                                                                                                                                                                                                     |
+| `AI_VISION_IMAGE_QUALITY`                 | Optional                               | JPEG quality 1–100 for compressed screenshots sent to the vision API (default: `80`)                                                                                                                                                                                                                                                               |
+| `SENTENCE_TRANSFORMERS_MODEL`             | Optional                               | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`)                                                                                                                                                                                                                                   |
+| `APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH` | Optional                               | Absolute file path to persist attached remote session info across server restarts (JSON format)                                                                                                                                                                                                                                                    |
 
 ### Capabilities
 
@@ -407,60 +407,26 @@ Each tool name should also be unique across all plugins and the core server. Fas
 
 ### Verify plugin and tool names
 
-Use the `verify` command before publishing or deploying a custom plugin setup. It registers plugin capabilities into a lightweight collector, registers the Appium MCP core tools, and reports duplicate plugin names, duplicate tool names, and registration/load errors without starting the MCP server.
+Use `verifyAppiumMcpNames` before publishing or deploying a custom plugin setup. It registers your plugin capabilities into a lightweight collector, registers the Appium MCP core tools, and reports duplicate plugin names, duplicate tool names, and registration errors without starting the MCP server.
 
-```bash
-# Check only the Appium MCP core tools shipped by this package
-npx appium-mcp verify
-
-# Check Appium MCP plus one external plugin
-npx appium-mcp verify --plugin ./dist/my-plugin.js
-
-# Check multiple plugins together
-npx appium-mcp verify --plugin ./dist/plugin-a.js --plugin @my-org/appium-mcp-plugin
-```
-
-The report labels this package's own shipped tools as `appium-mcp core`. External plugin sources are labeled as `plugin:<name>` after loading, or `plugin:<module-or-path>` if the module cannot be loaded.
-
-When you provide multiple plugins, order is preserved. Repeated `--plugin` flags are loaded from left to right, and plugins inside an exported `plugins` array are used in array order. This matters because Appium MCP keeps the first plugin for a duplicate plugin name and skips later plugins with the same name. Tool names still need to be unique across all loaded plugins and `appium-mcp core`; the verifier reports any collisions it finds.
-
-Plugin modules used with `--plugin` may export any of these shapes:
-
-```ts
-export default new MyPlugin();
-export default MyPlugin;
-export const plugin = new MyPlugin();
-export const plugins = [new PluginA(), new PluginB()];
-```
-
-That means you can either pass multiple modules:
-
-```bash
-npx appium-mcp verify --plugin ./dist/plugin-a.js --plugin ./dist/plugin-b.js
-```
-
-Or bundle several plugins in one module:
-
-```ts
-export const plugins = [new PluginA(), new PluginB()];
-```
-
-For CI or custom server tests, the same verifier is available from `appium-mcp/core`:
+The recommended approach is to verify the same plugin array you pass to `createAppiumMcpServer({ plugins })`. This preserves your real plugin instances and order:
 
 ```ts
 import {
   formatVerificationReport,
   verifyAppiumMcpNames,
 } from 'appium-mcp/core';
-import MyPlugin from './my-plugin.js';
+import { plugins } from './plugins.js';
 
-const report = verifyAppiumMcpNames({
-  plugins: [new MyPlugin()],
-});
+const report = verifyAppiumMcpNames({ plugins });
 
 console.log(formatVerificationReport(report));
 process.exit(report.ok ? 0 : 1);
 ```
+
+When you provide multiple plugins, order is preserved. Plugins are verified in array order. This matters because Appium MCP keeps the first plugin for a duplicate plugin name and skips later plugins with the same name. Tool names still need to be unique across all loaded plugins and `appium-mcp core`; the verifier reports any collisions it finds.
+
+The report labels this package's own shipped tools as `appium-mcp core`. Plugin sources are labeled as `plugin:<name>` with the plugin version.
 
 Treat anything outside `appium-mcp/core` as internal. In particular, plugins should not rely on private server internals, internal session-store modules, tool implementation files, or the raw FastMCP server instance. If a plugin needs another stable primitive, open an issue so it can be added to `AppiumMcpCore` or `McpRegistry` deliberately.
 

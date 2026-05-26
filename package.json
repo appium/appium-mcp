@@ -37,7 +37,7 @@
     "inspect": "npx fastmcp inspect src/index.js",
     "dev:built": "node dist/index.js",
     "inspect:built": "npx @modelcontextprotocol/inspector node dist/index.js",
-    "verify:names": "node dist/index.js verify",
+    "verify:names": "node scripts/verify-names.mjs",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:locators": "NODE_OPTIONS=--experimental-vm-modules jest src/tests/generate-all-locators.test.ts",
     "lint": "eslint src --ext .ts",

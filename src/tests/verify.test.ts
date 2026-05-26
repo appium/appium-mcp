@@ -17,7 +17,7 @@ await jest.unstable_mockModule('../tools/index', () => ({
 }));
 
 const { formatVerificationReport, verifyAppiumMcpNames } =
-  await import('../verify.js');
+  await import('../plugin.js');
 
 describe('verifyAppiumMcpNames', () => {
   test('passes when plugin and tool names are unique', () => {
