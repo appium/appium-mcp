@@ -3,22 +3,22 @@ import appiumConfig from '@appium/eslint-config-appium-ts';
 export default [
   ...appiumConfig,
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'examples/**/*.ts'],
     rules: {
       'no-console': 'off',
       'import/no-named-as-default': 'off',
       'import/no-named-as-default-member': 'off',
       '@typescript-eslint/no-unused-vars': [
-        "warn",
+        'warn',
         {
-          "args": "all",
-          "argsIgnorePattern": "^_",
-          "varsIgnorePattern": "^_",
-          "caughtErrors": "all",
-          "caughtErrorsIgnorePattern": "^_",
-          "destructuredArrayIgnorePattern": "^_",
-          "ignoreRestSiblings": true
-        }
+          args: 'all',
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrors: 'all',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
       ],
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
