@@ -422,12 +422,26 @@ npx appium-mcp verify --plugin ./dist/plugin-a.js --plugin @my-org/appium-mcp-pl
 
 The report labels this package's own shipped tools as `appium-mcp core`. External plugin sources are labeled as `plugin:<name>` after loading, or `plugin:<module-or-path>` if the module cannot be loaded.
 
+When you provide multiple plugins, order is preserved. Repeated `--plugin` flags are loaded from left to right, and plugins inside an exported `plugins` array are used in array order. This matters because Appium MCP keeps the first plugin for a duplicate plugin name and skips later plugins with the same name. Tool names still need to be unique across all loaded plugins and `appium-mcp core`; the verifier reports any collisions it finds.
+
 Plugin modules used with `--plugin` may export any of these shapes:
 
 ```ts
 export default new MyPlugin();
 export default MyPlugin;
 export const plugin = new MyPlugin();
+export const plugins = [new PluginA(), new PluginB()];
+```
+
+That means you can either pass multiple modules:
+
+```bash
+npx appium-mcp verify --plugin ./dist/plugin-a.js --plugin ./dist/plugin-b.js
+```
+
+Or bundle several plugins in one module:
+
+```ts
 export const plugins = [new PluginA(), new PluginB()];
 ```
 
