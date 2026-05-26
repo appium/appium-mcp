@@ -1,18 +1,19 @@
 /**
  * Simple Markdown Indexer
  *
- * A simplified implementation for indexing Markdown documents into an in-memory vector store
- * using LangChain's RecursiveCharacterTextSplitter and MemoryVectorStore.
- * The vector store is persisted to a file for use across different script executions.
+ * Indexes Markdown documents into an in-memory vector store using a
+ * header-aware hybrid splitter and LangChain's MemoryVectorStore. The
+ * vector store is persisted to a file for use across different script
+ * executions.
  */
 
-import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Document } from '@langchain/core/documents';
 import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
 import { fs } from '@appium/support';
 import * as crypto from 'node:crypto';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { splitMarkdownByHeaders } from './markdown-header-splitter.js';
 
 // Initialize embeddings using sentence-transformers (no API key required)
 import { SentenceTransformersEmbeddings } from './sentence-transformers-embeddings.js';
@@ -67,7 +68,13 @@ let memoryVectorStore: MemoryVectorStore | null = null;
 /**
  * Exclude certain directories from being indexed to avoid irrelevant content and reduce noise in the vector store.
  */
-const EXCLUDED_MARKDOWN_DIRECTORIES = new Set(['appium-skills']);
+const EXCLUDED_MARKDOWN_DIRECTORIES = new Set([
+  'appium-skills',
+  'ja',
+  'zh',
+  '.github',
+  'blog',
+]);
 
 /**
  * Embeddings cache: vectors persisted alongside documents.json so the
@@ -114,15 +121,15 @@ export async function initializeVectorStore(
     const markdownText = await extractTextFromMarkdown(markdownPath);
     log.info(`Extracted ${markdownText.length} characters from Markdown`);
 
-    // Create text splitter
-    const textSplitter = new RecursiveCharacterTextSplitter({
+    // Header-aware hybrid splitter: parses ATX headers to find topical
+    // boundaries, coalesces short sibling sections to avoid tiny embeddings,
+    // recursive-splits oversized sections, and prepends a header breadcrumb
+    // (`# Page > ## Section`) so each chunk's embedding carries its context.
+    log.info('Splitting text into chunks...');
+    const documents = await splitMarkdownByHeaders(markdownText, {
       chunkSize,
       chunkOverlap,
     });
-
-    // Split text into documents
-    log.info('Splitting text into chunks...');
-    const documents = await textSplitter.createDocuments([markdownText]);
     log.info(`Created ${documents.length} document chunks`);
 
     // Embed once; reuse the vectors for both the in-memory store and the cache.
@@ -282,15 +289,12 @@ export async function indexAllMarkdownFiles(
         const markdownText = await extractTextFromMarkdown(markdownFile);
         log.info(`Extracted ${markdownText.length} characters from Markdown`);
 
-        // Create text splitter
-        const textSplitter = new RecursiveCharacterTextSplitter({
+        // Header-aware hybrid splitter
+        log.info('Splitting text into chunks...');
+        const documents = await splitMarkdownByHeaders(markdownText, {
           chunkSize,
           chunkOverlap,
         });
-
-        // Split text into documents
-        log.info('Splitting text into chunks...');
-        const documents = await textSplitter.createDocuments([markdownText]);
         log.info(`Created ${documents.length} document chunks`);
 
         // Add file metadata to each document
