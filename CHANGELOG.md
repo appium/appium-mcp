@@ -1,3 +1,9 @@
+## [1.78.0](https://github.com/appium/appium-mcp/compare/v1.77.0...v1.78.0) (2026-05-26)
+
+### Features
+
+* add plugin names/tool names verification cli ([#366](https://github.com/appium/appium-mcp/issues/366)) ([3ad1016](https://github.com/appium/appium-mcp/commit/3ad10163b2083b6346a27ba8b38adf6619c08b03))
+
 ## [1.77.0](https://github.com/appium/appium-mcp/compare/v1.76.0...v1.77.0) (2026-05-26)
 
 ### Features
