@@ -48,7 +48,6 @@
     "index-docs": "node dist/scripts/simple-index-documentation.js",
     "query-docs": "node dist/scripts/simple-query-documentation.js",
     "eval-docs": "node dist/scripts/eval-documentation-rag.js",
-    "eval-docs:save": "node dist/scripts/eval-documentation-rag.js --save",
     "generate-cache": "node dist/scripts/generate-embeddings-cache.js",
     "prepublishOnly": "npm run build && npm run generate-cache",
     "sync-version": "node scripts/sync-version.mjs",
