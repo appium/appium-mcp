@@ -36,6 +36,88 @@ const HEADER_RE = /^(#{1,6})\s+(.+?)\s*$/;
 const FENCE_RE = /^\s{0,3}(```|~~~)/;
 
 /**
+ * Split a single Markdown document into chunks using header-aware hybrid logic.
+ * See module docstring for the algorithm summary.
+ */
+export async function splitMarkdownByHeaders(
+  markdown: string,
+  options: MarkdownHeaderSplitterOptions
+): Promise<Document[]> {
+  const { chunkSize, chunkOverlap } = options;
+  const sections = parseSections(markdown);
+
+  // Fallback splitter for sections that exceed chunkSize on their own.
+  // Reserve some room for the breadcrumb so the final chunk text still fits.
+  const recursive = new RecursiveCharacterTextSplitter({
+    chunkSize,
+    chunkOverlap,
+    keepSeparator: true,
+  });
+
+  const chunks: Document[] = [];
+  // `buffer` holds rendered section texts (each with its own breadcrumb) that
+  // we plan to coalesce. We flush when adding the next section would overflow.
+  const buffer: Section[] = [];
+  let bufferSize = 0;
+
+  const flushBuffer = () => {
+    if (buffer.length === 0) {
+      return;
+    }
+    const text = buffer.map(renderSection).join('\n\n');
+    chunks.push(
+      new Document({
+        pageContent: text,
+        metadata: {
+          headerPath: breadcrumbFor(buffer[0].headerStack),
+          sectionCount: buffer.length,
+        },
+      })
+    );
+    buffer.length = 0;
+    bufferSize = 0;
+  };
+
+  for (const section of sections) {
+    const rendered = renderSection(section);
+
+    if (rendered.length > chunkSize) {
+      // Section is too big to live in any single chunk: flush whatever we had
+      // buffered, then recursive-split this section's body, prepending the
+      // breadcrumb to each sub-chunk so context isn't lost.
+      flushBuffer();
+      const bc = breadcrumbFor(section.headerStack);
+      const subTexts = await recursive.splitText(section.body || '');
+      for (const sub of subTexts) {
+        const text = bc ? `${bc}\n\n${sub}` : sub;
+        chunks.push(
+          new Document({
+            pageContent: text,
+            metadata: {
+              headerPath: bc,
+              sectionCount: 1,
+              recursiveSplit: true,
+            },
+          })
+        );
+      }
+      continue;
+    }
+
+    // Would adding this section overflow the current buffer? If so, flush.
+    // The +2 accounts for the "\n\n" join between buffered sections.
+    if (bufferSize > 0 && bufferSize + rendered.length + 2 > chunkSize) {
+      flushBuffer();
+    }
+    buffer.push(section);
+    bufferSize += rendered.length + (bufferSize > 0 ? 2 : 0);
+  }
+  flushBuffer();
+
+  return chunks;
+}
+
+/**
  * Parse Markdown into a flat list of sections delimited by ATX headers.
  *
  * - Respects fenced code blocks: `#` inside ``` ... ``` is not treated as a header.
@@ -124,86 +206,4 @@ function renderSection(section: Section): string {
     return bc;
   }
   return `${bc}\n\n${section.body}`;
-}
-
-/**
- * Split a single Markdown document into chunks using header-aware hybrid logic.
- * See module docstring for the algorithm summary.
- */
-export async function splitMarkdownByHeaders(
-  markdown: string,
-  options: MarkdownHeaderSplitterOptions
-): Promise<Document[]> {
-  const { chunkSize, chunkOverlap } = options;
-  const sections = parseSections(markdown);
-
-  // Fallback splitter for sections that exceed chunkSize on their own.
-  // Reserve some room for the breadcrumb so the final chunk text still fits.
-  const recursive = new RecursiveCharacterTextSplitter({
-    chunkSize,
-    chunkOverlap,
-    keepSeparator: true,
-  });
-
-  const chunks: Document[] = [];
-  // `buffer` holds rendered section texts (each with its own breadcrumb) that
-  // we plan to coalesce. We flush when adding the next section would overflow.
-  const buffer: Section[] = [];
-  let bufferSize = 0;
-
-  const flushBuffer = () => {
-    if (buffer.length === 0) {
-      return;
-    }
-    const text = buffer.map(renderSection).join('\n\n');
-    chunks.push(
-      new Document({
-        pageContent: text,
-        metadata: {
-          headerPath: breadcrumbFor(buffer[0].headerStack),
-          sectionCount: buffer.length,
-        },
-      })
-    );
-    buffer.length = 0;
-    bufferSize = 0;
-  };
-
-  for (const section of sections) {
-    const rendered = renderSection(section);
-
-    if (rendered.length > chunkSize) {
-      // Section is too big to live in any single chunk: flush whatever we had
-      // buffered, then recursive-split this section's body, prepending the
-      // breadcrumb to each sub-chunk so context isn't lost.
-      flushBuffer();
-      const bc = breadcrumbFor(section.headerStack);
-      const subTexts = await recursive.splitText(section.body || '');
-      for (const sub of subTexts) {
-        const text = bc ? `${bc}\n\n${sub}` : sub;
-        chunks.push(
-          new Document({
-            pageContent: text,
-            metadata: {
-              headerPath: bc,
-              sectionCount: 1,
-              recursiveSplit: true,
-            },
-          })
-        );
-      }
-      continue;
-    }
-
-    // Would adding this section overflow the current buffer? If so, flush.
-    // The +2 accounts for the "\n\n" join between buffered sections.
-    if (bufferSize > 0 && bufferSize + rendered.length + 2 > chunkSize) {
-      flushBuffer();
-    }
-    buffer.push(section);
-    bufferSize += rendered.length + (bufferSize > 0 ? 2 : 0);
-  }
-  flushBuffer();
-
-  return chunks;
 }

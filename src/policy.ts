@@ -144,7 +144,10 @@ function formatPolicyTargetForLog(target: string): string {
   return target.length > 0 ? target : '<unnamed>';
 }
 
-function formatResourceTargetForLog(resourceDef: unknown, target: string): string {
+function formatResourceTargetForLog(
+  resourceDef: unknown,
+  target: string
+): string {
   const label = formatPolicyTargetForLog(target);
   const identifiers = readResourceLogIdentifiers(resourceDef);
 
