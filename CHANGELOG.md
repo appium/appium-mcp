@@ -1,3 +1,9 @@
+## [1.78.1](https://github.com/appium/appium-mcp/compare/v1.78.0...v1.78.1) (2026-05-27)
+
+### Bug Fixes
+
+* **select-device:** instruct to use real device preparation tool ([#368](https://github.com/appium/appium-mcp/issues/368)) ([45e489f](https://github.com/appium/appium-mcp/commit/45e489f03799a457248ddda379d6bf5989c839fc))
+
 ## [1.78.0](https://github.com/appium/appium-mcp/compare/v1.77.0...v1.78.0) (2026-05-26)
 
 ### Features
