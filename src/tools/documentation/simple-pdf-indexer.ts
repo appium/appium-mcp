@@ -1,18 +1,19 @@
 /**
  * Simple Markdown Indexer
  *
- * A simplified implementation for indexing Markdown documents into an in-memory vector store
- * using LangChain's RecursiveCharacterTextSplitter and MemoryVectorStore.
- * The vector store is persisted to a file for use across different script executions.
+ * Indexes Markdown documents into an in-memory vector store using a
+ * header-aware hybrid splitter and LangChain's MemoryVectorStore. The
+ * vector store is persisted to a file for use across different script
+ * executions.
  */
 
-import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Document } from '@langchain/core/documents';
 import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
 import { fs } from '@appium/support';
 import * as crypto from 'node:crypto';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { splitMarkdownByHeaders } from './markdown-header-splitter.js';
 
 // Initialize embeddings using sentence-transformers (no API key required)
 import { SentenceTransformersEmbeddings } from './sentence-transformers-embeddings.js';
@@ -67,7 +68,22 @@ let memoryVectorStore: MemoryVectorStore | null = null;
 /**
  * Exclude certain directories from being indexed to avoid irrelevant content and reduce noise in the vector store.
  */
-const EXCLUDED_MARKDOWN_DIRECTORIES = new Set(['appium-skills']);
+const EXCLUDED_MARKDOWN_DIRECTORIES = new Set([
+  'appium-skills',
+  'ja',
+  'zh',
+  '.github',
+  'blog',
+]);
+
+/**
+ * Exclude specific filenames regardless of where they appear in the tree.
+ *
+ * CHANGELOG.md files are semantic-release templates dominated by version
+ * headers, commit hashes, and PR numbers. They have negligible instructional
+ * value.
+ */
+const EXCLUDED_MARKDOWN_FILENAMES = new Set(['CHANGELOG.md']);
 
 /**
  * Embeddings cache: vectors persisted alongside documents.json so the
@@ -102,7 +118,7 @@ interface EmbeddingsCacheFile {
  */
 export async function initializeVectorStore(
   markdownPath: string,
-  chunkSize: number = 1000,
+  chunkSize: number = 2500,
   chunkOverlap: number = 200
 ): Promise<MemoryVectorStore> {
   try {
@@ -114,15 +130,15 @@ export async function initializeVectorStore(
     const markdownText = await extractTextFromMarkdown(markdownPath);
     log.info(`Extracted ${markdownText.length} characters from Markdown`);
 
-    // Create text splitter
-    const textSplitter = new RecursiveCharacterTextSplitter({
+    // Header-aware hybrid splitter: parses ATX headers to find topical
+    // boundaries, coalesces short sibling sections to avoid tiny embeddings,
+    // recursive-splits oversized sections, and prepends a header breadcrumb
+    // (`# Page > ## Section`) so each chunk's embedding carries its context.
+    log.info('Splitting text into chunks...');
+    const documents = await splitMarkdownByHeaders(markdownText, {
       chunkSize,
       chunkOverlap,
     });
-
-    // Split text into documents
-    log.info('Splitting text into chunks...');
-    const documents = await textSplitter.createDocuments([markdownText]);
     log.info(`Created ${documents.length} document chunks`);
 
     // Embed once; reuse the vectors for both the in-memory store and the cache.
@@ -190,7 +206,8 @@ export async function getMarkdownFilesInDirectory(
           await scanDirectory(filePath);
         } else if (
           stats.isFile() &&
-          path.extname(file).toLowerCase() === '.md'
+          path.extname(file).toLowerCase() === '.md' &&
+          !EXCLUDED_MARKDOWN_FILENAMES.has(file)
         ) {
           markdownFiles.push(filePath);
         }
@@ -214,7 +231,7 @@ export async function getMarkdownFilesInDirectory(
  */
 export async function indexMarkdown(
   markdownPath: string,
-  chunkSize: number = 1000,
+  chunkSize: number = 2500,
   chunkOverlap: number = 200
 ): Promise<void> {
   try {
@@ -239,7 +256,7 @@ export async function indexMarkdown(
  */
 export async function indexAllMarkdownFiles(
   dirPath: string,
-  chunkSize: number = 1000,
+  chunkSize: number = 2500,
   chunkOverlap: number = 200
 ): Promise<string[]> {
   try {
@@ -282,15 +299,12 @@ export async function indexAllMarkdownFiles(
         const markdownText = await extractTextFromMarkdown(markdownFile);
         log.info(`Extracted ${markdownText.length} characters from Markdown`);
 
-        // Create text splitter
-        const textSplitter = new RecursiveCharacterTextSplitter({
+        // Header-aware hybrid splitter
+        log.info('Splitting text into chunks...');
+        const documents = await splitMarkdownByHeaders(markdownText, {
           chunkSize,
           chunkOverlap,
         });
-
-        // Split text into documents
-        log.info('Splitting text into chunks...');
-        const documents = await textSplitter.createDocuments([markdownText]);
         log.info(`Created ${documents.length} document chunks`);
 
         // Add file metadata to each document
@@ -299,7 +313,6 @@ export async function indexAllMarkdownFiles(
         documents.forEach((doc) => {
           doc.metadata = {
             ...doc.metadata,
-            source: markdownFile,
             filename,
             relativePath,
           };
@@ -676,7 +689,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   // Parse command line arguments
   const args = process.argv.slice(2);
   let markdownPath: string;
-  let chunkSize = 1000; // Default chunk size
+  let chunkSize = 2500; // Default chunk size
   let chunkOverlap = 200; // Default overlap
   let indexSingleFile = false;
 

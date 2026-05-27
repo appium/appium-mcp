@@ -73,26 +73,18 @@ export class SentenceTransformersEmbeddings {
 
     try {
       const embeddings: number[][] = [];
-
-      // Process texts in batches to avoid memory issues
-      const batchSize = 10;
-      for (let i = 0; i < texts.length; i += batchSize) {
-        const batch = texts.slice(i, i + batchSize);
-
-        for (const text of batch) {
-          const result = await this.model(text, {
-            pooling: 'mean',
-            normalize: true,
-          });
-          const embedding = Array.from(result.data) as number[];
-          embeddings.push(embedding);
-        }
-
-        // Log progress for large batches
-        if (texts.length > batchSize) {
-          log.info(
-            `Processed ${Math.min(i + batchSize, texts.length)}/${texts.length} documents`
-          );
+      const logEvery = 50; // chunk-by-chunk progress would be too noisy
+      for (let i = 0; i < texts.length; i++) {
+        const result = await this.model(texts[i], {
+          pooling: 'mean',
+          normalize: true,
+        });
+        embeddings.push(Array.from(result.data) as number[]);
+        if (
+          texts.length > logEvery &&
+          (i + 1 === texts.length || (i + 1) % logEvery === 0)
+        ) {
+          log.info(`Processed ${i + 1}/${texts.length} documents`);
         }
       }
 
