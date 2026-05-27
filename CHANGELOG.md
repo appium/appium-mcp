@@ -1,3 +1,9 @@
+## [1.79.0](https://github.com/appium/appium-mcp/compare/v1.78.1...v1.79.0) (2026-05-27)
+
+### Features
+
+* **rag:** implement header-aware hybrid splitter for Markdown documents ([#367](https://github.com/appium/appium-mcp/issues/367)) ([ea34007](https://github.com/appium/appium-mcp/commit/ea34007442d8528b36e46d56f75d14d950a7f137))
+
 ## [1.78.1](https://github.com/appium/appium-mcp/compare/v1.78.0...v1.78.1) (2026-05-27)
 
 ### Bug Fixes
