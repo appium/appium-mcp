@@ -19,6 +19,14 @@ type ResourceDef = {
   load: () => Promise<unknown>;
 };
 
+type ResourceTemplateDef = {
+  uriTemplate: string;
+  name?: string;
+  load: () => Promise<unknown>;
+};
+
+type RegisteredResource = ResourceDef | ResourceTemplateDef;
+
 const registeredServers: MockFastMCP[] = [];
 const safeDeleteAllSessions = jest.fn<() => Promise<number>>();
 let sessions: Array<{
@@ -30,7 +38,10 @@ const testToolParameters = z.object({});
 
 class MockFastMCP {
   readonly tools: ToolDef[] = [];
-  readonly resources: ResourceDef[] = [];
+  readonly resources: RegisteredResource[] = [];
+  addResourceTemplatesCallCount = 0;
+  addResourcesCallCount = 0;
+  addToolsCallCount = 0;
   private readonly handlers = new Map<
     string,
     Array<(event: unknown) => unknown>
@@ -44,12 +55,27 @@ class MockFastMCP {
     this.tools.push(toolDef);
   }
 
+  addTools(toolDefs: ToolDef[]): void {
+    this.addToolsCallCount += 1;
+    this.tools.push(...toolDefs);
+  }
+
   addResource(resourceDef: ResourceDef): void {
     this.resources.push(resourceDef);
   }
 
-  addResourceTemplate(resourceDef: ResourceDef): void {
+  addResources(resourceDefs: ResourceDef[]): void {
+    this.addResourcesCallCount += 1;
+    this.resources.push(...resourceDefs);
+  }
+
+  addResourceTemplate(resourceDef: ResourceTemplateDef): void {
     this.resources.push(resourceDef);
+  }
+
+  addResourceTemplates(resourceDefs: ResourceTemplateDef[]): void {
+    this.addResourceTemplatesCallCount += 1;
+    this.resources.push(...resourceDefs);
   }
 
   on(eventName: string, handler: (event: unknown) => unknown): void {
@@ -127,11 +153,13 @@ await jest.unstable_mockModule('../logger', () => ({
 }));
 
 const { createAppiumMcpServer } = await import('../create-server.js');
+const { default: log } = await import('../logger.js');
 
 afterEach(() => {
   registeredServers.length = 0;
   sessions = [];
   safeDeleteAllSessions.mockReset();
+  jest.mocked(log.warn).mockReset();
   delete process.env.APPIUM_MCP_ON_CLIENT_DISCONNECT;
 });
 
@@ -205,9 +233,11 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     }) as unknown as MockFastMCP;
 
     expect(server.tools.map((tool) => tool.name)).toEqual(['builtin_tool']);
-    expect(server.resources.map((resource) => resource.uri)).toEqual([
-      'generate://code-with-locators',
-    ]);
+    expect(
+      server.resources.map((resource) =>
+        'uri' in resource ? resource.uri : resource.uriTemplate
+      )
+    ).toEqual(['generate://code-with-locators']);
   });
 
   test('applies policy to plugin tools before registration', () => {
@@ -245,6 +275,163 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       'plugin_allowed',
       'builtin_tool',
     ]);
+  });
+
+  test('applies policy to batch tool and resource registration methods', () => {
+    const server = createAppiumMcpServer({
+      policy: {
+        allowTools: [/^builtin_tool$/, /^batch_allowed_/],
+        allowResources: [/^Batch Allowed/],
+      },
+    }) as unknown as MockFastMCP;
+
+    server.addTools([
+      {
+        name: 'batch_allowed_first',
+        description: 'Allowed batch tool',
+        parameters: {},
+        execute: async () => ({ content: [] }),
+      },
+      {
+        name: 'batch_blocked',
+        description: 'Blocked batch tool',
+        parameters: {},
+        execute: async () => ({ content: [] }),
+      },
+      {
+        name: 'batch_allowed_second',
+        description: 'Allowed batch tool',
+        parameters: {},
+        execute: async () => ({ content: [] }),
+      },
+    ]);
+
+    server.addResources([
+      {
+        uri: 'batch://allowed-resource',
+        name: 'Batch Allowed Resource',
+        load: async () => ({ text: 'allowed resource' }),
+      },
+      {
+        uri: 'batch://blocked-resource',
+        name: 'Batch Blocked Resource',
+        load: async () => ({ text: 'blocked resource' }),
+      },
+    ]);
+
+    server.addResourceTemplates([
+      {
+        uriTemplate: 'batch://allowed-template/{id}',
+        name: 'Batch Allowed Template',
+        load: async () => ({ text: 'allowed template' }),
+      },
+      {
+        uriTemplate: 'batch://blocked-template/{id}',
+        name: 'Batch Blocked Template',
+        load: async () => ({ text: 'blocked template' }),
+      },
+    ]);
+
+    expect(server.addToolsCallCount).toBe(1);
+    expect(server.addResourcesCallCount).toBe(1);
+    expect(server.addResourceTemplatesCallCount).toBe(1);
+    expect(server.tools.map((tool) => tool.name)).toEqual([
+      'builtin_tool',
+      'batch_allowed_first',
+      'batch_allowed_second',
+    ]);
+    expect(server.resources).toEqual([
+      expect.objectContaining({
+        name: 'Batch Allowed Resource',
+        uri: 'batch://allowed-resource',
+      }),
+      expect.objectContaining({
+        name: 'Batch Allowed Template',
+        uriTemplate: 'batch://allowed-template/{id}',
+      }),
+    ]);
+  });
+
+  test('skips fully denied batch registration calls', () => {
+    const server = createAppiumMcpServer({
+      policy: {
+        allowTools: [/^builtin_tool$/],
+        allowResources: [/^Generate Code With Locators$/],
+      },
+    }) as unknown as MockFastMCP;
+
+    server.addTools([
+      {
+        name: 'batch_blocked_first',
+        description: 'Blocked batch tool',
+        parameters: {},
+        execute: async () => ({ content: [] }),
+      },
+      {
+        name: 'batch_blocked_second',
+        description: 'Blocked batch tool',
+        parameters: {},
+        execute: async () => ({ content: [] }),
+      },
+    ]);
+    server.addResources([
+      {
+        uri: 'batch://blocked-resource',
+        name: 'Batch Blocked Resource',
+        load: async () => ({ text: 'blocked resource' }),
+      },
+    ]);
+    server.addResourceTemplates([
+      {
+        uriTemplate: 'batch://blocked-template/{id}',
+        name: 'Batch Blocked Template',
+        load: async () => ({ text: 'blocked template' }),
+      },
+    ]);
+
+    expect(server.addToolsCallCount).toBe(0);
+    expect(server.addResourcesCallCount).toBe(0);
+    expect(server.addResourceTemplatesCallCount).toBe(0);
+    expect(server.tools.map((tool) => tool.name)).toEqual(['builtin_tool']);
+    expect(server.resources.map((resource) => resource.name)).toEqual([
+      'Generate Code With Locators',
+    ]);
+    expect(log.warn).toHaveBeenCalledWith(
+      'Policy denied tool registration: batch_blocked_first (not_in_allowlist)'
+    );
+    expect(log.warn).toHaveBeenCalledWith(
+      'Policy denied tool registration: batch_blocked_second (not_in_allowlist)'
+    );
+  });
+
+  test('matches resource templates by name only', () => {
+    const server = createAppiumMcpServer({
+      policy: {
+        allowTools: [/^builtin_tool$/],
+        allowResources: [/^Allowed Template$/],
+      },
+    }) as unknown as MockFastMCP;
+
+    server.addResourceTemplate({
+      uriTemplate: 'batch://not-the-policy-target/{id}',
+      name: 'Allowed Template',
+      load: async () => ({ text: 'allowed template' }),
+    });
+
+    server.addResourceTemplate({
+      uriTemplate: 'batch://allowed-template/{id}',
+      load: async () => ({ text: 'unnamed template' }),
+    });
+
+    expect(server.resources).toEqual([
+      expect.objectContaining({
+        name: 'Allowed Template',
+        uriTemplate: 'batch://not-the-policy-target/{id}',
+      }),
+    ]);
+    expect(log.warn).toHaveBeenCalledWith(
+      'Policy denied resource template registration: <unnamed>; uriTemplate=batch://allowed-template/{id} (not_in_allowlist)'
+    );
   });
 
   test('fails during construction when policy allowlists are invalid', () => {
