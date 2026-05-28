@@ -142,7 +142,10 @@ export function installPolicy(server: FastMCP, policy?: AppiumMcpPolicy): void {
   }) as FastMCP['addResourceTemplates'];
 }
 
-function isToolAllowed(policy: AppiumMcpPolicy, toolDef: AddToolParam): boolean {
+function isToolAllowed(
+  policy: AppiumMcpPolicy,
+  toolDef: AddToolParam
+): boolean {
   const decision = evaluatePolicyTarget(policy, 'tool', toolDef.name);
   if (!decision.allowed) {
     log.warn(
@@ -209,15 +212,14 @@ function formatResourceTargetForLog(
   return identifiers.length > 0 ? `${label}; ${identifiers.join('; ')}` : label;
 }
 
-function readResourceLogIdentifiers(resourceDef: PolicyResourceParam): string[] {
+function readResourceLogIdentifiers(
+  resourceDef: PolicyResourceParam
+): string[] {
   const identifiers: string[] = [];
   if ('uri' in resourceDef && resourceDef.uri.length > 0) {
     identifiers.push(`uri=${resourceDef.uri}`);
   }
-  if (
-    'uriTemplate' in resourceDef &&
-    resourceDef.uriTemplate.length > 0
-  ) {
+  if ('uriTemplate' in resourceDef && resourceDef.uriTemplate.length > 0) {
     identifiers.push(`uriTemplate=${resourceDef.uriTemplate}`);
   }
   return identifiers;
