@@ -1,26 +1,33 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
+import type { DriverInstance } from '../../session-store.js';
 import { z } from 'zod';
 import { elementUUIDScheme } from '../../schema.js';
-import {
-  getElementRect,
-  getWindowRect,
-  performActions,
-} from '../../command.js';
+import { getWindowRect, performActions } from '../../command.js';
+import { isAIEnabled } from '../ai/config.js';
 import {
   errorResult,
   resolveDriver,
   textResult,
   toolErrorMessage,
 } from '../tool-response.js';
-import type { DriverInstance } from '../../session-store.js';
+import {
+  aiDisabledResult,
+  isAiElementUUID,
+  resolveTargetRect,
+} from './handlers/ai-element.js';
 
 const DROP_PAUSE_DURATION_MS = 150;
+
+const AI_UUID_HINT = isAIEnabled()
+  ? `Supports AI coordinate UUIDs (format: ai-element:x,y:bbox) returned by appium_ai. `
+  : '';
 
 const dragAndDropSchema = z.object({
   sourceElementUUID: elementUUIDScheme
     .optional()
     .describe(
-      'UUID of source element to drag from. Either sourceElementUUID or sourceX+sourceY must be provided.'
+      AI_UUID_HINT +
+        `UUID of source element to drag from. Either sourceElementUUID or sourceX+sourceY must be provided.`
     ),
   sourceX: z
     .number()
@@ -41,7 +48,8 @@ const dragAndDropSchema = z.object({
   targetElementUUID: elementUUIDScheme
     .optional()
     .describe(
-      'UUID of target element to drop on. Either targetElementUUID or targetX+targetY must be provided.'
+      AI_UUID_HINT +
+        `UUID of target element to drop on. Either targetElementUUID or targetX+targetY must be provided.`
     ),
   targetX: z
     .number()
@@ -106,28 +114,37 @@ export default function dragAndDrop(server: FastMCP): void {
       }
       const { driver } = resolved;
 
+      if (
+        (args.sourceElementUUID &&
+          isAiElementUUID(args.sourceElementUUID) &&
+          !isAIEnabled()) ||
+        (args.targetElementUUID &&
+          isAiElementUUID(args.targetElementUUID) &&
+          !isAIEnabled())
+      ) {
+        return aiDisabledResult();
+      }
+
       try {
         const source = await resolvePoint(
           driver,
           args.sourceElementUUID,
           args.sourceX,
-          args.sourceY
+          args.sourceY,
+          'source'
         );
         if ('error' in source) {
-          return errorResult(
-            'drag_and_drop requires either sourceElementUUID, or both sourceX and sourceY.'
-          );
+          return errorResult(source.error);
         }
         const target = await resolvePoint(
           driver,
           args.targetElementUUID,
           args.targetX,
-          args.targetY
+          args.targetY,
+          'target'
         );
         if ('error' in target) {
-          return errorResult(
-            'drag_and_drop requires either targetElementUUID, or both targetX and targetY.'
-          );
+          return errorResult(target.error);
         }
 
         const { width, height } = await getWindowRect(driver);
@@ -193,17 +210,28 @@ async function resolvePoint(
   driver: DriverInstance,
   uuid: string | undefined,
   x: number | undefined,
-  y: number | undefined
+  y: number | undefined,
+  role: 'source' | 'target'
 ): Promise<{ x: number; y: number } | { error: string }> {
   if (uuid) {
-    const rect = await getElementRect(driver, uuid);
+    // ai-element UUIDs are coordinates, not real element ids — resolve via
+    // the shared helper (bbox centre for AI, getElementRect for real elements).
+    const rect = await resolveTargetRect(driver, uuid);
+    if ('error' in rect) {
+      return rect;
+    }
     return {
       x: Math.floor(rect.x + rect.width / 2),
       y: Math.floor(rect.y + rect.height / 2),
     };
   }
   if (x === undefined || y === undefined) {
-    return { error: 'missing element UUID or coordinates' };
+    return {
+      error:
+        role === 'source'
+          ? 'drag_and_drop requires either sourceElementUUID, or both sourceX and sourceY.'
+          : 'drag_and_drop requires either targetElementUUID, or both targetX and targetY.',
+    };
   }
   return { x, y };
 }
