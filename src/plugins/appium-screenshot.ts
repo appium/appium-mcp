@@ -27,7 +27,3 @@ export class AppiumScreenshotPlugin implements AppiumMcpPlugin {
     );
   }
 }
-
-export function createAppiumScreenshotPlugin(): AppiumMcpPlugin {
-  return new AppiumScreenshotPlugin();
-}

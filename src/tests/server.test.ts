@@ -7,10 +7,10 @@ await jest.unstable_mockModule('../create-server', () => ({
 }));
 
 await jest.unstable_mockModule('../plugins/appium-screenshot', () => ({
-  createAppiumScreenshotPlugin: jest.fn(() => ({
-    name: 'appium-screenshot',
-    version: '1.0.0',
-  })),
+  AppiumScreenshotPlugin: class MockAppiumScreenshotPlugin {
+    readonly name = 'appium-screenshot';
+    readonly version = '1.0.0';
+  },
 }));
 
 describe('default server composition', () => {
