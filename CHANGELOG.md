@@ -1,3 +1,9 @@
+## [1.80.0](https://github.com/appium/appium-mcp/compare/v1.79.1...v1.80.0) (2026-05-28)
+
+### Features
+
+* **rag:** update evals to use answer spans ([#371](https://github.com/appium/appium-mcp/issues/371)) ([e59ea55](https://github.com/appium/appium-mcp/commit/e59ea5597eff268021bb588312931a5d8ceef090))
+
 ## [1.79.1](https://github.com/appium/appium-mcp/compare/v1.79.0...v1.79.1) (2026-05-28)
 
 ### Bug Fixes
