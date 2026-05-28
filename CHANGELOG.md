@@ -1,3 +1,9 @@
+## [1.79.1](https://github.com/appium/appium-mcp/compare/v1.79.0...v1.79.1) (2026-05-28)
+
+### Bug Fixes
+
+* **gestures:** support ai-element UUIDs in drag and drop ([#339](https://github.com/appium/appium-mcp/issues/339)) ([de91697](https://github.com/appium/appium-mcp/commit/de916975c4315135c147a189545db4b617694d5b))
+
 ## [1.79.0](https://github.com/appium/appium-mcp/compare/v1.78.1...v1.79.0) (2026-05-27)
 
 ### Features
