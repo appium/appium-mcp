@@ -1,23 +1,50 @@
 /**
- * RAG retrieval eval harness for the Appium documentation tool.
+ * Answer-grounded RAG eval for the Appium documentation tool.
+ *
+ * Runs the documentation_query retrieval pipeline against a fixed set of
+ * realistic queries and asks the only question that matters downstream:
+ * "did the answer text actually land in the chunks an LLM would see?"
+ *
+ * What we measure:
+ *
+ *   1. answerSpanRecall@K
+ *      For each query, the dataset declares short verbatim phrases lifted
+ *      from the docs (`answerSpans`). We concatenate the top-K retrieved
+ *      chunks and check what fraction of the spans appears in that text.
+ *      "anyOf" semantics: a query that finds at least one span counts as a
+ *      hit. Spans are 30-140 chars and chosen so any reasonable chunk
+ *      containing the answer will include them, regardless of chunk
+ *      boundaries -- so the metric is splitter-neutral.
+ *
+ *   2. hit@{1,3,5,10}
+ *      Did any chunk at rank <= K carry any answerSpan? Direct measure of
+ *      "does the LLM see the answer" at different context budgets.
+ *
+ *   3. MRR
+ *      Mean reciprocal rank of the *first* chunk that carries an answerSpan.
+ *      MRR-equivalent on content, not on file paths -- a chunk from the
+ *      right file but wrong section is worth nothing here.
+ *
+ *   4. contextEfficiency
+ *      For queries we hit, 1000 * spansCovered / totalChars(topK). Spans-per-
+ *      kchar density. Low = lots of noise around the answer.
+ *
+ *   5. fileRecall@{5,10} (diagnostic only)
+ *      Did the right *file* appear in top-K? Kept so we can spot the
+ *      "right-file wrong-chunk" failure mode (right file present but no
+ *      answerSpan landed).
+ *
+ * Match semantics: lowercase + collapse whitespace, then substring check.
  *
  * Usage (after `npm run build`):
- *   node dist/scripts/eval-documentation-rag.js [--quiet] [--save] [--top-chunks=N]
+ *   node dist/scripts/eval-documentation-rag.js \
+ *        [--top-k=10] [--label=NAME] [--quiet] [--no-save]
  *
- * What it does:
- *   1. Loads the eval dataset (src/scripts/rag-eval-dataset.json).
- *   2. For each query, calls the existing queryVectorStore() with `topChunks`
- *      chunks (default 30), dedupes by source (preserving rank), and matches
- *      the resulting source list against expectedSources.
- *   3. Reports Recall@{1,3,5,10} and MRR, broken down by difficulty.
- *   4. Persists results to src/scripts/eval-results/<ISO>.json plus a
- *      `latest.json` so successive runs can be diffed.
- *
- * Notes:
- *   - The first run after a server restart pays the embedding cold start
- *     (~30-60s for the current corpus).
- *   - Match strategy: a retrieved source matches an expected source if its
- *     `relativePath` ends with the expected path (case-sensitive).
+ *   --top-k=N    number of chunks to retrieve & evaluate (default 10)
+ *   --label=N    label written into the saved run, useful for comparing
+ *                index variants (e.g. --label=before, --label=after)
+ *   --quiet      suppress the per-query log lines and table
+ *   --no-save    don't persist results JSON to disk
  */
 
 import * as fs from 'node:fs';
@@ -30,6 +57,7 @@ interface EvalQuery {
   id: string;
   query: string;
   expectedSources: string[];
+  answerSpans: string[];
   difficulty: 'easy' | 'medium' | 'vague';
   category?: string;
 }
@@ -37,8 +65,16 @@ interface EvalQuery {
 interface EvalDataset {
   version: number;
   description: string;
-  matchMode?: 'endsWith' | 'exact';
+  matchMode: string;
+  spanMatch?: { normalize: string; anyOf: boolean };
   queries: EvalQuery[];
+}
+
+interface RetrievedChunk {
+  rank: number;
+  text: string;
+  source: string | undefined;
+  charCount: number;
 }
 
 interface PerQueryResult {
@@ -47,46 +83,78 @@ interface PerQueryResult {
   difficulty: EvalQuery['difficulty'];
   category?: string;
   expectedSources: string[];
+  answerSpans: string[];
   retrievedSources: string[];
-  matchedAtRank: number | null;
-  matchedSource: string | null;
-  recallAt1: 0 | 1;
-  recallAt3: 0 | 1;
-  recallAt5: 0 | 1;
-  recallAt10: 0 | 1;
+  topKChunks: number;
+  topKChars: number;
+  uniqueFiles: number;
+
+  // Per-rank tracking: which ranks contain at least one answerSpan, and which
+  // chunk first carried each individual span. Lets us derive recall@K cheaply.
+  hitRanks: number[];
+  firstHitRank: number | null;
+  spansCovered: string[];
+  spansMissing: string[];
+
+  // Aggregates: per definitions in module docstring.
+  answerSpanRecall: number;
+  hitAnyAt1: 0 | 1;
+  hitAnyAt3: 0 | 1;
+  hitAnyAt5: 0 | 1;
+  hitAnyAt10: 0 | 1;
   reciprocalRank: number;
+  contextEfficiency: number; // spans/kchar; only meaningful when hitAny=1
+
+  // Diagnostic: right-file recall (independent of whether the answer span
+  // actually landed). Useful for spotting "right file, wrong section" cases.
+  fileRecallAt5: 0 | 1;
+  fileRecallAt10: 0 | 1;
 }
 
 interface AggregateMetrics {
   count: number;
-  recallAt1: number;
-  recallAt3: number;
-  recallAt5: number;
-  recallAt10: number;
+  answerSpanRecall: number;
+  hitAnyAt1: number;
+  hitAnyAt3: number;
+  hitAnyAt5: number;
+  hitAnyAt10: number;
   mrr: number;
+  contextEfficiency: number; // averaged over queries with a hit
+  fileRecallAt5: number;
+  fileRecallAt10: number;
 }
 
 interface EvalRun {
   timestamp: string;
+  label: string;
   datasetVersion: number;
-  topChunks: number;
+  topK: number;
   overall: AggregateMetrics;
   byDifficulty: Record<string, AggregateMetrics>;
   perQuery: PerQueryResult[];
 }
 
+// -- arg parsing ----------------------------------------------------------
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const args = new Set(process.argv.slice(2));
-const QUIET = args.has('--quiet');
-const NO_SAVE = !args.has('--save');
-const topChunksArg = process.argv.find((a) => a.startsWith('--top-chunks='));
-const TOP_CHUNKS = topChunksArg ? Number(topChunksArg.split('=')[1]) : 30;
+const args = process.argv.slice(2);
+const flagSet = new Set(args);
+const QUIET = flagSet.has('--quiet');
+const NO_SAVE = flagSet.has('--no-save');
+
+function flagValue(name: string, dflt: string): string {
+  const a = args.find((x) => x.startsWith(`${name}=`));
+  return a ? a.split('=').slice(1).join('=') : dflt;
+}
+
+const TOP_K = Number(flagValue('--top-k', '10'));
+const LABEL = flagValue('--label', 'default');
+
+// -- paths ----------------------------------------------------------------
 
 function resolveDatasetPath(): string {
-  // When compiled, this file lives in dist/scripts/. We look for the dataset
-  // beside it first (copy-docs build step), then fall back to src/scripts/.
   const candidates = [
     path.resolve(__dirname, 'rag-eval-dataset.json'),
     path.resolve(__dirname, '../../src/scripts/rag-eval-dataset.json'),
@@ -97,126 +165,134 @@ function resolveDatasetPath(): string {
     }
   }
   throw new Error(
-    `Could not find rag-eval-dataset.json in any of: ${candidates.join(', ')}`
+    `rag-eval-dataset.json not found in: ${candidates.join(', ')}`
   );
 }
 
 function resolveResultsDir(): string {
-  // Always write results into the source tree so they're easy to diff/commit.
-  const candidates = [
-    path.resolve(__dirname, '../../src/scripts/eval-results'),
-    path.resolve(__dirname, 'eval-results'),
-  ];
-  const dir = candidates[0];
+  const dir = path.resolve(__dirname, '../../src/scripts/eval-results');
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
 
-function matches(retrievedRelPath: string, expected: string): boolean {
+// -- matching helpers -----------------------------------------------------
+
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function chunkContainsSpan(chunkText: string, span: string): boolean {
+  return normalize(chunkText).includes(normalize(span));
+}
+
+function endsWithExpected(retrievedRelPath: string, expected: string): boolean {
   return retrievedRelPath === expected || retrievedRelPath.endsWith(expected);
 }
 
-function dedupeBySource(
-  chunks: Array<{ relativePath: string | undefined }>
-): string[] {
-  const seen = new Set<string>();
-  const ordered: string[] = [];
-  for (const c of chunks) {
-    const src = c.relativePath;
-    if (!src || seen.has(src)) {
-      continue;
+// -- per-query evaluation -------------------------------------------------
+
+function evaluateQuery(
+  q: EvalQuery,
+  chunks: RetrievedChunk[]
+): {
+  hitRanks: number[];
+  firstHitRank: number | null;
+  spansCovered: string[];
+  spansMissing: string[];
+} {
+  const hitRanks: number[] = [];
+  const spansCovered = new Set<string>();
+
+  for (const chunk of chunks) {
+    let chunkHadHit = false;
+    for (const span of q.answerSpans) {
+      if (chunkContainsSpan(chunk.text, span)) {
+        spansCovered.add(span);
+        chunkHadHit = true;
+      }
     }
-    seen.add(src);
-    ordered.push(src);
+    if (chunkHadHit) {
+      hitRanks.push(chunk.rank);
+    }
   }
-  return ordered;
+  const firstHitRank = hitRanks.length > 0 ? hitRanks[0] : null;
+  const spansMissing = q.answerSpans.filter((s) => !spansCovered.has(s));
+  return {
+    hitRanks,
+    firstHitRank,
+    spansCovered: [...spansCovered],
+    spansMissing,
+  };
 }
 
-function evalQuery(
-  retrievedSources: string[],
-  expectedSources: string[]
-): {
-  matchedAtRank: number | null;
-  matchedSource: string | null;
-} {
-  for (let i = 0; i < retrievedSources.length; i++) {
-    const hit = expectedSources.find((e) => matches(retrievedSources[i], e));
-    if (hit) {
-      return { matchedAtRank: i + 1, matchedSource: retrievedSources[i] };
-    }
-  }
-  return { matchedAtRank: null, matchedSource: null };
-}
+// -- aggregation ----------------------------------------------------------
 
 function aggregate(results: PerQueryResult[]): AggregateMetrics {
   if (results.length === 0) {
     return {
       count: 0,
-      recallAt1: 0,
-      recallAt3: 0,
-      recallAt5: 0,
-      recallAt10: 0,
+      answerSpanRecall: 0,
+      hitAnyAt1: 0,
+      hitAnyAt3: 0,
+      hitAnyAt5: 0,
+      hitAnyAt10: 0,
       mrr: 0,
+      contextEfficiency: 0,
+      fileRecallAt5: 0,
+      fileRecallAt10: 0,
     };
   }
   const n = results.length;
-  const sum = (k: keyof PerQueryResult): number =>
-    results.reduce((acc, r) => acc + (r[k] as number), 0);
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  const hitResults = results.filter((r) => r.hitAnyAt10 === 1);
   return {
     count: n,
-    recallAt1: sum('recallAt1') / n,
-    recallAt3: sum('recallAt3') / n,
-    recallAt5: sum('recallAt5') / n,
-    recallAt10: sum('recallAt10') / n,
-    mrr: sum('reciprocalRank') / n,
+    answerSpanRecall: mean(results.map((r) => r.answerSpanRecall)),
+    hitAnyAt1: mean(results.map((r) => r.hitAnyAt1)),
+    hitAnyAt3: mean(results.map((r) => r.hitAnyAt3)),
+    hitAnyAt5: mean(results.map((r) => r.hitAnyAt5)),
+    hitAnyAt10: mean(results.map((r) => r.hitAnyAt10)),
+    mrr: mean(results.map((r) => r.reciprocalRank)),
+    contextEfficiency: hitResults.length
+      ? mean(hitResults.map((r) => r.contextEfficiency))
+      : 0,
+    fileRecallAt5: mean(results.map((r) => r.fileRecallAt5)),
+    fileRecallAt10: mean(results.map((r) => r.fileRecallAt10)),
   };
 }
 
-function fmt(n: number): string {
-  return n.toFixed(3);
-}
-
-function rankStr(rank: number | null): string {
-  return rank === null ? ' - ' : String(rank).padStart(3, ' ');
-}
-
-function printPerQueryTable(results: PerQueryResult[]): void {
-  const rows = results.map((r) => ({
-    id: r.id,
-    diff: r.difficulty,
-    rank: rankStr(r.matchedAtRank),
-    query: r.query.length > 56 ? r.query.slice(0, 53) + '...' : r.query,
-    matched: r.matchedSource ?? '(none of expected found in top results)',
-  }));
-
-  const widths = {
-    id: 4,
-    diff: 7,
-    rank: 4,
-    query: Math.max(...rows.map((r) => r.query.length), 5),
-    matched: Math.max(...rows.map((r) => r.matched.length), 7),
-  };
-
-  const header = `${'id'.padEnd(widths.id)} | ${'diff'.padEnd(widths.diff)} | ${'rank'.padStart(widths.rank)} | ${'query'.padEnd(widths.query)} | matched`;
-  const sep = '-'.repeat(header.length + 10);
-
-  console.log(sep);
-  console.log(header);
-  console.log(sep);
-  for (const r of rows) {
-    console.log(
-      `${r.id.padEnd(widths.id)} | ${r.diff.padEnd(widths.diff)} | ${r.rank.padStart(widths.rank)} | ${r.query.padEnd(widths.query)} | ${r.matched}`
-    );
-  }
-  console.log(sep);
+function fmt(n: number, dp: number = 3): string {
+  return n.toFixed(dp);
 }
 
 function printAggregate(label: string, m: AggregateMetrics): void {
   const tag = `${label} (n=${m.count})`.padEnd(20);
   console.log(
-    `${tag}  R@1=${fmt(m.recallAt1)}  R@3=${fmt(m.recallAt3)}  R@5=${fmt(m.recallAt5)}  R@10=${fmt(m.recallAt10)}  MRR=${fmt(m.mrr)}`
+    `${tag}  spanRecall=${fmt(m.answerSpanRecall)}  hit@1=${fmt(m.hitAnyAt1)}  hit@3=${fmt(m.hitAnyAt3)}  hit@5=${fmt(m.hitAnyAt5)}  hit@10=${fmt(m.hitAnyAt10)}  MRR=${fmt(m.mrr)}  ctxEff=${fmt(m.contextEfficiency, 2)}  fileR@5=${fmt(m.fileRecallAt5)}`
   );
 }
+
+function printPerQueryTable(results: PerQueryResult[]): void {
+  const header = 'id   | diff   | fhr | spans  | hit@5 | unique | sources';
+  const sep = '-'.repeat(110);
+  console.log(sep);
+  console.log(header);
+  console.log(sep);
+  for (const r of results) {
+    const fhr =
+      r.firstHitRank === null ? ' - ' : String(r.firstHitRank).padStart(3, ' ');
+    const spans = `${r.spansCovered.length}/${r.answerSpans.length}`;
+    const matched = r.retrievedSources[0]
+      ? r.retrievedSources.slice(0, 2).join(', ')
+      : '(empty)';
+    console.log(
+      `${r.id.padEnd(4)} | ${r.difficulty.padEnd(6)} | ${fhr} | ${spans.padEnd(6)} | ${String(r.hitAnyAt5).padEnd(5)} | ${String(r.uniqueFiles).padEnd(6)} | ${matched}`
+    );
+  }
+  console.log(sep);
+}
+
+// -- main -----------------------------------------------------------------
 
 async function runEval(): Promise<void> {
   const datasetPath = resolveDatasetPath();
@@ -224,31 +300,55 @@ async function runEval(): Promise<void> {
     fs.readFileSync(datasetPath, 'utf-8')
   );
 
-  if (!QUIET) {
-    console.log(`\n=== Appium RAG eval ===`);
-    console.log(`Dataset: ${datasetPath}`);
-    console.log(
-      `Queries: ${dataset.queries.length}   |   topChunks: ${TOP_CHUNKS}   |   match: endsWith\n`
-    );
-  }
+  console.log(`\n=== Appium RAG eval (answer-grounded) ===`);
+  console.log(`Dataset: ${datasetPath}`);
+  console.log(
+    `Queries: ${dataset.queries.length}   topK: ${TOP_K}   label: ${LABEL}\n`
+  );
 
   const perQuery: PerQueryResult[] = [];
 
   for (const q of dataset.queries) {
-    const docs = await queryVectorStore(q.query, TOP_CHUNKS);
-    const retrievedSources = dedupeBySource(
-      docs.map((d) => ({
-        relativePath:
-          (d.metadata?.relativePath as string | undefined) ??
-          (d.metadata?.filename as string | undefined) ??
-          (d.metadata?.source as string | undefined),
-      }))
-    );
+    const docs = await queryVectorStore(q.query, TOP_K);
+    const chunks: RetrievedChunk[] = docs.map((d, i) => ({
+      rank: i + 1,
+      text: d.pageContent,
+      source:
+        (d.metadata?.relativePath as string | undefined) ??
+        (d.metadata?.filename as string | undefined),
+      charCount: d.pageContent.length,
+    }));
 
-    const { matchedAtRank, matchedSource } = evalQuery(
-      retrievedSources,
-      q.expectedSources
-    );
+    const retrievedSources = chunks
+      .map((c) => c.source)
+      .filter((s): s is string => !!s);
+
+    const topKChars = chunks.reduce((a, c) => a + c.charCount, 0);
+    const uniqueFiles = new Set(retrievedSources).size;
+
+    const { hitRanks, firstHitRank, spansCovered, spansMissing } =
+      evaluateQuery(q, chunks);
+
+    const answerSpanRecall =
+      q.answerSpans.length === 0
+        ? 0
+        : spansCovered.length / q.answerSpans.length;
+    const hitAnyAt = (k: number): 0 | 1 =>
+      hitRanks.some((r) => r <= k) ? 1 : 0;
+    const reciprocalRank = firstHitRank ? 1 / firstHitRank : 0;
+    const contextEfficiency =
+      firstHitRank !== null && topKChars > 0
+        ? (1000 * spansCovered.length) / topKChars
+        : 0;
+
+    const fileMatched = (k: number): 0 | 1 => {
+      const top = retrievedSources.slice(0, k);
+      return top.some((rs) =>
+        q.expectedSources.some((es) => endsWithExpected(rs, es))
+      )
+        ? 1
+        : 0;
+    };
 
     perQuery.push({
       id: q.id,
@@ -256,15 +356,32 @@ async function runEval(): Promise<void> {
       difficulty: q.difficulty,
       category: q.category,
       expectedSources: q.expectedSources,
+      answerSpans: q.answerSpans,
       retrievedSources,
-      matchedAtRank,
-      matchedSource,
-      recallAt1: matchedAtRank !== null && matchedAtRank <= 1 ? 1 : 0,
-      recallAt3: matchedAtRank !== null && matchedAtRank <= 3 ? 1 : 0,
-      recallAt5: matchedAtRank !== null && matchedAtRank <= 5 ? 1 : 0,
-      recallAt10: matchedAtRank !== null && matchedAtRank <= 10 ? 1 : 0,
-      reciprocalRank: matchedAtRank !== null ? 1 / matchedAtRank : 0,
+      topKChunks: chunks.length,
+      topKChars,
+      uniqueFiles,
+      hitRanks,
+      firstHitRank,
+      spansCovered,
+      spansMissing,
+      answerSpanRecall,
+      hitAnyAt1: hitAnyAt(1),
+      hitAnyAt3: hitAnyAt(3),
+      hitAnyAt5: hitAnyAt(5),
+      hitAnyAt10: hitAnyAt(10),
+      reciprocalRank,
+      contextEfficiency,
+      fileRecallAt5: fileMatched(5),
+      fileRecallAt10: fileMatched(10),
     });
+
+    if (!QUIET) {
+      const status = hitAnyAt(5) ? 'OK' : 'MISS';
+      console.log(
+        `${status.padEnd(4)} ${q.id}  spans=${spansCovered.length}/${q.answerSpans.length}  fhr=${firstHitRank ?? '-'}`
+      );
+    }
   }
 
   if (!QUIET) {
@@ -287,19 +404,23 @@ async function runEval(): Promise<void> {
   if (!NO_SAVE) {
     const run: EvalRun = {
       timestamp: new Date().toISOString(),
+      label: LABEL,
       datasetVersion: dataset.version,
-      topChunks: TOP_CHUNKS,
+      topK: TOP_K,
       overall,
       byDifficulty,
       perQuery,
     };
     const dir = resolveResultsDir();
     const stamp = run.timestamp.replace(/[:.]/g, '-');
-    const outPath = path.join(dir, `${stamp}.json`);
+    const outPath = path.join(dir, `${LABEL}-${stamp}.json`);
+    const labelLatestPath = path.join(dir, `${LABEL}-latest.json`);
     const latestPath = path.join(dir, 'latest.json');
     fs.writeFileSync(outPath, JSON.stringify(run, null, 2));
+    fs.writeFileSync(labelLatestPath, JSON.stringify(run, null, 2));
     fs.writeFileSync(latestPath, JSON.stringify(run, null, 2));
     console.log(`Saved: ${path.relative(process.cwd(), outPath)}`);
+    console.log(`       ${path.relative(process.cwd(), labelLatestPath)}`);
     console.log(`       ${path.relative(process.cwd(), latestPath)}\n`);
   }
 }
