@@ -26,3 +26,7 @@ export type {
   VerificationReport,
   VerifyAppiumMcpNamesOptions,
 } from './plugin.js';
+export {
+  AppiumScreenshotPlugin,
+  createAppiumScreenshotPlugin,
+} from './plugins/appium-screenshot.js';

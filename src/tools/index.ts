@@ -41,7 +41,6 @@ import getPageSource from './interactions/get-page-source.js';
 import orientation from './interactions/orientation.js';
 import clipboard from './interactions/clipboard.js';
 import alert from './interactions/handle-alert.js';
-import screenshot from './interactions/screenshot.js';
 import getWindowSize from './interactions/window-size.js';
 import screenRecording from './interactions/screen-recording.js';
 import app from './app-management/app.js';
@@ -172,7 +171,6 @@ export default function registerTools(server: FastMCP): void {
   getPageSource(server);
   orientation(server);
   alert(server);
-  screenshot(server);
   getWindowSize(server);
   screenRecording(server);
 

@@ -104,7 +104,7 @@ export async function executeScreenshot(opts: {
   }
 }
 
-const screenshotSchema = z.object({
+export const screenshotSchema = z.object({
   elementUUID: elementUUIDScheme
     .optional()
     .describe(
@@ -122,6 +122,8 @@ const screenshotSchema = z.object({
     .describe('Session ID to target. If omitted, uses the active session.'),
 });
 
+export type ScreenshotArgs = z.infer<typeof screenshotSchema>;
+
 export default function screenshot(server: FastMCP): void {
   server.addTool({
     name: 'appium_screenshot',
@@ -132,7 +134,7 @@ export default function screenshot(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: z.infer<typeof screenshotSchema>, _context: any) =>
+    execute: async (args: ScreenshotArgs, _context: any) =>
       executeScreenshot({
         elementId: args.elementUUID,
         maxWidth: args.maxWidth,

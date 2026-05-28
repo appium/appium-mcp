@@ -1,7 +1,13 @@
 #!/usr/bin/env node
-import { formatVerificationReport, verifyAppiumMcpNames } from '../dist/plugin.js';
+import {
+  createAppiumScreenshotPlugin,
+  formatVerificationReport,
+  verifyAppiumMcpNames,
+} from '../dist/core.js';
 
-const report = verifyAppiumMcpNames();
+const report = verifyAppiumMcpNames({
+  plugins: [createAppiumScreenshotPlugin()],
+});
 const output = formatVerificationReport(report);
 if (report.ok) {
   console.log(output);
