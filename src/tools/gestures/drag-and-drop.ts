@@ -108,7 +108,7 @@ export default function dragAndDrop(server: FastMCP): void {
       args: DragArgs,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
+      const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }

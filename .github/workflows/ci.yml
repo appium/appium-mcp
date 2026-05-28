@@ -54,3 +54,7 @@ jobs:
 
       - name: Run Unit Tests
         run: npm run test
+
+      # check if the all tools and plugins have unique names
+      - name: Verify unique names for tools and plugins
+        run: npm run verify:names

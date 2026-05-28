@@ -1,6 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { URL } from 'node:url';
+import { getPortFromUrl } from '../../utils/url.js';
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
 import { setSession, listSessions } from '../../session-store.js';
@@ -177,13 +178,6 @@ export async function buildIOSCapabilities(
 }
 
 /**
- * Extract port number from a URL object, using protocol defaults (https/http) when not specified.
- */
-export function getPortFromUrl(url: URL): number {
-  return Number(url.port) || (url.protocol === 'https:' ? 443 : 80);
-}
-
-/**
  * Validate the provided remote server URL.
  *
  * @param remoteServerUrl - The URL of the remote Appium server to validate.
@@ -288,7 +282,13 @@ export async function createSessionAction(args: {
         capabilities: finalCapabilities,
       });
       sessionId = client.sessionId;
-      setSession(client, client.sessionId, finalCapabilities, 'owned');
+      setSession(
+        client,
+        client.sessionId,
+        finalCapabilities,
+        'owned',
+        args.remoteServerUrl
+      );
     } else {
       if (platform === 'general') {
         throw new Error(
@@ -390,3 +390,6 @@ async function createDriverSession(
   // Appium drivers return [sessionId, caps], extract just the session ID
   return Array.isArray(result) ? result[0] : result;
 }
+
+// Re-export for backward compatibility with consumers that imported from this module.
+export { getPortFromUrl };

@@ -85,7 +85,7 @@ export default function geolocation(server: FastMCP): void {
 }
 
 async function handleGet(args: GeolocationArgs): Promise<ContentResult> {
-  const resolved = resolveDriver(args.sessionId);
+  const resolved = await resolveDriver(args.sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
@@ -116,7 +116,7 @@ async function handleSet(args: GeolocationArgs): Promise<ContentResult> {
     return errorResult('latitude and longitude are required for action=set');
   }
 
-  const resolved = resolveDriver(args.sessionId);
+  const resolved = await resolveDriver(args.sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
@@ -149,7 +149,7 @@ async function handleSet(args: GeolocationArgs): Promise<ContentResult> {
 }
 
 async function handleReset(args: GeolocationArgs): Promise<ContentResult> {
-  const resolved = resolveDriver(args.sessionId);
+  const resolved = await resolveDriver(args.sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }

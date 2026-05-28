@@ -3,7 +3,7 @@
  *
  * Mock strategy:
  * - global fetch: mocked to avoid real HTTP requests
- * - @appium/support imageUtil: mocked via __mocks__/@appium/support.ts
+ * - @appium/support imageUtil.requireSharp: spied locally to avoid sharp work
  * - Screenshot input: benchmark image.png read as base64
  */
 
@@ -18,7 +18,7 @@ import {
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mockSharpInstance } from './__mocks__/@appium/support.js';
+import { imageUtil } from '@appium/support';
 
 // ─── Resolve paths ────────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
@@ -36,6 +36,15 @@ const BENCHMARK_IMAGE_BASE64 =
 // Realistic image dimensions matching the benchmark screenshot
 const IMAGE_WIDTH = 1080;
 const IMAGE_HEIGHT = 2400;
+
+type MockSharpInstance = {
+  resizeCalls: Array<[number, number]>;
+  toBufferImpl: () => Promise<Buffer>;
+  resize: (w: number, h: number) => MockSharpInstance;
+  jpeg: (_opts?: unknown) => MockSharpInstance;
+  toBuffer: () => Promise<Buffer>;
+  reset: () => void;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -68,6 +77,26 @@ function jsonBBoxResponse(
   return `action: **CLICK**\nParameters: {"target": "${target}", "bbox_2d": [${bbox.join(', ')}]}`;
 }
 
+const mockSharpInstance: MockSharpInstance = {
+  resizeCalls: [],
+  toBufferImpl: () => Promise.resolve(Buffer.from('mock-compressed-image')),
+  resize(w: number, h: number) {
+    this.resizeCalls.push([w, h]);
+    return this;
+  },
+  jpeg(_opts?: unknown) {
+    return this;
+  },
+  toBuffer() {
+    return this.toBufferImpl();
+  },
+  reset() {
+    this.resizeCalls = [];
+    this.toBufferImpl = () =>
+      Promise.resolve(Buffer.from('mock-compressed-image'));
+  },
+};
+
 function arrayBBoxResponse(bbox: [number, number, number, number]): string {
   return `The element is located at [${bbox.join(', ')}]`;
 }
@@ -80,6 +109,11 @@ describe('AIVisionFinder', () => {
   let fetchSpy: jest.MockedFunction<typeof fetch>;
 
   beforeEach(() => {
+    mockSharpInstance.reset();
+    jest
+      .spyOn(imageUtil, 'requireSharp')
+      .mockReturnValue(((_input: Buffer) => mockSharpInstance) as any);
+
     fetchSpy = jest.fn() as jest.MockedFunction<typeof fetch>;
     global.fetch = fetchSpy;
 
@@ -524,11 +558,6 @@ describe('AIVisionFinder', () => {
   // ── Image compression – resize actually called ──────────────────────────────
 
   describe('findElement – image compression (resize verification)', () => {
-    beforeEach(() => {
-      // Reset shared sharp mock state before each test in this group
-      mockSharpInstance.reset();
-    });
-
     test('should call sharp resize when image width exceeds imageMaxWidth', async () => {
       process.env.AI_VISION_IMAGE_MAX_WIDTH = '100';
 
