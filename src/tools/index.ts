@@ -55,8 +55,7 @@ type RegisteredTool = Parameters<FastMCP['addTool']>[0];
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
   const originalAddTool = server.addTool.bind(server);
-  // @ts-ignore - FIXME later
-  server.addTool = (toolDef: RegisteredTool): void => {
+  server.addTool = ((toolDef: RegisteredTool): void => {
     const toolName = toolDef?.name ?? 'unknown_tool';
     const originalExecute = toolDef?.execute;
     if (typeof originalExecute !== 'function') {
@@ -137,7 +136,7 @@ export default function registerTools(server: FastMCP): void {
         }
       },
     });
-  };
+  }) as FastMCP['addTool'];
 
   // Session Management
   selectDevice(server);
