@@ -57,11 +57,20 @@ function makeMockServer() {
     addPrompt(promptDef: unknown) {
       registeredPrompts.push(promptDef);
     },
+    addPrompts(promptDefs: unknown[]) {
+      registeredPrompts.push(...promptDefs);
+    },
     addResource(resourceDef: unknown) {
       registeredResources.push(resourceDef);
     },
+    addResources(resourceDefs: unknown[]) {
+      registeredResources.push(...resourceDefs);
+    },
     addResourceTemplate(resourceTemplateDef: unknown) {
       registeredResourceTemplates.push(resourceTemplateDef);
+    },
+    addResourceTemplates(resourceTemplateDefs: unknown[]) {
+      registeredResourceTemplates.push(...resourceTemplateDefs);
     },
     _tools: registeredTools,
     _prompts: registeredPrompts,
@@ -70,8 +79,11 @@ function makeMockServer() {
   };
   server.addTool = server.addTool.bind(server);
   server.addPrompt = server.addPrompt.bind(server);
+  server.addPrompts = server.addPrompts.bind(server);
   server.addResource = server.addResource.bind(server);
+  server.addResources = server.addResources.bind(server);
   server.addResourceTemplate = server.addResourceTemplate.bind(server);
+  server.addResourceTemplates = server.addResourceTemplates.bind(server);
   return server;
 }
 
@@ -195,6 +207,51 @@ describe('PluginManager.register', () => {
     await wrappedTool.execute({}, {});
 
     expect(beforeCallCount).toBe(1);
+  });
+
+  test('routes batch capability registration through single-item methods', () => {
+    const server = makeMockServer();
+    const manager = new PluginManager(server);
+
+    manager.register([{ name: 'batch-plugin', version: '1.0.0' }]);
+
+    server.addTools([
+      {
+        name: 'batch_tool',
+        description: 'test',
+        parameters: {},
+        execute: async () => ({ content: [] }),
+      },
+    ]);
+    server.addPrompts([{ name: 'batch_prompt', load: async () => 'prompt' }]);
+    server.addResources([
+      {
+        uri: 'example://batch-resource',
+        name: 'Batch Resource',
+        load: async () => ({ text: 'resource' }),
+      },
+    ]);
+    server.addResourceTemplates([
+      {
+        uriTemplate: 'example://batch-resource/{name}',
+        name: 'Batch Resource Template',
+        arguments: [{ name: 'name', required: true }],
+        load: async () => ({ text: 'resource template' }),
+      },
+    ]);
+
+    expect(server._tools.map((tool: ToolDef) => tool.name)).toEqual([
+      'batch_tool',
+    ]);
+    expect(server._prompts).toEqual([
+      expect.objectContaining({ name: 'batch_prompt' }),
+    ]);
+    expect(server._resources).toEqual([
+      expect.objectContaining({ name: 'Batch Resource' }),
+    ]);
+    expect(server._resourceTemplates).toEqual([
+      expect.objectContaining({ name: 'Batch Resource Template' }),
+    ]);
   });
 });
 

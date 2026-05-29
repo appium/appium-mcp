@@ -119,11 +119,19 @@ export interface VerifyAppiumMcpNamesOptions {
 
 type AddToolParam = Parameters<FastMCP['addTool']>[0];
 
+type AddToolsParam = Parameters<FastMCP['addTools']>[0];
+
 type AddPromptParam = Parameters<FastMCP['addPrompt']>[0];
+
+type AddPromptsParam = Parameters<FastMCP['addPrompts']>[0];
 
 type AddResourceParam = Parameters<FastMCP['addResource']>[0];
 
+type AddResourcesParam = Parameters<FastMCP['addResources']>[0];
+
 type AddResourceTemplateParam = Parameters<FastMCP['addResourceTemplate']>[0];
+
+type AddResourceTemplatesParam = Parameters<FastMCP['addResourceTemplates']>[0];
 
 type VerificationToolDef = {
   name: string;
@@ -408,6 +416,32 @@ export class PluginManager {
       };
 
       return originalAddTool({ ...toolDef, execute: wrappedExecute });
+    };
+
+    this.server.addTools = (toolDefs: AddToolsParam): void => {
+      for (const toolDef of toolDefs) {
+        this.server.addTool(toolDef);
+      }
+    };
+
+    this.server.addPrompts = (promptDefs: AddPromptsParam): void => {
+      for (const promptDef of promptDefs) {
+        this.server.addPrompt(promptDef);
+      }
+    };
+
+    this.server.addResources = (resourceDefs: AddResourcesParam): void => {
+      for (const resourceDef of resourceDefs) {
+        this.server.addResource(resourceDef);
+      }
+    };
+
+    this.server.addResourceTemplates = (
+      resourceTemplateDefs: AddResourceTemplatesParam
+    ): void => {
+      for (const resourceTemplateDef of resourceTemplateDefs) {
+        this.server.addResourceTemplate(resourceTemplateDef);
+      }
     };
   }
 }

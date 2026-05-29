@@ -352,6 +352,65 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     ]);
   });
 
+  test('keeps plugin hooks for policy-allowed batch tool registrations', async () => {
+    const calls: string[] = [];
+    const plugin: AppiumMcpPlugin = {
+      name: 'batch-hook-plugin',
+      version: '1.0.0',
+      async beforeCall(ctx: ToolCallContext): Promise<void> {
+        calls.push(`before:${ctx.toolName}`);
+      },
+      async afterCall(
+        ctx: ToolCallContext,
+        result: ToolCallResult
+      ): Promise<ToolCallResult> {
+        calls.push(`after:${ctx.toolName}`);
+        return result;
+      },
+    };
+
+    const server = createAppiumMcpServer({
+      plugins: [plugin],
+      policy: {
+        allowTools: [/^builtin_tool$/, /^batch_allowed$/],
+      },
+    }) as unknown as MockFastMCP;
+
+    server.addTools([
+      {
+        name: 'batch_allowed',
+        description: 'Allowed batch tool',
+        parameters: {},
+        execute: async () => ({
+          content: [{ type: 'text', text: 'batch result' }],
+        }),
+      },
+      {
+        name: 'batch_blocked',
+        description: 'Blocked batch tool',
+        parameters: {},
+        execute: async () => ({
+          content: [{ type: 'text', text: 'blocked result' }],
+        }),
+      },
+    ]);
+
+    expect(server.tools.map((tool) => tool.name)).toEqual([
+      'builtin_tool',
+      'batch_allowed',
+    ]);
+
+    const batchTool = server.tools.find(
+      (tool) => tool.name === 'batch_allowed'
+    );
+    await batchTool?.execute({}, {});
+
+    expect(calls).toEqual(['before:batch_allowed', 'after:batch_allowed']);
+    expect(log.warn).toHaveBeenCalledWith(
+      'Policy denied tool registration: batch_blocked (not_in_allowlist)'
+    );
+  });
+
   test('skips fully denied batch registration calls', () => {
     const server = createAppiumMcpServer({
       policy: {
