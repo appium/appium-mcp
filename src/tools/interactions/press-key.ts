@@ -96,7 +96,7 @@ export default function pressKey(server: FastMCP): void {
       args: z.infer<typeof pressKeySchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
+      const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }

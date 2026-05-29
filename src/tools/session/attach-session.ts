@@ -1,14 +1,16 @@
-import WebDriver, { type Client } from 'webdriver';
-import { URL } from 'node:url';
+import { type Client } from 'webdriver';
 import {
   detachSession,
   getSessionOwnership,
   listSessions,
   setSession,
   type SessionCapabilities,
+  type SessionOwnership,
 } from '../../session-store.js';
+import { readAllPersistedSessions } from '../../persistence.js';
 import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
-import { getPortFromUrl, validateRemoteServerUrl } from './create-session.js';
+import { validateRemoteServerUrl } from './create-session.js';
+import { attachToRemoteSession } from '../../utils/url.js';
 
 /**
  * Normalize capability payloads returned by Appium/WebdriverIO into a flat
@@ -67,24 +69,10 @@ export async function attachSessionAction(args: {
       process.env.REMOTE_SERVER_URL_ALLOW_REGEX
     );
 
-    const remoteUrl = new URL(args.remoteServerUrl);
-    const protocol = remoteUrl.protocol.replace(':', '');
-    const port = getPortFromUrl(remoteUrl);
-    const user = remoteUrl.username
-      ? decodeURIComponent(remoteUrl.username)
-      : undefined;
-    const key = remoteUrl.password
-      ? decodeURIComponent(remoteUrl.password)
-      : undefined;
-
-    const client: Client = await WebDriver.attachToSession({
+    const client: Client = await attachToRemoteSession({
+      remoteServerUrl: args.remoteServerUrl,
       sessionId: args.sessionId,
-      protocol,
-      hostname: remoteUrl.hostname,
-      port,
-      path: remoteUrl.pathname,
       capabilities: args.capabilities,
-      ...(user && key ? { user, key } : {}),
     });
 
     const [appiumCapabilities, sessionCapabilities] = await Promise.all([
@@ -120,7 +108,27 @@ export async function attachSessionAction(args: {
       }
     }
 
-    setSession(client, args.sessionId, capabilities, 'attached');
+    // If a persisted entry exists for this sessionId from a previous process
+    // that owned it, preserve 'owned' so the disconnect handler still cleans
+    // it up after this process exits. Users explicitly calling action=attach
+    // get the default 'attached' semantics otherwise.
+    let desiredOwnership: SessionOwnership = 'attached';
+    try {
+      const persisted = await readAllPersistedSessions();
+      const prior = persisted.find((p) => p.sessionId === args.sessionId);
+      if (prior?.ownership === 'owned') {
+        desiredOwnership = 'owned';
+      }
+    } catch {
+      // ignore — falling back to 'attached' is safe
+    }
+    setSession(
+      client,
+      args.sessionId,
+      capabilities,
+      desiredOwnership,
+      args.remoteServerUrl
+    );
 
     return textResult(
       `Attached to existing session ${args.sessionId}. Active sessions: ${listSessions().length}`

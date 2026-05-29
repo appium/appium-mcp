@@ -32,7 +32,7 @@ async function main(): Promise<void> {
   // Parse command line arguments
   const args = process.argv.slice(2);
   let markdownPath: string;
-  let chunkSize = 1000; // Default chunk size
+  let chunkSize = 2500; // Default chunk size
   let chunkOverlap = 200; // Default overlap
   let indexSingleFile = false;
 

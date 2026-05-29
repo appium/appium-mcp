@@ -14,14 +14,12 @@ import {
   toolErrorMessage,
 } from '../../tool-response.js';
 import { isAIEnabled } from '../../ai/config.js';
+import {
+  aiDisabledResult,
+  isAiElementUUID,
+  parseAiElement,
+} from './ai-element.js';
 import type { GestureArgs } from '../schema.js';
-
-const AI_ELEMENT_PREFIX = 'ai-element:';
-
-const AI_DISABLED_REJECTION =
-  `Received an ai-element: UUID, but the appium_ai tool is not registered ` +
-  `(AI_VISION_ENABLED is not set to true). Use appium_find_element to get a real ` +
-  `element UUID, or enable AI_VISION_ENABLED=true with the required AI_VISION_* keys.`;
 
 export async function handleTap(
   driver: DriverInstance,
@@ -29,18 +27,19 @@ export async function handleTap(
 ): Promise<ContentResult> {
   try {
     if (args.elementUUID) {
-      if (args.elementUUID.startsWith(AI_ELEMENT_PREFIX)) {
+      if (isAiElementUUID(args.elementUUID)) {
         if (!isAIEnabled()) {
-          return errorResult(AI_DISABLED_REJECTION);
+          return aiDisabledResult();
         }
-        const parsed = parseAiElementCoords(args.elementUUID);
+        const parsed = parseAiElement(args.elementUUID);
         if ('error' in parsed) {
           return errorResult(parsed.error);
         }
-        await performActions(driver, w3cTapAt(parsed.x, parsed.y));
+        const { x, y } = parsed.center;
+        await performActions(driver, w3cTapAt(x, y));
         return textResultWithPrimaryElementId(
           args.elementUUID,
-          `Successfully tapped at AI element coordinates (${parsed.x}, ${parsed.y}).`
+          `Successfully tapped at AI element coordinates (${x}, ${y}).`
         );
       }
       await elementClick(driver, args.elementUUID);
@@ -77,9 +76,22 @@ export async function handleDoubleTap(
     // other JS-bridged) gesture handlers. Resolve elements to coordinates
     // and use the same W3C sequence everywhere, verified against vodqa.
     if (args.elementUUID) {
-      const coords = await resolveCoordsFromElement(driver, args.elementUUID);
-      x = coords.x;
-      y = coords.y;
+      if (isAiElementUUID(args.elementUUID)) {
+        if (!isAIEnabled()) {
+          return aiDisabledResult();
+        }
+        const parsed = parseAiElement(args.elementUUID);
+        if ('error' in parsed) {
+          return errorResult(parsed.error);
+        }
+        // ai-element UUIDs are coordinates, not real element ids — use W3C
+        // double-tap at the parsed centre (same as main for real elements).
+        ({ x, y } = parsed.center);
+      } else {
+        const coords = await resolveCoordsFromElement(driver, args.elementUUID);
+        x = coords.x;
+        y = coords.y;
+      }
     } else if (args.x !== undefined && args.y !== undefined) {
       x = args.x;
       y = args.y;
@@ -128,24 +140,37 @@ export async function handleLongPress(
     let y: number;
 
     if (args.elementUUID) {
-      const platform = getPlatformName(driver);
-      if (platform === PLATFORM.ios) {
-        try {
-          await execute(driver, 'mobile: touchAndHold', {
-            elementId: args.elementUUID,
-            duration: duration / 1000,
-          });
-          return textResultWithPrimaryElementId(
-            args.elementUUID,
-            `Successfully long pressed element ${args.elementUUID} for ${duration}ms.`
-          );
-        } catch {
-          // fall through to W3C Actions fallback
+      if (isAiElementUUID(args.elementUUID)) {
+        if (!isAIEnabled()) {
+          return aiDisabledResult();
         }
+        const parsed = parseAiElement(args.elementUUID);
+        if ('error' in parsed) {
+          return errorResult(parsed.error);
+        }
+        // ai-element UUIDs are coordinates, not real element ids — skip the
+        // iOS `mobile: touchAndHold` fast-path and long-press at the parsed centre.
+        ({ x, y } = parsed.center);
+      } else {
+        const platform = getPlatformName(driver);
+        if (platform === PLATFORM.ios) {
+          try {
+            await execute(driver, 'mobile: touchAndHold', {
+              elementId: args.elementUUID,
+              duration: duration / 1000,
+            });
+            return textResultWithPrimaryElementId(
+              args.elementUUID,
+              `Successfully long pressed element ${args.elementUUID} for ${duration}ms.`
+            );
+          } catch {
+            // fall through to W3C Actions fallback
+          }
+        }
+        const coords = await resolveCoordsFromElement(driver, args.elementUUID);
+        x = coords.x;
+        y = coords.y;
       }
-      const coords = await resolveCoordsFromElement(driver, args.elementUUID);
-      x = coords.x;
-      y = coords.y;
     } else if (args.x !== undefined && args.y !== undefined) {
       x = args.x;
       y = args.y;
@@ -176,25 +201,6 @@ export async function handleLongPress(
       `Failed to perform long_press. ${toolErrorMessage(err)}`
     );
   }
-}
-
-function parseAiElementCoords(
-  uuid: string
-): { x: number; y: number } | { error: string } {
-  const parts = uuid.split(':');
-  if (parts.length < 2) {
-    return { error: 'Invalid AI element UUID format.' };
-  }
-  const coords = parts[1].split(',');
-  if (coords.length < 2) {
-    return { error: 'Invalid AI element coordinates format.' };
-  }
-  const x = parseInt(coords[0], 10);
-  const y = parseInt(coords[1], 10);
-  if (isNaN(x) || isNaN(y)) {
-    return { error: 'Invalid AI element coordinates: not numbers.' };
-  }
-  return { x, y };
 }
 
 function w3cTapAt(x: number, y: number) {

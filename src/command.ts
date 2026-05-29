@@ -70,7 +70,7 @@ export async function queryAppState(
   }
   return Number(
     await (driver as Client).executeScript('mobile: queryAppState', [
-      { bundleId: appId },
+      { appId, bundleId: appId },
     ])
   );
 }
@@ -252,7 +252,7 @@ export async function elementClick(
       'WEBVIEW_'
     )
   ) {
-    const caps = getSessionInfo(driver.sessionId);
+    const caps = getSessionInfo(driver.sessionId || undefined);
     const settings = await getSessionDriverSettings(driver);
     // nativeWebTap === true means we should use the native tap (elementClick) even in webview context
     if (
@@ -557,4 +557,18 @@ export async function setClipboard(
     content: base64Content,
     contentType: 'plaintext',
   });
+}
+
+/**
+ * Perform the "back" action on the device, which typically navigates back in the app or UI.
+ * @param driver
+ * @returns
+ */
+export async function back(driver: DriverInstance): Promise<void> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.back();
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.back();
+  }
+  return await (driver as Client).back();
 }

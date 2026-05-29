@@ -8,6 +8,7 @@ import {
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
+import { aiElementWebDriverRejectionIfNeeded } from '../gestures/handlers/ai-element.js';
 
 export default function getText(server: FastMCP): void {
   const getTextSchema = z.object({
@@ -23,18 +24,23 @@ export default function getText(server: FastMCP): void {
     description: 'Get text from an element',
     parameters: getTextSchema,
     annotations: {
-      readOnlyHint: false,
+      readOnlyHint: true,
       openWorldHint: false,
     },
     execute: async (
       args: z.infer<typeof getTextSchema>,
       _context: Record<string, unknown> | undefined
     ): Promise<ContentResult> => {
-      const resolved = resolveDriver(args.sessionId);
+      const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
       const { driver } = resolved;
+
+      const aiRejection = aiElementWebDriverRejectionIfNeeded(args.elementUUID);
+      if (aiRejection) {
+        return aiRejection;
+      }
 
       try {
         const text = await getElementText(driver, args.elementUUID);
