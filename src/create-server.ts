@@ -21,6 +21,7 @@ import { safeDeleteAllSessions, listSessions } from './session-store.js';
 import log from './logger.js';
 import { PluginManager } from './plugin.js';
 import type { AppiumMcpPlugin } from './plugin.js';
+import { installPolicy, type AppiumMcpPolicy } from './policy.js';
 
 const SERVER_VERSION = pkg.version as `${number}.${number}.${number}`;
 
@@ -57,6 +58,14 @@ export interface CreateAppiumMcpServerOptions {
    * Additional instructions appended to the default SERVER_INSTRUCTIONS.
    */
   additionalInstructions?: string;
+
+  /**
+   * Lightweight allowlist policy for registered tools and resources.
+   *
+   * Empty allowlists allow all matching target kinds. Non-empty allowlists hide
+   * nonmatching capabilities from discovery by skipping registration.
+   */
+  policy?: AppiumMcpPolicy;
 }
 
 type DisconnectSessionPolicy = 'delete_all' | 'skip';
@@ -83,6 +92,7 @@ export function createAppiumMcpServer(
     serverName = 'MCP Appium',
     serverVersion = SERVER_VERSION,
     additionalInstructions,
+    policy,
   } = options;
 
   const instructions = additionalInstructions
@@ -94,6 +104,8 @@ export function createAppiumMcpServer(
     version: serverVersion,
     instructions,
   });
+
+  installPolicy(server, policy);
 
   // -------------------------------------------------------------------------
   // 1. Install plugin hooks BEFORE registering any tools so that every built-in
