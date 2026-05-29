@@ -78,7 +78,15 @@ export interface AppiumMcpPlugin {
   readonly version: string;
   initialize?(ctx: PluginContext): Promise<void>;
   register?(registry: McpRegistry, core: AppiumMcpCore): void;
+  /**
+   * Tool-only hook. Prompts, resources, and resource templates are registered
+   * through FastMCP but are not wrapped by plugin call hooks.
+   */
   beforeCall?(ctx: ToolCallContext): Promise<ToolCallResult | void>;
+  /**
+   * Tool-only hook. Prompts, resources, and resource templates are registered
+   * through FastMCP but are not wrapped by plugin call hooks.
+   */
   afterCall?(
     ctx: ToolCallContext,
     result: ToolCallResult
@@ -123,15 +131,9 @@ type AddToolsParam = Parameters<FastMCP['addTools']>[0];
 
 type AddPromptParam = Parameters<FastMCP['addPrompt']>[0];
 
-type AddPromptsParam = Parameters<FastMCP['addPrompts']>[0];
-
 type AddResourceParam = Parameters<FastMCP['addResource']>[0];
 
-type AddResourcesParam = Parameters<FastMCP['addResources']>[0];
-
 type AddResourceTemplateParam = Parameters<FastMCP['addResourceTemplate']>[0];
-
-type AddResourceTemplatesParam = Parameters<FastMCP['addResourceTemplates']>[0];
 
 type VerificationToolDef = {
   name: string;
@@ -418,29 +420,10 @@ export class PluginManager {
       return originalAddTool({ ...toolDef, execute: wrappedExecute });
     };
 
+    // Keep batch tool registration on the same hook-wrapped path as addTool.
     this.server.addTools = (toolDefs: AddToolsParam): void => {
       for (const toolDef of toolDefs) {
         this.server.addTool(toolDef);
-      }
-    };
-
-    this.server.addPrompts = (promptDefs: AddPromptsParam): void => {
-      for (const promptDef of promptDefs) {
-        this.server.addPrompt(promptDef);
-      }
-    };
-
-    this.server.addResources = (resourceDefs: AddResourcesParam): void => {
-      for (const resourceDef of resourceDefs) {
-        this.server.addResource(resourceDef);
-      }
-    };
-
-    this.server.addResourceTemplates = (
-      resourceTemplateDefs: AddResourceTemplatesParam
-    ): void => {
-      for (const resourceTemplateDef of resourceTemplateDefs) {
-        this.server.addResourceTemplate(resourceTemplateDef);
       }
     };
   }

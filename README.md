@@ -339,7 +339,7 @@ HTTP and streamable MCP clients may **disconnect briefly** (reconnect, reload, p
 
 ## 🔌 Plugin API
 
-Use `appium-mcp/core` to compose the default Appium MCP server with custom business logic without maintaining a fork. Plugins can register MCP tools, prompts, resources, and resource templates, and can wrap tool execution with lifecycle hooks.
+Use `appium-mcp/core` to compose the default Appium MCP server with custom business logic without maintaining a fork. Plugins can register MCP tools, prompts, resources, and resource templates, and can wrap tool execution with lifecycle hooks. Call hooks are tool-only: prompts, resources, and resource templates are registered with FastMCP but are not wrapped by `beforeCall` or `afterCall`.
 
 `createAppiumMcpServer({ policy })` can also hide nonmatching tools and resources from MCP discovery. Policy rules are regular expressions matched against tool and resource names exactly as registered. The policy is applied at registration time to both single and batch registration methods. Resource policy matches the resource `name` only; resources or resource templates without a string `name` cannot match a non-empty `allowResources` list.
 
@@ -390,8 +390,8 @@ Plugin lifecycle:
 
 - `register(registry, core)`: called during server construction. Register custom tools, prompts, resources, and resource templates here.
 - `initialize(ctx)`: called lazily on the first MCP client connection. Use it for async setup such as artifact storage or internal service clients.
-- `beforeCall(ctx)`: called before a registered MCP tool executes. Return a `ToolCallResult` to short-circuit the tool.
-- `afterCall(ctx, result)`: called after a registered MCP tool executes. Return a modified `ToolCallResult` to decorate or replace the response.
+- `beforeCall(ctx)`: called before a registered MCP tool executes. Return a `ToolCallResult` to short-circuit the tool. This hook only applies to tools, not prompts, resources, or resource templates.
+- `afterCall(ctx, result)`: called after a registered MCP tool executes. Return a modified `ToolCallResult` to decorate or replace the response. This hook only applies to tools, not prompts, resources, or resource templates.
 - `destroy()`: called after the last MCP client disconnects.
 
 ### Safe plugin surface
