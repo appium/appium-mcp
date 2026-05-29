@@ -196,6 +196,26 @@ describe('PluginManager.register', () => {
 
     expect(beforeCallCount).toBe(1);
   });
+
+  test('routes batch tool registration through addTool', () => {
+    const server = makeMockServer();
+    const manager = new PluginManager(server);
+
+    manager.register([{ name: 'batch-plugin', version: '1.0.0' }]);
+
+    server.addTools([
+      {
+        name: 'batch_tool',
+        description: 'test',
+        parameters: {},
+        execute: async () => ({ content: [] }),
+      },
+    ]);
+
+    expect(server._tools.map((tool: ToolDef) => tool.name)).toEqual([
+      'batch_tool',
+    ]);
+  });
 });
 
 // ---------------------------------------------------------------------------

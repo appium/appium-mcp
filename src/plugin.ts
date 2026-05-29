@@ -78,7 +78,15 @@ export interface AppiumMcpPlugin {
   readonly version: string;
   initialize?(ctx: PluginContext): Promise<void>;
   register?(registry: McpRegistry, core: AppiumMcpCore): void;
+  /**
+   * Tool-only hook. Prompts, resources, and resource templates are registered
+   * through FastMCP but are not wrapped by plugin call hooks.
+   */
   beforeCall?(ctx: ToolCallContext): Promise<ToolCallResult | void>;
+  /**
+   * Tool-only hook. Prompts, resources, and resource templates are registered
+   * through FastMCP but are not wrapped by plugin call hooks.
+   */
   afterCall?(
     ctx: ToolCallContext,
     result: ToolCallResult
@@ -118,6 +126,8 @@ export interface VerifyAppiumMcpNamesOptions {
 }
 
 type AddToolParam = Parameters<FastMCP['addTool']>[0];
+
+type AddToolsParam = Parameters<FastMCP['addTools']>[0];
 
 type AddPromptParam = Parameters<FastMCP['addPrompt']>[0];
 
@@ -408,6 +418,13 @@ export class PluginManager {
       };
 
       return originalAddTool({ ...toolDef, execute: wrappedExecute });
+    };
+
+    // Keep batch tool registration on the same hook-wrapped path as addTool.
+    this.server.addTools = (toolDefs: AddToolsParam): void => {
+      for (const toolDef of toolDefs) {
+        this.server.addTool(toolDef);
+      }
     };
   }
 }
