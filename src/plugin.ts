@@ -362,10 +362,17 @@ export class PluginManager {
     }
     this.addToolInterceptorInstalled = true;
 
-    const originalAddTool = this.server.addTool.bind(this.server);
+    const originalAddTool = this.server.addTool.bind(
+      this.server
+    ) as FastMCP['addTool'];
 
-    this.server.addTool = (toolDef: AddToolParam): void => {
-      const wrappedExecute: AddToolParam['execute'] = async (args, mcpCtx) => {
+    this.server.addTool = (<Params extends ToolParameters>(
+      toolDef: Tool<FastMCPSessionAuth, Params>
+    ): void => {
+      const wrappedExecute: Tool<
+        FastMCPSessionAuth,
+        Params
+      >['execute'] = async (args, mcpCtx) => {
         const sessionCtx: PluginSessionContext = {
           getSessionId: () => getSessionId(),
           getSessionInfo: (sessionId?: string) => getSessionInfo(sessionId),
@@ -418,14 +425,14 @@ export class PluginManager {
       };
 
       return originalAddTool({ ...toolDef, execute: wrappedExecute });
-    };
+    }) as FastMCP['addTool'];
 
     // Keep batch tool registration on the same hook-wrapped path as addTool.
-    this.server.addTools = (toolDefs: AddToolsParam): void => {
+    this.server.addTools = ((toolDefs: AddToolsParam): void => {
       for (const toolDef of toolDefs) {
         this.server.addTool(toolDef);
       }
-    };
+    }) as FastMCP['addTools'];
   }
 }
 
