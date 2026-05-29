@@ -1,3 +1,9 @@
+## [1.81.0](https://github.com/appium/appium-mcp/compare/v1.80.0...v1.81.0) (2026-05-29)
+
+### Features
+
+* add lightweight allowlist policy ([#369](https://github.com/appium/appium-mcp/issues/369)) ([2a52174](https://github.com/appium/appium-mcp/commit/2a52174cea59d02333c0af86cf3faa5a4ccf8715))
+
 ## [1.80.0](https://github.com/appium/appium-mcp/compare/v1.79.1...v1.80.0) (2026-05-28)
 
 ### Features
