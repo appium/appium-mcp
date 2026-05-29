@@ -1,3 +1,9 @@
+## [1.81.1](https://github.com/appium/appium-mcp/compare/v1.81.0...v1.81.1) (2026-05-29)
+
+### Bug Fixes
+
+* fix potential before/after hook issue, correct documentation ([#373](https://github.com/appium/appium-mcp/issues/373)) ([16a1ad0](https://github.com/appium/appium-mcp/commit/16a1ad0f88e52c936bf7fb41adfdc0ed9fc8f051))
+
 ## [1.81.0](https://github.com/appium/appium-mcp/compare/v1.80.0...v1.81.0) (2026-05-29)
 
 ### Features
