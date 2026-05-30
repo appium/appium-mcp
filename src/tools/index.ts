@@ -14,8 +14,6 @@
  */
 import type { ContentResult, FastMCP } from 'fastmcp';
 import log from '../logger.js';
-import answerAppium from './documentation/answer-appium.js';
-import appiumSkills from './documentation/appium-skills.js';
 import session from './session/session.js';
 import generateLocators from './test-generation/locators.js';
 import selectDevice from './session/select-device.js';
@@ -186,10 +184,6 @@ export default function registerTools(server: FastMCP): void {
   // Test Generation
   generateLocators(server);
   generateTest(server);
-
-  // Documentation
-  answerAppium(server);
-  appiumSkills(server);
 
   // AI (vision-based fallback) — gated; only registered when explicitly enabled.
   assertAIConfig();

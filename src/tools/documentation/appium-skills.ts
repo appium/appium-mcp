@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import log from '../../logger.js';
 import { resolveAppiumResourcesPath } from '../../utils/paths.js';
@@ -9,6 +10,7 @@ type Platform = 'android' | 'ios';
 type Driver = 'uiautomator2' | 'espresso' | 'xcuitest';
 type Mode = 'setup' | 'troubleshoot';
 type OptionalSkill = 'ffmpeg' | 'bundletool';
+type ToolDef = Parameters<FastMCP['addTool']>[0];
 
 const ROOT = resolveAppiumResourcesPath('submodules', 'appium-skills');
 const AGENTS_PATH = path.join(ROOT, 'AGENTS.md');
@@ -42,114 +44,111 @@ const TEMPLATE_HEADINGS: Record<string, string> = {
   'troubleshoot:xcuitest': 'Troubleshooting',
 };
 
-export default function appiumSkills(server: any): void {
-  server.addTool({
-    name: 'appium_skills',
-    description: `Return ordered Appium setup or troubleshooting skills from the vendored appium/skills repository.
+export const appiumSkillsTool: ToolDef = {
+  name: 'appium_skills',
+  description: `Return ordered Appium setup or troubleshooting skills from the vendored appium/skills repository.
       Use this before preparing a LOCAL Appium environment or diagnosing local prerequisite issues.`,
-    parameters: z.object({
-      platform: z.enum(['android', 'ios']).describe('Target local platform.'),
-      driver: z
-        .enum(['uiautomator2', 'espresso', 'xcuitest'])
-        .describe('Target Appium automation driver.'),
-      mode: z
-        .enum(['setup', 'troubleshoot'])
-        .optional()
-        .default('setup')
-        .describe(
-          'Whether to prepare an environment or troubleshoot an existing failure.'
-        ),
-      realDevice: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe(
-          'For ios + xcuitest only: true for a physical device, false for simulator setup.'
-        ),
-      includeOptional: z
-        .array(z.enum(['ffmpeg', 'bundletool']))
-        .optional()
-        .default([])
-        .describe(
-          'Optional shared skills to include when explicitly requested.'
-        ),
-    }),
-    annotations: {
-      readOnlyHint: true,
-      openWorldHint: false,
-    },
-    execute: async (rawArgs: any): Promise<any> => {
-      const parsed = (rawArgs ?? {}) as Partial<{
-        platform: Platform;
-        driver: Driver;
-        mode: Mode;
-        realDevice: boolean;
-        includeOptional: OptionalSkill[];
-      }>;
-      const args = {
-        platform: parsed.platform as Platform,
-        driver: parsed.driver as Driver,
-        mode: parsed.mode ?? 'setup',
-        realDevice: parsed.realDevice ?? false,
-        includeOptional: Array.isArray(parsed.includeOptional)
-          ? parsed.includeOptional
-          : [],
-      };
-      const { skillNames, ignoredOptional } = getSkillNames(args);
+  parameters: z.object({
+    platform: z.enum(['android', 'ios']).describe('Target local platform.'),
+    driver: z
+      .enum(['uiautomator2', 'espresso', 'xcuitest'])
+      .describe('Target Appium automation driver.'),
+    mode: z
+      .enum(['setup', 'troubleshoot'])
+      .optional()
+      .default('setup')
+      .describe(
+        'Whether to prepare an environment or troubleshoot an existing failure.'
+      ),
+    realDevice: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe(
+        'For ios + xcuitest only: true for a physical device, false for simulator setup.'
+      ),
+    includeOptional: z
+      .array(z.enum(['ffmpeg', 'bundletool']))
+      .optional()
+      .default([])
+      .describe('Optional shared skills to include when explicitly requested.'),
+  }),
+  annotations: {
+    readOnlyHint: true,
+    openWorldHint: false,
+  },
+  execute: async (rawArgs: any): Promise<any> => {
+    const parsed = (rawArgs ?? {}) as Partial<{
+      platform: Platform;
+      driver: Driver;
+      mode: Mode;
+      realDevice: boolean;
+      includeOptional: OptionalSkill[];
+    }>;
+    const args = {
+      platform: parsed.platform as Platform,
+      driver: parsed.driver as Driver,
+      mode: parsed.mode ?? 'setup',
+      realDevice: parsed.realDevice ?? false,
+      includeOptional: Array.isArray(parsed.includeOptional)
+        ? parsed.includeOptional
+        : [],
+    };
+    const { skillNames, ignoredOptional } = getSkillNames(args);
 
-      log.info(
-        `Loading Appium skills for ${args.platform}/${args.driver} (${args.mode}) from ${ROOT}`
-      );
+    log.info(
+      `Loading Appium skills for ${args.platform}/${args.driver} (${args.mode}) from ${ROOT}`
+    );
 
-      const agentsMarkdown = await readMarkdown(AGENTS_PATH);
-      const promptTemplate = getPromptTemplate(
-        agentsMarkdown,
-        getTemplateHeading(args.mode, args.driver, args.realDevice)
-      );
-      const skillContents = await Promise.all(
-        skillNames.map(async (skillName) => ({
-          name: skillName,
-          markdown: await readMarkdown(SKILL_PATH(skillName)),
-        }))
-      );
+    const agentsMarkdown = await readMarkdown(AGENTS_PATH);
+    const promptTemplate = getPromptTemplate(
+      agentsMarkdown,
+      getTemplateHeading(args.mode, args.driver, args.realDevice)
+    );
+    const skillContents = await Promise.all(
+      skillNames.map(async (skillName) => ({
+        name: skillName,
+        markdown: await readMarkdown(SKILL_PATH(skillName)),
+      }))
+    );
 
-      const lines = [
-        `Appium skills for ${args.platform}/${args.driver}`,
-        `Mode: ${args.mode}`,
-        `Real device: ${args.realDevice ? 'yes' : 'no'}`,
-        '',
-        'Recommended skill order:',
-        ...skillNames.map((skillName, index) => `${index + 1}. ${skillName}`),
-      ];
+    const lines = [
+      `Appium skills for ${args.platform}/${args.driver}`,
+      `Mode: ${args.mode}`,
+      `Real device: ${args.realDevice ? 'yes' : 'no'}`,
+      '',
+      'Recommended skill order:',
+      ...skillNames.map((skillName, index) => `${index + 1}. ${skillName}`),
+    ];
 
-      if (ignoredOptional.length) {
-        lines.push(
-          '',
-          `Ignored optional skills: ${ignoredOptional.join(', ')}`
-        );
-      }
+    if (ignoredOptional.length) {
+      lines.push('', `Ignored optional skills: ${ignoredOptional.join(', ')}`);
+    }
 
-      lines.push('', 'Source files:', '- AGENTS.md');
+    lines.push('', 'Source files:', '- AGENTS.md');
+    lines.push(
+      ...skillNames.map((skillName) => `- skills/${skillName}/SKILL.md`)
+    );
+
+    if (promptTemplate) {
+      lines.push('', 'Prompt template:', '```text', promptTemplate, '```');
+    }
+
+    lines.push('', '--- AGENTS.md ---', agentsMarkdown.trim());
+    for (const skill of skillContents) {
       lines.push(
-        ...skillNames.map((skillName) => `- skills/${skillName}/SKILL.md`)
+        '',
+        `--- skills/${skill.name}/SKILL.md ---`,
+        skill.markdown.trim()
       );
+    }
 
-      if (promptTemplate) {
-        lines.push('', 'Prompt template:', '```text', promptTemplate, '```');
-      }
+    return textResult(lines.join('\n'));
+  },
+};
 
-      lines.push('', '--- AGENTS.md ---', agentsMarkdown.trim());
-      for (const skill of skillContents) {
-        lines.push(
-          '',
-          `--- skills/${skill.name}/SKILL.md ---`,
-          skill.markdown.trim()
-        );
-      }
-
-      return textResult(lines.join('\n'));
-    },
-  });
+export default function appiumSkills(server: Pick<FastMCP, 'addTool'>): void {
+  server.addTool(appiumSkillsTool);
 }
 
 /**
