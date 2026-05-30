@@ -1,3 +1,9 @@
+## [1.81.3](https://github.com/appium/appium-mcp/compare/v1.81.2...v1.81.3) (2026-05-30)
+
+### Bug Fixes
+
+* correct the order of plugins ([#374](https://github.com/appium/appium-mcp/issues/374)) ([394da39](https://github.com/appium/appium-mcp/commit/394da39b55669512acd3ec6b3aaa88025758d9f3))
+
 ## [1.81.2](https://github.com/appium/appium-mcp/compare/v1.81.1...v1.81.2) (2026-05-30)
 
 ### Miscellaneous Chores
