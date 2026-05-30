@@ -147,10 +147,6 @@ export const appiumSkillsTool: ToolDef = {
   },
 };
 
-export default function appiumSkills(server: Pick<FastMCP, 'addTool'>): void {
-  server.addTool(appiumSkillsTool);
-}
-
 /**
  * Get the list of skill names to return based on the input arguments,
  * and determine which optional skills were ignored.

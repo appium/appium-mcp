@@ -45,7 +45,3 @@ export const appiumDocumentationQueryTool: ToolDef = {
     }
   },
 };
-
-export default function answerAppium(server: Pick<FastMCP, 'addTool'>): void {
-  server.addTool(appiumDocumentationQueryTool);
-}

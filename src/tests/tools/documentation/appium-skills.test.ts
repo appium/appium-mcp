@@ -12,9 +12,8 @@ await jest.unstable_mockModule('../../../logger', () => ({
   default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
 }));
 
-const appiumSkills = (
-  await import('../../../tools/documentation/appium-skills.js')
-).default;
+const { appiumSkillsTool } =
+  await import('../../../tools/documentation/appium-skills.js');
 
 type ToolDef = {
   name: string;
@@ -22,11 +21,7 @@ type ToolDef = {
 };
 
 function getRegisteredTool(): ToolDef {
-  const addTool = jest.fn();
-  const server = { addTool } as any;
-  appiumSkills(server);
-  expect(addTool).toHaveBeenCalledTimes(1);
-  return addTool.mock.calls[0][0] as ToolDef;
+  return appiumSkillsTool as ToolDef;
 }
 
 async function runTool(args: any): Promise<string> {

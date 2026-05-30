@@ -1,6 +1,7 @@
 import type { AppiumMcpPlugin, McpRegistry } from '../../plugin.js';
 import { appiumDocumentationQueryTool } from './answer-appium.js';
 import { appiumSkillsTool } from './appium-skills.js';
+import pkg from '../../../package.json' with { type: 'json' };
 
 /**
  * Appium documentation plugin.
@@ -11,7 +12,7 @@ import { appiumSkillsTool } from './appium-skills.js';
  */
 export class AppiumDocument implements AppiumMcpPlugin {
   readonly name = 'appium-document';
-  readonly version = '1.0.0';
+  readonly version = pkg.version;
 
   register(registry: McpRegistry): void {
     registry.addTool(appiumDocumentationQueryTool);
