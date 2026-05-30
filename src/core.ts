@@ -8,7 +8,6 @@
 export { createAppiumMcpServer } from './create-server.js';
 export type { CreateAppiumMcpServerOptions } from './create-server.js';
 export { evaluatePolicyTarget } from './policy.js';
-export { AppiumDocumentation } from './tools/documentation/plugin.js';
 export type {
   AppiumMcpPolicy,
   PolicyDecision,
