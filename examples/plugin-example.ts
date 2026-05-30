@@ -20,6 +20,13 @@ import {
 import { z } from 'zod';
 
 const text = (value: string) => ({ type: 'text' as const, text: value });
+const checkoutSummaryParameters = z.object({
+  orderId: z.string().describe('The order ID to look for on screen'),
+});
+const activeSessionPlatformParameters = z.object({
+  platform: z.enum(['Android', 'iOS']),
+});
+
 type PageSourceDriver = {
   getPageSource(): Promise<string>;
 };
@@ -32,13 +39,13 @@ class CheckoutPlugin implements AppiumMcpPlugin {
   readonly version = '1.0.0';
 
   register(registry: McpRegistry, core: AppiumMcpCore): void {
-    registry.addTool(
-      'assert_checkout_summary',
-      'Assert that the checkout summary screen shows the expected order ID.',
-      z.object({
-        orderId: z.string().describe('The order ID to look for on screen'),
-      }),
-      async ({ orderId }) => {
+    registry.addTool({
+      name: 'assert_checkout_summary',
+      description:
+        'Assert that the checkout summary screen shows the expected order ID.',
+      parameters: checkoutSummaryParameters,
+      execute: async (args) => {
+        const { orderId } = checkoutSummaryParameters.parse(args);
         const driver = core.getDriver() as PageSourceDriver | null;
         if (!driver) {
           return {
@@ -63,7 +70,7 @@ class CheckoutPlugin implements AppiumMcpPlugin {
           content: [text(`Checkout summary correct for ${orderId}`)],
         };
       }
-    );
+    });
 
     registry.addTools([
       {
@@ -91,10 +98,9 @@ class CheckoutPlugin implements AppiumMcpPlugin {
         name: 'assert_active_session_platform',
         description:
           'Assert that the active Appium session is on the expected platform.',
-        parameters: z.object({
-          platform: z.enum(['Android', 'iOS']),
-        }),
-        execute: async ({ platform }) => {
+        parameters: activeSessionPlatformParameters,
+        execute: async (args) => {
+          const { platform } = activeSessionPlatformParameters.parse(args);
           const activeSession = core
             .listSessions()
             .find((session) => session.isActive);

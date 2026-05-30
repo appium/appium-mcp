@@ -89,9 +89,14 @@ describe('McpRegistry', () => {
     const mockServer = makeMockServer();
     const registry = new McpRegistry(mockServer);
 
-    registry.addTool('my_tool', 'A test tool', {} as any, async () => ({
-      content: [{ type: 'text', text: 'ok' }],
-    }));
+    registry.addTool({
+      name: 'my_tool',
+      description: 'A test tool',
+      parameters: {} as any,
+      execute: async () => ({
+        content: [{ type: 'text', text: 'ok' }],
+      }),
+    });
 
     expect(mockServer._tools).toHaveLength(1);
     expect(mockServer._tools[0].name).toBe('my_tool');
@@ -101,12 +106,22 @@ describe('McpRegistry', () => {
     const mockServer = makeMockServer();
     const registry = new McpRegistry(mockServer);
 
-    registry.addTool('same_tool', 'first tool', {} as any, async () => ({
-      content: [{ type: 'text', text: 'first' }],
-    }));
-    registry.addTool('same_tool', 'second tool', {} as any, async () => ({
-      content: [{ type: 'text', text: 'second' }],
-    }));
+    registry.addTool({
+      name: 'same_tool',
+      description: 'first tool',
+      parameters: {} as any,
+      execute: async () => ({
+        content: [{ type: 'text', text: 'first' }],
+      }),
+    });
+    registry.addTool({
+      name: 'same_tool',
+      description: 'second tool',
+      parameters: {} as any,
+      execute: async () => ({
+        content: [{ type: 'text', text: 'second' }],
+      }),
+    });
 
     expect(mockServer._tools).toHaveLength(1);
     expect(mockServer._tools[0].description).toBe('second tool');
@@ -428,14 +443,14 @@ describe('PluginManager.registerPluginCapabilities', () => {
       version: '1.0.0',
       register(registry: McpRegistryType) {
         called = true;
-        registry.addTool(
-          'custom_tool',
-          'A custom tool',
-          {} as any,
-          async () => ({
+        registry.addTool({
+          name: 'custom_tool',
+          description: 'A custom tool',
+          parameters: {} as any,
+          execute: async () => ({
             content: [{ type: 'text', text: 'custom' }],
-          })
-        );
+          }),
+        });
       },
     };
 
@@ -458,14 +473,14 @@ describe('PluginManager.registerPluginCapabilities', () => {
       version: '1.0.0',
       register(registry: McpRegistryType) {
         registerCount += 1;
-        registry.addTool(
-          'repeat_tool',
-          'A repeat tool',
-          {} as any,
-          async () => ({
+        registry.addTool({
+          name: 'repeat_tool',
+          description: 'A repeat tool',
+          parameters: {} as any,
+          execute: async () => ({
             content: [{ type: 'text', text: 'repeat' }],
-          })
-        );
+          }),
+        });
       },
     };
 
