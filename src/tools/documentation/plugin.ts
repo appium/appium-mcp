@@ -10,7 +10,7 @@ import pkg from '../../../package.json' with { type: 'json' };
  * - appium_documentation_query
  * - appium_skills
  */
-export class AppiumDocument implements AppiumMcpPlugin {
+export class AppiumDocumentation implements AppiumMcpPlugin {
   readonly name = 'appium-document';
   readonly version = pkg.version;
 
@@ -19,5 +19,3 @@ export class AppiumDocument implements AppiumMcpPlugin {
     registry.addTool(appiumSkillsTool);
   }
 }
-
-export default AppiumDocument;

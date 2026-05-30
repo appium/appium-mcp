@@ -12,7 +12,7 @@ await jest.unstable_mockModule('../../../logger', () => ({
   default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
 }));
 
-const { AppiumDocument } =
+const { AppiumDocumentation } =
   await import('../../../tools/documentation/plugin.js');
 
 type ToolDef = {
@@ -20,7 +20,7 @@ type ToolDef = {
   annotations?: unknown;
 };
 
-describe('AppiumDocument plugin', () => {
+describe('AppiumDocumentation plugin', () => {
   test('registers documentation query and skills tools', () => {
     const tools: ToolDef[] = [];
     const registry = {
@@ -29,7 +29,7 @@ describe('AppiumDocument plugin', () => {
       },
     };
 
-    new AppiumDocument().register(registry as never);
+    new AppiumDocumentation().register(registry as never);
 
     expect(tools.map((tool) => tool.name)).toEqual([
       'appium_documentation_query',

@@ -1,7 +1,7 @@
 import { createAppiumMcpServer } from './create-server.js';
-import { AppiumDocument } from './tools/documentation/plugin.js';
+import { AppiumDocumentation } from './tools/documentation/plugin.js';
 
 const server = createAppiumMcpServer({
-  plugins: [new AppiumDocument()],
+  plugins: [new AppiumDocumentation()],
 });
 export default server;
