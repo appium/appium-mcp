@@ -10,7 +10,8 @@ import {
   createDevicePickerUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import { textResult } from '../tool-response.js';
+import type { ContentResult } from 'fastmcp';
+import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 
 // Store selected device globally
 let selectedDeviceUdid: string | null = null;
@@ -83,62 +84,74 @@ export default function selectDevice(server: any): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, _context: any): Promise<any> => {
+    execute: async (args: any, _context: any): Promise<ContentResult> => {
       try {
         const { platform, iosDeviceType, deviceUdid } = args;
 
         if (platform === 'android') {
           return await handleAndroidDeviceSelection(deviceUdid);
-        } else if (platform === 'ios') {
-          return await handleIOSDeviceSelection(iosDeviceType, deviceUdid);
-        } else {
-          throw new Error(
-            `Invalid platform: ${platform}. Please choose 'android' or 'ios'.`
-          );
         }
-      } catch (error: any) {
+        if (platform === 'ios') {
+          return await handleIOSDeviceSelection(iosDeviceType, deviceUdid);
+        }
+        return errorResult(
+          `Invalid platform '${String(platform)}'. Use platform='android' or platform='ios'.`
+        );
+      } catch (error: unknown) {
         log.error('Error selecting device:', error);
-        throw new Error(`Failed to select device: ${error.message}`, {
-          cause: error,
-        });
+        return errorResult(
+          `Failed to select device. ${toolErrorMessage(error)}`
+        );
       }
     },
   });
 }
 
+type DevicesOk = { ok: true; devices: any[] };
+type DevicesFail = { ok: false; result: ContentResult };
+
 /**
  * Get and validate Android devices
  */
-async function getAndroidDevices(): Promise<any[]> {
+async function getAndroidDevices(): Promise<DevicesOk | DevicesFail> {
   const adb = await ADBManager.getInstance().initialize();
   const devices = await adb.getConnectedDevices();
 
   if (devices.length === 0) {
-    throw new Error('No Android devices/emulators found');
+    return {
+      ok: false,
+      result: errorResult(
+        'No Android devices or emulators found. Connect a USB device with USB debugging enabled, or start an Android emulator, then call select_device again with platform=android.'
+      ),
+    };
   }
 
-  return devices;
+  return { ok: true, devices };
 }
 
 /**
  * Validate and select Android device by UDID
  */
-function selectAndroidDevice(deviceUdid: string, devices: any[]): void {
+function selectAndroidDevice(
+  deviceUdid: string,
+  devices: any[]
+): ContentResult | undefined {
   const selectedDevice = devices.find((d) => d.udid === deviceUdid);
   if (!selectedDevice) {
-    throw new Error(
-      `Device with UDID "${deviceUdid}" not found. Available devices: ${devices.map((d) => d.udid).join(', ')}`
+    return errorResult(
+      `Device with UDID "${deviceUdid}" not found. Available devices: ${devices.map((d) => d.udid).join(', ')}. Call select_device again with deviceUdid set to one of these values.`
     );
   }
 
   selectedDeviceUdid = deviceUdid;
   log.info(`Device selected: ${deviceUdid}`);
+  return undefined;
 }
 
 /**
  * Format device selection response for Android
  */
-function formatAndroidSelectionResponse(deviceUdid: string): any {
+function formatAndroidSelectionResponse(deviceUdid: string): ContentResult {
   return textResult(
     JSON.stringify(
       {
@@ -159,7 +172,7 @@ function formatAndroidSelectionResponse(deviceUdid: string): any {
 /**
  * Format device list response for Android
  */
-function formatAndroidListResponse(devices: any[]): any {
+function formatAndroidListResponse(devices: any[]): ContentResult {
   const deviceList = devices
     .map((device, index) => `  ${index + 1}. ${device.udid}`)
     .join('\n');
@@ -182,12 +195,13 @@ function formatAndroidListResponse(devices: any[]): any {
  */
 function validateIOSDeviceType(
   iosDeviceType: 'simulator' | 'real' | undefined
-): void {
+): ContentResult | undefined {
   if (!iosDeviceType) {
-    throw new Error(
-      "For iOS platform, iosDeviceType ('simulator' or 'real') is required"
+    return errorResult(
+      "iosDeviceType is required when platform=ios. Pass iosDeviceType='simulator' or iosDeviceType='real'."
     );
   }
+  return undefined;
 }
 
 /**
@@ -195,33 +209,42 @@ function validateIOSDeviceType(
  */
 async function getIOSDevices(
   iosDeviceType: 'simulator' | 'real'
-): Promise<any[]> {
+): Promise<DevicesOk | DevicesFail> {
   const iosManager = IOSManager.getInstance();
   const devices = await iosManager.getDevicesByType(iosDeviceType);
 
   if (devices.length === 0) {
-    throw new Error(
-      `No iOS ${iosDeviceType === 'simulator' ? 'simulators' : 'devices'} found`
-    );
+    return {
+      ok: false,
+      result: errorResult(
+        `No iOS ${iosDeviceType === 'simulator' ? 'simulators' : 'devices'} found. Start a simulator in Xcode, or connect a real device with Developer Mode enabled, then call select_device again with platform=ios and iosDeviceType=${iosDeviceType}.`
+      ),
+    };
   }
 
-  return devices;
+  return { ok: true, devices };
 }
 
 /**
  * Validate and select iOS device by UDID
  */
+type SelectIOSOk = { ok: true; device: any };
+type SelectIOSFail = { ok: false; result: ContentResult };
+
 function selectIOSDevice(
   deviceUdid: string,
   devices: any[],
   iosDeviceType: 'simulator' | 'real'
-): any {
+): SelectIOSOk | SelectIOSFail {
   const selectedDevice = devices.find((d) => d.udid === deviceUdid);
   if (!selectedDevice) {
     const deviceList = devices.map((d) => `${d.name} (${d.udid})`).join(', ');
-    throw new Error(
-      `Device with UDID "${deviceUdid}" not found. Available devices: ${deviceList}`
-    );
+    return {
+      ok: false,
+      result: errorResult(
+        `Device with UDID "${deviceUdid}" not found. Available devices: ${deviceList}. Call select_device again with deviceUdid set to one of these values.`
+      ),
+    };
   }
 
   selectedDeviceUdid = deviceUdid;
@@ -231,7 +254,7 @@ function selectIOSDevice(
     `iOS ${iosDeviceType} selected: ${selectedDevice.name} (${deviceUdid})`
   );
 
-  return selectedDevice;
+  return { ok: true, device: selectedDevice };
 }
 
 /**
@@ -240,7 +263,7 @@ function selectIOSDevice(
 function formatIOSSelectionResponse(
   deviceName: string,
   deviceUdid: string
-): any {
+): ContentResult {
   return textResult(
     JSON.stringify(
       {
@@ -264,7 +287,7 @@ function formatIOSSelectionResponse(
 function formatIOSListResponse(
   devices: any[],
   iosDeviceType: 'simulator' | 'real'
-): any {
+): ContentResult {
   const deviceList = devices
     .map(
       (device, index) =>
@@ -288,17 +311,29 @@ function formatIOSListResponse(
 /**
  * Handle Android device selection
  */
-async function handleAndroidDeviceSelection(deviceUdid?: string): Promise<any> {
-  const devices = await getAndroidDevices();
+async function handleAndroidDeviceSelection(
+  deviceUdid?: string
+): Promise<ContentResult> {
+  const listed = await getAndroidDevices();
+  if (!listed.ok) {
+    return listed.result;
+  }
+  const { devices } = listed;
 
   if (deviceUdid) {
-    selectAndroidDevice(deviceUdid, devices);
+    const selectionError = selectAndroidDevice(deviceUdid, devices);
+    if (selectionError) {
+      return selectionError;
+    }
     return formatAndroidSelectionResponse(deviceUdid);
   }
 
   // Auto-select when only one device is available
   if (devices.length === 1) {
-    selectAndroidDevice(devices[0].udid, devices);
+    const selectionError = selectAndroidDevice(devices[0].udid, devices);
+    if (selectionError) {
+      return selectionError;
+    }
     return formatAndroidSelectionResponse(devices[0].udid);
   }
 
@@ -311,29 +346,40 @@ async function handleAndroidDeviceSelection(deviceUdid?: string): Promise<any> {
 async function handleIOSDeviceSelection(
   iosDeviceType: 'simulator' | 'real' | undefined,
   deviceUdid?: string
-): Promise<any> {
+): Promise<ContentResult> {
   const iosManager = IOSManager.getInstance();
   if (!iosManager.isMac()) {
-    throw new Error('iOS testing is only available on macOS');
+    return errorResult(
+      'iOS device selection requires macOS with Xcode installed. Use platform=android on this host, or connect to a remote macOS Appium server with remoteServerUrl on appium_session_management (action=create).'
+    );
   }
 
-  validateIOSDeviceType(iosDeviceType);
+  const typeError = validateIOSDeviceType(iosDeviceType);
+  if (typeError) {
+    return typeError;
+  }
 
-  const devices = await getIOSDevices(iosDeviceType!);
+  const listed = await getIOSDevices(iosDeviceType!);
+  if (!listed.ok) {
+    return listed.result;
+  }
+  const { devices } = listed;
 
   if (deviceUdid) {
-    const selectedDevice = selectIOSDevice(deviceUdid, devices, iosDeviceType!);
-    return formatIOSSelectionResponse(selectedDevice.name, deviceUdid);
+    const selected = selectIOSDevice(deviceUdid, devices, iosDeviceType!);
+    if (!selected.ok) {
+      return selected.result;
+    }
+    return formatIOSSelectionResponse(selected.device.name, deviceUdid);
   }
 
   // Auto-select when only one device is available
   if (devices.length === 1) {
-    const selectedDevice = selectIOSDevice(
-      devices[0].udid,
-      devices,
-      iosDeviceType!
-    );
-    return formatIOSSelectionResponse(selectedDevice.name, devices[0].udid);
+    const selected = selectIOSDevice(devices[0].udid, devices, iosDeviceType!);
+    if (!selected.ok) {
+      return selected.result;
+    }
+    return formatIOSSelectionResponse(selected.device.name, devices[0].udid);
   }
 
   return formatIOSListResponse(devices, iosDeviceType!);

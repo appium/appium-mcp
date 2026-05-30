@@ -18,7 +18,8 @@ import {
   createSessionDashboardUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import { textResult, toolErrorMessage } from '../tool-response.js';
+import type { ContentResult } from 'fastmcp';
+import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 import WebDriver from 'webdriver';
 
 // Define capabilities type
@@ -107,7 +108,7 @@ export async function validateIOSDeviceSelection(
     const selectedDevice = getSelectedDevice();
     if (!selectedDevice) {
       throw new Error(
-        `Multiple iOS ${deviceType === 'simulator' ? 'simulators' : 'devices'} found (${devices.length}). Please use the select_device tool to choose which device to use before creating a session.`
+        `Multiple iOS ${deviceType === 'simulator' ? 'simulators' : 'devices'} found (${devices.length}). Use select_device with platform=ios and iosDeviceType=${deviceType} to choose one, then call appium_session_management with action=create.`
       );
     }
   }
@@ -215,13 +216,13 @@ export function validateRemoteServerUrl(
  * - text: Success message with session ID and device details
  * - ui: Interactive session dashboard UI component
  *
- * @throws {Error} If session creation fails or platform capabilities cannot be loaded
+ * Returns a tool-execution error result (isError: true) on failure.
  */
 export async function createSessionAction(args: {
   platform: 'ios' | 'android' | 'general';
   capabilities?: Record<string, any>;
   remoteServerUrl?: string;
-}): Promise<any> {
+}): Promise<ContentResult> {
   try {
     const {
       platform,
@@ -256,10 +257,16 @@ export async function createSessionAction(args: {
     );
     let sessionId;
     if (remoteServerUrl) {
-      validateRemoteServerUrl(
-        remoteServerUrl,
-        process.env.REMOTE_SERVER_URL_ALLOW_REGEX
-      );
+      try {
+        validateRemoteServerUrl(
+          remoteServerUrl,
+          process.env.REMOTE_SERVER_URL_ALLOW_REGEX
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Invalid remoteServerUrl. ${toolErrorMessage(err)} Pass a valid http(s) URL, or omit remoteServerUrl to use the local embedded driver.`
+        );
+      }
 
       const remoteUrl = new URL(remoteServerUrl);
       const protocol = remoteUrl.protocol.replace(':', '');
@@ -291,8 +298,8 @@ export async function createSessionAction(args: {
       );
     } else {
       if (platform === 'general') {
-        throw new Error(
-          'platform="general" requires a remoteServerUrl — local drivers are not supported for general sessions.'
+        return errorResult(
+          'platform=general requires remoteServerUrl. Local embedded mode supports platform=android or platform=ios only.'
         );
       }
       const driver = createDriverForPlatform(platform);
@@ -329,11 +336,11 @@ export async function createSessionAction(args: {
     );
 
     return addUIResourceToResponse(textResponse, uiResource);
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error('Error creating session:', error);
-    throw new Error(`Failed to create session: ${error.message}`, {
-      cause: error,
-    });
+    return errorResult(
+      `Failed to create session. ${toolErrorMessage(error)} For local sessions, call select_device first (matching platform), then appium_session_management with action=create.`
+    );
   }
 }
 
