@@ -1,3 +1,9 @@
+## [1.81.2](https://github.com/appium/appium-mcp/compare/v1.81.1...v1.81.2) (2026-05-30)
+
+### Miscellaneous Chores
+
+* set strict for the tsconfig ([#338](https://github.com/appium/appium-mcp/issues/338)) ([4632004](https://github.com/appium/appium-mcp/commit/4632004bffdd7bbca78fc15d34cab232576a5e36))
+
 ## [1.81.1](https://github.com/appium/appium-mcp/compare/v1.81.0...v1.81.1) (2026-05-29)
 
 ### Bug Fixes
