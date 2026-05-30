@@ -257,22 +257,22 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       name: 'policy-plugin',
       version: '1.0.0',
       register(registry) {
-        registry.addTool(
-          'plugin_allowed',
-          'Allowed plugin tool',
-          testToolParameters,
-          async () => ({
+        registry.addTool({
+          name: 'plugin_allowed',
+          description: 'Allowed plugin tool',
+          parameters: testToolParameters,
+          execute: async () => ({
             content: [{ type: 'text', text: 'allowed' }],
-          })
-        );
-        registry.addTool(
-          'plugin_blocked',
-          'Blocked plugin tool',
-          testToolParameters,
-          async () => ({
+          }),
+        });
+        registry.addTool({
+          name: 'plugin_blocked',
+          description: 'Blocked plugin tool',
+          parameters: testToolParameters,
+          execute: async () => ({
             content: [{ type: 'text', text: 'blocked' }],
-          })
-        );
+          }),
+        });
       },
     };
 
@@ -294,14 +294,14 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       name: 'override-plugin',
       version: '1.0.0',
       register(registry) {
-        registry.addTool(
-          'builtin_tool',
-          'Plugin override for built-in test tool',
-          testToolParameters,
-          async () => ({
+        registry.addTool({
+          name: 'builtin_tool',
+          description: 'Plugin override for built-in test tool',
+          parameters: testToolParameters,
+          execute: async () => ({
             content: [{ type: 'text', text: 'plugin override result' }],
-          })
-        );
+          }),
+        });
       },
     };
 

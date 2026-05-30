@@ -357,14 +357,21 @@ class CheckoutPlugin implements AppiumMcpPlugin {
   readonly version = '1.0.0';
 
   register(registry: McpRegistry): void {
-    registry.addTool(
-      'assert_checkout_summary',
-      'Assert that the checkout summary screen shows an expected order ID.',
-      z.object({ orderId: z.string() }),
-      async ({ orderId }) => ({
-        content: [{ type: 'text', text: `Assert checkout order ${orderId}` }],
-      })
-    );
+    const parameters = z.object({ orderId: z.string() });
+    registry.addTool({
+      name: 'assert_checkout_summary',
+      description:
+        'Assert that the checkout summary screen shows an expected order ID.',
+      parameters,
+      execute: async (args) => {
+        const { orderId } = parameters.parse(args);
+        return {
+          content: [
+            { type: 'text', text: `Assert checkout order ${orderId}` },
+          ],
+        };
+      },
+    });
   }
 
   async beforeCall(ctx: ToolCallContext): Promise<void> {
