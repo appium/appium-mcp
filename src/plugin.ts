@@ -72,7 +72,9 @@ export interface AppiumMcpPlugin {
    * Unique plugin identifier within a server instance.
    *
    * Duplicate plugin names are skipped with a warning, so prefer stable
-   * package-style or organization-prefixed names.
+   * package-style or organization-prefixed names. This differs from MCP tool
+   * names: FastMCP replaces an existing tool when another tool is registered
+   * with the same name.
    */
   readonly name: string;
   readonly version: string;
@@ -152,7 +154,8 @@ export class McpRegistry {
   /**
    * Register one MCP tool. Tool calls are wrapped by plugin call hooks.
    *
-   * Delegates to FastMCP `addTool`.
+   * Delegates to FastMCP `addTool`. If a tool with the same name was already
+   * registered, FastMCP replaces the earlier tool with this definition.
    *
    * @see https://github.com/punkpeye/fastmcp#tools
    */
@@ -169,6 +172,7 @@ export class McpRegistry {
    * Register multiple MCP tools.
    *
    * Delegates to FastMCP `addTool` for each definition.
+   * Duplicate tool names are therefore last-registration-wins.
    *
    * @see https://github.com/punkpeye/fastmcp#tools
    */
@@ -473,6 +477,16 @@ export function verifyAppiumMcpNames(
   const registry = new McpRegistry(collector as never);
   const core = new AppiumMcpCore();
 
+  currentSource = CORE_SOURCE;
+  try {
+    withSuppressedRegistrationLogs(() => registerTools(collector as never));
+  } catch (err: unknown) {
+    errors.push({
+      source: currentSource,
+      message: errorMessage(err),
+    });
+  }
+
   for (const plugin of plugins) {
     if (seenPluginNames.has(plugin.name)) {
       continue;
@@ -490,16 +504,6 @@ export function verifyAppiumMcpNames(
         message: errorMessage(err),
       });
     }
-  }
-
-  currentSource = CORE_SOURCE;
-  try {
-    withSuppressedRegistrationLogs(() => registerTools(collector as never));
-  } catch (err: unknown) {
-    errors.push({
-      source: currentSource,
-      message: errorMessage(err),
-    });
   }
   duplicates.push(...findDuplicates('tool', toolEntries));
 

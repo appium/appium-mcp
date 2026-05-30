@@ -97,8 +97,8 @@ describe('verifyAppiumMcpNames', () => {
         kind: 'tool',
         name: 'builtin_tool',
         entries: [
-          { name: 'builtin_tool', source: 'plugin:conflicting-plugin' },
           { name: 'builtin_tool', source: 'appium-mcp core' },
+          { name: 'builtin_tool', source: 'plugin:conflicting-plugin' },
         ],
       },
     ]);
