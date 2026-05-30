@@ -1,3 +1,9 @@
+## [1.81.4](https://github.com/appium/appium-mcp/compare/v1.81.3...v1.81.4) (2026-05-30)
+
+### Bug Fixes
+
+* addTool argument format in plugin ([#375](https://github.com/appium/appium-mcp/issues/375)) ([2dee443](https://github.com/appium/appium-mcp/commit/2dee443bf30741dc2756846ef30809afb0c2ea0b))
+
 ## [1.81.3](https://github.com/appium/appium-mcp/compare/v1.81.2...v1.81.3) (2026-05-30)
 
 ### Bug Fixes
