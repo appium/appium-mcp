@@ -25,14 +25,14 @@ describe('verifyAppiumMcpNames', () => {
       name: 'unique-plugin',
       version: '1.0.0',
       register(registry) {
-        registry.addTool(
-          'plugin_tool',
-          'plugin tool',
-          {} as never,
-          async () => ({
+        registry.addTool({
+          name: 'plugin_tool',
+          description: 'plugin tool',
+          parameters: {} as never,
+          execute: async () => ({
             content: [{ type: 'text', text: 'ok' }],
-          })
-        );
+          }),
+        });
       },
     };
 
@@ -78,14 +78,14 @@ describe('verifyAppiumMcpNames', () => {
       name: 'conflicting-plugin',
       version: '1.0.0',
       register(registry) {
-        registry.addTool(
-          'builtin_tool',
-          'conflicting tool',
-          {} as never,
-          async () => ({
+        registry.addTool({
+          name: 'builtin_tool',
+          description: 'conflicting tool',
+          parameters: {} as never,
+          execute: async () => ({
             content: [{ type: 'text', text: 'ok' }],
-          })
-        );
+          }),
+        });
       },
     };
 
@@ -118,14 +118,14 @@ describe('verifyAppiumMcpNames', () => {
         name: 'working-plugin',
         version: '1.0.0',
         register(registry) {
-          registry.addTool(
-            'working_plugin_tool',
-            'working tool',
-            {} as never,
-            async () => ({
+          registry.addTool({
+            name: 'working_plugin_tool',
+            description: 'working tool',
+            parameters: {} as never,
+            execute: async () => ({
               content: [{ type: 'text', text: 'ok' }],
-            })
-          );
+            }),
+          });
         },
       },
     ];

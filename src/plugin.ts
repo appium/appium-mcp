@@ -159,13 +159,8 @@ export class McpRegistry {
    *
    * @see https://github.com/punkpeye/fastmcp#tools
    */
-  addTool<Params extends ToolParameters>(
-    name: string,
-    description: string,
-    parameters: Params,
-    execute: Tool<FastMCPSessionAuth, Params>['execute']
-  ): void {
-    this.server.addTool({ name, description, parameters, execute });
+  addTool(def: AddToolParam): void {
+    this.server.addTool(def);
   }
 
   /**
@@ -176,16 +171,9 @@ export class McpRegistry {
    *
    * @see https://github.com/punkpeye/fastmcp#tools
    */
-  addTools(
-    defs: Array<{
-      name: string;
-      description: string;
-      parameters: ToolParameters;
-      execute: AddToolParam['execute'];
-    }>
-  ): void {
+  addTools(defs: AddToolParam[]): void {
     for (const def of defs) {
-      this.addTool(def.name, def.description, def.parameters, def.execute);
+      this.addTool(def);
     }
   }
 
