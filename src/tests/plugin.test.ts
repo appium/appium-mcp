@@ -52,6 +52,12 @@ function makeMockServer() {
   const registeredResourceTemplates: unknown[] = [];
   const server: any = {
     addTool(toolDef: ToolDef) {
+      const existingIndex = registeredTools.findIndex(
+        (tool) => tool.name === toolDef.name
+      );
+      if (existingIndex !== -1) {
+        registeredTools.splice(existingIndex, 1);
+      }
       registeredTools.push(toolDef);
     },
     addPrompt(promptDef: unknown) {
@@ -89,6 +95,26 @@ describe('McpRegistry', () => {
 
     expect(mockServer._tools).toHaveLength(1);
     expect(mockServer._tools[0].name).toBe('my_tool');
+  });
+
+  test('uses FastMCP replacement behavior for duplicate tool names', async () => {
+    const mockServer = makeMockServer();
+    const registry = new McpRegistry(mockServer);
+
+    registry.addTool('same_tool', 'first tool', {} as any, async () => ({
+      content: [{ type: 'text', text: 'first' }],
+    }));
+    registry.addTool('same_tool', 'second tool', {} as any, async () => ({
+      content: [{ type: 'text', text: 'second' }],
+    }));
+
+    expect(mockServer._tools).toHaveLength(1);
+    expect(mockServer._tools[0].description).toBe('second tool');
+
+    const result = (await mockServer._tools[0].execute({}, {})) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toBe('second');
   });
 
   test('delegates prompt and resource registration to server methods', () => {

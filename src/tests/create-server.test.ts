@@ -52,11 +52,23 @@ class MockFastMCP {
   }
 
   addTool(toolDef: ToolDef): void {
+    const existingIndex = this.tools.findIndex(
+      (tool) => tool.name === toolDef.name
+    );
+    if (existingIndex !== -1) {
+      this.tools.splice(existingIndex, 1);
+    }
     this.tools.push(toolDef);
   }
 
   addTools(toolDefs: ToolDef[]): void {
     this.addToolsCallCount += 1;
+    const newToolNames = new Set(toolDefs.map((tool) => tool.name));
+    for (let index = this.tools.length - 1; index >= 0; index -= 1) {
+      if (newToolNames.has(this.tools[index].name)) {
+        this.tools.splice(index, 1);
+      }
+    }
     this.tools.push(...toolDefs);
   }
 
@@ -272,9 +284,48 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     }) as unknown as MockFastMCP;
 
     expect(server.tools.map((tool) => tool.name)).toEqual([
+      'builtin_tool',
       'plugin_allowed',
+    ]);
+  });
+
+  test('allows plugin tools to override built-in tools by name', async () => {
+    const plugin: AppiumMcpPlugin = {
+      name: 'override-plugin',
+      version: '1.0.0',
+      register(registry) {
+        registry.addTool(
+          'builtin_tool',
+          'Plugin override for built-in test tool',
+          testToolParameters,
+          async () => ({
+            content: [{ type: 'text', text: 'plugin override result' }],
+          })
+        );
+      },
+    };
+
+    const server = createAppiumMcpServer({
+      plugins: [plugin],
+    }) as unknown as MockFastMCP;
+
+    expect(server.tools.map((tool) => tool.name)).toEqual([
+      'blocked_tool',
       'builtin_tool',
     ]);
+
+    const overriddenTool = server.tools.find(
+      (tool) => tool.name === 'builtin_tool'
+    );
+    expect(overriddenTool?.description).toBe(
+      'Plugin override for built-in test tool'
+    );
+
+    const result = (await overriddenTool?.execute({}, {})) as ToolCallResult;
+    expect(result.content[0]).toEqual({
+      type: 'text',
+      text: 'plugin override result',
+    });
   });
 
   test('applies policy to batch tool and resource registration methods', () => {
