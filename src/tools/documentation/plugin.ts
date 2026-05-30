@@ -11,7 +11,7 @@ import pkg from '../../../package.json' with { type: 'json' };
  * - appium_skills
  */
 export class AppiumDocumentation implements AppiumMcpPlugin {
-  readonly name = 'appium-document';
+  readonly name = 'appium-documentation';
   readonly version = pkg.version;
 
   register(registry: McpRegistry): void {
