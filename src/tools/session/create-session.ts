@@ -264,7 +264,7 @@ export async function createSessionAction(args: {
         );
       } catch (err: unknown) {
         return errorResult(
-          `Invalid remoteServerUrl. ${toolErrorMessage(err)} Pass a valid http(s) URL, or omit remoteServerUrl to use the local embedded driver.`
+          `Invalid remoteServerUrl "${remoteServerUrl}". ${toolErrorMessage(err)} Pass a valid http(s) URL, or omit remoteServerUrl to use the local embedded driver.`
         );
       }
 
@@ -339,9 +339,47 @@ export async function createSessionAction(args: {
   } catch (error: unknown) {
     log.error('Error creating session:', error);
     return errorResult(
-      `Failed to create session. ${toolErrorMessage(error)} For local sessions, call select_device first (matching platform), then appium_session_management with action=create.`
+      buildCreateSessionFailureMessage(error, {
+        platform: args.platform,
+        remoteServerUrl: args.remoteServerUrl,
+        customCapabilities: args.capabilities,
+      })
     );
   }
+}
+
+function buildCreateSessionFailureMessage(
+  error: unknown,
+  ctx: {
+    platform: 'ios' | 'android' | 'general';
+    remoteServerUrl?: string;
+    customCapabilities?: Record<string, any>;
+  }
+): string {
+  const detail = toolErrorMessage(error);
+  const base = `Failed to create session. ${detail}`;
+
+  if (ctx.remoteServerUrl) {
+    return `${base} remoteServerUrl="${ctx.remoteServerUrl}". Check the URL and your capabilities.`;
+  }
+
+  if (/select_device/i.test(detail)) {
+    return base;
+  }
+
+  const caps = ctx.customCapabilities ?? {};
+  const hasDeviceTarget =
+    Boolean(caps['appium:udid'] || caps['appium:deviceName']) ||
+    Boolean(getSelectedDevice());
+
+  if (
+    !hasDeviceTarget &&
+    (ctx.platform === 'ios' || ctx.platform === 'android')
+  ) {
+    return `${base} For local sessions without appium:udid (or a prior select_device), use select_device with a matching platform or pass target device capabilities, then action=create.`;
+  }
+
+  return base;
 }
 
 /**
