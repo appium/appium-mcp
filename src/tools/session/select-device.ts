@@ -350,7 +350,7 @@ async function handleIOSDeviceSelection(
   const iosManager = IOSManager.getInstance();
   if (!iosManager.isMac()) {
     return errorResult(
-      'iOS device selection requires macOS with Xcode installed. To automate iOS from this host, use appium_session_management (action=create) with a remoteServerUrl that points at a macOS Appium server.'
+      'iOS device selection requires macOS with Xcode installed.'
     );
   }
 

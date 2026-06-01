@@ -223,6 +223,8 @@ export async function createSessionAction(args: {
   capabilities?: Record<string, any>;
   remoteServerUrl?: string;
 }): Promise<ContentResult> {
+  let finalCapabilities: Capabilities | undefined;
+
   try {
     const {
       platform,
@@ -231,7 +233,6 @@ export async function createSessionAction(args: {
     } = args;
 
     const configCapabilities = await loadCapabilitiesConfig();
-    let finalCapabilities: Capabilities;
     if (platform === 'android') {
       finalCapabilities = buildAndroidCapabilities(
         configCapabilities.android,
@@ -298,9 +299,7 @@ export async function createSessionAction(args: {
       );
     } else {
       if (platform === 'general') {
-        return errorResult(
-          'platform=general requires remoteServerUrl. Local embedded mode supports platform=android or platform=ios only.'
-        );
+        return errorResult('platform=general requires remoteServerUrl.');
       }
       const driver = createDriverForPlatform(platform);
       log.info(`Sending session with ${driver.constructor.name}`);
@@ -342,7 +341,7 @@ export async function createSessionAction(args: {
       buildCreateSessionFailureMessage(error, {
         platform: args.platform,
         remoteServerUrl: args.remoteServerUrl,
-        customCapabilities: args.capabilities,
+        finalCapabilities,
       })
     );
   }
@@ -353,21 +352,21 @@ function buildCreateSessionFailureMessage(
   ctx: {
     platform: 'ios' | 'android' | 'general';
     remoteServerUrl?: string;
-    customCapabilities?: Record<string, any>;
+    finalCapabilities?: Capabilities;
   }
 ): string {
   const detail = toolErrorMessage(error);
   const base = `Failed to create session. ${detail}`;
 
   if (ctx.remoteServerUrl) {
-    return `${base} remoteServerUrl="${ctx.remoteServerUrl}". Check the URL and your capabilities.`;
+    return `${base} remoteServerUrl="${ctx.remoteServerUrl}".`;
   }
 
   if (/select_device/i.test(detail)) {
     return base;
   }
 
-  const caps = ctx.customCapabilities ?? {};
+  const caps: Record<string, any> = ctx.finalCapabilities ?? {};
   const hasDeviceTarget =
     Boolean(caps['appium:udid'] || caps['appium:deviceName']) ||
     Boolean(getSelectedDevice());
