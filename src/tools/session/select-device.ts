@@ -31,7 +31,6 @@ export function getSelectedDeviceInfo(): any {
 
 export function clearSelectedDevice(): void {
   selectedDeviceUdid = null;
-  selectedDevicePlatform = null;
   selectedDeviceType = null;
   selectedDeviceInfo = null;
 }
