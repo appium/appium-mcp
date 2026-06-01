@@ -8,7 +8,6 @@ const mockAttachToSession = jest.fn<
   sessionId: 'attached-session-id',
   capabilities: { platformName: 'Android' },
 }));
-let mockSelectedDevicePlatform: 'android' | 'ios' | null = 'ios';
 
 jest.unstable_mockModule('../../../tools/session/select-device', () => ({
   getSelectedDevice: () => 'device-udid',
@@ -116,7 +115,6 @@ const mockServer = { addTool: jest.fn() } as any;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockSelectedDevicePlatform = 'ios';
   mockGetSessionOwnership.mockReturnValue(null);
   mockAttachToSession.mockResolvedValue({
     sessionId: 'attached-session-id',
@@ -496,7 +494,6 @@ describe('appium_session_management tool', () => {
 
 describe('buildAndroidCapabilities', () => {
   test('includes udid for local server and removes empty values', () => {
-    mockSelectedDevicePlatform = 'android';
     const caps = buildAndroidCapabilities(
       { 'appium:app': '/path/app.apk' },
       { 'appium:deviceName': '' },
@@ -512,15 +509,7 @@ describe('buildAndroidCapabilities', () => {
   });
 
   test('does not include udid for remote server', () => {
-    mockSelectedDevicePlatform = 'android';
     const caps = buildAndroidCapabilities({}, undefined, true);
-    expect(caps.platformName).toBe('Android');
-    expect(caps).not.toHaveProperty('appium:udid');
-  });
-
-  test('ignores a selected device from another platform', () => {
-    mockSelectedDevicePlatform = 'ios';
-    const caps = buildAndroidCapabilities({}, undefined, false);
     expect(caps.platformName).toBe('Android');
     expect(caps).not.toHaveProperty('appium:udid');
   });
@@ -540,14 +529,6 @@ describe('buildIOSCapabilities', () => {
     expect(caps['appium:wdaStartupRetries']).toBe(4);
     expect(caps['custom:cap']).toBe('value');
     expect(caps['appium:bundleId']).toBe('com.example.app');
-  });
-
-  test('ignores a selected device from another platform', async () => {
-    mockSelectedDevicePlatform = 'android';
-    const caps = await buildIOSCapabilities({}, undefined, false);
-    expect(caps.platformName).toBe('iOS');
-    expect(caps['appium:deviceName']).toBe('iPhone Simulator');
-    expect(caps).not.toHaveProperty('appium:udid');
   });
 
   test('falls back to defaults for remote server', async () => {

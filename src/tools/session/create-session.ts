@@ -4,11 +4,7 @@ import { URL } from 'node:url';
 import { getPortFromUrl } from '../../utils/url.js';
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
-import {
-  setSession,
-  setSessionAndPersist,
-  listSessions,
-} from '../../session-store.js';
+import { setSession, listSessions } from '../../session-store.js';
 import {
   getSelectedDevice,
   getSelectedDeviceType,
@@ -286,7 +282,7 @@ export async function createSessionAction(args: {
         capabilities: finalCapabilities,
       });
       sessionId = client.sessionId;
-      await setSessionAndPersist(
+      await setSession(
         client,
         client.sessionId,
         finalCapabilities,
@@ -302,7 +298,7 @@ export async function createSessionAction(args: {
       const driver = createDriverForPlatform(platform);
       log.info(`Sending session with ${driver.constructor.name}`);
       sessionId = await createDriverSession(driver, finalCapabilities);
-      setSession(driver, sessionId, finalCapabilities, 'owned');
+      await setSession(driver, sessionId, finalCapabilities, 'owned');
     }
 
     const sessionIdStr =

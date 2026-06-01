@@ -108,17 +108,7 @@ export function isXCUITestDriverSession(
   );
 }
 
-export function setSession(
-  d: DriverInstance,
-  id: string | null,
-  capabilities: SessionCapabilities = {},
-  ownership: SessionOwnership = 'owned',
-  remoteServerUrl?: string
-) {
-  void setSessionEntry(d, id, capabilities, ownership, remoteServerUrl);
-}
-
-export async function setSessionAndPersist(
+export async function setSession(
   d: DriverInstance,
   id: string | null,
   capabilities: SessionCapabilities = {},
