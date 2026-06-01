@@ -37,7 +37,7 @@ export async function attachToRemoteSession(
     hostname: url.hostname,
     port,
     path: url.pathname,
-    capabilities: options.capabilities,
+    capabilities: options.capabilities ?? {},
     ...(user && key ? { user, key } : {}),
   });
 }

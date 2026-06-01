@@ -10,7 +10,7 @@ import {
 import { readAllPersistedSessions } from '../../persistence.js';
 import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 import { validateRemoteServerUrl } from './create-session.js';
-import { attachToRemoteSession } from '../../utils/url.js';
+import { attachToRemoteSession, getPortFromUrl } from '../../utils/url.js';
 
 /**
  * Normalize capability payloads returned by Appium/WebdriverIO into a flat
@@ -44,9 +44,14 @@ const METADATA_FIELDS = [
  * Attach MCP Appium to an existing remote Appium session without taking
  * ownership of the underlying session lifecycle.
  *
+ * Session capabilities are fetched from the server before creating the
+ * WebDriver client so that WebDriver.attachToSession receives the full
+ * capability set (including platformName) and sessionEnvironmentDetector can
+ * correctly configure isMobile / isAndroid / isIOS on the client instance.
+ *
  * @param args - Remote server location, target session id, and optional
- *   capability overrides to seed local metadata.
- * @returns A tool response describing whether the attach succeeded.
+ *   capability overrides.
+ * @returns A tool response describing whether the attachment succeeded.
  */
 export async function attachSessionAction(args: {
   remoteServerUrl: string;
@@ -69,29 +74,41 @@ export async function attachSessionAction(args: {
       process.env.REMOTE_SERVER_URL_ALLOW_REGEX
     );
 
-    const client: Client = await attachToRemoteSession({
-      remoteServerUrl: args.remoteServerUrl,
-      sessionId: args.sessionId,
-      capabilities: args.capabilities,
-    });
-
-    const [appiumCapabilities, sessionCapabilities] = await Promise.all([
-      readClientCapabilities(client, 'getAppiumSessionCapabilities'),
-      readClientCapabilities(client, 'getSession'),
-    ]);
+    // Fetch capabilities from the server BEFORE creating the WebDriver client.
+    // This ensures WebDriver.attachToSession receives platformName so that
+    // sessionEnvironmentDetector configures isMobile / isAndroid / isIOS
+    // correctly. Caller-provided capabilities take the lowest priority; the W3C
+    // Appium extension endpoint wins.
+    const [sessionCapabilities, deprecatedSessionCapabilities] =
+      await Promise.all([
+        fetchCapabilitiesFromServer(
+          args.remoteServerUrl,
+          args.sessionId,
+          'appium/session_capabilities'
+        ),
+        fetchCapabilitiesFromServer(args.remoteServerUrl, args.sessionId),
+      ]);
 
     const sources = [
-      appiumCapabilities,
       sessionCapabilities,
+      deprecatedSessionCapabilities,
       args.capabilities,
     ];
     const capabilities: SessionCapabilities = Object.assign(
       {},
       args.capabilities ?? {},
-      sessionCapabilities ?? {},
-      appiumCapabilities ?? {}
+      deprecatedSessionCapabilities ?? {},
+      sessionCapabilities ?? {}
     );
 
+    const client: Client = await attachToRemoteSession({
+      remoteServerUrl: args.remoteServerUrl,
+      sessionId: args.sessionId,
+      capabilities,
+    });
+
+    // Normalize metadata fields into their canonical prefixed forms for
+    // local session tracking.
     for (const [plainKey, prefixedKey, targetKey] of METADATA_FIELDS) {
       const source = sources.find(
         (candidate) =>
@@ -99,10 +116,8 @@ export async function attachSessionAction(args: {
           candidate?.[prefixedKey] !== undefined
       );
       const value = source?.[plainKey] ?? source?.[prefixedKey];
-
       delete capabilities[plainKey];
       delete capabilities[prefixedKey];
-
       if (value !== undefined) {
         capabilities[targetKey] = value;
       }
@@ -141,23 +156,49 @@ export async function attachSessionAction(args: {
 }
 
 /**
- * Read capabilities from a WebdriverIO client method when available.
+ * Fetch session capabilities from the Appium server via a plain HTTP request.
  *
- * @param client - Attached WebdriverIO client for the target Appium session.
- * @param methodName - Capability reader to invoke on the client.
- * @returns Parsed capabilities, or `undefined` when the method is missing or fails.
+ * Making this request before WebDriver.attachToSession avoids the ordering
+ * problem where the client is created before platformName is known.
+ *
+ * @param remoteServerUrl - Base URL of the Appium server.
+ * @param sessionId - ID of the existing session to query.
+ * @param endpoint - Optional sub-path after `/session/{id}/`.
+ * @returns Parsed capabilities, or `undefined` when the request fails or the
+ *   endpoint is not supported by the server.
  */
-async function readClientCapabilities(
-  client: Client,
-  methodName: 'getAppiumSessionCapabilities' | 'getSession'
+async function fetchCapabilitiesFromServer(
+  remoteServerUrl: string,
+  sessionId: string,
+  endpoint?: string
 ): Promise<SessionCapabilities | undefined> {
-  const method = client[methodName];
-  if (typeof method !== 'function') {
-    return undefined;
-  }
-
   try {
-    return readCapabilities(await method.call(client));
+    const url = new URL(remoteServerUrl);
+    const port = getPortFromUrl(url);
+    const basePath = url.pathname.replace(/\/$/, '');
+    const path = `${basePath}/session/${sessionId}${endpoint ? '/' + endpoint : ''}`;
+    const requestUrl = `${url.protocol}//${url.hostname}:${port}${path}`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (url.username && url.password) {
+      const credentials = Buffer.from(
+        `${decodeURIComponent(url.username)}:${decodeURIComponent(url.password)}`
+      ).toString('base64');
+      headers.Authorization = `Basic ${credentials}`;
+    }
+
+    const response = await fetch(requestUrl, {
+      headers,
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) {
+      return undefined;
+    }
+
+    const json = (await response.json()) as { value?: unknown };
+    return readCapabilities(json.value);
   } catch {
     return undefined;
   }
