@@ -7,6 +7,7 @@ import { XCUITestDriver } from 'appium-xcuitest-driver';
 import { setSession, listSessions } from '../../session-store.js';
 import {
   getSelectedDevice,
+  getSelectedDevicePlatform,
   getSelectedDeviceType,
   getSelectedDeviceInfo,
   clearSelectedDevice,
@@ -65,7 +66,10 @@ export function buildAndroidCapabilities(
     'appium:deviceName': 'Android Device',
   };
 
-  const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
+  const selectedDeviceUdid =
+    !isRemoteServer && getSelectedDevicePlatform() === 'android'
+      ? getSelectedDevice()
+      : undefined;
 
   const additionalCaps = {
     'appium:settings[actionAcknowledgmentTimeout]': 0,
@@ -125,10 +129,14 @@ export async function buildIOSCapabilities(
   await validateIOSDeviceSelection(deviceType);
 
   // Get selected device info BEFORE constructing defaultCaps so we can use the actual device name
-  const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
-  const selectedDeviceInfo = isRemoteServer
-    ? undefined
-    : getSelectedDeviceInfo();
+  const hasSelectedIOSDevice =
+    !isRemoteServer && getSelectedDevicePlatform() === 'ios';
+  const selectedDeviceUdid = hasSelectedIOSDevice
+    ? getSelectedDevice()
+    : undefined;
+  const selectedDeviceInfo = hasSelectedIOSDevice
+    ? getSelectedDeviceInfo()
+    : undefined;
 
   log.debug('Selected device info:', selectedDeviceInfo);
 
