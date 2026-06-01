@@ -72,12 +72,22 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
     return [];
   }
   const jsonFiles = entries.filter((name) => name.endsWith('.json'));
+  const jsonFileNames = new Set(jsonFiles);
   const parsed = await Promise.all(
     jsonFiles.map(async (name): Promise<PersistedSession | null> => {
       const filePath = path.join(dir, name);
       try {
         const raw = await fs.readFile(filePath, 'utf8');
         const entry = JSON.parse(raw) as PersistedSession;
+        const canonicalName = path.basename(
+          sessionFilePath(entry.sessionId, dir)
+        );
+        if (name !== canonicalName && jsonFileNames.has(canonicalName)) {
+          log.warn(
+            `Skipping legacy persisted session file ${name}: canonical file ${canonicalName} already exists`
+          );
+          return null;
+        }
         await migrateLegacySessionFile(entry.sessionId, dir);
         return entry;
       } catch (err) {
