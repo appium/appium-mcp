@@ -79,10 +79,13 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
       try {
         const raw = await fs.readFile(filePath, 'utf8');
         const entry = JSON.parse(raw) as PersistedSession;
+        const canonicalName = path.basename(
+          sessionFilePath(entry.sessionId, dir)
+        );
         if (name !== canonicalName && jsonFileNames.has(canonicalName)) {
-          await migrateLegacySessionFile(entry.sessionId, dir);
+          await removeDuplicateSessionFile(filePath, name, entry.sessionId);
           log.warn(
-            `Skipping legacy persisted session file ${name}: canonical file ${canonicalName} already exists`
+            `Skipping duplicate persisted session file ${name}: canonical file ${canonicalName} already exists`
           );
           return null;
         }
@@ -187,6 +190,25 @@ async function migrateLegacySessionFile(
   } catch (err) {
     log.warn(
       `Failed to migrate legacy persisted session file for ${sessionId}: ${
+        (err as Error).message
+      }`
+    );
+  }
+}
+
+async function removeDuplicateSessionFile(
+  filePath: string,
+  name: string,
+  sessionId: string
+): Promise<void> {
+  try {
+    await fs.unlink(filePath);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return;
+    }
+    log.warn(
+      `Failed to remove duplicate persisted session file ${name} for ${sessionId}: ${
         (err as Error).message
       }`
     );

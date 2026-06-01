@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
 import { createHash } from 'node:crypto';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { access, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
@@ -42,6 +43,30 @@ describe('readAllPersistedSessions', () => {
       sessionId,
       remoteServerUrl: 'http://valid.example',
     });
+
+    await expectFileMissing(path.join(dir, `${sessionId}.json`));
+    await expectFileExists(path.join(dir, hashedSessionFilename(sessionId)));
+  });
+
+  test('removes a non-canonical duplicate when the canonical file also exists', async () => {
+    const dir = await createTempPersistenceDir();
+    const sessionId = 'session-456';
+    const staleDuplicate = persistedSession(sessionId, 'http://stale.example');
+    const canonical = persistedSession(sessionId, 'http://valid.example');
+
+    await writeSessionFile(dir, 'duplicate-session.json', staleDuplicate);
+    await writeSessionFile(dir, hashedSessionFilename(sessionId), canonical);
+
+    const sessions = await readAllPersistedSessions();
+
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]).toMatchObject({
+      sessionId,
+      remoteServerUrl: 'http://valid.example',
+    });
+
+    await expectFileMissing(path.join(dir, 'duplicate-session.json'));
+    await expectFileExists(path.join(dir, hashedSessionFilename(sessionId)));
   });
 
   test('still migrates and returns a legacy file when no canonical file exists', async () => {
@@ -59,15 +84,8 @@ describe('readAllPersistedSessions', () => {
       remoteServerUrl: 'http://legacy.example',
     });
 
-    const { access } = await import('node:fs/promises');
-    const { constants } = await import('node:fs');
-
-    await expect(
-      access(path.join(dir, `${sessionId}.json`), constants.F_OK)
-    ).rejects.toThrow();
-    await expect(
-      access(path.join(dir, hashedSessionFilename(sessionId)), constants.F_OK)
-    ).resolves.toBeUndefined();
+    await expectFileMissing(path.join(dir, `${sessionId}.json`));
+    await expectFileExists(path.join(dir, hashedSessionFilename(sessionId)));
   });
 });
 
@@ -103,4 +121,12 @@ function persistedSession(
 
 function hashedSessionFilename(sessionId: string): string {
   return `${createHash('sha256').update(sessionId).digest('hex')}.json`;
+}
+
+async function expectFileExists(filePath: string): Promise<void> {
+  await expect(access(filePath, constants.F_OK)).resolves.toBeUndefined();
+}
+
+async function expectFileMissing(filePath: string): Promise<void> {
+  await expect(access(filePath, constants.F_OK)).rejects.toThrow();
 }
