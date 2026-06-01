@@ -62,7 +62,9 @@ describe('readAllPersistedSessions', () => {
     const { access } = await import('node:fs/promises');
     const { constants } = await import('node:fs');
 
-    await expect(access(path.join(dir, `${sessionId}.json`), constants.F_OK)).rejects.toThrow();
+    await expect(
+      access(path.join(dir, `${sessionId}.json`), constants.F_OK)
+    ).rejects.toThrow();
     await expect(
       access(path.join(dir, hashedSessionFilename(sessionId)), constants.F_OK)
     ).resolves.toBeUndefined();
