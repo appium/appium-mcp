@@ -82,11 +82,7 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
       const canonicalName = path.basename(canonicalPath);
       if (name !== canonicalName) {
         try {
-          await fs.copyFile(
-            filePath,
-            canonicalPath,
-            fs.constants.COPYFILE_EXCL
-          );
+          await fs.writeFile(canonicalPath, raw, { flag: 'wx' });
         } catch (err) {
           if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
             await removeDuplicateSessionFile(filePath, name, entry.sessionId);

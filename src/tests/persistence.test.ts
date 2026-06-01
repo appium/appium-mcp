@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
 import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
-import { access, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
@@ -45,7 +45,7 @@ describe('readAllPersistedSessions', () => {
     });
 
     await expectFileMissing(path.join(dir, `${sessionId}.json`));
-    await expectFileExists(path.join(dir, hashedSessionFilename(sessionId)));
+    await expectCanonicalSession(dir, sessionId, 'http://valid.example');
   });
 
   test('removes a non-canonical duplicate when the canonical file also exists', async () => {
@@ -66,7 +66,7 @@ describe('readAllPersistedSessions', () => {
     });
 
     await expectFileMissing(path.join(dir, 'duplicate-session.json'));
-    await expectFileExists(path.join(dir, hashedSessionFilename(sessionId)));
+    await expectCanonicalSession(dir, sessionId, 'http://valid.example');
   });
 
   test('coalesces non-canonical duplicates when no canonical file exists yet', async () => {
@@ -87,11 +87,14 @@ describe('readAllPersistedSessions', () => {
     const sessions = await readAllPersistedSessions();
 
     expect(sessions).toHaveLength(1);
-    expect(sessions[0]).toMatchObject({ sessionId });
+    expect(sessions[0]?.sessionId).toBe(sessionId);
+    expect(['http://legacy.example', 'http://duplicate.example']).toContain(
+      sessions[0]?.remoteServerUrl
+    );
 
     await expectFileMissing(path.join(dir, `${sessionId}.json`));
     await expectFileMissing(path.join(dir, 'duplicate-session.json'));
-    await expectFileExists(path.join(dir, hashedSessionFilename(sessionId)));
+    await expectCanonicalSession(dir, sessionId, sessions[0]!.remoteServerUrl);
   });
 
   test('still migrates and returns a legacy file when no canonical file exists', async () => {
@@ -110,7 +113,7 @@ describe('readAllPersistedSessions', () => {
     });
 
     await expectFileMissing(path.join(dir, `${sessionId}.json`));
-    await expectFileExists(path.join(dir, hashedSessionFilename(sessionId)));
+    await expectCanonicalSession(dir, sessionId, 'http://legacy.example');
   });
 });
 
@@ -154,4 +157,15 @@ async function expectFileExists(filePath: string): Promise<void> {
 
 async function expectFileMissing(filePath: string): Promise<void> {
   await expect(access(filePath, constants.F_OK)).rejects.toThrow();
+}
+
+async function expectCanonicalSession(
+  dir: string,
+  sessionId: string,
+  remoteServerUrl: string
+): Promise<void> {
+  const filePath = path.join(dir, hashedSessionFilename(sessionId));
+  await expectFileExists(filePath);
+  const raw = await readFile(filePath, 'utf8');
+  expect(JSON.parse(raw)).toMatchObject({ sessionId, remoteServerUrl });
 }
