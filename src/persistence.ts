@@ -77,7 +77,9 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
       const filePath = path.join(dir, name);
       try {
         const raw = await fs.readFile(filePath, 'utf8');
-        return JSON.parse(raw) as PersistedSession;
+        const entry = JSON.parse(raw) as PersistedSession;
+        await migrateLegacySessionFile(entry.sessionId, dir);
+        return entry;
       } catch (err) {
         log.warn(
           `Skipping persisted session file ${name}: ${(err as Error).message}`
@@ -108,6 +110,7 @@ export async function writePersistedSession(
   const tmp = `${target}.${process.pid}.tmp`;
   try {
     await fs.mkdir(dir, { recursive: true });
+    await migrateLegacySessionFile(entry.sessionId, dir);
     await fs.writeFile(tmp, JSON.stringify(entry, null, 2), 'utf8');
     await fs.rename(tmp, target);
   } catch (err) {
@@ -133,6 +136,7 @@ export async function removePersistedSession(sessionId: string): Promise<void> {
   if (!dir) {
     return;
   }
+  await migrateLegacySessionFile(sessionId, dir);
   try {
     await fs.unlink(sessionFilePath(sessionId, dir));
   } catch (err) {
@@ -150,4 +154,41 @@ export async function removePersistedSession(sessionId: string): Promise<void> {
 function sessionFilePath(sessionId: string, dir: string): string {
   const safeName = createHash('sha256').update(sessionId).digest('hex');
   return path.join(dir, `${safeName}.json`);
+}
+
+async function migrateLegacySessionFile(
+  sessionId: string,
+  dir: string
+): Promise<void> {
+  const legacy = legacySessionFilePath(sessionId, dir);
+  if (!legacy) {
+    return;
+  }
+  const target = sessionFilePath(sessionId, dir);
+  try {
+    if (legacy === target || !(await fs.hasAccess(legacy))) {
+      return;
+    }
+
+    if (await fs.hasAccess(target)) {
+      await fs.unlink(legacy);
+      return;
+    }
+
+    await fs.rename(legacy, target);
+  } catch (err) {
+    log.warn(
+      `Failed to migrate legacy persisted session file for ${sessionId}: ${
+        (err as Error).message
+      }`
+    );
+  }
+}
+
+function legacySessionFilePath(sessionId: string, dir: string): string | null {
+  const legacyName = `${sessionId}.json`;
+  if (path.basename(legacyName) !== legacyName) {
+    return null;
+  }
+  return path.join(dir, legacyName);
 }
