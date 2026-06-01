@@ -3,7 +3,7 @@ import {
   detachSession,
   getSessionOwnership,
   listSessions,
-  setSession,
+  setSessionAndPersist,
   type SessionCapabilities,
   type SessionOwnership,
 } from '../../session-store.js';
@@ -122,7 +122,7 @@ export async function attachSessionAction(args: {
     } catch {
       // ignore — falling back to 'attached' is safe
     }
-    setSession(
+    await setSessionAndPersist(
       client,
       args.sessionId,
       capabilities,

@@ -115,48 +115,17 @@ export function setSession(
   ownership: SessionOwnership = 'owned',
   remoteServerUrl?: string
 ) {
-  if (!id) {
-    activeSessionId = null;
-    return;
-  }
+  void setSessionEntry(d, id, capabilities, ownership, remoteServerUrl);
+}
 
-  // `getAppiumSessionCapabilities()` may return metadata fields without the
-  // `appium:` prefix, so accept both namespaced and non-namespaced variants.
-  const metadata: SessionMetadata = {
-    platform: (capabilities.platformName as string | undefined) ?? null,
-    automationName:
-      (capabilities['appium:automationName'] as string | undefined) ??
-      (capabilities.automationName as string | undefined) ??
-      null,
-    deviceName:
-      (capabilities['appium:deviceName'] as string | undefined) ??
-      (capabilities.deviceName as string | undefined) ??
-      null,
-    capabilities,
-  };
-
-  sessions.set(id, {
-    driver: d,
-    sessionId: id,
-    currentContext: 'NATIVE_APP',
-    isDeletingSession: false,
-    ownership,
-    metadata,
-    remoteServerUrl,
-  });
-  activeSessionId = id;
-
-  if (remoteServerUrl) {
-    void writePersistedSession({
-      sessionId: id,
-      remoteServerUrl,
-      capabilities,
-      platform: metadata.platform,
-      automationName: metadata.automationName,
-      deviceName: metadata.deviceName,
-      ownership,
-    });
-  }
+export async function setSessionAndPersist(
+  d: DriverInstance,
+  id: string | null,
+  capabilities: SessionCapabilities = {},
+  ownership: SessionOwnership = 'owned',
+  remoteServerUrl?: string
+): Promise<void> {
+  await setSessionEntry(d, id, capabilities, ownership, remoteServerUrl);
 }
 
 export function getDriver(sessionId?: string): NullableDriverInstance {
@@ -368,6 +337,57 @@ export async function safeDeleteAllSessions(): Promise<number> {
   }
 
   return deletedCount;
+}
+
+function setSessionEntry(
+  d: DriverInstance,
+  id: string | null,
+  capabilities: SessionCapabilities,
+  ownership: SessionOwnership,
+  remoteServerUrl?: string
+): Promise<void> | undefined {
+  if (!id) {
+    activeSessionId = null;
+    return;
+  }
+
+  // `getAppiumSessionCapabilities()` may return metadata fields without the
+  // `appium:` prefix, so accept both namespaced and non-namespaced variants.
+  const metadata: SessionMetadata = {
+    platform: (capabilities.platformName as string | undefined) ?? null,
+    automationName:
+      (capabilities['appium:automationName'] as string | undefined) ??
+      (capabilities.automationName as string | undefined) ??
+      null,
+    deviceName:
+      (capabilities['appium:deviceName'] as string | undefined) ??
+      (capabilities.deviceName as string | undefined) ??
+      null,
+    capabilities,
+  };
+
+  sessions.set(id, {
+    driver: d,
+    sessionId: id,
+    currentContext: 'NATIVE_APP',
+    isDeletingSession: false,
+    ownership,
+    metadata,
+    remoteServerUrl,
+  });
+  activeSessionId = id;
+
+  if (remoteServerUrl) {
+    return writePersistedSession({
+      sessionId: id,
+      remoteServerUrl,
+      capabilities,
+      platform: metadata.platform,
+      automationName: metadata.automationName,
+      deviceName: metadata.deviceName,
+      ownership,
+    });
+  }
 }
 
 function selectNextActiveSessionId(deletedSessionId: string): string | null {

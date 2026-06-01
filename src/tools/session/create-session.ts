@@ -4,9 +4,14 @@ import { URL } from 'node:url';
 import { getPortFromUrl } from '../../utils/url.js';
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
-import { setSession, listSessions } from '../../session-store.js';
+import {
+  setSession,
+  setSessionAndPersist,
+  listSessions,
+} from '../../session-store.js';
 import {
   getSelectedDevice,
+  getSelectedDevicePlatform,
   getSelectedDeviceType,
   getSelectedDeviceInfo,
   clearSelectedDevice,
@@ -65,7 +70,10 @@ export function buildAndroidCapabilities(
     'appium:deviceName': 'Android Device',
   };
 
-  const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
+  const selectedDeviceUdid =
+    !isRemoteServer && getSelectedDevicePlatform() === 'android'
+      ? getSelectedDevice()
+      : undefined;
 
   const additionalCaps = {
     'appium:settings[actionAcknowledgmentTimeout]': 0,
@@ -121,14 +129,18 @@ export async function buildIOSCapabilities(
   customCaps: Record<string, any> | undefined,
   isRemoteServer: boolean
 ): Promise<Capabilities> {
-  const deviceType = isRemoteServer ? null : getSelectedDeviceType();
+  const hasSelectedIOSDevice =
+    !isRemoteServer && getSelectedDevicePlatform() === 'ios';
+  const deviceType = hasSelectedIOSDevice ? getSelectedDeviceType() : null;
   await validateIOSDeviceSelection(deviceType);
 
   // Get selected device info BEFORE constructing defaultCaps so we can use the actual device name
-  const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
-  const selectedDeviceInfo = isRemoteServer
-    ? undefined
-    : getSelectedDeviceInfo();
+  const selectedDeviceUdid = hasSelectedIOSDevice
+    ? getSelectedDevice()
+    : undefined;
+  const selectedDeviceInfo = hasSelectedIOSDevice
+    ? getSelectedDeviceInfo()
+    : undefined;
 
   log.debug('Selected device info:', selectedDeviceInfo);
 
@@ -282,7 +294,7 @@ export async function createSessionAction(args: {
         capabilities: finalCapabilities,
       });
       sessionId = client.sessionId;
-      setSession(
+      await setSessionAndPersist(
         client,
         client.sessionId,
         finalCapabilities,

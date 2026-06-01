@@ -1,4 +1,5 @@
 import { fs } from '@appium/support';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import log from './logger.js';
 import { resolveAppiumMcpSessionsDir } from './utils/paths.js';
@@ -147,5 +148,6 @@ export async function removePersistedSession(sessionId: string): Promise<void> {
 }
 
 function sessionFilePath(sessionId: string, dir: string): string {
-  return path.join(dir, `${sessionId}.json`);
+  const safeName = createHash('sha256').update(sessionId).digest('hex');
+  return path.join(dir, `${safeName}.json`);
 }
