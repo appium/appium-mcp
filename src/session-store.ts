@@ -329,13 +329,13 @@ export async function safeDeleteAllSessions(): Promise<number> {
   return deletedCount;
 }
 
-function setSessionEntry(
+async function setSessionEntry(
   d: DriverInstance,
   id: string | null,
   capabilities: SessionCapabilities,
   ownership: SessionOwnership,
   remoteServerUrl?: string
-): Promise<void> | undefined {
+): Promise<void> {
   if (!id) {
     activeSessionId = null;
     return;
@@ -368,7 +368,7 @@ function setSessionEntry(
   activeSessionId = id;
 
   if (remoteServerUrl) {
-    return writePersistedSession({
+    await writePersistedSession({
       sessionId: id,
       remoteServerUrl,
       capabilities,

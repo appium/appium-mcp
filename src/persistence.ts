@@ -72,34 +72,41 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
     return [];
   }
   const jsonFiles = entries.filter((name) => name.endsWith('.json'));
-  const jsonFileNames = new Set(jsonFiles);
-  const parsed = await Promise.all(
-    jsonFiles.map(async (name): Promise<PersistedSession | null> => {
-      const filePath = path.join(dir, name);
-      try {
-        const raw = await fs.readFile(filePath, 'utf8');
-        const entry = JSON.parse(raw) as PersistedSession;
-        const canonicalName = path.basename(
-          sessionFilePath(entry.sessionId, dir)
-        );
-        if (name !== canonicalName && jsonFileNames.has(canonicalName)) {
-          await removeDuplicateSessionFile(filePath, name, entry.sessionId);
-          log.warn(
-            `Skipping duplicate persisted session file ${name}: canonical file ${canonicalName} already exists`
+  const parsed: PersistedSession[] = [];
+  for (const name of jsonFiles) {
+    const filePath = path.join(dir, name);
+    try {
+      const raw = await fs.readFile(filePath, 'utf8');
+      const entry = JSON.parse(raw) as PersistedSession;
+      const canonicalPath = sessionFilePath(entry.sessionId, dir);
+      const canonicalName = path.basename(canonicalPath);
+      if (name !== canonicalName) {
+        try {
+          await fs.copyFile(
+            filePath,
+            canonicalPath,
+            fs.constants.COPYFILE_EXCL
           );
-          return null;
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
+            await removeDuplicateSessionFile(filePath, name, entry.sessionId);
+            log.warn(
+              `Skipping duplicate persisted session file ${name}: canonical file ${canonicalName} already exists`
+            );
+            continue;
+          }
+          throw err;
         }
-        await migrateLegacySessionFile(entry.sessionId, dir);
-        return entry;
-      } catch (err) {
-        log.warn(
-          `Skipping persisted session file ${name}: ${(err as Error).message}`
-        );
-        return null;
+        await removeDuplicateSessionFile(filePath, name, entry.sessionId);
       }
-    })
-  );
-  return parsed.filter((entry): entry is PersistedSession => entry !== null);
+      parsed.push(entry);
+    } catch (err) {
+      log.warn(
+        `Skipping persisted session file ${name}: ${(err as Error).message}`
+      );
+    }
+  }
+  return parsed;
 }
 
 /**

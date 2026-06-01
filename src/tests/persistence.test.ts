@@ -69,6 +69,31 @@ describe('readAllPersistedSessions', () => {
     await expectFileExists(path.join(dir, hashedSessionFilename(sessionId)));
   });
 
+  test('coalesces non-canonical duplicates when no canonical file exists yet', async () => {
+    const dir = await createTempPersistenceDir();
+    const sessionId = 'session-789';
+
+    await writeSessionFile(
+      dir,
+      `${sessionId}.json`,
+      persistedSession(sessionId, 'http://legacy.example')
+    );
+    await writeSessionFile(
+      dir,
+      'duplicate-session.json',
+      persistedSession(sessionId, 'http://duplicate.example')
+    );
+
+    const sessions = await readAllPersistedSessions();
+
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]).toMatchObject({ sessionId });
+
+    await expectFileMissing(path.join(dir, `${sessionId}.json`));
+    await expectFileMissing(path.join(dir, 'duplicate-session.json'));
+    await expectFileExists(path.join(dir, hashedSessionFilename(sessionId)));
+  });
+
   test('still migrates and returns a legacy file when no canonical file exists', async () => {
     const dir = await createTempPersistenceDir();
     const sessionId = 'legacy-session';
