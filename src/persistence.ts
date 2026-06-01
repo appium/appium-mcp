@@ -79,10 +79,8 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
       try {
         const raw = await fs.readFile(filePath, 'utf8');
         const entry = JSON.parse(raw) as PersistedSession;
-        const canonicalName = path.basename(
-          sessionFilePath(entry.sessionId, dir)
-        );
         if (name !== canonicalName && jsonFileNames.has(canonicalName)) {
+          await migrateLegacySessionFile(entry.sessionId, dir);
           log.warn(
             `Skipping legacy persisted session file ${name}: canonical file ${canonicalName} already exists`
           );
