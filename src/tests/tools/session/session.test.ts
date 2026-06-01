@@ -12,7 +12,6 @@ let mockSelectedDevicePlatform: 'android' | 'ios' | null = 'ios';
 
 jest.unstable_mockModule('../../../tools/session/select-device', () => ({
   getSelectedDevice: () => 'device-udid',
-  getSelectedDevicePlatform: () => mockSelectedDevicePlatform,
   getSelectedDeviceType: () => 'simulator',
   getSelectedDeviceInfo: () => ({ name: 'iPhone 12', platform: '16.0' }),
   clearSelectedDevice: () => {},
