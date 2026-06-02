@@ -1,3 +1,9 @@
+## [1.82.0](https://github.com/appium/appium-mcp/compare/v1.81.7...v1.82.0) (2026-06-02)
+
+### Features
+
+* **attach-session:** fetch capabilities automatically from server when attaching sessions ([#380](https://github.com/appium/appium-mcp/issues/380)) ([69934b0](https://github.com/appium/appium-mcp/commit/69934b0b3893fa9bc05cadfe6a41b9018679e89e))
+
 ## [1.81.7](https://github.com/appium/appium-mcp/compare/v1.81.6...v1.81.7) (2026-06-02)
 
 ### Bug Fixes
