@@ -137,26 +137,26 @@ describe('isXCUITestDriverSession', () => {
 // setSession / getDriver / getSessionId
 // ---------------------------------------------------------------------------
 describe('setSession', () => {
-  test('setting null id clears the active session id without storing a session', () => {
+  test('setting null id clears the active session id without storing a session', async () => {
     const driver = makeMockDriver();
-    setSession(driver, 'session-1');
-    setSession(driver, null);
+    await setSession(driver, 'session-1');
+    await setSession(driver, null);
     expect(getSessionId()).toBeNull();
     expect(getDriver()).toBeNull();
   });
 
-  test('stores the session and makes it active', () => {
+  test('stores the session and makes it active', async () => {
     const driver = makeMockDriver();
-    setSession(driver, 'session-1');
+    await setSession(driver, 'session-1');
     expect(getSessionId()).toBe('session-1');
     expect(getDriver()).toBe(driver);
   });
 
-  test('getDriver returns the driver for the specified sessionId', () => {
+  test('getDriver returns the driver for the specified sessionId', async () => {
     const driver1 = makeMockDriver();
     const driver2 = makeMockDriver();
-    setSession(driver1, 'session-1');
-    setSession(driver2, 'session-2');
+    await setSession(driver1, 'session-1');
+    await setSession(driver2, 'session-2');
     expect(getDriver('session-1')).toBe(driver1);
     expect(getDriver('session-2')).toBe(driver2);
   });
@@ -169,9 +169,9 @@ describe('setSession', () => {
     expect(getDriver()).toBeNull();
   });
 
-  test('extracts platform metadata from capabilities', () => {
+  test('extracts platform metadata from capabilities', async () => {
     const driver = makeMockDriver();
-    setSession(driver, 'session-meta', {
+    await setSession(driver, 'session-meta', {
       platformName: 'Android',
       'appium:automationName': 'UiAutomator2',
       'appium:deviceName': 'Pixel 5',
@@ -183,9 +183,9 @@ describe('setSession', () => {
     expect(session?.deviceName).toBe('Pixel 5');
   });
 
-  test('accepts non-prefixed metadata fields from attached session capabilities', () => {
+  test('accepts non-prefixed metadata fields from attached session capabilities', async () => {
     const driver = makeMockDriver();
-    setSession(driver, 'session-meta-fallback', {
+    await setSession(driver, 'session-meta-fallback', {
       platformName: 'Android',
       automationName: 'UiAutomator2',
       deviceName: 'Pixel 9 Pro XL',
@@ -198,9 +198,9 @@ describe('setSession', () => {
     expect(session?.deviceName).toBe('Pixel 9 Pro XL');
   });
 
-  test('stores ownership and exposes it through list/get helpers', () => {
+  test('stores ownership and exposes it through list/get helpers', async () => {
     const driver = makeMockDriver();
-    setSession(driver, 'session-attached', {}, 'attached');
+    await setSession(driver, 'session-attached', {}, 'attached');
 
     expect(getSessionOwnership('session-attached')).toBe('attached');
     expect(listSessions()[0]?.ownership).toBe('attached');
@@ -215,11 +215,11 @@ describe('listSessions', () => {
     expect(listSessions()).toEqual([]);
   });
 
-  test('marks only the active session as isActive:true', () => {
+  test('marks only the active session as isActive:true', async () => {
     const driver1 = makeMockDriver();
     const driver2 = makeMockDriver();
-    setSession(driver1, 'session-a');
-    setSession(driver2, 'session-b'); // session-b becomes active
+    await setSession(driver1, 'session-a');
+    await setSession(driver2, 'session-b'); // session-b becomes active
 
     const sessions = listSessions();
     expect(sessions).toHaveLength(2);
@@ -230,9 +230,9 @@ describe('listSessions', () => {
     expect(b.isActive).toBe(true);
   });
 
-  test('returns currentContext and capabilities for each session', () => {
+  test('returns currentContext and capabilities for each session', async () => {
     const caps = { platformName: 'Android' };
-    setSession(makeMockDriver(), 'session-ctx', caps);
+    await setSession(makeMockDriver(), 'session-ctx', caps);
     const session = listSessions()[0];
     expect(session.currentContext).toBe('NATIVE_APP');
     expect(session.capabilities).toEqual(caps);
@@ -247,9 +247,9 @@ describe('setActiveSession', () => {
     expect(setActiveSession('unknown')).toBe(false);
   });
 
-  test('switches the active session and returns true', () => {
-    setSession(makeMockDriver(), 'session-1');
-    setSession(makeMockDriver(), 'session-2'); // session-2 is now active
+  test('switches the active session and returns true', async () => {
+    await setSession(makeMockDriver(), 'session-1');
+    await setSession(makeMockDriver(), 'session-2'); // session-2 is now active
 
     expect(getSessionId()).toBe('session-2');
     const result = setActiveSession('session-1');
@@ -270,16 +270,16 @@ describe('setCurrentContext / getCurrentContext', () => {
     expect(setCurrentContext('WEBVIEW')).toBe(false);
   });
 
-  test('setCurrentContext updates the context and returns true', () => {
-    setSession(makeMockDriver(), 'session-ctx');
+  test('setCurrentContext updates the context and returns true', async () => {
+    await setSession(makeMockDriver(), 'session-ctx');
 
     const result = setCurrentContext('WEBVIEW_chrome');
     expect(result).toBe(true);
     expect(getCurrentContext()).toBe('WEBVIEW_chrome');
   });
 
-  test('setCurrentContext works with an explicit sessionId', () => {
-    setSession(makeMockDriver(), 'session-ctx');
+  test('setCurrentContext works with an explicit sessionId', async () => {
+    await setSession(makeMockDriver(), 'session-ctx');
     setCurrentContext('WEBVIEW_myapp', 'session-ctx');
     expect(getCurrentContext('session-ctx')).toBe('WEBVIEW_myapp');
   });
@@ -297,8 +297,8 @@ describe('isDeletingSessionInProgress', () => {
     expect(isDeletingSessionInProgress()).toBe(false);
   });
 
-  test('returns false for a session that is not being deleted', () => {
-    setSession(makeMockDriver(), 'session-1');
+  test('returns false for a session that is not being deleted', async () => {
+    await setSession(makeMockDriver(), 'session-1');
     expect(isDeletingSessionInProgress('session-1')).toBe(false);
   });
 
@@ -309,7 +309,7 @@ describe('isDeletingSessionInProgress', () => {
     });
 
     const slowDriver = { deleteSession: () => pending } as any;
-    setSession(slowDriver, 'slow-session');
+    await setSession(slowDriver, 'slow-session');
 
     const deleteTask = safeDeleteSession('slow-session');
 
@@ -334,8 +334,8 @@ describe('hasActiveSession', () => {
     expect(hasActiveSession()).toBe(false);
   });
 
-  test('returns true when there is a normal active session', () => {
-    setSession(makeMockDriver(), 'session-1');
+  test('returns true when there is a normal active session', async () => {
+    await setSession(makeMockDriver(), 'session-1');
     expect(hasActiveSession()).toBe(true);
   });
 
@@ -346,7 +346,7 @@ describe('hasActiveSession', () => {
     });
 
     const slowDriver = { deleteSession: () => pending } as any;
-    setSession(slowDriver, 'active-session');
+    await setSession(slowDriver, 'active-session');
 
     const deleteTask = safeDeleteSession('active-session');
 
@@ -380,7 +380,7 @@ describe('safeDeleteSession', () => {
       },
     } as any;
 
-    setSession(driver, 'session-del');
+    await setSession(driver, 'session-del');
     const result = await safeDeleteSession('session-del');
 
     expect(result).toBe(true);
@@ -389,7 +389,7 @@ describe('safeDeleteSession', () => {
   });
 
   test('deletes the active session when no sessionId is provided', async () => {
-    setSession(makeMockDriver(), 'session-active');
+    await setSession(makeMockDriver(), 'session-active');
 
     const result = await safeDeleteSession();
     expect(result).toBe(true);
@@ -397,8 +397,8 @@ describe('safeDeleteSession', () => {
   });
 
   test('promotes another session as active after the active one is deleted', async () => {
-    setSession(makeMockDriver(), 'session-1');
-    setSession(makeMockDriver(), 'session-2'); // session-2 is active
+    await setSession(makeMockDriver(), 'session-1');
+    await setSession(makeMockDriver(), 'session-2'); // session-2 is active
 
     await safeDeleteSession('session-2');
 
@@ -416,7 +416,7 @@ describe('safeDeleteSession', () => {
     });
 
     const slowDriver = { deleteSession: () => pending } as any;
-    setSession(slowDriver, 'double-delete-session');
+    await setSession(slowDriver, 'double-delete-session');
 
     const firstDelete = safeDeleteSession('double-delete-session');
     await Promise.resolve(); // let the first deletion acquire the lock
@@ -439,7 +439,7 @@ describe('safeDeleteSession', () => {
       },
     } as any;
 
-    setSession(errorDriver, 'error-session');
+    await setSession(errorDriver, 'error-session');
     await expect(safeDeleteSession('error-session')).rejects.toThrow(
       'driver error'
     );
@@ -456,9 +456,9 @@ describe('safeDeleteAllSessions', () => {
   });
 
   test('deletes all sessions and returns the deleted count', async () => {
-    setSession(makeMockDriver(), 'session-1');
-    setSession(makeMockDriver(), 'session-2');
-    setSession(makeMockDriver(), 'session-3');
+    await setSession(makeMockDriver(), 'session-1');
+    await setSession(makeMockDriver(), 'session-2');
+    await setSession(makeMockDriver(), 'session-3');
 
     const count = await safeDeleteAllSessions();
     expect(count).toBe(3);
@@ -477,8 +477,8 @@ describe('safeDeleteAllSessions', () => {
       },
     } as any;
 
-    setSession(goodDriver, 'good-session');
-    setSession(badDriver, 'bad-session');
+    await setSession(goodDriver, 'good-session');
+    await setSession(badDriver, 'bad-session');
 
     const count = await safeDeleteAllSessions();
     // Only the good session should have been deleted.
@@ -487,7 +487,7 @@ describe('safeDeleteAllSessions', () => {
 
   test('deletes only owned sessions', async () => {
     let ownedDeleted = false;
-    setSession(
+    await setSession(
       {
         deleteSession: async () => {
           ownedDeleted = true;
@@ -497,7 +497,7 @@ describe('safeDeleteAllSessions', () => {
       {},
       'owned'
     );
-    setSession(makeMockDriver(), 'attached-session', {}, 'attached');
+    await setSession(makeMockDriver(), 'attached-session', {}, 'attached');
 
     const count = await safeDeleteAllSessions();
 
@@ -516,8 +516,8 @@ describe('detachSession / getSessionOwnership', () => {
     expect(getSessionOwnership('missing')).toBeNull();
   });
 
-  test('does not detach an owned session', () => {
-    setSession(makeMockDriver(), 'owned-session', {}, 'owned');
+  test('does not detach an owned session', async () => {
+    await setSession(makeMockDriver(), 'owned-session', {}, 'owned');
 
     expect(() => detachSession('owned-session')).toThrow(
       'Session owned-session is owned by MCP Appium. Use action=delete to remove it.'
@@ -525,7 +525,7 @@ describe('detachSession / getSessionOwnership', () => {
     expect(getDriver('owned-session')).not.toBeNull();
   });
 
-  test('detaches an attached session without deleting it', () => {
+  test('detaches an attached session without deleting it', async () => {
     let deleted = false;
     const driver = {
       deleteSession: async () => {
@@ -533,7 +533,7 @@ describe('detachSession / getSessionOwnership', () => {
       },
     } as any;
 
-    setSession(driver, 'attached-session', {}, 'attached');
+    await setSession(driver, 'attached-session', {}, 'attached');
 
     expect(() => detachSession('attached-session')).not.toThrow();
     expect(getDriver('attached-session')).toBeNull();
@@ -570,13 +570,13 @@ describe('getPlatformName', () => {
     expect(() => getPlatformName(unknown)).toThrow('Unknown driver type');
   });
 
-  test('falls back to session platformName for remote sessions', () => {
+  test('falls back to session platformName for remote sessions', async () => {
     const client = {
       isAndroid: false,
       isIOS: false,
       sessionId: 'session-remote-android',
     } as any;
-    setSession(client, 'session-remote-android', {
+    await setSession(client, 'session-remote-android', {
       platformName: 'Android',
     });
     expect(getPlatformName(client)).toBe(PLATFORM.android);

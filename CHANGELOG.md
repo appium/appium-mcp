@@ -1,3 +1,39 @@
+## [1.81.7](https://github.com/appium/appium-mcp/compare/v1.81.6...v1.81.7) (2026-06-02)
+
+### Bug Fixes
+
+* some minor issues ([#378](https://github.com/appium/appium-mcp/issues/378)) ([4068a7a](https://github.com/appium/appium-mcp/commit/4068a7a492d6ea0af1a1b5b509b6a6215f659ad1))
+
+## [1.81.6](https://github.com/appium/appium-mcp/compare/v1.81.5...v1.81.6) (2026-06-02)
+
+### Bug Fixes
+
+* lint ([#381](https://github.com/appium/appium-mcp/issues/381)) ([f4422d2](https://github.com/appium/appium-mcp/commit/f4422d2e7b502374577b84052090d2b67723ba5f))
+
+## [1.81.5](https://github.com/appium/appium-mcp/compare/v1.81.4...v1.81.5) (2026-06-02)
+
+### Bug Fixes
+
+* **session:** return errorResult from select_device and session create failures ([#377](https://github.com/appium/appium-mcp/issues/377)) ([7c5c6f9](https://github.com/appium/appium-mcp/commit/7c5c6f9c302482bda1b64f29888f83f4583c6811))
+
+## [1.81.4](https://github.com/appium/appium-mcp/compare/v1.81.3...v1.81.4) (2026-05-30)
+
+### Bug Fixes
+
+* addTool argument format in plugin ([#375](https://github.com/appium/appium-mcp/issues/375)) ([2dee443](https://github.com/appium/appium-mcp/commit/2dee443bf30741dc2756846ef30809afb0c2ea0b))
+
+## [1.81.3](https://github.com/appium/appium-mcp/compare/v1.81.2...v1.81.3) (2026-05-30)
+
+### Bug Fixes
+
+* correct the order of plugins ([#374](https://github.com/appium/appium-mcp/issues/374)) ([394da39](https://github.com/appium/appium-mcp/commit/394da39b55669512acd3ec6b3aaa88025758d9f3))
+
+## [1.81.2](https://github.com/appium/appium-mcp/compare/v1.81.1...v1.81.2) (2026-05-30)
+
+### Miscellaneous Chores
+
+* set strict for the tsconfig ([#338](https://github.com/appium/appium-mcp/issues/338)) ([4632004](https://github.com/appium/appium-mcp/commit/4632004bffdd7bbca78fc15d34cab232576a5e36))
+
 ## [1.81.1](https://github.com/appium/appium-mcp/compare/v1.81.0...v1.81.1) (2026-05-29)
 
 ### Bug Fixes

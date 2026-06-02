@@ -117,16 +117,16 @@ export function createAppiumMcpServer(
   }
 
   // -------------------------------------------------------------------------
-  // 2. Register plugin tools (before built-ins so plugins appear first in the
-  //    tool list, but either order is fine – adjust if needed).
-  // -------------------------------------------------------------------------
-  manager.registerPluginCapabilities();
-
-  // -------------------------------------------------------------------------
-  // 3. Register built-in Appium MCP resources and tools.
+  // 2. Register built-in Appium MCP resources and tools.
   // -------------------------------------------------------------------------
   registerResources(server);
   registerTools(server);
+
+  // -------------------------------------------------------------------------
+  // 3. Register plugin capabilities after built-ins. FastMCP replaces tools by
+  //    name, so plugin tools can intentionally override built-in tools.
+  // -------------------------------------------------------------------------
+  manager.registerPluginCapabilities();
 
   // -------------------------------------------------------------------------
   // 4. Initialize plugins (after all tools are registered so plugins can look

@@ -357,14 +357,21 @@ class CheckoutPlugin implements AppiumMcpPlugin {
   readonly version = '1.0.0';
 
   register(registry: McpRegistry): void {
-    registry.addTool(
-      'assert_checkout_summary',
-      'Assert that the checkout summary screen shows an expected order ID.',
-      z.object({ orderId: z.string() }),
-      async ({ orderId }) => ({
-        content: [{ type: 'text', text: `Assert checkout order ${orderId}` }],
-      })
-    );
+    const parameters = z.object({ orderId: z.string() });
+    registry.addTool({
+      name: 'assert_checkout_summary',
+      description:
+        'Assert that the checkout summary screen shows an expected order ID.',
+      parameters,
+      execute: async (args) => {
+        const { orderId } = parameters.parse(args);
+        return {
+          content: [
+            { type: 'text', text: `Assert checkout order ${orderId}` },
+          ],
+        };
+      },
+    });
   }
 
   async beforeCall(ctx: ToolCallContext): Promise<void> {
@@ -407,9 +414,9 @@ The supported plugin API is intentionally small:
 
 `McpRegistry` methods delegate to the matching FastMCP registration APIs, so their object shapes follow FastMCP's documented tool, prompt, resource, and resource-template definitions. Appium MCP wraps registered tools with plugin call hooks, but prompts and resources are registered directly with FastMCP.
 
-Each plugin name should be unique within the server. If two plugins use the same `name`, Appium MCP keeps the first plugin registered for that name and skips later duplicates with a warning. Use a stable, package-style or organization-prefixed name, such as `acme-checkout-plugin`, to avoid collisions when composing plugins from multiple teams.
+Each plugin name should be unique within the server. If two plugins use the same `name`, Appium MCP keeps the first plugin registered for that name and skips later plugins with a warning. Use a stable, package-style or organization-prefixed name, such as `acme-checkout-plugin`, to avoid collisions when composing plugins from multiple teams.
 
-Each tool name should also be unique across all plugins and the core server. FastMCP registers the latest tool definition for a name, so a duplicate name can replace an earlier tool definition. Appium MCP registers plugin tools before built-in tools, which means a plugin tool that uses the same name as a built-in tool can be replaced by the built-in tool. Appium MCP tools usually have an `appium_` prefix, so plugin tool names should avoid that pattern to reduce the chance of collisions with future core tools.
+Each tool name should also be unique across all plugins and the core server. Tool names follow FastMCP behavior, not plugin-name behavior: when a tool is registered with the same `name` as an existing tool, FastMCP replaces the earlier tool definition with the later one. Appium MCP registers built-in tools before plugin tools, which means a plugin tool that uses the same name as a built-in tool replaces the built-in tool. Appium MCP tools usually have an `appium_` prefix, so plugin tool names should use that pattern only when they intentionally override a core tool.
 
 ### Verify plugin and tool names
 
@@ -430,7 +437,7 @@ console.log(formatVerificationReport(report));
 process.exit(report.ok ? 0 : 1);
 ```
 
-When you provide multiple plugins, order is preserved. Plugins are verified in array order. This matters because Appium MCP keeps the first plugin for a duplicate plugin name and skips later plugins with the same name. Tool names still need to be unique across all loaded plugins and `appium-mcp core`; the verifier reports any collisions it finds.
+When you provide multiple plugins, order is preserved. Plugins are verified in array order after the `appium-mcp core` tools. This matters because Appium MCP keeps the first plugin for a duplicate plugin name and skips later plugins with the same name, while duplicate tool names follow FastMCP's later-registration-wins behavior. Tool names still need to be unique across all loaded plugins and `appium-mcp core`; the verifier reports any collisions it finds.
 
 The report labels this package's own shipped tools as `appium-mcp core`. Plugin sources are labeled as `plugin:<name>` with the plugin version.
 

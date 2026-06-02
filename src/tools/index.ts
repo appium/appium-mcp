@@ -55,7 +55,7 @@ type RegisteredTool = Parameters<FastMCP['addTool']>[0];
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
   const originalAddTool = server.addTool.bind(server);
-  server.addTool = (toolDef: RegisteredTool): void => {
+  server.addTool = ((toolDef: RegisteredTool): void => {
     const toolName = toolDef?.name ?? 'unknown_tool';
     const originalExecute = toolDef?.execute;
     if (typeof originalExecute !== 'function') {
@@ -64,12 +64,12 @@ export default function registerTools(server: FastMCP): void {
     const SENSITIVE_KEYS = [
       'password',
       'token',
-      'accessToken',
+      'accesstoken',
       'authorization',
-      'apiKey',
       'apikey',
       'secret',
-      'clientSecret',
+      'clientsecret',
+      'remoteserverurl',
     ];
     const redactArgs = (obj: unknown): unknown => {
       if (obj === undefined || obj === null) {
@@ -136,7 +136,7 @@ export default function registerTools(server: FastMCP): void {
         }
       },
     });
-  };
+  }) as FastMCP['addTool'];
 
   // Session Management
   selectDevice(server);

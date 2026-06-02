@@ -7,6 +7,7 @@ import { XCUITestDriver } from 'appium-xcuitest-driver';
 import { setSession, listSessions } from '../../session-store.js';
 import {
   getSelectedDevice,
+  getSelectedDevicePlatform,
   getSelectedDeviceType,
   getSelectedDeviceInfo,
   clearSelectedDevice,
@@ -18,7 +19,8 @@ import {
   createSessionDashboardUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import { textResult, toolErrorMessage } from '../tool-response.js';
+import type { ContentResult } from 'fastmcp';
+import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 import WebDriver from 'webdriver';
 
 // Define capabilities type
@@ -65,7 +67,10 @@ export function buildAndroidCapabilities(
     'appium:deviceName': 'Android Device',
   };
 
-  const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
+  const selectedDeviceUdid =
+    !isRemoteServer && getSelectedDevicePlatform() === 'android'
+      ? getSelectedDevice()
+      : undefined;
 
   const additionalCaps = {
     'appium:settings[actionAcknowledgmentTimeout]': 0,
@@ -107,7 +112,7 @@ export async function validateIOSDeviceSelection(
     const selectedDevice = getSelectedDevice();
     if (!selectedDevice) {
       throw new Error(
-        `Multiple iOS ${deviceType === 'simulator' ? 'simulators' : 'devices'} found (${devices.length}). Please use the select_device tool to choose which device to use before creating a session.`
+        `Multiple iOS ${deviceType === 'simulator' ? 'simulators' : 'devices'} found (${devices.length}). Use select_device with platform=ios and iosDeviceType=${deviceType} to choose one, then call appium_session_management with action=create.`
       );
     }
   }
@@ -125,10 +130,14 @@ export async function buildIOSCapabilities(
   await validateIOSDeviceSelection(deviceType);
 
   // Get selected device info BEFORE constructing defaultCaps so we can use the actual device name
-  const selectedDeviceUdid = isRemoteServer ? undefined : getSelectedDevice();
-  const selectedDeviceInfo = isRemoteServer
-    ? undefined
-    : getSelectedDeviceInfo();
+  const hasSelectedIOSDevice =
+    !isRemoteServer && getSelectedDevicePlatform() === 'ios';
+  const selectedDeviceUdid = hasSelectedIOSDevice
+    ? getSelectedDevice()
+    : undefined;
+  const selectedDeviceInfo = hasSelectedIOSDevice
+    ? getSelectedDeviceInfo()
+    : undefined;
 
   log.debug('Selected device info:', selectedDeviceInfo);
 
@@ -143,7 +152,7 @@ export async function buildIOSCapabilities(
       ? selectedDeviceInfo.platform
       : undefined;
 
-  const additionalCaps =
+  const additionalCaps: Record<string, any> =
     deviceType === 'simulator'
       ? {
           'appium:usePrebuiltWDA': true,
@@ -215,13 +224,15 @@ export function validateRemoteServerUrl(
  * - text: Success message with session ID and device details
  * - ui: Interactive session dashboard UI component
  *
- * @throws {Error} If session creation fails or platform capabilities cannot be loaded
+ * Returns a tool-execution error result (isError: true) on failure.
  */
 export async function createSessionAction(args: {
   platform: 'ios' | 'android' | 'general';
   capabilities?: Record<string, any>;
   remoteServerUrl?: string;
-}): Promise<any> {
+}): Promise<ContentResult> {
+  let finalCapabilities: Capabilities | undefined;
+
   try {
     const {
       platform,
@@ -230,7 +241,6 @@ export async function createSessionAction(args: {
     } = args;
 
     const configCapabilities = await loadCapabilitiesConfig();
-    let finalCapabilities;
     if (platform === 'android') {
       finalCapabilities = buildAndroidCapabilities(
         configCapabilities.android,
@@ -247,7 +257,7 @@ export async function createSessionAction(args: {
       finalCapabilities = {
         ...configCapabilities.general,
         ...customCapabilities,
-      };
+      } as Capabilities;
     }
 
     log.info(
@@ -256,10 +266,16 @@ export async function createSessionAction(args: {
     );
     let sessionId;
     if (remoteServerUrl) {
-      validateRemoteServerUrl(
-        remoteServerUrl,
-        process.env.REMOTE_SERVER_URL_ALLOW_REGEX
-      );
+      try {
+        validateRemoteServerUrl(
+          remoteServerUrl,
+          process.env.REMOTE_SERVER_URL_ALLOW_REGEX
+        );
+      } catch (err: unknown) {
+        return errorResult(
+          `Invalid remoteServerUrl "${remoteServerUrl}". ${toolErrorMessage(err)} Pass a valid http(s) URL, or omit remoteServerUrl to use the local embedded driver.`
+        );
+      }
 
       const remoteUrl = new URL(remoteServerUrl);
       const protocol = remoteUrl.protocol.replace(':', '');
@@ -282,7 +298,7 @@ export async function createSessionAction(args: {
         capabilities: finalCapabilities,
       });
       sessionId = client.sessionId;
-      setSession(
+      await setSession(
         client,
         client.sessionId,
         finalCapabilities,
@@ -291,14 +307,12 @@ export async function createSessionAction(args: {
       );
     } else {
       if (platform === 'general') {
-        throw new Error(
-          'platform="general" requires a remoteServerUrl — local drivers are not supported for general sessions.'
-        );
+        return errorResult('platform=general requires remoteServerUrl.');
       }
       const driver = createDriverForPlatform(platform);
       log.info(`Sending session with ${driver.constructor.name}`);
       sessionId = await createDriverSession(driver, finalCapabilities);
-      setSession(driver, sessionId, finalCapabilities, 'owned');
+      await setSession(driver, sessionId, finalCapabilities, 'owned');
     }
 
     const sessionIdStr =
@@ -329,12 +343,50 @@ export async function createSessionAction(args: {
     );
 
     return addUIResourceToResponse(textResponse, uiResource);
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error('Error creating session:', error);
-    throw new Error(`Failed to create session: ${error.message}`, {
-      cause: error,
-    });
+    return errorResult(
+      buildCreateSessionFailureMessage(error, {
+        platform: args.platform,
+        remoteServerUrl: args.remoteServerUrl,
+        finalCapabilities,
+      })
+    );
   }
+}
+
+function buildCreateSessionFailureMessage(
+  error: unknown,
+  ctx: {
+    platform: 'ios' | 'android' | 'general';
+    remoteServerUrl?: string;
+    finalCapabilities?: Capabilities;
+  }
+): string {
+  const detail = toolErrorMessage(error);
+  const base = `Failed to create session. ${detail}`;
+
+  if (ctx.remoteServerUrl) {
+    return `${base} remoteServerUrl="${ctx.remoteServerUrl}".`;
+  }
+
+  if (/select_device/i.test(detail)) {
+    return base;
+  }
+
+  const caps: Record<string, any> = ctx.finalCapabilities ?? {};
+  const hasDeviceTarget =
+    Boolean(caps['appium:udid'] || caps['appium:deviceName']) ||
+    Boolean(getSelectedDevice());
+
+  if (
+    !hasDeviceTarget &&
+    (ctx.platform === 'ios' || ctx.platform === 'android')
+  ) {
+    return `${base} For local sessions without appium:udid (or a prior select_device), use select_device with a matching platform or pass target device capabilities, then action=create.`;
+  }
+
+  return base;
 }
 
 /**

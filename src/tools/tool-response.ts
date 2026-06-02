@@ -160,7 +160,7 @@ async function rehydrateAttachedSession(
       if (entry.deviceName) {
         seedCaps['appium:deviceName'] = entry.deviceName;
       }
-      setSession(
+      await setSession(
         client,
         entry.sessionId,
         seedCaps,

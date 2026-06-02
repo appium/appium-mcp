@@ -52,6 +52,12 @@ function makeMockServer() {
   const registeredResourceTemplates: unknown[] = [];
   const server: any = {
     addTool(toolDef: ToolDef) {
+      const existingIndex = registeredTools.findIndex(
+        (tool) => tool.name === toolDef.name
+      );
+      if (existingIndex !== -1) {
+        registeredTools.splice(existingIndex, 1);
+      }
       registeredTools.push(toolDef);
     },
     addPrompt(promptDef: unknown) {
@@ -83,12 +89,47 @@ describe('McpRegistry', () => {
     const mockServer = makeMockServer();
     const registry = new McpRegistry(mockServer);
 
-    registry.addTool('my_tool', 'A test tool', {} as any, async () => ({
-      content: [{ type: 'text', text: 'ok' }],
-    }));
+    registry.addTool({
+      name: 'my_tool',
+      description: 'A test tool',
+      parameters: {} as any,
+      execute: async () => ({
+        content: [{ type: 'text', text: 'ok' }],
+      }),
+    });
 
     expect(mockServer._tools).toHaveLength(1);
     expect(mockServer._tools[0].name).toBe('my_tool');
+  });
+
+  test('uses FastMCP replacement behavior for duplicate tool names', async () => {
+    const mockServer = makeMockServer();
+    const registry = new McpRegistry(mockServer);
+
+    registry.addTool({
+      name: 'same_tool',
+      description: 'first tool',
+      parameters: {} as any,
+      execute: async () => ({
+        content: [{ type: 'text', text: 'first' }],
+      }),
+    });
+    registry.addTool({
+      name: 'same_tool',
+      description: 'second tool',
+      parameters: {} as any,
+      execute: async () => ({
+        content: [{ type: 'text', text: 'second' }],
+      }),
+    });
+
+    expect(mockServer._tools).toHaveLength(1);
+    expect(mockServer._tools[0].description).toBe('second tool');
+
+    const result = (await mockServer._tools[0].execute({}, {})) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toBe('second');
   });
 
   test('delegates prompt and resource registration to server methods', () => {
@@ -129,7 +170,7 @@ describe('AppiumMcpCore', () => {
     expect(core.getSessionId()).toBeNull();
     expect(core.getSessionInfo()).toBeNull();
 
-    setSession(driver, 'session-1', { platformName: 'Android' }, 'owned');
+    await setSession(driver, 'session-1', { platformName: 'Android' }, 'owned');
 
     expect(core.getSessionId()).toBe('session-1');
     expect(core.getSessionInfo('session-1')).not.toBeNull();
@@ -402,14 +443,14 @@ describe('PluginManager.registerPluginCapabilities', () => {
       version: '1.0.0',
       register(registry: McpRegistryType) {
         called = true;
-        registry.addTool(
-          'custom_tool',
-          'A custom tool',
-          {} as any,
-          async () => ({
+        registry.addTool({
+          name: 'custom_tool',
+          description: 'A custom tool',
+          parameters: {} as any,
+          execute: async () => ({
             content: [{ type: 'text', text: 'custom' }],
-          })
-        );
+          }),
+        });
       },
     };
 
@@ -432,14 +473,14 @@ describe('PluginManager.registerPluginCapabilities', () => {
       version: '1.0.0',
       register(registry: McpRegistryType) {
         registerCount += 1;
-        registry.addTool(
-          'repeat_tool',
-          'A repeat tool',
-          {} as any,
-          async () => ({
+        registry.addTool({
+          name: 'repeat_tool',
+          description: 'A repeat tool',
+          parameters: {} as any,
+          execute: async () => ({
             content: [{ type: 'text', text: 'repeat' }],
-          })
-        );
+          }),
+        });
       },
     };
 

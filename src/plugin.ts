@@ -72,7 +72,9 @@ export interface AppiumMcpPlugin {
    * Unique plugin identifier within a server instance.
    *
    * Duplicate plugin names are skipped with a warning, so prefer stable
-   * package-style or organization-prefixed names.
+   * package-style or organization-prefixed names. This differs from MCP tool
+   * names: FastMCP replaces an existing tool when another tool is registered
+   * with the same name.
    */
   readonly name: string;
   readonly version: string;
@@ -152,36 +154,26 @@ export class McpRegistry {
   /**
    * Register one MCP tool. Tool calls are wrapped by plugin call hooks.
    *
-   * Delegates to FastMCP `addTool`.
+   * Delegates to FastMCP `addTool`. If a tool with the same name was already
+   * registered, FastMCP replaces the earlier tool with this definition.
    *
    * @see https://github.com/punkpeye/fastmcp#tools
    */
-  addTool<Params extends ToolParameters>(
-    name: string,
-    description: string,
-    parameters: Params,
-    execute: Tool<FastMCPSessionAuth, Params>['execute']
-  ): void {
-    this.server.addTool({ name, description, parameters, execute });
+  addTool(def: AddToolParam): void {
+    this.server.addTool(def);
   }
 
   /**
    * Register multiple MCP tools.
    *
    * Delegates to FastMCP `addTool` for each definition.
+   * Duplicate tool names are therefore last-registration-wins.
    *
    * @see https://github.com/punkpeye/fastmcp#tools
    */
-  addTools(
-    defs: Array<{
-      name: string;
-      description: string;
-      parameters: ToolParameters;
-      execute: AddToolParam['execute'];
-    }>
-  ): void {
+  addTools(defs: AddToolParam[]): void {
     for (const def of defs) {
-      this.addTool(def.name, def.description, def.parameters, def.execute);
+      this.addTool(def);
     }
   }
 
@@ -362,10 +354,17 @@ export class PluginManager {
     }
     this.addToolInterceptorInstalled = true;
 
-    const originalAddTool = this.server.addTool.bind(this.server);
+    const originalAddTool = this.server.addTool.bind(
+      this.server
+    ) as FastMCP['addTool'];
 
-    this.server.addTool = (toolDef: AddToolParam): void => {
-      const wrappedExecute: AddToolParam['execute'] = async (args, mcpCtx) => {
+    this.server.addTool = (<Params extends ToolParameters>(
+      toolDef: Tool<FastMCPSessionAuth, Params>
+    ): void => {
+      const wrappedExecute: Tool<
+        FastMCPSessionAuth,
+        Params
+      >['execute'] = async (args, mcpCtx) => {
         const sessionCtx: PluginSessionContext = {
           getSessionId: () => getSessionId(),
           getSessionInfo: (sessionId?: string) => getSessionInfo(sessionId),
@@ -418,14 +417,14 @@ export class PluginManager {
       };
 
       return originalAddTool({ ...toolDef, execute: wrappedExecute });
-    };
+    }) as FastMCP['addTool'];
 
     // Keep batch tool registration on the same hook-wrapped path as addTool.
-    this.server.addTools = (toolDefs: AddToolsParam): void => {
+    this.server.addTools = ((toolDefs: AddToolsParam): void => {
       for (const toolDef of toolDefs) {
         this.server.addTool(toolDef);
       }
-    };
+    }) as FastMCP['addTools'];
   }
 }
 
@@ -466,6 +465,16 @@ export function verifyAppiumMcpNames(
   const registry = new McpRegistry(collector as never);
   const core = new AppiumMcpCore();
 
+  currentSource = CORE_SOURCE;
+  try {
+    withSuppressedRegistrationLogs(() => registerTools(collector as never));
+  } catch (err: unknown) {
+    errors.push({
+      source: currentSource,
+      message: errorMessage(err),
+    });
+  }
+
   for (const plugin of plugins) {
     if (seenPluginNames.has(plugin.name)) {
       continue;
@@ -483,16 +492,6 @@ export function verifyAppiumMcpNames(
         message: errorMessage(err),
       });
     }
-  }
-
-  currentSource = CORE_SOURCE;
-  try {
-    withSuppressedRegistrationLogs(() => registerTools(collector as never));
-  } catch (err: unknown) {
-    errors.push({
-      source: currentSource,
-      message: errorMessage(err),
-    });
   }
   duplicates.push(...findDuplicates('tool', toolEntries));
 

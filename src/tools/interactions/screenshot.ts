@@ -40,7 +40,7 @@ const defaultDeps: ScreenshotDeps = {
 
 export async function executeScreenshot(opts: {
   deps?: ScreenshotDeps;
-  elementId?;
+  elementId?: string;
   maxWidth?: number;
   sessionId?: string;
 }): Promise<any> {

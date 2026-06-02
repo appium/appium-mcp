@@ -9,9 +9,13 @@ const mockAttachToSession = jest.fn<
   capabilities: { platformName: 'Android' },
 }));
 
+let mockSelectedDevicePlatform: 'android' | 'ios' | null = 'ios';
+
 jest.unstable_mockModule('../../../tools/session/select-device', () => ({
   getSelectedDevice: () => 'device-udid',
-  getSelectedDeviceType: () => 'simulator',
+  getSelectedDevicePlatform: () => mockSelectedDevicePlatform,
+  getSelectedDeviceType: () =>
+    mockSelectedDevicePlatform === 'ios' ? 'simulator' : null,
   getSelectedDeviceInfo: () => ({ name: 'iPhone 12', platform: '16.0' }),
   clearSelectedDevice: () => {},
 }));
@@ -119,6 +123,7 @@ let mockFetch: jest.MockedFunction<typeof fetch>;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSelectedDevicePlatform = 'ios';
   mockGetSessionOwnership.mockReturnValue(null);
   mockAttachToSession.mockResolvedValue({
     sessionId: 'attached-session-id',
@@ -490,6 +495,8 @@ describe('appium_session_management tool', () => {
 
 describe('buildAndroidCapabilities', () => {
   test('includes udid for local server and removes empty values', () => {
+    mockSelectedDevicePlatform = 'android';
+
     const caps = buildAndroidCapabilities(
       { 'appium:app': '/path/app.apk' },
       { 'appium:deviceName': '' },
@@ -504,6 +511,15 @@ describe('buildAndroidCapabilities', () => {
     expect(caps['appium:settings[waitForSelectorTimeout]']).toBe(0);
   });
 
+  test('ignores selected iOS device for local server', () => {
+    mockSelectedDevicePlatform = 'ios';
+
+    const caps = buildAndroidCapabilities({}, undefined, false);
+
+    expect(caps.platformName).toBe('Android');
+    expect(caps).not.toHaveProperty('appium:udid');
+  });
+
   test('does not include udid for remote server', () => {
     const caps = buildAndroidCapabilities({}, undefined, true);
     expect(caps.platformName).toBe('Android');
@@ -513,6 +529,8 @@ describe('buildAndroidCapabilities', () => {
 
 describe('buildIOSCapabilities', () => {
   test('uses selected device info for local simulator', async () => {
+    mockSelectedDevicePlatform = 'ios';
+
     const caps = await buildIOSCapabilities(
       { 'custom:cap': 'value' },
       { 'appium:bundleId': 'com.example.app' },
@@ -525,6 +543,18 @@ describe('buildIOSCapabilities', () => {
     expect(caps['appium:wdaStartupRetries']).toBe(4);
     expect(caps['custom:cap']).toBe('value');
     expect(caps['appium:bundleId']).toBe('com.example.app');
+  });
+
+  test('ignores selected Android device for local server', async () => {
+    mockSelectedDevicePlatform = 'android';
+
+    const caps = await buildIOSCapabilities({}, undefined, false);
+
+    expect(caps.platformName).toBe('iOS');
+    expect(caps['appium:deviceName']).toBe('iPhone Simulator');
+    expect(caps).not.toHaveProperty('appium:udid');
+    expect(caps).not.toHaveProperty('appium:platformVersion');
+    expect(caps).not.toHaveProperty('appium:usePrebuiltWDA');
   });
 
   test('falls back to defaults for remote server', async () => {

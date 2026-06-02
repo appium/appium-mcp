@@ -21,6 +21,7 @@ import { access, mkdir, readdir, readFile, rm, cp } from 'node:fs/promises';
 import { constants, existsSync } from 'node:fs';
 import { net, plist, zip } from '@appium/support';
 import { BOOTSTRAP_PATH } from 'appium-webdriveragent';
+// @ts-ignore: No type definitions for 'applesign'
 import Applesign from 'applesign';
 import { provision } from 'ios-mobileprovision-finder';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
