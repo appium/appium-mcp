@@ -22,9 +22,6 @@ type DevicesOk = { ok: true; devices: any[] };
 
 type DevicesFail = { ok: false; result: ContentResult };
 
-/**
- * Validate and select iOS device by UDID
- */
 type SelectIOSOk = { ok: true; device: any };
 
 type SelectIOSFail = { ok: false; result: ContentResult };
@@ -231,6 +228,9 @@ async function getIOSDevices(
   return { ok: true, devices };
 }
 
+/**
+ * Validate and select iOS device by UDID
+ */
 function selectIOSDevice(
   deviceUdid: string,
   devices: any[],
