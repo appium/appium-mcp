@@ -18,6 +18,17 @@ let selectedDeviceUdid: string | null = null;
 let selectedDeviceType: 'simulator' | 'real' | null = null;
 let selectedDeviceInfo: any = null;
 
+type DevicesOk = { ok: true; devices: any[] };
+
+type DevicesFail = { ok: false; result: ContentResult };
+
+/**
+ * Validate and select iOS device by UDID
+ */
+type SelectIOSOk = { ok: true; device: any };
+
+type SelectIOSFail = { ok: false; result: ContentResult };
+
 export function getSelectedDevice(): string | null {
   return selectedDeviceUdid;
 }
@@ -25,7 +36,6 @@ export function getSelectedDevice(): string | null {
 export function getSelectedDeviceType(): 'simulator' | 'real' | null {
   return selectedDeviceType;
 }
-
 export function getSelectedDeviceInfo(): any {
   return selectedDeviceInfo;
 }
@@ -106,9 +116,6 @@ export default function selectDevice(server: any): void {
     },
   });
 }
-
-type DevicesOk = { ok: true; devices: any[] };
-type DevicesFail = { ok: false; result: ContentResult };
 
 /**
  * Get and validate Android devices
@@ -203,7 +210,6 @@ function validateIOSDeviceType(
   }
   return undefined;
 }
-
 /**
  * Get and validate iOS devices by type
  */
@@ -224,12 +230,6 @@ async function getIOSDevices(
 
   return { ok: true, devices };
 }
-
-/**
- * Validate and select iOS device by UDID
- */
-type SelectIOSOk = { ok: true; device: any };
-type SelectIOSFail = { ok: false; result: ContentResult };
 
 function selectIOSDevice(
   deviceUdid: string,
