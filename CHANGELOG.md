@@ -1,3 +1,9 @@
+## [1.81.5](https://github.com/appium/appium-mcp/compare/v1.81.4...v1.81.5) (2026-06-02)
+
+### Bug Fixes
+
+* **session:** return errorResult from select_device and session create failures ([#377](https://github.com/appium/appium-mcp/issues/377)) ([7c5c6f9](https://github.com/appium/appium-mcp/commit/7c5c6f9c302482bda1b64f29888f83f4583c6811))
+
 ## [1.81.4](https://github.com/appium/appium-mcp/compare/v1.81.3...v1.81.4) (2026-05-30)
 
 ### Bug Fixes
