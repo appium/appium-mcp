@@ -1,3 +1,9 @@
+## [1.81.7](https://github.com/appium/appium-mcp/compare/v1.81.6...v1.81.7) (2026-06-02)
+
+### Bug Fixes
+
+* some minor issues ([#378](https://github.com/appium/appium-mcp/issues/378)) ([4068a7a](https://github.com/appium/appium-mcp/commit/4068a7a492d6ea0af1a1b5b509b6a6215f659ad1))
+
 ## [1.81.6](https://github.com/appium/appium-mcp/compare/v1.81.5...v1.81.6) (2026-06-02)
 
 ### Bug Fixes
