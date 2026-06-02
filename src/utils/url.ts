@@ -3,7 +3,7 @@ import WebDriver, { type Client } from 'webdriver';
 export interface RemoteAttachOptions {
   remoteServerUrl: string;
   sessionId: string;
-  capabilities?: Record<string, unknown>;
+  capabilities: Record<string, unknown>;
 }
 
 /**

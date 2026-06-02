@@ -39,7 +39,7 @@ const schema = z.object({
     .describe(
       'Action to perform. ' +
         `create: ${CREATE_SESSION_DESCRIPTION}` +
-        'attach: Attach MCP Appium to an existing remote Appium session without taking ownership of its lifecycle. Requires remoteServerUrl and sessionId.' +
+        'attach: Attach MCP Appium to an existing remote Appium session without taking ownership of its lifecycle. Requires remoteServerUrl and sessionId. Always pass capabilities with at least platformName (e.g. \'{"platformName":"iOS"}\' or \'{"platformName":"Android"}\') so the client is configured with the correct protocol commands.' +
         'detach: Remove an attached Appium session from MCP Appium without deleting the real remote session. Defaults to the active session.' +
         'delete: Delete a mobile session and clean up resources. If sessionId is omitted, deletes the active session.' +
         'list: List all active Appium sessions managed by this MCP server, including active flag, ownership, and current context.' +
@@ -59,9 +59,8 @@ const schema = z.object({
     .optional()
     .describe(
       'Optional W3C capabilities for create. Provide as a JSON string (e.g. \'{"appium:app":"/path/to/app","appium:platformVersion":"17.0"}\'). ' +
-        'Applied on top of defaults for ios/android, or used as-is for general. ' +
-        'Common: appium:app, appium:deviceName, appium:platformVersion, appium:bundleId. ' +
-        'When passing from a capabilitiesHint result, serialize the full object to JSON — do NOT drop boolean or numeric values.'
+        'For create: applied on top of defaults for ios/android, or used as-is for general. Common: appium:app, appium:deviceName, appium:platformVersion, appium:bundleId. When passing from a capabilitiesHint result, serialize the full object to JSON — do NOT drop boolean or numeric values. ' +
+        'For attach: always include platformName ("iOS" or "Android") so the WebDriver client loads the correct Appium protocol commands (e.g. \'{"platformName":"iOS"}\').'
     ),
   remoteServerUrl: z
     .string()

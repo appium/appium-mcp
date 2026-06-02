@@ -117,6 +117,10 @@ const {
 
 const mockServer = { addTool: jest.fn() } as any;
 
+// Default fetch mock: both capability endpoints return nothing (404-like).
+// Individual tests override this for the specific responses they need.
+let mockFetch: jest.MockedFunction<typeof fetch>;
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockSelectedDevicePlatform = 'ios';
@@ -125,6 +129,10 @@ beforeEach(() => {
     sessionId: 'attached-session-id',
     capabilities: { platformName: 'Android' },
   });
+  mockFetch = jest.fn<typeof fetch>().mockResolvedValue({
+    ok: false,
+  } as Response);
+  global.fetch = mockFetch;
 });
 
 async function getToolExecute() {
@@ -275,82 +283,82 @@ describe('appium_session_management tool', () => {
       );
     });
 
-    test('attaches an existing remote session and prefers getAppiumSessionCapabilities per field', async () => {
+    test('fetches capabilities from server before creating client and prefers W3C extension endpoint', async () => {
       const tool = await getToolExecute();
       mockListSessions.mockReturnValue([
         { sessionId: 'borrowed', isActive: true, ownership: 'attached' },
       ] as any);
-      mockAttachToSession.mockResolvedValue({
-        sessionId: 'attached-session-id',
-        getAppiumSessionCapabilities: async () => ({
-          capabilities: {
-            platformName: 'Android',
-            automationName: 'UiAutomator2',
-          },
-        }),
-        getSession: async () => ({
-          platformName: 'iOS',
-          automationName: 'XCUITest',
-          deviceName: 'Ignored Device',
-        }),
-      } as any);
+      mockFetch.mockImplementation(async (input) => {
+        const url = input.toString();
+        if (url.includes('appium/session_capabilities')) {
+          return {
+            ok: true,
+            json: async () => ({
+              value: {
+                platformName: 'Android',
+                automationName: 'UiAutomator2',
+              },
+            }),
+          } as Response;
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            value: {
+              platformName: 'iOS',
+              automationName: 'XCUITest',
+              deviceName: 'Ignored Device',
+            },
+          }),
+        } as Response;
+      });
 
       const result = await tool.execute(
         {
           action: 'attach',
           remoteServerUrl: 'http://localhost:4723',
           sessionId: 'borrowed',
-          capabilities: {
-            platformName: 'Provided',
-            automationName: 'UiAutomator2',
-            deviceName: 'Pixel 9 Pro XL',
-            'appium:app': 'demo.apk',
-          },
+          capabilities: { 'appium:app': 'demo.apk' },
         },
         undefined
       );
 
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('Attached to existing session');
-      expect(mockAttachToSession).toHaveBeenCalledWith({
-        sessionId: 'borrowed',
-        protocol: 'http',
-        hostname: 'localhost',
-        port: 4723,
-        path: '/',
-        capabilities: {
-          platformName: 'Provided',
-          automationName: 'UiAutomator2',
-          deviceName: 'Pixel 9 Pro XL',
-          'appium:app': 'demo.apk',
-        },
-      });
+      // Client created with merged caps — W3C extension wins over deprecated and caller
+      expect(mockAttachToSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          capabilities: expect.objectContaining({ platformName: 'Android' }),
+        })
+      );
       expect(mockSetSession).toHaveBeenCalledWith(
         expect.anything(),
         'borrowed',
         {
-          'appium:app': 'demo.apk',
           platformName: 'Android',
           'appium:automationName': 'UiAutomator2',
           'appium:deviceName': 'Ignored Device',
+          'appium:app': 'demo.apk',
         },
         'attached',
         expect.any(String)
       );
     });
 
-    test('falls back to getSession when getAppiumSessionCapabilities is unavailable', async () => {
+    test('falls back to deprecated session endpoint when W3C extension is unavailable', async () => {
       const tool = await getToolExecute();
-      mockAttachToSession.mockResolvedValue({
-        sessionId: 'attached-session-id',
-        getAppiumSessionCapabilities: async () => {
-          throw new Error('unsupported');
-        },
-        getSession: async () => ({
-          platformName: 'Android',
-          automationName: 'UiAutomator2',
-        }),
-      } as any);
+      mockFetch.mockImplementation(async (input) => {
+        const url = input.toString();
+        if (url.includes('appium/session_capabilities')) {
+          return { ok: false } as Response;
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            value: { platformName: 'Android', automationName: 'UiAutomator2' },
+          }),
+        } as Response;
+      });
 
       const result = await tool.execute(
         {
@@ -370,55 +378,43 @@ describe('appium_session_management tool', () => {
         expect.anything(),
         'borrowed',
         {
-          'appium:app': 'demo.apk',
           platformName: 'Android',
           'appium:automationName': 'UiAutomator2',
           'appium:deviceName': 'Pixel 9 Pro XL',
+          'appium:app': 'demo.apk',
         },
         'attached',
         expect.any(String)
       );
     });
 
-    test('falls back to provided capabilities when runtime capability methods are unavailable', async () => {
+    test('returns error when both capability endpoints are unreachable', async () => {
       const tool = await getToolExecute();
-      mockAttachToSession.mockResolvedValue({
-        sessionId: 'attached-session-id',
-      } as any);
+      // mockFetch already returns ok: false for both endpoints by default
 
       const result = await tool.execute(
         {
           action: 'attach',
           remoteServerUrl: 'http://localhost:4723',
           sessionId: 'borrowed',
-          capabilities: {
-            platformName: 'Android',
-            'appium:automationName': 'UiAutomator2',
-            deviceName: 'Pixel 9 Pro XL',
-            'appium:app': 'demo.apk',
-          },
+          capabilities: { platformName: 'Android' },
         },
         undefined
       );
 
-      expect(result.isError).toBeFalsy();
-      expect(mockSetSession).toHaveBeenCalledWith(
-        expect.anything(),
-        'borrowed',
-        {
-          'appium:app': 'demo.apk',
-          platformName: 'Android',
-          'appium:automationName': 'UiAutomator2',
-          'appium:deviceName': 'Pixel 9 Pro XL',
-        },
-        'attached',
-        expect.any(String)
-      );
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Failed to fetch capabilities');
+      expect(result.content[0].text).toContain('borrowed');
+      expect(mockAttachToSession).not.toHaveBeenCalled();
     });
 
     test('detaches an existing attached session before re-attaching the same id', async () => {
       const tool = await getToolExecute();
       mockGetSessionOwnership.mockReturnValue('attached');
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ value: { platformName: 'Android' } }),
+      } as Response);
 
       const result = await tool.execute(
         {
