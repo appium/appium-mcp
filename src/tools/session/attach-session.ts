@@ -89,6 +89,16 @@ export async function attachSessionAction(args: {
         fetchCapabilitiesFromServer(args.remoteServerUrl, args.sessionId),
       ]);
 
+    if (
+      sessionCapabilities === undefined &&
+      deprecatedSessionCapabilities === undefined
+    ) {
+      return errorResult(
+        `Failed to fetch capabilities for session ${args.sessionId} from ${args.remoteServerUrl}. ` +
+          `The server may be unreachable or the session may no longer exist.`
+      );
+    }
+
     const sources = [
       sessionCapabilities,
       deprecatedSessionCapabilities,

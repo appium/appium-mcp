@@ -383,7 +383,7 @@ describe('appium_session_management tool', () => {
       );
     });
 
-    test('falls back to caller-provided capabilities when server fetch fails', async () => {
+    test('returns error when both capability endpoints are unreachable', async () => {
       const tool = await getToolExecute();
       // mockFetch already returns ok: false for both endpoints by default
 
@@ -392,34 +392,24 @@ describe('appium_session_management tool', () => {
           action: 'attach',
           remoteServerUrl: 'http://localhost:4723',
           sessionId: 'borrowed',
-          capabilities: {
-            platformName: 'Android',
-            'appium:automationName': 'UiAutomator2',
-            deviceName: 'Pixel 9 Pro XL',
-            'appium:app': 'demo.apk',
-          },
+          capabilities: { platformName: 'Android' },
         },
         undefined
       );
 
-      expect(result.isError).toBeFalsy();
-      expect(mockSetSession).toHaveBeenCalledWith(
-        expect.anything(),
-        'borrowed',
-        {
-          platformName: 'Android',
-          'appium:automationName': 'UiAutomator2',
-          'appium:deviceName': 'Pixel 9 Pro XL',
-          'appium:app': 'demo.apk',
-        },
-        'attached',
-        expect.any(String)
-      );
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Failed to fetch capabilities');
+      expect(result.content[0].text).toContain('borrowed');
+      expect(mockAttachToSession).not.toHaveBeenCalled();
     });
 
     test('detaches an existing attached session before re-attaching the same id', async () => {
       const tool = await getToolExecute();
       mockGetSessionOwnership.mockReturnValue('attached');
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ value: { platformName: 'Android' } }),
+      } as Response);
 
       const result = await tool.execute(
         {

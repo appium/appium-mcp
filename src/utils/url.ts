@@ -3,7 +3,7 @@ import WebDriver, { type Client } from 'webdriver';
 export interface RemoteAttachOptions {
   remoteServerUrl: string;
   sessionId: string;
-  capabilities?: Record<string, unknown>;
+  capabilities: Record<string, unknown>;
 }
 
 /**
@@ -37,7 +37,7 @@ export async function attachToRemoteSession(
     hostname: url.hostname,
     port,
     path: url.pathname,
-    capabilities: options.capabilities ?? {},
+    capabilities: options.capabilities,
     ...(user && key ? { user, key } : {}),
   });
 }
