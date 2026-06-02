@@ -15,6 +15,7 @@ import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 
 // Store selected device globally
 let selectedDeviceUdid: string | null = null;
+let selectedDevicePlatform: 'android' | 'ios' | null = null;
 let selectedDeviceType: 'simulator' | 'real' | null = null;
 let selectedDeviceInfo: any = null;
 
@@ -30,6 +31,10 @@ export function getSelectedDevice(): string | null {
   return selectedDeviceUdid;
 }
 
+export function getSelectedDevicePlatform(): 'android' | 'ios' | null {
+  return selectedDevicePlatform;
+}
+
 export function getSelectedDeviceType(): 'simulator' | 'real' | null {
   return selectedDeviceType;
 }
@@ -39,6 +44,7 @@ export function getSelectedDeviceInfo(): any {
 
 export function clearSelectedDevice(): void {
   selectedDeviceUdid = null;
+  selectedDevicePlatform = null;
   selectedDeviceType = null;
   selectedDeviceInfo = null;
 }
@@ -148,6 +154,9 @@ function selectAndroidDevice(
   }
 
   selectedDeviceUdid = deviceUdid;
+  selectedDevicePlatform = 'android';
+  selectedDeviceType = null;
+  selectedDeviceInfo = selectedDevice;
   log.info(`Device selected: ${deviceUdid}`);
   return undefined;
 }
@@ -248,6 +257,7 @@ function selectIOSDevice(
   }
 
   selectedDeviceUdid = deviceUdid;
+  selectedDevicePlatform = 'ios';
   selectedDeviceType = iosDeviceType;
   selectedDeviceInfo = selectedDevice;
   log.info(

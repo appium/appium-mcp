@@ -170,7 +170,7 @@ describe('AppiumMcpCore', () => {
     expect(core.getSessionId()).toBeNull();
     expect(core.getSessionInfo()).toBeNull();
 
-    setSession(driver, 'session-1', { platformName: 'Android' }, 'owned');
+    await setSession(driver, 'session-1', { platformName: 'Android' }, 'owned');
 
     expect(core.getSessionId()).toBe('session-1');
     expect(core.getSessionInfo('session-1')).not.toBeNull();
