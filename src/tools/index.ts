@@ -62,12 +62,12 @@ export default function registerTools(server: FastMCP): void {
     const SENSITIVE_KEYS = [
       'password',
       'token',
-      'accessToken',
+      'accesstoken',
       'authorization',
-      'apiKey',
       'apikey',
       'secret',
-      'clientSecret',
+      'clientsecret',
+      'remoteserverurl',
     ];
     const redactArgs = (obj: unknown): unknown => {
       if (obj === undefined || obj === null) {

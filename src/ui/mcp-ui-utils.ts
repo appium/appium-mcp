@@ -216,7 +216,7 @@ export function createDevicePickerUI(
           intent: 'select-device',
           params: {
             platform: '${platform}',
-            ${deviceType ? `deviceType: '${deviceType}',` : ''}
+            ${deviceType ? `iosDeviceType: '${deviceType}',` : ''}
             deviceUdid: udid
           }
         }

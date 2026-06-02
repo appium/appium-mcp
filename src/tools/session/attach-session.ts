@@ -122,7 +122,7 @@ export async function attachSessionAction(args: {
     } catch {
       // ignore — falling back to 'attached' is safe
     }
-    setSession(
+    await setSession(
       client,
       args.sessionId,
       capabilities,
