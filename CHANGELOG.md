@@ -1,3 +1,9 @@
+## [1.82.1](https://github.com/appium/appium-mcp/compare/v1.82.0...v1.82.1) (2026-06-03)
+
+### Miscellaneous Chores
+
+* refactor documentation part as a plugin style ([#376](https://github.com/appium/appium-mcp/issues/376)) ([42ab1ed](https://github.com/appium/appium-mcp/commit/42ab1edb3d3e7ab4564f7930112dad9554a4d117))
+
 ## [1.82.0](https://github.com/appium/appium-mcp/compare/v1.81.7...v1.82.0) (2026-06-02)
 
 ### Features
