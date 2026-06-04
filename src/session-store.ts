@@ -13,6 +13,40 @@ export type DriverInstance =
   | AndroidUiautomator2Driver
   | XCUITestDriver;
 export type NullableDriverInstance = DriverInstance | null;
+
+/**
+ * The `AndroidDriver` base type, recovered from an inherited command's `this`
+ * annotation. It is derived rather than imported because `appium-android-driver`
+ * is only a transitive dependency and is not re-exported by
+ * `appium-uiautomator2-driver`.
+ *
+ * Why this exists: as of `appium-android-driver@13` (pulled in by
+ * `appium-uiautomator2-driver@7`), the base `getAttribute()` returns
+ * `Promise<string | null>` while `AndroidUiautomator2Driver` overrides it to
+ * return the non-null `Promise<string>`. That makes `AndroidUiautomator2Driver`
+ * no longer structurally assignable to its own `AndroidDriver` base, so every
+ * command *inherited* from `AndroidDriver` (declared with `this: AndroidDriver`,
+ * e.g. `execute`, `activateApp`, `setValue`) becomes impossible to call on a
+ * narrowed uiautomator2 session (TS2684). Casting such a session with
+ * {@link asAndroidDriver} restores access to those inherited commands with
+ * their real signatures.
+ */
+export type AndroidDriverBase = ThisParameterType<
+  AndroidUiautomator2Driver['activateApp']
+>;
+
+/**
+ * Cast a narrowed uiautomator2 session to its {@link AndroidDriverBase} so that
+ * commands inherited from `AndroidDriver` remain callable. See the
+ * {@link AndroidDriverBase} docs for the upstream type regression this works
+ * around.
+ */
+export function asAndroidDriver(
+  driver: AndroidUiautomator2Driver
+): AndroidDriverBase {
+  return driver as unknown as AndroidDriverBase;
+}
+
 export type SessionCapabilities = Record<string, any>;
 export type SessionOwnership = 'owned' | 'attached';
 

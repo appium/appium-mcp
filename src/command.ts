@@ -1,5 +1,6 @@
 import type { Client } from 'webdriver';
 import {
+  asAndroidDriver,
   getPlatformName,
   isAndroidUiautomator2DriverSession,
   isRemoteDriverSession,
@@ -40,7 +41,7 @@ export async function execute(
   params: any
 ): Promise<any> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.execute(cmd, params);
+    return await asAndroidDriver(driver).execute(cmd, params);
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.execute(cmd, params);
   } else {
@@ -64,7 +65,7 @@ export async function queryAppState(
   appId: string
 ): Promise<number> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.queryAppState(appId);
+    return await asAndroidDriver(driver).queryAppState(appId);
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.queryAppState(appId);
   }
@@ -121,7 +122,7 @@ export async function activateApp(
   appId: string
 ): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.activateApp(appId);
+    return await asAndroidDriver(driver).activateApp(appId);
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.activateApp(appId);
   }
@@ -138,7 +139,7 @@ export async function getCurrentContext(
   driver: DriverInstance
 ): Promise<string> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.getCurrentContext();
+    return await asAndroidDriver(driver).getCurrentContext();
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.getCurrentContext();
   } else if (isRemoteDriverSession(driver)) {
@@ -155,7 +156,7 @@ export async function getCurrentContext(
  */
 export async function getContexts(driver: DriverInstance): Promise<string[]> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.getContexts();
+    return await asAndroidDriver(driver).getContexts();
   } else if (isXCUITestDriverSession(driver)) {
     return (await driver.getContexts()) as string[];
   } else if (isRemoteDriverSession(driver)) {
@@ -176,7 +177,7 @@ export async function setContext(
   name?: string
 ): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.setContext(name);
+    return await asAndroidDriver(driver).setContext(name);
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.setContext(name || null);
   } else if (isRemoteDriverSession(driver)) {
@@ -229,7 +230,7 @@ export async function setValue(
     return await performActions(driver, [buildW3cKeyActions(text)]);
   }
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.setValue(text, elementUUID);
+    return await asAndroidDriver(driver).setValue(text, elementUUID);
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.setValue(text, elementUUID);
   }
@@ -473,7 +474,7 @@ export async function startRecordingScreen(
   options: IOSRecordingOptions | AndroidRecordingOptions = {}
 ): Promise<string> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.startRecordingScreen(
+    return await asAndroidDriver(driver).startRecordingScreen(
       options as AndroidRecordingOptions
     );
   } else if (isXCUITestDriverSession(driver)) {
@@ -492,7 +493,7 @@ export async function stopRecordingScreen(
   driver: DriverInstance
 ): Promise<string> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.stopRecordingScreen({});
+    return await asAndroidDriver(driver).stopRecordingScreen({});
   } else if (isXCUITestDriverSession(driver)) {
     return (await driver.stopRecordingScreen({})) ?? '';
   }

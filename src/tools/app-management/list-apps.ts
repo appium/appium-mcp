@@ -3,6 +3,7 @@ import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { DriverInstance } from '../../session-store.js';
 import {
+  asAndroidDriver,
   getPlatformName,
   isRemoteDriverSession,
   isAndroidUiautomator2DriverSession,
@@ -14,7 +15,6 @@ import {
   createAppListUI,
   addUIResourceToResponse,
 } from '../../ui/mcp-ui-utils.js';
-import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import type { XCUITestDriver } from 'appium-xcuitest-driver';
 import { execute } from '../../command.js';
 import {
@@ -74,7 +74,7 @@ export async function listAppsFromDevice(
     platform === PLATFORM.android &&
     isAndroidUiautomator2DriverSession(driver)
   ) {
-    const result = await (driver as AndroidUiautomator2Driver).mobileListApps();
+    const result = await asAndroidDriver(driver).mobileListApps();
     const ids = Object.keys(result || {});
     return ids.map((packageName) => ({ packageName, appName: packageName }));
   }
