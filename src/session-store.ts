@@ -35,18 +35,6 @@ export type AndroidDriverBase = ThisParameterType<
   AndroidUiautomator2Driver['activateApp']
 >;
 
-/**
- * Cast a narrowed uiautomator2 session to its {@link AndroidDriverBase} so that
- * commands inherited from `AndroidDriver` remain callable. See the
- * {@link AndroidDriverBase} docs for the upstream type regression this works
- * around.
- */
-export function asAndroidDriver(
-  driver: AndroidUiautomator2Driver
-): AndroidDriverBase {
-  return driver as unknown as AndroidDriverBase;
-}
-
 export type SessionCapabilities = Record<string, any>;
 export type SessionOwnership = 'owned' | 'attached';
 
@@ -80,6 +68,18 @@ export const PLATFORM = {
   android: 'Android',
   ios: 'iOS',
 };
+
+/**
+ * Cast a narrowed uiautomator2 session to its {@link AndroidDriverBase} so that
+ * commands inherited from `AndroidDriver` remain callable. See the
+ * {@link AndroidDriverBase} docs for the upstream type regression this works
+ * around.
+ */
+export function asAndroidDriver(
+  driver: AndroidUiautomator2Driver
+): AndroidDriverBase {
+  return driver as unknown as AndroidDriverBase;
+}
 
 /**
  * Determine whether the provided driver represents a remote Appium session
