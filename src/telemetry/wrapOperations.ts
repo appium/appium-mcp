@@ -1,3 +1,10 @@
+/**
+ * FastMCP operation wrappers that create spans around registered MCP handlers.
+ * Installing these wrappers before built-in and plugin registration covers
+ * tools, prompts, resources, and resource templates without changing handler
+ * return values or recording sensitive request/response payloads.
+ */
+
 import type { FastMCP } from 'fastmcp';
 
 import { safeInputKeys, safeSessionId } from './attributes.js';
@@ -13,6 +20,15 @@ type PromptLoad = NonNullable<PromptDef['load']>;
 type ResourceLoad = NonNullable<ResourceDef['load']>;
 type ResourceTemplateLoad = NonNullable<ResourceTemplateDef['load']>;
 
+/**
+ * Installs telemetry wrappers on the given FastMCP server instance. This should be
+ * called early in the server setup process, before registering any tools, prompts,
+ * or resources, to ensure that all operations are wrapped with OpenTelemetry spans.
+ * Each span will be named according to the operation type and include attributes
+ * such as tool name, prompt name, resource URI, session ID, and input keys, while
+ * avoiding any sensitive information.
+ * @param server The FastMCP server instance on which to install telemetry wrappers.
+ */
 export function installTelemetryWrappers(server: FastMCP): void {
   const originalAddTool = server.addTool.bind(server) as FastMCP['addTool'];
 
@@ -50,6 +66,14 @@ export function installTelemetryWrappers(server: FastMCP): void {
   }
 }
 
+/**
+ * Wraps a tool definition with telemetry spans around its execute function.
+ * The span will be named "tools/call {toolName}" and include attributes for the tool name,
+ * session ID (if available), and input keys. If the tool execution results in an error,
+ * the span status will be set to error and an attribute will indicate that the result is an error.
+ * @param toolDef The original tool definition to wrap.
+ * @returns A new tool definition with telemetry spans around the execute function.
+ */
 export function wrapToolWithTelemetry(toolDef: ToolDef): ToolDef {
   const execute = toolDef.execute as ToolExecute | undefined;
   if (!execute) {
@@ -76,6 +100,14 @@ export function wrapToolWithTelemetry(toolDef: ToolDef): ToolDef {
   };
 }
 
+/**
+ * Wraps a prompt definition with telemetry spans around its load function.
+ * The span will be named "prompts/get {promptName}" and include attributes for the prompt name
+ * and input keys. If the prompt load results in an error, the span status will be set to error
+ * and an attribute will indicate that the result is an error.
+ * @param promptDef The original prompt definition to wrap.
+ * @returns A new prompt definition with telemetry spans around the load function.
+ */
 function wrapPromptWithTelemetry(promptDef: PromptDef): PromptDef {
   const load = promptDef.load as PromptLoad | undefined;
   if (!load) {
