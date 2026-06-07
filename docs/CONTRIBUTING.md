@@ -619,23 +619,6 @@ Look for `[TOOL START]` / `[TOOL END]` (and `[TOOL END WITH ERROR]` on `isError:
 
 Before releasing a new version, ensure documentation and skills submodules are up to date:
 
-### Updating Documentation And Skills
-
-Documentation RAG assets and Appium setup skills are maintained in the separate
-`appium/appium-mcp-documentation` repository and published as
-`@appium/mcp-documentation`. Update upstream documentation submodules and
-regenerate indexes from that repository:
-
-```bash
-cd ../appium-mcp-documentation
-npm run update-submodules
-npm run index-docs
-npm run build
-```
-
-After publishing a new `@appium/mcp-documentation` version, update the
-`@appium/mcp-documentation` dependency in this package.
-
 ## Formatting Best Practices
 
 ### Long Descriptions
