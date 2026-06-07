@@ -1,6 +1,7 @@
+import type { AppiumMcpPlugin } from './core.js';
 import { createAppiumMcpServer } from './create-server.js';
 
-const plugins = [];
+const plugins: AppiumMcpPlugin[] = [];
 
 try {
   const { AppiumDocumentation } = await import('@appium/mcp-documentation');
