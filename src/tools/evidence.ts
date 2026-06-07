@@ -90,11 +90,6 @@ export function withEvidence(
 }
 
 /**
- * Map a raw Appium/WebDriver error to a stable, normalized code. The codes are
- * also the foundation for failure-reason hypotheses. Inspects the error
- * name first, then the message, falling back to ACTION_FAILED.
- */
-/**
  * Snapshot the active session's platform, app id, and current context for the
  * evidence record. Returns undefined when there is no session to read, so the
  * field is simply omitted.
@@ -121,6 +116,11 @@ export function evidenceContext(
   };
 }
 
+/**
+ * Map a raw Appium/WebDriver error to a stable, normalized code. The codes are
+ * also the foundation for failure-reason hypotheses. Inspects the error name
+ * first, then the message, falling back to ACTION_FAILED.
+ */
 export function classifyError(err: unknown): EvidenceErrorCode {
   const name = err instanceof Error ? err.name : '';
   const message = (err instanceof Error ? err.message : String(err)) ?? '';
