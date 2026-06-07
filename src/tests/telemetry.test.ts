@@ -5,7 +5,12 @@ import {
   safeInputKeys,
   safeSessionId,
 } from '../telemetry/attributes.js';
+import {
+  initializeOpenTelemetry,
+  shutdownOpenTelemetry,
+} from '../telemetry/init.js';
 import { installTelemetryWrappers } from '../telemetry/wrapOperations.js';
+import { startOtlpHttpReceiver } from './telemetry-tools/otlp-http-receiver.js';
 
 const originalEnv = { ...process.env };
 
@@ -89,4 +94,146 @@ describe('telemetry attributes', () => {
       'resource-template-result'
     );
   });
+
+  test('exports actual OTLP span data for wrapped MCP operations', async () => {
+    const receiver = await startOtlpHttpReceiver();
+
+    process.env.APPIUM_MCP_OTEL_ENABLED = 'true';
+    process.env.OTEL_SERVICE_NAME = 'appium-mcp-test';
+    process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = receiver.endpoint;
+
+    const server = {
+      tools: [] as any[],
+      prompts: [] as any[],
+      resources: [] as any[],
+      resourceTemplates: [] as any[],
+      addTool(toolDef: any) {
+        this.tools.push(toolDef);
+      },
+      addPrompt(promptDef: any) {
+        this.prompts.push(promptDef);
+      },
+      addResource(resourceDef: any) {
+        this.resources.push(resourceDef);
+      },
+      addResourceTemplate(resourceTemplateDef: any) {
+        this.resourceTemplates.push(resourceTemplateDef);
+      },
+    };
+
+    try {
+      await initializeOpenTelemetry();
+      installTelemetryWrappers(server as any);
+
+      server.addTool({
+        name: 'plugin_tool',
+        execute: async () => ({ content: [{ type: 'text', text: 'ok' }] }),
+      });
+      server.addPrompt({
+        name: 'plugin_prompt',
+        load: async () => ({ messages: [] }),
+      });
+      server.addResource({
+        uri: 'plugin://resource',
+        load: async () => ({ contents: [] }),
+      });
+      server.addResourceTemplate({
+        uriTemplate: 'plugin://resource/{id}',
+        load: async () => ({ contents: [] }),
+      });
+
+      await server.tools[0].execute({ sessionId: 'session-1' }, {});
+      await server.prompts[0].load({ promptArg: 'value' }, {});
+      await server.resources[0].load();
+      await server.resourceTemplates[0].load({ id: '123' }, {});
+
+      await shutdownOpenTelemetry();
+
+      const spans = flattenOtlpSpans(
+        receiver.requests.map((request) => request.body)
+      );
+      const spanNames = spans.map((span) => span.name).sort();
+
+      expect(receiver.requests).toHaveLength(1);
+      expect(receiver.requests[0].method).toBe('POST');
+      expect(receiver.requests[0].url).toBe('/v1/traces');
+      expect(receiver.requests[0].headers['content-type']).toContain(
+        'application/json'
+      );
+      expect(spanNames).toEqual([
+        'prompts/get plugin_prompt',
+        'resources/read',
+        'resources/read',
+        'tools/call plugin_tool',
+      ]);
+
+      const toolSpan = spans.find(
+        (span) => span.name === 'tools/call plugin_tool'
+      );
+      expect(otlpAttributes(toolSpan)).toMatchObject({
+        'appium.session.id': 'session-1',
+        'mcp.tool.name': 'plugin_tool',
+      });
+
+      const promptSpan = spans.find(
+        (span) => span.name === 'prompts/get plugin_prompt'
+      );
+      expect(otlpAttributes(promptSpan)).toMatchObject({
+        'mcp.prompt.name': 'plugin_prompt',
+      });
+
+      const resourceAttributes = spans
+        .filter((span) => span.name === 'resources/read')
+        .map((span) => otlpAttributes(span));
+      expect(resourceAttributes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ 'mcp.resource.uri': 'plugin://resource' }),
+          expect.objectContaining({
+            'mcp.resource.uri_template': 'plugin://resource/{id}',
+          }),
+        ])
+      );
+    } finally {
+      await shutdownOpenTelemetry();
+      await receiver.close();
+    }
+  });
 });
+
+function flattenOtlpSpans(bodies: unknown[]): any[] {
+  return bodies.flatMap((body: any) =>
+    (body?.resourceSpans ?? []).flatMap((resourceSpan: any) =>
+      (resourceSpan.scopeSpans ?? []).flatMap(
+        (scopeSpan: any) => scopeSpan.spans ?? []
+      )
+    )
+  );
+}
+
+function otlpAttributes(span: any): Record<string, unknown> {
+  return Object.fromEntries(
+    (span?.attributes ?? []).map((attribute: any) => [
+      attribute.key,
+      otlpValue(attribute.value),
+    ])
+  );
+}
+
+function otlpValue(value: any): unknown {
+  if ('stringValue' in value) {
+    return value.stringValue;
+  }
+  if ('intValue' in value) {
+    return value.intValue;
+  }
+  if ('doubleValue' in value) {
+    return value.doubleValue;
+  }
+  if ('boolValue' in value) {
+    return value.boolValue;
+  }
+  if ('arrayValue' in value) {
+    return (value.arrayValue.values ?? []).map(otlpValue);
+  }
+  return value;
+}

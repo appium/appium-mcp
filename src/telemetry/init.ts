@@ -26,6 +26,19 @@ export async function initializeOpenTelemetry(): Promise<void> {
   log.info('OpenTelemetry tracing enabled for appium-mcp.');
 }
 
+export async function shutdownOpenTelemetry(): Promise<void> {
+  if (!sdkStarted || !sdk) {
+    return;
+  }
+
+  try {
+    await sdk.shutdown();
+  } finally {
+    sdk = undefined;
+    sdkStarted = false;
+  }
+}
+
 function registerShutdown(): void {
   if (shutdownRegistered) {
     return;
@@ -34,12 +47,8 @@ function registerShutdown(): void {
   shutdownRegistered = true;
 
   const shutdown = async () => {
-    if (!sdkStarted || !sdk) {
-      return;
-    }
-
     try {
-      await sdk.shutdown();
+      await shutdownOpenTelemetry();
     } catch (error) {
       log.error('Error shutting down OpenTelemetry SDK:', error);
     }
