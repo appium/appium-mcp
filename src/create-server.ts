@@ -22,6 +22,7 @@ import log from './logger.js';
 import { PluginManager } from './plugin.js';
 import type { AppiumMcpPlugin } from './plugin.js';
 import { installPolicy, type AppiumMcpPolicy } from './policy.js';
+import { installTelemetryWrappers } from './telemetry/wrapOperations.js';
 
 const SERVER_VERSION = pkg.version as `${number}.${number}.${number}`;
 
@@ -106,6 +107,7 @@ export function createAppiumMcpServer(
   });
 
   installPolicy(server, policy);
+  installTelemetryWrappers(server);
 
   // -------------------------------------------------------------------------
   // 1. Install plugin hooks BEFORE registering any tools so that every built-in

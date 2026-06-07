@@ -21,6 +21,8 @@ export {
   PluginManager,
   verifyAppiumMcpNames,
 } from './plugin.js';
+export { isTelemetryEnabled } from './telemetry/attributes.js';
+export { getAppiumMcpTracer, withSpan } from './telemetry/tracer.js';
 export type {
   AppiumMcpPlugin,
   PluginContext,

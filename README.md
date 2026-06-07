@@ -155,6 +155,19 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `SENTENCE_TRANSFORMERS_MODEL`             | Optional                               | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`)                                                                                                                                                                                                                                   |
 | `APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH` | Optional                               | Absolute file path to persist attached remote session info across server restarts (JSON format)                                                                                                                                                                                                                                                    |
 
+### OpenTelemetry tracing
+
+OpenTelemetry tracing is disabled by default. Set `APPIUM_MCP_OTEL_ENABLED=true` to initialize the Node.js OpenTelemetry SDK before the MCP server is constructed. The SDK uses standard `OTEL_*` environment variables, for example:
+
+```bash
+APPIUM_MCP_OTEL_ENABLED=true
+OTEL_SERVICE_NAME=appium-mcp
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces
+OTEL_TRACES_SAMPLER=parentbased_always_on
+```
+
+When enabled, appium-mcp creates spans for MCP tool calls, prompt loads, resource reads, and resource template reads. Error status is recorded for thrown operation errors and MCP tool results marked with `isError`. Span attributes intentionally avoid raw screenshots, XML page source, prompts, credentials, and other high-cardinality or sensitive payloads.
+
 ### Capabilities
 
 Create a `capabilities.json` file to define your device capabilities:

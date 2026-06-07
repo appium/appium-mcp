@@ -1,4 +1,5 @@
 import log from '../logger.js';
+import { initializeOpenTelemetry } from '../telemetry/init.js';
 
 export async function runCli(
   args: string[] = process.argv.slice(2)
@@ -28,6 +29,7 @@ async function startServer(args: string[]): Promise<void> {
   log.info('Starting MCP Appium MCP Server...');
 
   try {
+    await initializeOpenTelemetry();
     const { default: server } = await import('../server.js');
 
     if (useHttpStream) {

@@ -19,7 +19,7 @@ Welcome! This guide will help you extend MCP Appium by adding new tools and reso
 
 ## Integrators (CI, farms, multi-session)
 
-End-user behavior for **multiple sessions**, **MCP client disconnect**, **remote Appium / farms**, and **tool argument logging** lives in the main **README**, under **Configuration → Integrator notes (sessions, transport, logging)**. If you change session lifecycle (`session-store`, `server` disconnect handling) or the tool logging wrapper, update that README section so it stays accurate.
+End-user behavior for **multiple sessions**, **MCP client disconnect**, **remote Appium / farms**, **tool argument logging**, and **OpenTelemetry tracing** lives in the main **README**, under **Configuration**. If you change session lifecycle (`session-store`, `server` disconnect handling), the tool logging wrapper, or telemetry span attributes, update that README section so it stays accurate and does not expose screenshots, XML page source, prompts, credentials, or other sensitive payloads.
 
 ---
 
