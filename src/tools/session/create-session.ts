@@ -97,10 +97,6 @@ export function buildAndroidCapabilities(
     ...customCaps,
   };
 
-  if (selectedDeviceUdid) {
-    clearSelectedDevice();
-  }
-
   return filterEmptyCapabilities(capabilities);
 }
 
@@ -187,10 +183,6 @@ export async function buildIOSCapabilities(
     // customCaps should override additionalCaps.
     ...customCaps,
   };
-
-  if (selectedDeviceUdid) {
-    clearSelectedDevice();
-  }
 
   return filterEmptyCapabilities(capabilities);
 }
@@ -324,6 +316,8 @@ export async function createSessionAction(args: {
       await setSession(driver, sessionId, finalCapabilities, 'owned');
     }
 
+    clearSelectedDeviceAfterSuccessfulCreate(platform, remoteServerUrl);
+
     const sessionIdStr =
       typeof sessionId === 'string'
         ? sessionId
@@ -361,6 +355,25 @@ export async function createSessionAction(args: {
         finalCapabilities,
       })
     );
+  }
+}
+
+/**
+ * Clear the selected device only after a session has been created
+ * successfully, so a failed create attempt does not force the user to run
+ * select_device again. No-op for remote and general sessions, which do not
+ * consume the local device selection.
+ */
+function clearSelectedDeviceAfterSuccessfulCreate(
+  platform: (typeof DRIVER_MODE_PLATFORMS)[number],
+  remoteServerUrl?: string
+): void {
+  if (remoteServerUrl || platform === 'general') {
+    return;
+  }
+
+  if (getSelectedDevicePlatform() === platform) {
+    clearSelectedDevice();
   }
 }
 

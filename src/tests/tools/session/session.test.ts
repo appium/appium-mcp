@@ -10,6 +10,7 @@ const mockAttachToSession = jest.fn<
 }));
 
 let mockSelectedDevicePlatform: 'android' | 'ios' | null = 'ios';
+const mockClearSelectedDevice = jest.fn();
 
 jest.unstable_mockModule('../../../tools/session/select-device', () => ({
   getSelectedDevice: () => 'device-udid',
@@ -17,7 +18,7 @@ jest.unstable_mockModule('../../../tools/session/select-device', () => ({
   getSelectedDeviceType: () =>
     mockSelectedDevicePlatform === 'ios' ? 'simulator' : null,
   getSelectedDeviceInfo: () => ({ name: 'iPhone 12', platform: '16.0' }),
-  clearSelectedDevice: () => {},
+  clearSelectedDevice: mockClearSelectedDevice,
 }));
 
 jest.unstable_mockModule('../../../devicemanager/ios-manager', () => ({
@@ -525,6 +526,14 @@ describe('buildAndroidCapabilities', () => {
     expect(caps.platformName).toBe('Android');
     expect(caps).not.toHaveProperty('appium:udid');
   });
+
+  test('does not clear the selected device while building capabilities', () => {
+    mockSelectedDevicePlatform = 'android';
+
+    buildAndroidCapabilities({}, undefined, false);
+
+    expect(mockClearSelectedDevice).not.toHaveBeenCalled();
+  });
 });
 
 describe('buildIOSCapabilities', () => {
@@ -562,6 +571,14 @@ describe('buildIOSCapabilities', () => {
     expect(caps.platformName).toBe('iOS');
     expect(caps['appium:deviceName']).toBe('iPhone Simulator');
     expect(caps).not.toHaveProperty('appium:udid');
+  });
+
+  test('does not clear the selected device while building capabilities', async () => {
+    mockSelectedDevicePlatform = 'ios';
+
+    await buildIOSCapabilities({}, undefined, false);
+
+    expect(mockClearSelectedDevice).not.toHaveBeenCalled();
   });
 });
 
