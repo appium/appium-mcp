@@ -168,6 +168,14 @@ OTEL_TRACES_SAMPLER=parentbased_always_on
 
 When enabled, appium-mcp creates spans for MCP tool calls, prompt loads, resource reads, and resource template reads. Error status is recorded for thrown operation errors and MCP tool results marked with `isError`. Span attributes intentionally avoid raw screenshots, XML page source, prompts, credentials, and other high-cardinality or sensitive payloads.
 
+For local trace inspection, use the Jaeger setup in `tools/telemetry`:
+
+```bash
+npm run telemetry:jaeger:start
+```
+
+Then open `http://127.0.0.1:16686` and run appium-mcp with the environment values in `tools/telemetry/jaeger.env`.
+
 ### Capabilities
 
 Create a `capabilities.json` file to define your device capabilities:
