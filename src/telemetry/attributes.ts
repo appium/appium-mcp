@@ -5,21 +5,8 @@
  * source XML, prompts, or other user payloads.
  */
 
-const TRUE_VALUES = new Set(['1', 'true', 'yes', 'on']);
-
-const SENSITIVE_KEY_PARTS = [
-  'api_key',
-  'apikey',
-  'authorization',
-  'client_secret',
-  'clientsecret',
-  'credential',
-  'password',
-  'remote_server_url',
-  'remoteserverurl',
-  'secret',
-  'token',
-];
+import { isTruthyEnvValue } from '../utils/env.js';
+import { isSensitiveKey } from '../utils/sensitive.js';
 
 /**
  * Determines whether telemetry is enabled based on the APPIUM_MCP_OTEL_ENABLED environment variable.
@@ -28,9 +15,7 @@ const SENSITIVE_KEY_PARTS = [
  * @returns True if telemetry is enabled, false otherwise.
  */
 export function isTelemetryEnabled(): boolean {
-  return TRUE_VALUES.has(
-    process.env.APPIUM_MCP_OTEL_ENABLED?.trim().toLowerCase() ?? ''
-  );
+  return isTruthyEnvValue(process.env.APPIUM_MCP_OTEL_ENABLED);
 }
 
 /**
@@ -86,11 +71,4 @@ export function safeInputKeys(args: unknown): string[] {
   return Object.keys(args)
     .filter((key) => !isSensitiveKey(key))
     .sort();
-}
-
-function isSensitiveKey(key: string): boolean {
-  const normalized = key.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-  return SENSITIVE_KEY_PARTS.some((part) =>
-    normalized.includes(part.replace(/[^a-zA-Z0-9]/g, '').toLowerCase())
-  );
 }

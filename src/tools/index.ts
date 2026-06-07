@@ -14,6 +14,7 @@
  */
 import type { ContentResult, FastMCP } from 'fastmcp';
 import log from '../logger.js';
+import { isSensitiveKey } from '../utils/sensitive.js';
 import session from './session/session.js';
 import generateLocators from './test-generation/locators.js';
 import selectDevice from './session/select-device.js';
@@ -59,16 +60,6 @@ export default function registerTools(server: FastMCP): void {
     if (typeof originalExecute !== 'function') {
       return originalAddTool(toolDef);
     }
-    const SENSITIVE_KEYS = [
-      'password',
-      'token',
-      'accesstoken',
-      'authorization',
-      'apikey',
-      'secret',
-      'clientsecret',
-      'remoteserverurl',
-    ];
     const redactArgs = (obj: unknown): unknown => {
       if (obj === undefined || obj === null) {
         return obj;
@@ -76,10 +67,7 @@ export default function registerTools(server: FastMCP): void {
       try {
         return JSON.parse(
           JSON.stringify(obj, (key, value) => {
-            if (
-              key &&
-              SENSITIVE_KEYS.some((k) => key.toLowerCase().includes(k))
-            ) {
+            if (key && isSensitiveKey(key)) {
               return '[REDACTED]';
             }
             // Avoid logging extremely large buffers/strings

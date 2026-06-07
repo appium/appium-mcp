@@ -31,6 +31,13 @@ describe('telemetry attributes', () => {
     expect(isTelemetryEnabled()).toBe(true);
   });
 
+  test('accepts shared truthy environment values', () => {
+    for (const value of ['1', 'true', 'yes', 'on']) {
+      process.env.APPIUM_MCP_OTEL_ENABLED = value;
+      expect(isTelemetryEnabled()).toBe(true);
+    }
+  });
+
   test('keeps sensitive argument names out of telemetry attributes', () => {
     expect(
       safeInputKeys({
