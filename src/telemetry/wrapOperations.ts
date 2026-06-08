@@ -7,8 +7,14 @@
 
 import type { FastMCP } from 'fastmcp';
 
-import { safeInputKeys, safeSessionId } from './attributes.js';
+import {
+  isArgumentValueTelemetryEnabled,
+  safeAttributeValue,
+  safeInputKeys,
+  safeSessionId,
+} from './attributes.js';
 import { getActiveSpan, SpanStatusCode, withSpan } from './tracer.js';
+import { isSensitiveKey } from '../utils/sensitive.js';
 
 type ToolDef = Parameters<FastMCP['addTool']>[0];
 type PromptDef = Parameters<FastMCP['addPrompt']>[0];
@@ -100,6 +106,29 @@ export function wrapToolWithTelemetry(toolDef: ToolDef): ToolDef {
   };
 }
 
+export function safeInputValueAttributes(
+  args: unknown
+): Record<string, string | number | boolean | string[]> {
+  if (!isArgumentValueTelemetryEnabled()) {
+    return {};
+  }
+  if (!args || typeof args !== 'object' || Array.isArray(args)) {
+    return {};
+  }
+
+  const attributes: Record<string, string | number | boolean | string[]> = {};
+
+  for (const [key, value] of Object.entries(args)) {
+    // do not include sensitive keys as attributes, and avoid logging large strings or buffers
+    if (isSensitiveKey(key)) {
+      continue;
+    }
+    attributes[`mcp.input.value.${key}`] = safeAttributeValue(value);
+  }
+
+  return attributes;
+}
+
 /**
  * Wraps a prompt definition with telemetry spans around its load function.
  * The span will be named "prompts/get {promptName}" and include attributes for the prompt name
@@ -123,7 +152,7 @@ function wrapPromptWithTelemetry(promptDef: PromptDef): PromptDef {
         `prompts/get ${promptName}`,
         {
           'mcp.prompt.name': promptName,
-          ...inputKeyAttributes(args),
+          ...inputAttributes(args),
         },
         () => load(args, auth)
       ),
@@ -169,7 +198,7 @@ function wrapResourceTemplateWithTelemetry(
         'resources/read',
         {
           'mcp.resource.uri_template': uriTemplate,
-          ...inputKeyAttributes(args),
+          ...inputAttributes(args),
         },
         () => load(args, auth)
       ),
@@ -188,7 +217,16 @@ function toolAttributes(toolName: string, args: unknown) {
 
   return {
     ...attributes,
+    ...inputAttributes(args),
+  };
+}
+
+function inputAttributes(
+  args: unknown
+): Record<string, string | number | boolean | string[]> {
+  return {
     ...inputKeyAttributes(args),
+    ...safeInputValueAttributes(args),
   };
 }
 

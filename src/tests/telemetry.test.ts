@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from '@jest/globals';
 
 import {
+  isArgumentValueTelemetryEnabled,
   isTelemetryEnabled,
   safeInputKeys,
   safeSessionId,
@@ -9,7 +10,10 @@ import {
   initializeOpenTelemetry,
   shutdownOpenTelemetry,
 } from '../telemetry/init.js';
-import { installTelemetryWrappers } from '../telemetry/wrapOperations.js';
+import {
+  installTelemetryWrappers,
+  safeInputValueAttributes,
+} from '../telemetry/wrapOperations.js';
 import { startOtlpHttpReceiver } from './telemetry-tools/otlp-http-receiver.js';
 
 const originalEnv = { ...process.env };
@@ -36,6 +40,37 @@ describe('telemetry attributes', () => {
       process.env.APPIUM_MCP_OTEL_ENABLED = value;
       expect(isTelemetryEnabled()).toBe(true);
     }
+  });
+
+  test('keeps argument values disabled by default', () => {
+    delete process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES;
+    expect(isArgumentValueTelemetryEnabled()).toBe(false);
+    expect(
+      safeInputValueAttributes({
+        platformName: 'iOS',
+      })
+    ).toEqual({});
+  });
+
+  test('includes non-sensitive argument values only when explicitly enabled', () => {
+    process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
+
+    expect(
+      safeInputValueAttributes({
+        apiKey: 'secret',
+        password: 'secret',
+        platformName: 'iOS',
+        strict: true,
+        timeout: 1000,
+        capabilities: { platformName: 'iOS', deviceName: 'iPhone 15' },
+      })
+    ).toEqual({
+      'mcp.input.value.capabilities':
+        '{"platformName":"iOS","deviceName":"iPhone 15"}',
+      'mcp.input.value.platformName': 'iOS',
+      'mcp.input.value.strict': true,
+      'mcp.input.value.timeout': 1000,
+    });
   });
 
   test('keeps sensitive argument names out of telemetry attributes', () => {
@@ -106,6 +141,7 @@ describe('telemetry attributes', () => {
     const receiver = await startOtlpHttpReceiver();
 
     process.env.APPIUM_MCP_OTEL_ENABLED = 'true';
+    process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
     process.env.OTEL_SERVICE_NAME = 'appium-mcp-test';
     process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = receiver.endpoint;
 
@@ -149,8 +185,19 @@ describe('telemetry attributes', () => {
         load: async () => ({ contents: [] }),
       });
 
-      await server.tools[0].execute({ sessionId: 'session-1' }, {});
-      await server.prompts[0].load({ promptArg: 'value' }, {});
+      await server.tools[0].execute(
+        {
+          apiKey: 'secret',
+          capabilities: { platformName: 'iOS', deviceName: 'iPhone 15' },
+          platformName: 'iOS',
+          sessionId: 'session-1',
+        },
+        {}
+      );
+      await server.prompts[0].load(
+        { password: 'secret', promptArg: 'value' },
+        {}
+      );
       await server.resources[0].load();
       await server.resourceTemplates[0].load({ id: '123' }, {});
 
@@ -179,15 +226,25 @@ describe('telemetry attributes', () => {
       );
       expect(otlpAttributes(toolSpan)).toMatchObject({
         'appium.session.id': 'session-1',
+        'mcp.input.value.capabilities':
+          '{"platformName":"iOS","deviceName":"iPhone 15"}',
+        'mcp.input.value.platformName': 'iOS',
         'mcp.tool.name': 'plugin_tool',
       });
+      expect(otlpAttributes(toolSpan)).not.toHaveProperty(
+        'mcp.input.value.apiKey'
+      );
 
       const promptSpan = spans.find(
         (span) => span.name === 'prompts/get plugin_prompt'
       );
       expect(otlpAttributes(promptSpan)).toMatchObject({
+        'mcp.input.value.promptArg': 'value',
         'mcp.prompt.name': 'plugin_prompt',
       });
+      expect(otlpAttributes(promptSpan)).not.toHaveProperty(
+        'mcp.input.value.password'
+      );
 
       const resourceAttributes = spans
         .filter((span) => span.name === 'resources/read')
@@ -196,6 +253,7 @@ describe('telemetry attributes', () => {
         expect.arrayContaining([
           expect.objectContaining({ 'mcp.resource.uri': 'plugin://resource' }),
           expect.objectContaining({
+            'mcp.input.value.id': '123',
             'mcp.resource.uri_template': 'plugin://resource/{id}',
           }),
         ])

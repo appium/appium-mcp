@@ -154,6 +154,11 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `AI_VISION_IMAGE_QUALITY`                 | Optional                               | JPEG quality 1–100 for compressed screenshots sent to the vision API (default: `80`)                                                                                                                                                                                                                                                               |
 | `SENTENCE_TRANSFORMERS_MODEL`             | Optional                               | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`)                                                                                                                                                                                                                                   |
 | `APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH` | Optional                               | Absolute file path to persist attached remote session info across server restarts (JSON format)                                                                                                                                                                                                                                                    |
+| `APPIUM_MCP_OTEL_ENABLED` | Optional | Set to `true` to enable OpenTelemetry tracing (disabled by default). |
+| `APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES` | Optional | Set to `true` to include sanitized non-sensitive argument values in spans; disabled by default because values may contain sensitive data. |
+| `OTEL_SERVICE_NAME` | Optional | Service name reported to the OpenTelemetry collector (example: `appium-mcp`). |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Optional | OTLP/HTTP traces endpoint (example: `http://127.0.0.1:4318/v1/traces`). |
+| `OTEL_TRACES_SAMPLER` | Optional | Trace sampling strategy; `parentbased_always_on` samples new root traces and follows parent decisions. |
 
 ### OpenTelemetry tracing
 
@@ -161,6 +166,8 @@ OpenTelemetry tracing is disabled by default. Set `APPIUM_MCP_OTEL_ENABLED=true`
 
 ```bash
 APPIUM_MCP_OTEL_ENABLED=true
+# Optional: include sanitized non-sensitive argument values in spans.
+# APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES=true
 OTEL_SERVICE_NAME=appium-mcp
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces
 OTEL_TRACES_SAMPLER=parentbased_always_on

@@ -5,6 +5,7 @@
  * source XML, prompts, or other user payloads.
  */
 
+import { getSessionId } from '../session-store.js';
 import { isTruthyEnvValue } from '../utils/env.js';
 import { isSensitiveKey } from '../utils/sensitive.js';
 
@@ -16,6 +17,19 @@ import { isSensitiveKey } from '../utils/sensitive.js';
  */
 export function isTelemetryEnabled(): boolean {
   return isTruthyEnvValue(process.env.APPIUM_MCP_OTEL_ENABLED);
+}
+
+/**
+ * Determines whether including argument values in telemetry attributes is enabled based on the APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES environment variable.
+ * Recognizes "1", "true", "yes", and "on" (case-insensitive) as true values.
+ * Defaults to false if the variable is not set or has an unrecognized value.
+ * When false, argument values will not be included in telemetry attributes, even for non-sensitive keys.
+ * When true, non-sensitive argument values will be included in telemetry attributes, while sensitive keys will still be excluded.
+ * @see safeInputValueAttributes for how argument values are included in attributes when this is enabled.
+ * @returns
+ */
+export function isArgumentValueTelemetryEnabled(): boolean {
+  return isTruthyEnvValue(process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES);
 }
 
 /**
@@ -44,15 +58,23 @@ export function safeAttributeValue(value: unknown): string | number | boolean {
 
 /**
  * Safely extracts the session ID from the given arguments.
+ * If the arguments object has a string `sessionId` property, that value is returned.
+ * Otherwise, the current session ID is retrieved from the session store and returned if it is a string.
+ * If no valid session ID can be found, undefined is returned.
  * @param args The arguments object potentially containing a sessionId.
  * @returns The session ID if present and valid, otherwise undefined.
  */
 export function safeSessionId(args: unknown): string | undefined {
+  let sessionId: string | undefined;
   if (!args || typeof args !== 'object' || !('sessionId' in args)) {
+    sessionId = getSessionId() ?? undefined;
+    if (sessionId) {
+      return sessionId;
+    }
     return undefined;
   }
 
-  const sessionId = (args as { sessionId?: unknown }).sessionId;
+  sessionId = (args as { sessionId?: string }).sessionId;
   return typeof sessionId === 'string' && sessionId.length > 0
     ? sessionId
     : undefined;
