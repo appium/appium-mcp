@@ -196,6 +196,27 @@ export async function buildIOSCapabilities(
 }
 
 /**
+ * For local sessions, ensure create platform matches a prior select_device choice.
+ */
+export function validateLocalCreatePlatformMatch(
+  platform: (typeof DRIVER_MODE_PLATFORMS)[number],
+  remoteServerUrl?: string
+): ContentResult | undefined {
+  if (remoteServerUrl || platform === 'general') {
+    return undefined;
+  }
+
+  const selectedPlatform = getSelectedDevicePlatform();
+  if (selectedPlatform && selectedPlatform !== platform) {
+    return errorResult(
+      `platform=${platform} does not match select_device (platform=${selectedPlatform}). Use action=create with platform=${selectedPlatform}, or call select_device again.`
+    );
+  }
+
+  return undefined;
+}
+
+/**
  * Validate the provided remote server URL.
  *
  * @param remoteServerUrl - The URL of the remote Appium server to validate.
@@ -248,6 +269,14 @@ export async function createSessionAction(args: {
       capabilities: customCapabilities,
       remoteServerUrl,
     } = args;
+
+    const platformMismatch = validateLocalCreatePlatformMatch(
+      platform,
+      remoteServerUrl
+    );
+    if (platformMismatch) {
+      return platformMismatch;
+    }
 
     const configCapabilities = await loadCapabilitiesConfig();
     if (platform === 'android') {
