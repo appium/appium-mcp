@@ -1,3 +1,9 @@
+## [1.84.0](https://github.com/appium/appium-mcp/compare/v1.83.0...v1.84.0) (2026-06-08)
+
+### Features
+
+* extratc docs stuff into a new package ([#384](https://github.com/appium/appium-mcp/issues/384)) ([1daddb3](https://github.com/appium/appium-mcp/commit/1daddb3563d4f646e924623889db5b8b3eab7ce9))
+
 ## [1.83.0](https://github.com/appium/appium-mcp/compare/v1.82.2...v1.83.0) (2026-06-08)
 
 ### Features
