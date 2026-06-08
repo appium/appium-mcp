@@ -1,3 +1,9 @@
+## [1.82.2](https://github.com/appium/appium-mcp/compare/v1.82.1...v1.82.2) (2026-06-08)
+
+### Miscellaneous Chores
+
+* define driver mode platform ([#388](https://github.com/appium/appium-mcp/issues/388)) ([a86b5ee](https://github.com/appium/appium-mcp/commit/a86b5ee0530fa0b60f27d5ad5121b4e4b6a9be6c))
+
 ## [1.82.1](https://github.com/appium/appium-mcp/compare/v1.82.0...v1.82.1) (2026-06-03)
 
 ### Miscellaneous Chores

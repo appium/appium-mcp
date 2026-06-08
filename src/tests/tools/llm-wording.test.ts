@@ -21,6 +21,7 @@ jest.unstable_mockModule('../../tools/session/attach-session', () => ({
 
 jest.unstable_mockModule('../../tools/session/create-session', () => ({
   createSessionAction: jest.fn(),
+  DRIVER_MODE_PLATFORMS: ['ios', 'android', 'general'],
 }));
 
 jest.unstable_mockModule('../../tools/session/delete-session', () => ({
