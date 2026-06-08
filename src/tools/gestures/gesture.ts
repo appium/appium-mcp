@@ -48,12 +48,13 @@ export default function gesture(server: FastMCP): void {
       const { driver } = resolved;
 
       const startedAt = Date.now();
+      const context = await evidenceContext(args.sessionId);
       const result = await dispatchGesture(driver, args);
       return withEvidence(result, {
-        toolName: 'appium_gesture',
+        name: 'appium_gesture',
         stage: gestureStage(args.action),
         startedAt,
-        context: evidenceContext(args.sessionId),
+        context,
         ...(args.strategy && args.selector
           ? { locator: { strategy: args.strategy, selector: args.selector } }
           : {}),

@@ -15,14 +15,6 @@ jest.unstable_mockModule('../../tools/tool-response', () => ({
   toolErrorMessage: jest.fn(mockToolErrorMessage),
 }));
 
-// Evidence reads the session store, which statically imports the native
-// drivers; mock it so registering find/gesture stays driver-free.
-jest.unstable_mockModule('../../tools/evidence', () => ({
-  withEvidence: jest.fn((result: unknown) => result),
-  evidenceContext: jest.fn(),
-  classifyError: jest.fn(),
-}));
-
 jest.unstable_mockModule('../../tools/session/attach-session', () => ({
   attachSessionAction: jest.fn(),
 }));

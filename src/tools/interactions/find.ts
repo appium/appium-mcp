@@ -77,7 +77,7 @@ export default function findElement(server: FastMCP): void {
 
       const startedAt = Date.now();
       const locator = { strategy: args.strategy, selector: args.selector };
-      const context = evidenceContext(args.sessionId);
+      const context = await evidenceContext(args.sessionId);
       try {
         const element = await driver.findElement(args.strategy, args.selector);
         const elementId = readWebElementId(element);
@@ -85,7 +85,7 @@ export default function findElement(server: FastMCP): void {
           return withEvidence(
             errorResult('Element was returned without a valid element ID'),
             {
-              toolName: 'appium_find_element',
+              name: 'appium_find_element',
               stage: 'locate',
               startedAt,
               locator,
@@ -99,7 +99,7 @@ export default function findElement(server: FastMCP): void {
             `Successfully found element ${args.selector} with strategy ${args.strategy}.`
           ),
           {
-            toolName: 'appium_find_element',
+            name: 'appium_find_element',
             stage: 'locate',
             startedAt,
             locator,
@@ -113,7 +113,7 @@ export default function findElement(server: FastMCP): void {
             `Failed to find element. Error: ${toolErrorMessage(err)}`
           ),
           {
-            toolName: 'appium_find_element',
+            name: 'appium_find_element',
             stage: 'locate',
             startedAt,
             locator,

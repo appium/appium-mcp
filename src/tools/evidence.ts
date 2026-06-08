@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { ContentResult } from 'fastmcp';
 import pkg from '../../package.json' with { type: 'json' };
-import { getSessionInfo } from '../session-store.js';
 
 /**
  * Structured, machine-readable trace of a single tool action, so CI and agents
@@ -14,15 +13,20 @@ export interface ActionEvidenceRecord {
   schemaVersion: 1;
   producer: { name: 'appium-mcp'; version: string };
   evidenceId: string;
-  toolName: string;
   status: 'success' | 'error';
-  /** Phase the action reached when it ended (most useful on failure). */
-  stage: EvidenceStage;
-  locator?: { strategy: string; selector: string };
-  element?: { webdriverId: string };
+  /**
+   * Action-specific details. `stage`/`locator`/`element` are optional because
+   * they only apply to tools that resolve or interact with elements (find,
+   * gesture); tools like screenshot carry just `name`.
+   */
+  action: {
+    name: string;
+    stage?: EvidenceStage;
+    locator?: { strategy: string; selector: string };
+    element?: { webdriverId: string };
+  };
   context?: {
     platform?: string;
-    appPackageOrBundle?: string;
     contextName?: string;
   };
   timing: { startedAt: string; finishedAt: string; durationMs: number };
@@ -43,11 +47,11 @@ const EVIDENCE_MIME_TYPE = 'application/vnd.appium.evidence+json';
 
 /** Inputs a handler supplies to describe the action it performed. */
 export interface EvidenceInput {
-  toolName: string;
-  stage: EvidenceStage;
+  name: string;
   startedAt: number;
-  locator?: ActionEvidenceRecord['locator'];
-  element?: ActionEvidenceRecord['element'];
+  stage?: EvidenceStage;
+  locator?: ActionEvidenceRecord['action']['locator'];
+  element?: ActionEvidenceRecord['action']['element'];
   context?: ActionEvidenceRecord['context'];
   error?: unknown;
 }
@@ -90,28 +94,24 @@ export function withEvidence(
 }
 
 /**
- * Snapshot the active session's platform, app id, and current context for the
- * evidence record. Returns undefined when there is no session to read, so the
- * field is simply omitted.
+ * Snapshot the active session's platform and current context for the evidence
+ * record. Returns undefined when there is no session to read, so the field is
+ * simply omitted. The session-store import is deferred until evidence is
+ * enabled so the disabled path pulls in no driver dependencies.
  */
-export function evidenceContext(
+export async function evidenceContext(
   sessionId?: string
-): ActionEvidenceRecord['context'] | undefined {
+): Promise<ActionEvidenceRecord['context'] | undefined> {
   if (!isEvidenceEnabled()) {
     return undefined;
   }
+  const { getSessionInfo } = await import('../session-store.js');
   const info = getSessionInfo(sessionId);
   if (!info) {
     return undefined;
   }
-  const caps = info.metadata.capabilities;
-  const appPackageOrBundle =
-    caps.appPackage ?? caps['appium:bundleId'] ?? caps.bundleId ?? caps.app;
   return {
     ...(info.metadata.platform ? { platform: info.metadata.platform } : {}),
-    ...(appPackageOrBundle
-      ? { appPackageOrBundle: String(appPackageOrBundle) }
-      : {}),
     ...(info.currentContext ? { contextName: info.currentContext } : {}),
   };
 }
@@ -156,11 +156,13 @@ function buildRecord(
     schemaVersion: 1,
     producer: { name: 'appium-mcp', version: pkg.version },
     evidenceId: randomUUID(),
-    toolName: input.toolName,
     status,
-    stage: input.stage,
-    ...(input.locator ? { locator: input.locator } : {}),
-    ...(input.element ? { element: input.element } : {}),
+    action: {
+      name: input.name,
+      ...(input.stage ? { stage: input.stage } : {}),
+      ...(input.locator ? { locator: input.locator } : {}),
+      ...(input.element ? { element: input.element } : {}),
+    },
     ...(input.context ? { context: input.context } : {}),
     timing: {
       startedAt: new Date(input.startedAt).toISOString(),

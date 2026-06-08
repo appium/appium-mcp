@@ -103,7 +103,7 @@ describe('withEvidence', () => {
   test('is a no-op when disabled', () => {
     const result = textResult('ok');
     const out = withEvidence(result, {
-      toolName: 'appium_find_element',
+      name: 'appium_find_element',
       stage: 'locate',
       startedAt: Date.now(),
     });
@@ -114,7 +114,7 @@ describe('withEvidence', () => {
   test('appends a resource block without mutating the text', () => {
     enableEvidence();
     const out = withEvidence(textResult("elementId 'abc'\nfound"), {
-      toolName: 'appium_find_element',
+      name: 'appium_find_element',
       stage: 'locate',
       startedAt: Date.now(),
       locator: { strategy: 'accessibility id', selector: 'login' },
@@ -140,7 +140,7 @@ describe('withEvidence', () => {
     const startedAt = Date.now();
     const record = readRecord(
       withEvidence(textResult('found'), {
-        toolName: 'appium_find_element',
+        name: 'appium_find_element',
         stage: 'locate',
         startedAt,
         locator: { strategy: 'id', selector: 'btn' },
@@ -152,9 +152,10 @@ describe('withEvidence', () => {
     expect(record.producer.name).toBe('appium-mcp');
     expect(record.evidenceId).toEqual(expect.any(String));
     expect(record.status).toBe('success');
-    expect(record.stage).toBe('locate');
-    expect(record.locator).toEqual({ strategy: 'id', selector: 'btn' });
-    expect(record.element).toEqual({ webdriverId: 'el-1' });
+    expect(record.action.name).toBe('appium_find_element');
+    expect(record.action.stage).toBe('locate');
+    expect(record.action.locator).toEqual({ strategy: 'id', selector: 'btn' });
+    expect(record.action.element).toEqual({ webdriverId: 'el-1' });
     expect(record.error).toBeUndefined();
     expect(record.timing.durationMs).toBeGreaterThanOrEqual(0);
     expect(record.timing.startedAt).toBe(new Date(startedAt).toISOString());
@@ -164,7 +165,7 @@ describe('withEvidence', () => {
     enableEvidence();
     const record = readRecord(
       withEvidence(errorResult('Failed to find element. Error: stale'), {
-        toolName: 'appium_find_element',
+        name: 'appium_find_element',
         stage: 'locate',
         startedAt: Date.now(),
         error: new Error('stale element reference'),
@@ -180,7 +181,7 @@ describe('withEvidence', () => {
     enableEvidence();
     const record = readRecord(
       withEvidence(errorResult('The operation timed out'), {
-        toolName: 'appium_gesture',
+        name: 'appium_gesture',
         stage: 'interact',
         startedAt: Date.now(),
       })
