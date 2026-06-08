@@ -83,7 +83,10 @@ export default function findElement(server: FastMCP): void {
         const elementId = readWebElementId(element);
         if (!elementId) {
           return withEvidence(
-            errorResult('Element was returned without a valid element ID'),
+            errorResult(
+              `Element not found: the locator matched no resolvable element ` +
+                `(no element id returned) for strategy '${args.strategy}' selector '${args.selector}'.`
+            ),
             {
               name: 'appium_find_element',
               stage: 'locate',

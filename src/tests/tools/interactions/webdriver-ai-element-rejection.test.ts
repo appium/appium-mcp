@@ -10,6 +10,7 @@ jest.unstable_mockModule('../../../persistence.js', () => ({
 jest.unstable_mockModule('../../../session-store.js', () => ({
   getDriver: jest.fn(),
   setSession: jest.fn(),
+  getSessionInfo: jest.fn(() => null),
 }));
 
 jest.unstable_mockModule('../../../command.js', () => ({
@@ -131,5 +132,26 @@ describe('interaction tools and ai-element tokens', () => {
     expect(result.isError).toBe(true);
     expect(textFromResult(result)).toBe(AI_WEBDRIVER_REJECTION);
     expect(mockGetElementAttribute).not.toHaveBeenCalled();
+  });
+
+  test('find_element reports ELEMENT_NOT_FOUND for an id-less match', async () => {
+    process.env.APPIUM_MCP_EVIDENCE = '1';
+    try {
+      mockGetDriver.mockReturnValue({
+        findElement: jest.fn(async () => ({})), // resolves, but no element id
+      } as any);
+      const tool = await loadTool('../../../tools/interactions/find.js');
+      const result = await runTool(tool, {
+        strategy: 'id',
+        selector: 'org.x:id/nope',
+      });
+
+      expect(result.isError).toBe(true);
+      const block = result.content.find((c: any) => c.type === 'resource');
+      const record = JSON.parse(block.resource.text);
+      expect(record.error.code).toBe('ELEMENT_NOT_FOUND');
+    } finally {
+      delete process.env.APPIUM_MCP_EVIDENCE;
+    }
   });
 });
