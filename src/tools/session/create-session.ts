@@ -23,6 +23,15 @@ import type { ContentResult } from 'fastmcp';
 import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 import WebDriver from 'webdriver';
 
+/**
+ * What driver should the appium-mcp session management tool create and manage.
+ * 'ios' and 'android' create sessions with the embedded Appium drivers inside this MCP server.
+ * 'general' is for remote servers only and just passes the capabilities through as-is without adding any defaults,
+ * so it's up to the user to specify the correct driver in their capabilities (e.g., Windows, macOS, custom).
+ *
+ */
+export const DRIVER_MODE_PLATFORMS = ['ios', 'android', 'general'] as const;
+
 // Define capabilities type
 interface Capabilities {
   platformName: string;
@@ -212,7 +221,7 @@ export function validateRemoteServerUrl(
  * servers. Supports both local and remote Appium server connections.
  *
  * @param {Object} args - Action arguments
- * @param {'ios' | 'android' | 'general'} args.platform - REQUIRED. The target
+ * @param {(typeof DRIVER_MODE_PLATFORMS)[number]} args.platform - REQUIRED. The target
  * platform. For local servers, must match the platform explicitly selected via
  * `select_device`. Use 'general' only with `remoteServerUrl` for non-Android/iOS
  * drivers.
@@ -227,7 +236,7 @@ export function validateRemoteServerUrl(
  * Returns a tool-execution error result (isError: true) on failure.
  */
 export async function createSessionAction(args: {
-  platform: 'ios' | 'android' | 'general';
+  platform: (typeof DRIVER_MODE_PLATFORMS)[number];
   capabilities?: Record<string, any>;
   remoteServerUrl?: string;
 }): Promise<ContentResult> {
@@ -358,7 +367,7 @@ export async function createSessionAction(args: {
 function buildCreateSessionFailureMessage(
   error: unknown,
   ctx: {
-    platform: 'ios' | 'android' | 'general';
+    platform: (typeof DRIVER_MODE_PLATFORMS)[number];
     remoteServerUrl?: string;
     finalCapabilities?: Capabilities;
   }
