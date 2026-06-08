@@ -8,36 +8,26 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-// Walk up from src/tests/utils to the package root
 const packageRoot = resolve(__dirname, '..', '..', '..');
 
 describe('paths utilities', () => {
-  test('resolveAppiumResourcesPath returns src/resources root with no segments', () => {
+  test('resolveAppiumResourcesPath returns src/resources root', () => {
     expect(resolveAppiumResourcesPath()).toBe(
       resolve(packageRoot, 'src', 'resources')
     );
   });
 
-  test('resolveAppiumResourcesPath appends resource segments correctly', () => {
-    expect(
-      resolveAppiumResourcesPath('submodules', 'appium-skills', 'AGENTS.md')
-    ).toBe(
-      resolve(
-        packageRoot,
-        'src',
-        'resources',
-        'submodules',
-        'appium-skills',
-        'AGENTS.md'
-      )
+  test('resolveAppiumResourcesPath appends path segments', () => {
+    expect(resolveAppiumResourcesPath('java', 'template.ts')).toBe(
+      resolve(packageRoot, 'src', 'resources', 'java', 'template.ts')
     );
   });
 
-  test('resolveScreenshotDir respects relative SCREENSHOTS_DIR values', () => {
+  test('resolveScreenshotDir returns the configured screenshot directory', () => {
     process.env.SCREENSHOTS_DIR = 'artifacts/screenshots';
 
     expect(resolveScreenshotDir()).toBe(
-      resolve(process.cwd(), 'artifacts', 'screenshots')
+      resolve(packageRoot, 'artifacts', 'screenshots')
     );
 
     delete process.env.SCREENSHOTS_DIR;

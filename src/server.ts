@@ -1,7 +1,12 @@
+import type { AppiumMcpPlugin } from './core.js';
 import { createAppiumMcpServer } from './create-server.js';
-import { AppiumDocumentation } from './tools/documentation/plugin.js';
 
-const server = createAppiumMcpServer({
-  plugins: [new AppiumDocumentation()],
-});
+const plugins: AppiumMcpPlugin[] = [];
+
+try {
+  const { AppiumDocumentation } = await import('@appium/mcp-documentation');
+  plugins.push(new AppiumDocumentation());
+} catch (_err) {}
+
+const server = createAppiumMcpServer({ plugins });
 export default server;
