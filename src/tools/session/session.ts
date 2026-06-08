@@ -1,7 +1,10 @@
 import type { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { attachSessionAction } from './attach-session.js';
-import { createSessionAction } from './create-session.js';
+import {
+  createSessionAction,
+  DRIVER_MODE_PLATFORMS,
+} from './create-session.js';
 import { deleteSessionAction } from './delete-session.js';
 import { detachSessionAction } from './detach-session.js';
 import { listSessionsAction } from './list-sessions.js';
@@ -46,7 +49,7 @@ const schema = z.object({
         'select: Set an existing Appium session as the active session for subsequent tool calls (requires sessionId).'
     ),
   platform: z
-    .enum(['ios', 'android', 'general'])
+    .enum(DRIVER_MODE_PLATFORMS)
     .optional()
     .describe(
       'Required for create. ' +
