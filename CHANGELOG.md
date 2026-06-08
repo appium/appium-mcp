@@ -1,3 +1,9 @@
+## [1.83.0](https://github.com/appium/appium-mcp/compare/v1.82.2...v1.83.0) (2026-06-08)
+
+### Features
+
+* emit structured action evidence records ([#386](https://github.com/appium/appium-mcp/issues/386)) ([d42593e](https://github.com/appium/appium-mcp/commit/d42593e86c0bb6535b4e1c3e855c6d7e307e9611))
+
 ## [1.82.2](https://github.com/appium/appium-mcp/compare/v1.82.1...v1.82.2) (2026-06-08)
 
 ### Miscellaneous Chores
