@@ -5,7 +5,7 @@
  * ```ts
  * import { createAppiumMcpServer } from 'appium-mcp/core';
  *
- * const server = createAppiumMcpServer({
+ * const server = await createAppiumMcpServer({
  *   plugins: [new CheckoutPlugin(), new LoginGuardPlugin()],
  * });
  *
@@ -22,6 +22,7 @@ import log from './logger.js';
 import { PluginManager } from './plugin.js';
 import type { AppiumMcpPlugin } from './plugin.js';
 import { installPolicy, type AppiumMcpPolicy } from './policy.js';
+import { initializeOpenTelemetry } from './telemetry/init.js';
 import { installTelemetryWrappers } from './telemetry/wrapOperations.js';
 
 const SERVER_VERSION = pkg.version as `${number}.${number}.${number}`;
@@ -83,11 +84,11 @@ type DisconnectSessionPolicy = 'delete_all' | 'skip';
  * server.  It replicates the setup that the default `server.ts` performs, while
  * also registering plugin tools and lifecycle hooks.
  *
- * @returns A configured `FastMCP` instance ready to be `start()`-ed.
+ * @returns A promise resolving to a configured `FastMCP` instance ready to be `start()`-ed.
  */
-export function createAppiumMcpServer(
+export async function createAppiumMcpServer(
   options: CreateAppiumMcpServerOptions = {}
-): FastMCP {
+): Promise<FastMCP> {
   const {
     plugins = [],
     serverName = 'MCP Appium',
@@ -107,6 +108,7 @@ export function createAppiumMcpServer(
   });
 
   installPolicy(server, policy);
+  await initializeOpenTelemetry();
   installTelemetryWrappers(server);
 
   // -------------------------------------------------------------------------

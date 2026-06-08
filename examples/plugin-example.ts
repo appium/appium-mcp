@@ -343,7 +343,7 @@ class ArtifactPipelinePlugin implements AppiumMcpPlugin {
 // ---------------------------------------------------------------------------
 // Wire everything together
 // ---------------------------------------------------------------------------
-const server = createAppiumMcpServer({
+const server = await createAppiumMcpServer({
   plugins: [
     new CheckoutPlugin(),
     new TestAssetsPlugin(),

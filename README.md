@@ -362,7 +362,7 @@ HTTP and streamable MCP clients may **disconnect briefly** (reconnect, reload, p
 
 Use `appium-mcp/core` to compose the default Appium MCP server with custom business logic without maintaining a fork. Plugins can register MCP tools, prompts, resources, and resource templates, and can wrap tool execution with lifecycle hooks. Call hooks are tool-only: prompts, resources, and resource templates are registered with FastMCP but are not wrapped by `beforeCall` or `afterCall`.
 
-`createAppiumMcpServer({ policy })` can also hide nonmatching tools and resources from MCP discovery. Policy rules are regular expressions matched against tool and resource names exactly as registered. The policy is applied at registration time to both single and batch registration methods. Resource policy matches the resource `name` only; resources or resource templates without a string `name` cannot match a non-empty `allowResources` list.
+`createAppiumMcpServer({ policy })` can also hide nonmatching tools and resources from MCP discovery. The factory is async, so await it before starting the returned server. Policy rules are regular expressions matched against tool and resource names exactly as registered. The policy is applied at registration time to both single and batch registration methods. Resource policy matches the resource `name` only; resources or resource templates without a string `name` cannot match a non-empty `allowResources` list.
 
 ```ts
 import { createAppiumMcpServer } from 'appium-mcp/core';
@@ -402,7 +402,7 @@ class CheckoutPlugin implements AppiumMcpPlugin {
   }
 }
 
-const server = createAppiumMcpServer({
+const server = await createAppiumMcpServer({
   plugins: [new CheckoutPlugin()],
   additionalInstructions: 'Custom checkout policies are active.',
   policy: {

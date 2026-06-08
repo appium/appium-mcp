@@ -192,9 +192,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     expect(registerCalled).toBe(true);
     expect(initialized).toBe(false);
@@ -224,9 +224,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
     const result = (await server.tools[0].execute({}, {})) as ToolCallResult;
 
     expect(calls).toEqual(['before:builtin_tool', 'after:builtin_tool']);
@@ -236,13 +236,13 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     });
   });
 
-  test('hides nonmatching built-in tools and resources from registration', () => {
-    const server = createAppiumMcpServer({
+  test('hides nonmatching built-in tools and resources from registration', async () => {
+    const server = (await createAppiumMcpServer({
       policy: {
         allowTools: [/^builtin_tool$/],
         allowResources: [/^Generate Code With Locators$/],
       },
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     expect(server.tools.map((tool) => tool.name)).toEqual(['builtin_tool']);
     expect(
@@ -252,7 +252,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     ).toEqual(['generate://code-with-locators']);
   });
 
-  test('applies policy to plugin tools before registration', () => {
+  test('applies policy to plugin tools before registration', async () => {
     const plugin: AppiumMcpPlugin = {
       name: 'policy-plugin',
       version: '1.0.0',
@@ -276,12 +276,12 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
       policy: {
         allowTools: [/^plugin_allowed$/, /^builtin_tool$/],
       },
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     expect(server.tools.map((tool) => tool.name)).toEqual([
       'builtin_tool',
@@ -305,9 +305,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     expect(server.tools.map((tool) => tool.name)).toEqual([
       'blocked_tool',
@@ -328,13 +328,13 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     });
   });
 
-  test('applies policy to batch tool and resource registration methods', () => {
-    const server = createAppiumMcpServer({
+  test('applies policy to batch tool and resource registration methods', async () => {
+    const server = (await createAppiumMcpServer({
       policy: {
         allowTools: [/^builtin_tool$/, /^batch_allowed_/],
         allowResources: [/^Batch Allowed/],
       },
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     server.addTools([
       {
@@ -420,12 +420,12 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
       policy: {
         allowTools: [/^builtin_tool$/, /^batch_allowed$/],
       },
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     server.addTools([
       {
@@ -462,13 +462,13 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     );
   });
 
-  test('skips fully denied batch registration calls', () => {
-    const server = createAppiumMcpServer({
+  test('skips fully denied batch registration calls', async () => {
+    const server = (await createAppiumMcpServer({
       policy: {
         allowTools: [/^builtin_tool$/],
         allowResources: [/^Generate Code With Locators$/],
       },
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     server.addTools([
       {
@@ -514,13 +514,13 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     );
   });
 
-  test('matches resource templates by name only', () => {
-    const server = createAppiumMcpServer({
+  test('matches resource templates by name only', async () => {
+    const server = (await createAppiumMcpServer({
       policy: {
         allowTools: [/^builtin_tool$/],
         allowResources: [/^Allowed Template$/],
       },
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     server.addResourceTemplate({
       uriTemplate: 'batch://not-the-policy-target/{id}',
@@ -544,14 +544,14 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     );
   });
 
-  test('fails during construction when policy allowlists are invalid', () => {
-    expect(() =>
+  test('fails during construction when policy allowlists are invalid', async () => {
+    await expect(
       createAppiumMcpServer({
         policy: {
           allowTools: ['builtin_tool'] as unknown as RegExp[],
         },
       })
-    ).toThrow('policy.allowTools must contain only RegExp values');
+    ).rejects.toThrow('policy.allowTools must contain only RegExp values');
   });
 
   test('destroys plugins only after the last client disconnects', async () => {
@@ -568,9 +568,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     await server.emitTest('connect', { session: 'client-1' });
     await server.emitTest('connect', { session: 'client-2' });
@@ -603,9 +603,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     const connectA = server.emitTest('connect', { session: 'client-1' });
     const connectB = server.emitTest('connect', { session: 'client-2' });
@@ -636,9 +636,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     await server.emitTest('connect', { session: 'client-1' });
     const disconnect = server.emitTest('disconnect', { session: 'client-1' });
@@ -676,9 +676,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     const connect = server.emitTest('connect', { session: 'client-1' });
     await Promise.resolve();
@@ -706,9 +706,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     };
 
-    const server = createAppiumMcpServer({
+    const server = (await createAppiumMcpServer({
       plugins: [plugin],
-    }) as unknown as MockFastMCP;
+    })) as unknown as MockFastMCP;
 
     await server.emitTest('connect', { session: 'client-1' });
     await server.emitTest('disconnect', { session: 'client-1' });
