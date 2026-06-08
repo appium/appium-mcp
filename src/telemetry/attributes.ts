@@ -5,9 +5,11 @@
  * source XML, prompts, or other user payloads.
  */
 
-import { getSessionId } from '../session-store.js';
 import { isTruthyEnvValue } from '../utils/env.js';
 import { isSensitiveKey } from '../utils/sensitive.js';
+import { getSessionId } from '../session-store.js';
+
+const MAX_ATTRIBUTE_VALUE_LENGTH = 2048;
 
 /**
  * Determines whether telemetry is enabled based on the APPIUM_MCP_OTEL_ENABLED environment variable.
@@ -53,31 +55,29 @@ export function safeAttributeValue(value: unknown): string | number | boolean {
     return '';
   }
 
-  return String(value);
+  try {
+    const serialized = JSON.stringify(value);
+    return truncateAttributeValue(serialized ?? String(value));
+  } catch {
+    return truncateAttributeValue(String(value));
+  }
 }
 
 /**
  * Safely extracts the session ID from the given arguments.
- * If the arguments object has a string `sessionId` property, that value is returned.
- * Otherwise, the current session ID is retrieved from the session store and returned if it is a string.
- * If no valid session ID can be found, undefined is returned.
+ * Falls back to the active session ID when no string argument sessionId exists.
  * @param args The arguments object potentially containing a sessionId.
  * @returns The session ID if present and valid, otherwise undefined.
  */
 export function safeSessionId(args: unknown): string | undefined {
-  let sessionId: string | undefined;
-  if (!args || typeof args !== 'object' || !('sessionId' in args)) {
-    sessionId = getSessionId() ?? undefined;
-    if (sessionId) {
+  if (args && typeof args === 'object' && 'sessionId' in args) {
+    const sessionId = (args as { sessionId?: unknown }).sessionId;
+    if (typeof sessionId === 'string' && sessionId.length > 0) {
       return sessionId;
     }
-    return undefined;
   }
 
-  sessionId = (args as { sessionId?: string }).sessionId;
-  return typeof sessionId === 'string' && sessionId.length > 0
-    ? sessionId
-    : undefined;
+  return getSessionId() ?? undefined;
 }
 
 /**
@@ -93,4 +93,10 @@ export function safeInputKeys(args: unknown): string[] {
   return Object.keys(args)
     .filter((key) => !isSensitiveKey(key))
     .sort();
+}
+
+function truncateAttributeValue(value: string): string {
+  return value.length > MAX_ATTRIBUTE_VALUE_LENGTH
+    ? `${value.slice(0, MAX_ATTRIBUTE_VALUE_LENGTH)}...`
+    : value;
 }
