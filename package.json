@@ -93,6 +93,7 @@
     "src",
     "!src/tests",
     "dist",
+    "!dist/tests",
     "CHANGELOG.md",
     "README.md",
     "LICENSE",
