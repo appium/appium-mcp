@@ -1,3 +1,33 @@
+## [1.84.2](https://github.com/appium/appium-mcp/compare/v1.84.1...v1.84.2) (2026-06-09)
+
+### Bug Fixes
+
+* **find:** surface remote "no such element" as a thrown not-found ([#392](https://github.com/appium/appium-mcp/issues/392)) ([254663c](https://github.com/appium/appium-mcp/commit/254663cff45a9e74c38327b89b87d918970ff28e))
+
+## [1.84.1](https://github.com/appium/appium-mcp/compare/v1.84.0...v1.84.1) (2026-06-09)
+
+### Miscellaneous Chores
+
+* drop dist/tests from package as well ([#393](https://github.com/appium/appium-mcp/issues/393)) ([6ff2d8e](https://github.com/appium/appium-mcp/commit/6ff2d8e061c2b0a1fbfa11db8dbc885359280e64))
+
+## [1.84.0](https://github.com/appium/appium-mcp/compare/v1.83.0...v1.84.0) (2026-06-08)
+
+### Features
+
+* extratc docs stuff into a new package ([#384](https://github.com/appium/appium-mcp/issues/384)) ([1daddb3](https://github.com/appium/appium-mcp/commit/1daddb3563d4f646e924623889db5b8b3eab7ce9))
+
+## [1.83.0](https://github.com/appium/appium-mcp/compare/v1.82.2...v1.83.0) (2026-06-08)
+
+### Features
+
+* emit structured action evidence records ([#386](https://github.com/appium/appium-mcp/issues/386)) ([d42593e](https://github.com/appium/appium-mcp/commit/d42593e86c0bb6535b4e1c3e855c6d7e307e9611))
+
+## [1.82.2](https://github.com/appium/appium-mcp/compare/v1.82.1...v1.82.2) (2026-06-08)
+
+### Miscellaneous Chores
+
+* define driver mode platform ([#388](https://github.com/appium/appium-mcp/issues/388)) ([a86b5ee](https://github.com/appium/appium-mcp/commit/a86b5ee0530fa0b60f27d5ad5121b4e4b6a9be6c))
+
 ## [1.82.1](https://github.com/appium/appium-mcp/compare/v1.82.0...v1.82.1) (2026-06-03)
 
 ### Miscellaneous Chores

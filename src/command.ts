@@ -279,6 +279,43 @@ export async function elementClick(
 }
 
 /**
+ * Find a single element by strategy + selector.
+ *
+ * @param driver - The driver instance to query.
+ * @param strategy
+ * @param selector
+ * @returns An element
+ */
+export async function findElement(
+  driver: DriverInstance,
+  strategy: string,
+  selector: string
+): Promise<unknown> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.findElement(strategy, selector);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.findElement(strategy, selector);
+  }
+  const result = await (driver as Client).findElement(strategy, selector);
+  if (
+    typeof result === 'object' &&
+    result !== null &&
+    'error' in result &&
+    (result as { error?: unknown }).error === 'no such element'
+  ) {
+    const message = (result as { message?: unknown }).message;
+    const err = new Error(
+      typeof message === 'string'
+        ? message
+        : 'no such element: An element could not be located on the page using the given search parameters'
+    );
+    err.name = 'no such element';
+    throw err;
+  }
+  return result;
+}
+
+/**
  * Get the bounding rectangle for an element.
  *
  * @param driver - The driver instance to query.

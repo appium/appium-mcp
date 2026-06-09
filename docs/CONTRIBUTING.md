@@ -619,51 +619,6 @@ Look for `[TOOL START]` / `[TOOL END]` (and `[TOOL END WITH ERROR]` on `isError:
 
 Before releasing a new version, ensure documentation and skills submodules are up to date:
 
-### Updating Documentation And Skills Submodules
-
-This project uses Git submodules to automatically sync documentation and agent skill content from the official Appium repositories. Before each release, you must update the submodules to ensure you have the latest markdown and image assets.
-
-**Required steps before each release:**
-
-1. **Update all submodules to latest commits:**
-
-   ```bash
-   ./scripts/update-submodules.sh
-   ```
-
-   This script will:
-
-   - Update all Git submodules to their latest commits
-  - Reapply sparse-checkout to only fetch `.md` and image files (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`)
-  - Ensure you have the latest documentation and Appium skills without downloading entire repositories
-
-2. **Re-index the documentation (if needed):**
-
-   ```bash
-   npm run build
-   npm run index-docs
-   ```
-
-3. **Commit the updated submodule references:**
-   ```bash
-   git add .gitmodules src/resources/submodules
-   git commit -m "chore: update documentation submodules"
-   ```
-
-### Why This Is Important
-
-- **Fresh Documentation**: Ensures RAG indexing uses the latest Appium documentation
-- **Fresh Skills**: Ensures environment-setup guidance stays aligned with upstream Appium agent workflows
-- **Smaller Repository**: Sparse-checkout keeps repository size manageable by only fetching documentation files
-- **Automatic Sync**: Submodules automatically track upstream repository commits
-- **Reproducibility**: Submodule commits are tracked, ensuring consistent documentation across environments
-
-See [SUBMODULES.md](../docs/SUBMODULES.md) for detailed information about submodule setup and usage.
-
----
-
----
-
 ## Formatting Best Practices
 
 ### Long Descriptions

@@ -176,6 +176,16 @@ afterEach(() => {
 });
 
 describe('createAppiumMcpServer plugin lifecycle', () => {
+  test('disables FastMCP roots negotiation', () => {
+    createAppiumMcpServer();
+
+    expect(registeredServers[0]?.options).toMatchObject({
+      roots: {
+        enabled: false,
+      },
+    });
+  });
+
   test('registers plugin capabilities during construction but initializes lazily', async () => {
     let registerCalled = false;
     let initialized = false;

@@ -7,6 +7,8 @@ import {
   toolErrorMessage,
   readWebElementId,
 } from '../tool-response.js';
+import { withEvidence, evidenceContext } from '../evidence.js';
+import { findElement as findSingleElement } from '../../command.js';
 
 export const findElementSchema = z.object({
   strategy: z
@@ -74,19 +76,56 @@ export default function findElement(server: FastMCP): void {
       }
       const { driver } = resolved;
 
+      const startedAt = Date.now();
+      const locator = { strategy: args.strategy, selector: args.selector };
+      const context = await evidenceContext(args.sessionId);
       try {
-        const element = await driver.findElement(args.strategy, args.selector);
+        const element = await findSingleElement(
+          driver,
+          args.strategy,
+          args.selector
+        );
         const elementId = readWebElementId(element);
         if (!elementId) {
-          return errorResult('Element was returned without a valid element ID');
+          return withEvidence(
+            errorResult('Element was returned without a valid element ID'),
+            {
+              name: 'appium_find_element',
+              stage: 'locate',
+              startedAt,
+              locator,
+              context,
+            }
+          );
         }
-        return textResultWithPrimaryElementId(
-          elementId,
-          `Successfully found element ${args.selector} with strategy ${args.strategy}.`
+        return withEvidence(
+          textResultWithPrimaryElementId(
+            elementId,
+            `Successfully found element ${args.selector} with strategy ${args.strategy}.`
+          ),
+          {
+            name: 'appium_find_element',
+            stage: 'locate',
+            startedAt,
+            locator,
+            element: { webdriverId: elementId },
+            context,
+          }
         );
       } catch (err: unknown) {
-        const errorMessage = toolErrorMessage(err);
-        return errorResult(`Failed to find element. Error: ${errorMessage}`);
+        return withEvidence(
+          errorResult(
+            `Failed to find element. Error: ${toolErrorMessage(err)}`
+          ),
+          {
+            name: 'appium_find_element',
+            stage: 'locate',
+            startedAt,
+            locator,
+            context,
+            error: err,
+          }
+        );
       }
     },
   });

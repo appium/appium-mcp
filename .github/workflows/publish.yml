@@ -17,12 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
-          fetch-depth: 0 # Fetch all tags for version detection
-      - name: Setup submodules sparse-checkout
-        run: |
-          chmod +x scripts/setup-submodules-sparse.sh
-          ./scripts/setup-submodules-sparse.sh
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: lts/*
@@ -31,10 +26,6 @@ jobs:
         name: Install dependencies
       - run: npm run build
         name: Build
-      - run: |
-          npm run zip-assets
-          rm -rf src/resources/submodules
-        name: Zip submodules for distribution
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

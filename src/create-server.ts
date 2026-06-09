@@ -105,6 +105,10 @@ export async function createAppiumMcpServer(
     name: serverName,
     version: serverVersion,
     instructions,
+    // Appium MCP will not allow client to ask the local workspace/project folders.
+    roots: {
+      enabled: false,
+    },
   });
 
   installPolicy(server, policy);
