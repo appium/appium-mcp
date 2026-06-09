@@ -1,3 +1,9 @@
+## [1.84.1](https://github.com/appium/appium-mcp/compare/v1.84.0...v1.84.1) (2026-06-09)
+
+### Miscellaneous Chores
+
+* drop dist/tests from package as well ([#393](https://github.com/appium/appium-mcp/issues/393)) ([6ff2d8e](https://github.com/appium/appium-mcp/commit/6ff2d8e061c2b0a1fbfa11db8dbc885359280e64))
+
 ## [1.84.0](https://github.com/appium/appium-mcp/compare/v1.83.0...v1.84.0) (2026-06-08)
 
 ### Features
