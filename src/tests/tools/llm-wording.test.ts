@@ -15,6 +15,10 @@ jest.unstable_mockModule('../../tools/tool-response', () => ({
   toolErrorMessage: jest.fn(mockToolErrorMessage),
 }));
 
+jest.unstable_mockModule('../../command', () => ({
+  findElement: jest.fn(),
+}));
+
 jest.unstable_mockModule('../../tools/session/attach-session', () => ({
   attachSessionAction: jest.fn(),
 }));

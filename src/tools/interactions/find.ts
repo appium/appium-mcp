@@ -8,6 +8,7 @@ import {
   readWebElementId,
 } from '../tool-response.js';
 import { withEvidence, evidenceContext } from '../evidence.js';
+import { findElement as findSingleElement } from '../../command.js';
 
 export const findElementSchema = z.object({
   strategy: z
@@ -79,7 +80,11 @@ export default function findElement(server: FastMCP): void {
       const locator = { strategy: args.strategy, selector: args.selector };
       const context = await evidenceContext(args.sessionId);
       try {
-        const element = await driver.findElement(args.strategy, args.selector);
+        const element = await findSingleElement(
+          driver,
+          args.strategy,
+          args.selector
+        );
         const elementId = readWebElementId(element);
         if (!elementId) {
           return withEvidence(
