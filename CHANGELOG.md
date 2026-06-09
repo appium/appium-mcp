@@ -1,3 +1,9 @@
+## [1.84.2](https://github.com/appium/appium-mcp/compare/v1.84.1...v1.84.2) (2026-06-09)
+
+### Bug Fixes
+
+* **find:** surface remote "no such element" as a thrown not-found ([#392](https://github.com/appium/appium-mcp/issues/392)) ([254663c](https://github.com/appium/appium-mcp/commit/254663cff45a9e74c38327b89b87d918970ff28e))
+
 ## [1.84.1](https://github.com/appium/appium-mcp/compare/v1.84.0...v1.84.1) (2026-06-09)
 
 ### Miscellaneous Chores
