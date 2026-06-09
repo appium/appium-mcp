@@ -3,13 +3,13 @@ import { describe, test, expect, jest, afterEach } from '@jest/globals';
 // Mock heavy native driver packages so the module can be imported without
 // native dependencies installed in the test environment.
 await jest.unstable_mockModule('appium-uiautomator2-driver', () => ({
-  AndroidUiautomator2Driver: class MockAndroidUiautomator2Driver {
+  AndroidUiautomator2Driver: class AndroidUiautomator2Driver {
     async deleteSession() {}
   },
 }));
 
 await jest.unstable_mockModule('appium-xcuitest-driver', () => ({
-  XCUITestDriver: class MockXCUITestDriver {
+  XCUITestDriver: class XCUITestDriver {
     async deleteSession() {}
   },
 }));
