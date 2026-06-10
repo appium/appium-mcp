@@ -93,16 +93,21 @@ export default function session(server: FastMCP): void {
     execute: async (args: z.infer<typeof schema>): Promise<any> => {
       try {
         // Parse capabilities: some LLMs (e.g. Gemini) pass a JSON string instead of an object.
-        const parsedCapabilities: Record<string, any> | undefined = (() => {
-          if (typeof args.capabilities === 'string') {
-            try {
-              return JSON.parse(args.capabilities) as Record<string, any>;
-            } catch {
-              return undefined;
-            }
+        let parsedCapabilities: Record<string, any> | undefined;
+        if (typeof args.capabilities === 'string') {
+          try {
+            parsedCapabilities = JSON.parse(args.capabilities) as Record<
+              string,
+              any
+            >;
+          } catch (err: unknown) {
+            return errorResult(
+              `Invalid capabilities JSON: ${toolErrorMessage(err)}`
+            );
           }
-          return args.capabilities;
-        })();
+        } else {
+          parsedCapabilities = args.capabilities;
+        }
 
         if (args.action === 'create') {
           if (!args.platform) {
