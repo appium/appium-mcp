@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from '@jest/globals';
 import {
   isArgumentValueTelemetryEnabled,
   isTelemetryEnabled,
+  safeAttributeValue,
   safeInputKeys,
   safeSessionId,
 } from '../telemetry/attributes.js';
@@ -71,6 +72,57 @@ describe('telemetry attributes', () => {
       'mcp.input.value.strict': true,
       'mcp.input.value.timeout': 1000,
     });
+  });
+
+  test('keeps primitive attribute values unchanged and normalizes nullish values', () => {
+    expect(safeAttributeValue('iOS')).toBe('iOS');
+    expect(safeAttributeValue(2)).toBe(2);
+    expect(safeAttributeValue(false)).toBe(false);
+    expect(safeAttributeValue(null)).toBe('');
+    expect(safeAttributeValue(undefined)).toBe('');
+  });
+
+  test('serializes object attribute values and redacts nested sensitive keys', () => {
+    expect(
+      safeAttributeValue({
+        capabilities: {
+          platformName: 'iOS',
+          appiumApiKey: 'secret',
+        },
+        nested: [
+          {
+            password: 'also-secret',
+          },
+        ],
+      })
+    ).toBe(
+      JSON.stringify({
+        capabilities: {
+          platformName: 'iOS',
+          appiumApiKey: '[REDACTED]',
+        },
+        nested: [
+          {
+            password: '[REDACTED]',
+          },
+        ],
+      })
+    );
+  });
+
+  test('falls back to string conversion for unserializable attribute values', () => {
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+
+    expect(safeAttributeValue(circular)).toBe('[object Object]');
+  });
+
+  test('truncates long serialized attribute values', () => {
+    const value = safeAttributeValue({ text: 'x'.repeat(2100) });
+
+    expect(typeof value).toBe('string');
+    expect(value).toHaveLength(2051);
+    expect(String(value).endsWith('...')).toBe(true);
   });
 
   test('keeps sensitive argument names out of telemetry attributes', () => {
