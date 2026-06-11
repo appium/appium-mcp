@@ -4,6 +4,16 @@
 
 * add OpenTelemetry feature ([#385](https://github.com/appium/appium-mcp/issues/385)) ([99dee60](https://github.com/appium/appium-mcp/commit/99dee60e81491020cb7b03ed811629a4a955eeb8))
 
+### Miscellaneous Chores
+
+* **release:** 1.85.0 [skip ci] ([22d7957](https://github.com/appium/appium-mcp/commit/22d79570be7f5e8ea36dec302c21445823495e02))
+
+## [1.85.0](https://github.com/appium/appium-mcp/compare/v1.84.2...v1.85.0) (2026-06-11)
+
+### Features
+
+* add OpenTelemetry feature ([#385](https://github.com/appium/appium-mcp/issues/385)) ([99dee60](https://github.com/appium/appium-mcp/commit/99dee60e81491020cb7b03ed811629a4a955eeb8))
+
 ## [1.84.2](https://github.com/appium/appium-mcp/compare/v1.84.1...v1.84.2) (2026-06-09)
 
 ### Bug Fixes
