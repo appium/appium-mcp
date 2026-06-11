@@ -155,6 +155,34 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `SENTENCE_TRANSFORMERS_MODEL`             | Optional                               | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`)                                                                                                                                                                                                                                   |
 | `APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH` | Optional                               | Absolute file path to persist attached remote session info across server restarts (JSON format)                                                                                                                                                                                                                                                    |
 | `APPIUM_MCP_EVIDENCE`                     | Optional                               | Set to `true` or `1` to attach a structured **action evidence record** (locator, resolved element id, context, timing, normalized error code) to `appium_find_element` and `appium_gesture` responses as an `application/vnd.appium.evidence+json` resource block, for CI/debugging. Disabled by default; responses are unchanged when unset.        |
+| `APPIUM_MCP_OTEL_ENABLED` | Optional | Set to `true` to enable OpenTelemetry tracing (disabled by default). |
+| `APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES` | Optional | Set to `true` to include sanitized non-sensitive argument values in spans; disabled by default because values may contain sensitive data. |
+| `OTEL_SERVICE_NAME` | Optional | Service name reported to the OpenTelemetry collector (example: `appium-mcp`). |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Optional | OTLP/HTTP traces endpoint (example: `http://127.0.0.1:4318/v1/traces`). |
+| `OTEL_TRACES_SAMPLER` | Optional | Trace sampling strategy; `parentbased_always_on` samples new root traces and follows parent decisions. |
+
+### OpenTelemetry tracing
+
+OpenTelemetry tracing is disabled by default. Set `APPIUM_MCP_OTEL_ENABLED=true` to initialize the Node.js OpenTelemetry SDK before the MCP server is constructed. The SDK uses standard `OTEL_*` environment variables, for example:
+
+```bash
+APPIUM_MCP_OTEL_ENABLED=true
+# Optional: include sanitized non-sensitive argument values in spans.
+# APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES=true
+OTEL_SERVICE_NAME=appium-mcp
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces
+OTEL_TRACES_SAMPLER=parentbased_always_on
+```
+
+When enabled, appium-mcp creates spans for MCP tool calls, prompt loads, resource reads, and resource template reads. Error status is recorded for thrown operation errors and MCP tool results marked with `isError`. Span attributes intentionally avoid raw screenshots, XML page source, prompts, credentials, and other high-cardinality or sensitive payloads.
+
+For local trace inspection, use the Jaeger setup in `tools/telemetry`:
+
+```bash
+npm run telemetry:jaeger:start
+```
+
+Then open `http://127.0.0.1:16686` and run appium-mcp with the environment values in `tools/telemetry/jaeger.env`.
 
 ### Capabilities
 
@@ -342,7 +370,7 @@ HTTP and streamable MCP clients may **disconnect briefly** (reconnect, reload, p
 
 Use `appium-mcp/core` to compose the default Appium MCP server with custom business logic without maintaining a fork. Plugins can register MCP tools, prompts, resources, and resource templates, and can wrap tool execution with lifecycle hooks. Call hooks are tool-only: prompts, resources, and resource templates are registered with FastMCP but are not wrapped by `beforeCall` or `afterCall`.
 
-`createAppiumMcpServer({ policy })` can also hide nonmatching tools and resources from MCP discovery. Policy rules are regular expressions matched against tool and resource names exactly as registered. The policy is applied at registration time to both single and batch registration methods. Resource policy matches the resource `name` only; resources or resource templates without a string `name` cannot match a non-empty `allowResources` list.
+`createAppiumMcpServer({ policy })` can also hide nonmatching tools and resources from MCP discovery. The factory is async, so await it before starting the returned server. Policy rules are regular expressions matched against tool and resource names exactly as registered. The policy is applied at registration time to both single and batch registration methods. Resource policy matches the resource `name` only; resources or resource templates without a string `name` cannot match a non-empty `allowResources` list.
 
 ```ts
 import { createAppiumMcpServer } from 'appium-mcp/core';
@@ -382,7 +410,7 @@ class CheckoutPlugin implements AppiumMcpPlugin {
   }
 }
 
-const server = createAppiumMcpServer({
+const server = await createAppiumMcpServer({
   plugins: [new CheckoutPlugin()],
   additionalInstructions: 'Custom checkout policies are active.',
   policy: {

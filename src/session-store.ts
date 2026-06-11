@@ -1,5 +1,5 @@
-import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
-import { XCUITestDriver } from 'appium-xcuitest-driver';
+import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
+import type { XCUITestDriver } from 'appium-xcuitest-driver';
 import type { Client } from 'webdriver';
 import log from './logger.js';
 import {
@@ -58,9 +58,7 @@ export const PLATFORM = {
 export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
   if (driver) {
     return (
-      !(driver instanceof AndroidUiautomator2Driver) &&
       driver.constructor?.name !== 'AndroidUiautomator2Driver' &&
-      !(driver instanceof XCUITestDriver) &&
       driver.constructor?.name !== 'XCUITestDriver'
     );
   }
@@ -82,10 +80,7 @@ export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
 export function isAndroidUiautomator2DriverSession(
   driver: NullableDriverInstance
 ): driver is AndroidUiautomator2Driver {
-  return (
-    driver instanceof AndroidUiautomator2Driver ||
-    driver?.constructor?.name === 'AndroidUiautomator2Driver'
-  );
+  return driver?.constructor?.name === 'AndroidUiautomator2Driver';
 }
 
 /**
@@ -102,10 +97,7 @@ export function isAndroidUiautomator2DriverSession(
 export function isXCUITestDriverSession(
   driver: NullableDriverInstance
 ): driver is XCUITestDriver {
-  return (
-    driver instanceof XCUITestDriver ||
-    driver?.constructor?.name === 'XCUITestDriver'
-  );
+  return driver?.constructor?.name === 'XCUITestDriver';
 }
 
 export async function setSession(
@@ -392,16 +384,10 @@ function selectNextActiveSessionId(deletedSessionId: string): string | null {
 }
 
 export const getPlatformName = (driver: any): string => {
-  if (
-    driver instanceof AndroidUiautomator2Driver ||
-    driver?.constructor?.name === 'AndroidUiautomator2Driver'
-  ) {
+  if (driver?.constructor?.name === 'AndroidUiautomator2Driver') {
     return PLATFORM.android;
   }
-  if (
-    driver instanceof XCUITestDriver ||
-    driver?.constructor?.name === 'XCUITestDriver'
-  ) {
+  if (driver?.constructor?.name === 'XCUITestDriver') {
     return PLATFORM.ios;
   }
 

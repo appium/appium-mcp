@@ -8,5 +8,5 @@ try {
   plugins.push(new AppiumDocumentation());
 } catch (_err) {}
 
-const server = createAppiumMcpServer({ plugins });
+const server = await createAppiumMcpServer({ plugins });
 export default server;
