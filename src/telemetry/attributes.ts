@@ -56,7 +56,9 @@ export function safeAttributeValue(value: unknown): string | number | boolean {
   }
 
   try {
-    const serialized = JSON.stringify(value);
+    const serialized = JSON.stringify(value, (key, val) =>
+      key && isSensitiveKey(key) ? '[REDACTED]' : val
+    );
     return truncateAttributeValue(serialized ?? String(value));
   } catch {
     return truncateAttributeValue(String(value));
