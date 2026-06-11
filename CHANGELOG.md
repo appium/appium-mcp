@@ -1,3 +1,9 @@
+## [1.85.1](https://github.com/appium/appium-mcp/compare/v1.85.0...v1.85.1) (2026-06-11)
+
+### Bug Fixes
+
+* **session:** return error on invalid capabilities JSON ([#397](https://github.com/appium/appium-mcp/issues/397)) ([c1be520](https://github.com/appium/appium-mcp/commit/c1be520ca463f9d5ff0ce60c70a0095585f4ce5d))
+
 ## [1.85.0](https://github.com/appium/appium-mcp/compare/v1.84.2...v1.85.0) (2026-06-11)
 
 ### Features
