@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from '@jest/globals';
 import {
   isArgumentValueTelemetryEnabled,
   isTelemetryEnabled,
+  safeAttributeValue,
   safeInputKeys,
   safeSessionId,
 } from '../telemetry/attributes.js';
@@ -71,6 +72,108 @@ describe('telemetry attributes', () => {
       'mcp.input.value.strict': true,
       'mcp.input.value.timeout': 1000,
     });
+  });
+
+  test('ignores non-object input values when argument value telemetry is enabled', () => {
+    process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
+
+    expect(safeInputValueAttributes(null)).toEqual({});
+    expect(safeInputValueAttributes(undefined)).toEqual({});
+    expect(safeInputValueAttributes('platformName')).toEqual({});
+    expect(safeInputValueAttributes(['platformName'])).toEqual({});
+  });
+
+  test('redacts nested sensitive values in safe input value attributes', () => {
+    process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
+
+    expect(
+      safeInputValueAttributes({
+        capabilities: {
+          platformName: 'iOS',
+          password: 'secret',
+          nested: {
+            appiumApiKey: 'also-secret',
+          },
+        },
+      })
+    ).toEqual({
+      'mcp.input.value.capabilities':
+        '{"platformName":"iOS","password":"[REDACTED]","nested":{"appiumApiKey":"[REDACTED]"}}',
+    });
+  });
+
+  test('uses string fallback for circular safe input value attributes', () => {
+    process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+
+    expect(safeInputValueAttributes({ metadata: circular })).toEqual({
+      'mcp.input.value.metadata': '[object Object]',
+    });
+  });
+
+  test('truncates long safe input value attributes', () => {
+    process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
+
+    const attributes = safeInputValueAttributes({
+      metadata: { text: 'x'.repeat(2100) },
+    });
+    const value = attributes['mcp.input.value.metadata'];
+
+    expect(typeof value).toBe('string');
+    expect(value).toHaveLength(2051);
+    expect(String(value).endsWith('...')).toBe(true);
+  });
+
+  test('keeps primitive attribute values unchanged and normalizes nullish values', () => {
+    expect(safeAttributeValue('iOS')).toBe('iOS');
+    expect(safeAttributeValue(2)).toBe(2);
+    expect(safeAttributeValue(false)).toBe(false);
+    expect(safeAttributeValue(null)).toBe('');
+    expect(safeAttributeValue(undefined)).toBe('');
+  });
+
+  test('serializes object attribute values and redacts nested sensitive keys', () => {
+    expect(
+      safeAttributeValue({
+        capabilities: {
+          platformName: 'iOS',
+          appiumApiKey: 'secret',
+        },
+        nested: [
+          {
+            password: 'also-secret',
+          },
+        ],
+      })
+    ).toBe(
+      JSON.stringify({
+        capabilities: {
+          platformName: 'iOS',
+          appiumApiKey: '[REDACTED]',
+        },
+        nested: [
+          {
+            password: '[REDACTED]',
+          },
+        ],
+      })
+    );
+  });
+
+  test('falls back to string conversion for unserializable attribute values', () => {
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+
+    expect(safeAttributeValue(circular)).toBe('[object Object]');
+  });
+
+  test('truncates long serialized attribute values', () => {
+    const value = safeAttributeValue({ text: 'x'.repeat(2100) });
+
+    expect(typeof value).toBe('string');
+    expect(value).toHaveLength(2051);
+    expect(String(value).endsWith('...')).toBe(true);
   });
 
   test('keeps sensitive argument names out of telemetry attributes', () => {
