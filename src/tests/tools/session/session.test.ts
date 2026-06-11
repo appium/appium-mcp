@@ -488,6 +488,74 @@ describe('appium_session_management tool', () => {
         'platform is required for create action'
       );
     });
+
+    test('returns error when capabilities JSON is invalid', async () => {
+      const tool = await getToolExecute();
+
+      const result = await tool.execute(
+        {
+          action: 'create',
+          platform: 'android',
+          capabilities: '{not valid json}',
+        },
+        undefined
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid capabilities JSON');
+      expect(mockSetSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('capabilities parsing', () => {
+    test('parses valid capabilities JSON string for attach', async () => {
+      const tool = await getToolExecute();
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ value: { platformName: 'Android' } }),
+      } as Response);
+
+      const result = await tool.execute(
+        {
+          action: 'attach',
+          remoteServerUrl: 'http://localhost:4723',
+          sessionId: 'borrowed',
+          capabilities: '{"platformName":"Android","appium:app":"demo.apk"}',
+        },
+        undefined
+      );
+
+      expect(result.isError).toBeFalsy();
+      expect(mockSetSession).toHaveBeenCalledWith(
+        expect.anything(),
+        'borrowed',
+        expect.objectContaining({
+          platformName: 'Android',
+          'appium:app': 'demo.apk',
+        }),
+        'attached',
+        expect.any(String)
+      );
+    });
+
+    test('returns error on invalid JSON for attach before contacting server', async () => {
+      const tool = await getToolExecute();
+
+      const result = await tool.execute(
+        {
+          action: 'attach',
+          remoteServerUrl: 'http://localhost:4723',
+          sessionId: 'borrowed',
+          capabilities: '{"platformName":',
+        },
+        undefined
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Invalid capabilities JSON');
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockAttachToSession).not.toHaveBeenCalled();
+    });
   });
 });
 
