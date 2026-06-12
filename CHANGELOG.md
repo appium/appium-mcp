@@ -1,3 +1,9 @@
+## [1.85.2](https://github.com/appium/appium-mcp/compare/v1.85.1...v1.85.2) (2026-06-12)
+
+### Miscellaneous Chores
+
+* **tools:** add exported tools name test ([#399](https://github.com/appium/appium-mcp/issues/399)) ([4547d66](https://github.com/appium/appium-mcp/commit/4547d660c0846c5df9b0d157d43ff6429686bde7))
+
 ## [1.85.1](https://github.com/appium/appium-mcp/compare/v1.85.0...v1.85.1) (2026-06-11)
 
 ### Bug Fixes
