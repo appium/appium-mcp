@@ -1,3 +1,9 @@
+## [1.85.4](https://github.com/appium/appium-mcp/compare/v1.85.3...v1.85.4) (2026-06-12)
+
+### Miscellaneous Chores
+
+* **deps:** bump @opentelemetry/exporter-trace-otlp-http ([#402](https://github.com/appium/appium-mcp/issues/402)) ([9bf7734](https://github.com/appium/appium-mcp/commit/9bf773482a79b95d10b7aa24bd62e4859532218f))
+
 ## [1.85.3](https://github.com/appium/appium-mcp/compare/v1.85.2...v1.85.3) (2026-06-12)
 
 ### Miscellaneous Chores
