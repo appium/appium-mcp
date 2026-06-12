@@ -1,3 +1,9 @@
+## [1.85.3](https://github.com/appium/appium-mcp/compare/v1.85.2...v1.85.3) (2026-06-12)
+
+### Miscellaneous Chores
+
+* **deps:** bump @opentelemetry/sdk-node from 0.218.0 to 0.219.0 ([#403](https://github.com/appium/appium-mcp/issues/403)) ([0b04a47](https://github.com/appium/appium-mcp/commit/0b04a47cae8827ec468646092ec89138446f3b2f))
+
 ## [1.85.2](https://github.com/appium/appium-mcp/compare/v1.85.1...v1.85.2) (2026-06-12)
 
 ### Miscellaneous Chores
