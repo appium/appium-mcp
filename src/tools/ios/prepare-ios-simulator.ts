@@ -5,7 +5,7 @@
  */
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 import { access, mkdir, unlink, readdir, stat, rm } from 'node:fs/promises';
@@ -18,7 +18,7 @@ import log from '../../logger.js';
 import { textResult } from '../tool-response.js';
 import { resolveAppiumMcpCachePath } from '../../utils/paths.js';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 type StepStatus = 'completed' | 'skipped' | 'failed';
 
@@ -125,14 +125,14 @@ async function installAppOnSimulator(
   appPath: string,
   simulatorUdid: string
 ): Promise<void> {
-  await execAsync(`xcrun simctl install "${simulatorUdid}" "${appPath}"`);
+  await execFileAsync('xcrun', ['simctl', 'install', simulatorUdid, appPath]);
 }
 
 async function launchAppOnSimulator(
   bundleId: string,
   simulatorUdid: string
 ): Promise<void> {
-  await execAsync(`xcrun simctl launch "${simulatorUdid}" "${bundleId}"`);
+  await execFileAsync('xcrun', ['simctl', 'launch', simulatorUdid, bundleId]);
 }
 
 async function getAppBundleId(appPath: string): Promise<string> {
@@ -150,9 +150,12 @@ async function getWDAState(simulatorUdid: string): Promise<WDAState> {
 
   // Check if installed via simctl listapps
   try {
-    const { stdout } = await execAsync(
-      `xcrun simctl listapps "${simulatorUdid}" --json`
-    );
+    const { stdout } = await execFileAsync('xcrun', [
+      'simctl',
+      'listapps',
+      simulatorUdid,
+      '--json',
+    ]);
     const data = JSON.parse(stdout);
 
     for (const [bundleId, appInfo] of Object.entries(data)) {
@@ -174,9 +177,13 @@ async function getWDAState(simulatorUdid: string): Promise<WDAState> {
 
   // Check if actually running via launchctl inside the simulator
   try {
-    const { stdout } = await execAsync(
-      `xcrun simctl spawn "${simulatorUdid}" launchctl list`
-    );
+    const { stdout } = await execFileAsync('xcrun', [
+      'simctl',
+      'spawn',
+      simulatorUdid,
+      'launchctl',
+      'list',
+    ]);
     const running = stdout.includes('WebDriverAgentRunner');
     return { installed: true, running };
   } catch {
