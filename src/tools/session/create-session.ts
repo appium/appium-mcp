@@ -209,7 +209,7 @@ export function validateLocalCreatePlatformMatch(
   const selectedPlatform = getSelectedDevicePlatform();
   if (selectedPlatform && selectedPlatform !== platform) {
     return errorResult(
-      `platform=${platform} does not match select_device (platform=${selectedPlatform}). Use action=create with platform=${selectedPlatform}, or call select_device again.`
+      `platform=${platform} does not match select_device (platform=${selectedPlatform}).`
     );
   }
 
