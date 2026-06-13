@@ -111,6 +111,7 @@ const {
   buildIOSCapabilities,
   getPortFromUrl,
   validateRemoteServerUrl,
+  validateLocalCreatePlatformMatch,
 } = await import('../../../tools/session/create-session.js');
 
 // ── tool helper ───────────────────────────────────────────────────────────────
@@ -643,6 +644,52 @@ describe('getPortFromUrl', () => {
     ['https://example.com:8443/path', 8443],
   ])('%s → %i', (url, expected) => {
     expect(getPortFromUrl(new URL(url))).toBe(expected);
+  });
+});
+
+describe('validateLocalCreatePlatformMatch', () => {
+  test('returns error when local create platform mismatches select_device', () => {
+    mockSelectedDevicePlatform = 'ios';
+
+    const result = validateLocalCreatePlatformMatch('android');
+
+    expect(result).toBeDefined();
+    expect(result!.isError).toBe(true);
+    const message = (result!.content[0] as { text: string }).text;
+    expect(message).toContain('platform=android');
+    expect(message).toContain('platform=ios');
+  });
+
+  test('returns error for the reverse mismatch (android selected, ios create)', () => {
+    mockSelectedDevicePlatform = 'android';
+
+    const result = validateLocalCreatePlatformMatch('ios');
+
+    expect(result).toBeDefined();
+    expect(result!.isError).toBe(true);
+    const message = (result!.content[0] as { text: string }).text;
+    expect(message).toContain('platform=ios');
+    expect(message).toContain('platform=android');
+  });
+
+  test('allows remote create without matching select_device platform', () => {
+    mockSelectedDevicePlatform = 'ios';
+
+    expect(
+      validateLocalCreatePlatformMatch('android', 'http://localhost:4723')
+    ).toBeUndefined();
+  });
+
+  test('allows matching local platform', () => {
+    mockSelectedDevicePlatform = 'android';
+
+    expect(validateLocalCreatePlatformMatch('android')).toBeUndefined();
+  });
+
+  test('allows local create when select_device was not called', () => {
+    mockSelectedDevicePlatform = null;
+
+    expect(validateLocalCreatePlatformMatch('android')).toBeUndefined();
   });
 });
 
