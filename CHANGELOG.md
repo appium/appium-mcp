@@ -1,3 +1,9 @@
+## [1.85.5](https://github.com/appium/appium-mcp/compare/v1.85.4...v1.85.5) (2026-06-13)
+
+### Bug Fixes
+
+* **session:** reject local create when platform mismatches select_device ([#391](https://github.com/appium/appium-mcp/issues/391)) ([d86c4b7](https://github.com/appium/appium-mcp/commit/d86c4b70d4cf3e0e741976885c751217ac4bd906))
+
 ## [1.85.4](https://github.com/appium/appium-mcp/compare/v1.85.3...v1.85.4) (2026-06-12)
 
 ### Miscellaneous Chores
