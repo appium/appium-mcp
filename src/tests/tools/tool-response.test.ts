@@ -69,7 +69,7 @@ describe('resolveDriver rehydration', () => {
       return;
     }
     expect(result.result.isError).toBe(true);
-    expect(result.result.content[0].text).toBe(
+    expect((result.result.content[0] as { text: string }).text).toBe(
       ambiguousPersistedSessionsMessage(['session-a', 'session-b'])
     );
     expect(mockAttachToRemoteSession).not.toHaveBeenCalled();
@@ -89,7 +89,7 @@ describe('resolveDriver rehydration', () => {
     if (result.ok) {
       return;
     }
-    expect(result.result.content[0].text).toBe(
+    expect((result.result.content[0] as { text: string }).text).toBe(
       ambiguousPersistedSessionsMessage(['session-a', 'session-b', 'session-c'])
     );
     // Guard fires before any liveness check, so nothing is pruned.
