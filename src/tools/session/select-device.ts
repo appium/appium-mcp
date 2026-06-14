@@ -64,7 +64,7 @@ export class SelectedLocalDevice {
 }
 
 /**
- * @returns
+ * @returns The currently selected local device, or null if no device is selected.
  */
 export function getSelectedLocalDevice(): SelectedLocalDevice | null {
   return selectedLocalDevice;
