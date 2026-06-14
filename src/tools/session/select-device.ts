@@ -29,13 +29,13 @@ export class SelectedLocalDevice {
    * Represents a selected local device for session creation.
    * This is used to store the user's device selection from the select_device tool.
    */
-  private _udid: string;
+  private _udid: string | null;
   private _platform: 'android' | 'ios' | null;
   private _type: 'simulator' | 'real' | null;
   private _info: any;
 
   constructor(
-    udid: string,
+    udid: string | null,
     platform: 'android' | 'ios' | null,
     type: 'simulator' | 'real' | null,
     info: any
@@ -182,7 +182,13 @@ function selectAndroidDevice(
   }
 
   log.info(`Device selected: ${deviceUdid}`);
-  return new SelectedLocalDevice(deviceUdid, 'android', null, selectedDevice);
+  selectedLocalDevice = new SelectedLocalDevice(
+    deviceUdid,
+    'android',
+    null,
+    selectedDevice
+  );
+  return selectedLocalDevice;
 }
 
 /**
@@ -280,22 +286,18 @@ function selectIOSDevice(
     };
   }
 
-  selectedDeviceUdid = deviceUdid;
-  selectedDevicePlatform = 'ios';
-  selectedDeviceType = iosDeviceType;
-  selectedDeviceInfo = selectedDevice;
   log.info(
     `iOS ${iosDeviceType} selected: ${selectedDevice.name} (${deviceUdid})`
   );
-
+  selectedLocalDevice = new SelectedLocalDevice(
+    deviceUdid,
+    'ios',
+    iosDeviceType,
+    selectedDevice
+  );
   return {
     ok: true,
-    device: new SelectedLocalDevice(
-      deviceUdid,
-      'ios',
-      iosDeviceType,
-      selectedDevice
-    ),
+    device: selectedLocalDevice,
   };
 }
 
