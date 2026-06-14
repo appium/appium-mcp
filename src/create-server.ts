@@ -112,8 +112,15 @@ export async function createAppiumMcpServer(
   });
 
   installPolicy(server, policy);
-  await initializeOpenTelemetry();
-  installTelemetryWrappers(server);
+  try {
+    await initializeOpenTelemetry();
+    installTelemetryWrappers(server);
+  } catch (error) {
+    log.error(
+      'Failed to initialize OpenTelemetry, telemetry will not be available:',
+      error
+    );
+  }
 
   // -------------------------------------------------------------------------
   // 1. Install plugin hooks BEFORE registering any tools so that every built-in
