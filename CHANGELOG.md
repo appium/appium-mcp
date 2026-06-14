@@ -1,3 +1,9 @@
+## [1.85.6](https://github.com/appium/appium-mcp/compare/v1.85.5...v1.85.6) (2026-06-14)
+
+### Miscellaneous Chores
+
+* make telemetry deps optional ([#405](https://github.com/appium/appium-mcp/issues/405)) ([7607832](https://github.com/appium/appium-mcp/commit/7607832495c7e3b99e2de0a9f6e2a56ba9d2dd39))
+
 ## [1.85.5](https://github.com/appium/appium-mcp/compare/v1.85.4...v1.85.5) (2026-06-13)
 
 ### Bug Fixes
