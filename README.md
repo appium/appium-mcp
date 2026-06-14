@@ -46,7 +46,7 @@ MCP Appium supports two driver modes:
 - **Embedded local drivers**: when `appium_session_management` creates an `android` or `ios` session without `remoteServerUrl`, MCP Appium uses the bundled `appium-uiautomator2-driver` or `appium-xcuitest-driver` dependency directly. You still need the platform toolchains below, but you do not need to install a global Appium server or run `appium driver install uiautomator2` / `appium driver install xcuitest` for this mode.
 - **Remote WebDriver/Appium server**: when `remoteServerUrl` is provided to `action=create` or `action=attach`, MCP Appium uses the `webdriver` client to talk to that existing server. In this mode the remote server is responsible for its installed drivers, plugins, device access, and capability handling. Use this mode for `platform=general`; embedded local creation is available only for Android and iOS.
 
-### Mobile Testing Setup
+### Mobile Testing Setup for embedded local drivers
 
 #### Android
 
