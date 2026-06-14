@@ -135,13 +135,17 @@ export async function buildIOSCapabilities(
   isRemoteServer: boolean
 ): Promise<Capabilities> {
   const selectedLocalDevice = getSelectedLocalDevice();
+  const selectedIOSDevice =
+    !isRemoteServer && selectedLocalDevice?.platform === 'ios'
+      ? selectedLocalDevice
+      : null;
 
-  const deviceType = isRemoteServer ? null : selectedLocalDevice?.type || null;
+  const deviceType = selectedIOSDevice?.type || null;
   await validateIOSDeviceSelection(deviceType);
 
   // Get selected device info BEFORE constructing defaultCaps so we can use the actual device name
-  const selectedDeviceUdid = selectedLocalDevice?.udid;
-  const selectedDeviceInfo = selectedLocalDevice?.info;
+  const selectedDeviceUdid = selectedIOSDevice?.udid;
+  const selectedDeviceInfo = selectedIOSDevice?.info;
 
   log.debug('Selected device info:', selectedDeviceInfo);
 
@@ -183,7 +187,7 @@ export async function buildIOSCapabilities(
     ...customCaps,
   };
 
-  if (selectedLocalDevice) {
+  if (selectedIOSDevice) {
     clearSelectedDevice();
   }
 
