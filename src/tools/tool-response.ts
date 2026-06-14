@@ -19,6 +19,11 @@ export type DriverOrError =
   | { ok: true; driver: DriverInstance }
   | { ok: false; result: ContentResult };
 
+type RehydrateAttachedSessionResult =
+  | { status: 'ok'; sessionId: string }
+  | { status: 'ambiguous'; sessionIds: string[] }
+  | { status: 'none' };
+
 /**
  * Normalizes unknown errors into a message string for tool responses.
  */
@@ -84,6 +89,13 @@ export function noActiveDriverSessionResult(sessionId?: string): ContentResult {
   return errorResult(noActiveDriverSessionMessage(sessionId));
 }
 
+/** Message when rehydration is ambiguous without an explicit sessionId. */
+export function ambiguousPersistedSessionsMessage(
+  sessionIds: string[]
+): string {
+  return `Multiple persisted sessions: ${sessionIds.join(', ')}. Pass sessionId.`;
+}
+
 /**
  * Resolves the driver for a tool call or returns a standardised error result.
  * On cache miss, transparently re-attaches to any persisted attached session
@@ -96,7 +108,15 @@ export async function resolveDriver(
   let driver = getDriver(sessionId);
   if (!driver) {
     const rehydrated = await rehydrateAttachedSession(sessionId);
-    if (rehydrated) {
+    if (rehydrated.status === 'ambiguous') {
+      return {
+        ok: false,
+        result: errorResult(
+          ambiguousPersistedSessionsMessage(rehydrated.sessionIds)
+        ),
+      };
+    }
+    if (rehydrated.status === 'ok') {
       driver = getDriver(sessionId ?? rehydrated.sessionId);
     }
   }
@@ -122,10 +142,17 @@ export function platformMismatch(
 
 async function rehydrateAttachedSession(
   sessionId?: string
-): Promise<{ sessionId: string } | null> {
+): Promise<RehydrateAttachedSessionResult> {
   const persisted = await readAllPersistedSessions();
   if (persisted.length === 0) {
-    return null;
+    return { status: 'none' };
+  }
+  if (!sessionId && persisted.length > 1) {
+    // Sort for a deterministic message; on-disk order follows readdir.
+    return {
+      status: 'ambiguous',
+      sessionIds: persisted.map((entry) => entry.sessionId).sort(),
+    };
   }
   const candidates = sessionId
     ? persisted.filter((p) => p.sessionId === sessionId)
@@ -170,7 +197,7 @@ async function rehydrateAttachedSession(
       log.info(
         `Rehydrated attached session ${entry.sessionId} from persisted store.`
       );
-      return { sessionId: entry.sessionId };
+      return { status: 'ok', sessionId: entry.sessionId };
     } catch (err) {
       log.warn(
         `Persisted session ${entry.sessionId} no longer attachable (${
@@ -180,7 +207,7 @@ async function rehydrateAttachedSession(
       await removePersistedSession(entry.sessionId);
     }
   }
-  return null;
+  return { status: 'none' };
 }
 
 function sanitizePrimaryElementIdLine(elementId: string): string {
