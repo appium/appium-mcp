@@ -13,40 +13,68 @@ import {
 import type { ContentResult } from 'fastmcp';
 import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 
-// Store selected device globally
-let selectedDeviceUdid: string | null = null;
-let selectedDevicePlatform: 'android' | 'ios' | null = null;
-let selectedDeviceType: 'simulator' | 'real' | null = null;
-let selectedDeviceInfo: any = null;
+// Store selected local device globally
+let selectedLocalDevice: SelectedLocalDevice | null = null;
 
 type DevicesOk = { ok: true; devices: any[] };
 
 type DevicesFail = { ok: false; result: ContentResult };
 
-type SelectIOSOk = { ok: true; device: any };
+type SelectIOSOk = { ok: true; device: SelectedLocalDevice };
 
 type SelectIOSFail = { ok: false; result: ContentResult };
 
-export function getSelectedDevice(): string | null {
-  return selectedDeviceUdid;
+export class SelectedLocalDevice {
+  /**
+   * Represents a selected local device for session creation.
+   * This is used to store the user's device selection from the select_device tool.
+   */
+  private _udid: string | null;
+  private _platform: 'android' | 'ios' | null;
+  private _type: 'simulator' | 'real' | null;
+  private _info: any;
+
+  constructor(
+    udid: string | null,
+    platform: 'android' | 'ios' | null,
+    type: 'simulator' | 'real' | null,
+    info: any
+  ) {
+    this._udid = udid;
+    this._platform = platform;
+    this._type = type;
+    this._info = info;
+  }
+
+  get udid(): string | null {
+    return this._udid;
+  }
+
+  get platform(): 'android' | 'ios' | null {
+    return this._platform;
+  }
+
+  get type(): 'simulator' | 'real' | null {
+    return this._type;
+  }
+
+  get info(): any {
+    return this._info;
+  }
 }
 
-export function getSelectedDevicePlatform(): 'android' | 'ios' | null {
-  return selectedDevicePlatform;
+/**
+ * @returns The currently selected local device, or null if no device is selected.
+ */
+export function getSelectedLocalDevice(): SelectedLocalDevice | null {
+  return selectedLocalDevice;
 }
 
-export function getSelectedDeviceType(): 'simulator' | 'real' | null {
-  return selectedDeviceType;
-}
-export function getSelectedDeviceInfo(): any {
-  return selectedDeviceInfo;
-}
-
+/**
+ * @returns
+ */
 export function clearSelectedDevice(): void {
-  selectedDeviceUdid = null;
-  selectedDevicePlatform = null;
-  selectedDeviceType = null;
-  selectedDeviceInfo = null;
+  selectedLocalDevice = null;
 }
 
 export default function selectDevice(server: any): void {
@@ -145,7 +173,7 @@ async function getAndroidDevices(): Promise<DevicesOk | DevicesFail> {
 function selectAndroidDevice(
   deviceUdid: string,
   devices: any[]
-): ContentResult | undefined {
+): ContentResult | SelectedLocalDevice {
   const selectedDevice = devices.find((d) => d.udid === deviceUdid);
   if (!selectedDevice) {
     return errorResult(
@@ -153,12 +181,14 @@ function selectAndroidDevice(
     );
   }
 
-  selectedDeviceUdid = deviceUdid;
-  selectedDevicePlatform = 'android';
-  selectedDeviceType = null;
-  selectedDeviceInfo = selectedDevice;
   log.info(`Device selected: ${deviceUdid}`);
-  return undefined;
+  selectedLocalDevice = new SelectedLocalDevice(
+    deviceUdid,
+    'android',
+    null,
+    selectedDevice
+  );
+  return selectedLocalDevice;
 }
 
 /**
@@ -256,15 +286,19 @@ function selectIOSDevice(
     };
   }
 
-  selectedDeviceUdid = deviceUdid;
-  selectedDevicePlatform = 'ios';
-  selectedDeviceType = iosDeviceType;
-  selectedDeviceInfo = selectedDevice;
   log.info(
     `iOS ${iosDeviceType} selected: ${selectedDevice.name} (${deviceUdid})`
   );
-
-  return { ok: true, device: selectedDevice };
+  selectedLocalDevice = new SelectedLocalDevice(
+    deviceUdid,
+    'ios',
+    iosDeviceType,
+    selectedDevice
+  );
+  return {
+    ok: true,
+    device: selectedLocalDevice,
+  };
 }
 
 /**
@@ -331,18 +365,18 @@ async function handleAndroidDeviceSelection(
   const { devices } = listed;
 
   if (deviceUdid) {
-    const selectionError = selectAndroidDevice(deviceUdid, devices);
-    if (selectionError) {
-      return selectionError;
+    const selected = selectAndroidDevice(deviceUdid, devices);
+    if (!(selected instanceof SelectedLocalDevice)) {
+      return selected;
     }
     return formatAndroidSelectionResponse(deviceUdid);
   }
 
   // Auto-select when only one device is available
   if (devices.length === 1) {
-    const selectionError = selectAndroidDevice(devices[0].udid, devices);
-    if (selectionError) {
-      return selectionError;
+    const selected = selectAndroidDevice(devices[0].udid, devices);
+    if (!(selected instanceof SelectedLocalDevice)) {
+      return selected;
     }
     return formatAndroidSelectionResponse(devices[0].udid);
   }
@@ -380,7 +414,7 @@ async function handleIOSDeviceSelection(
     if (!selected.ok) {
       return selected.result;
     }
-    return formatIOSSelectionResponse(selected.device.name, deviceUdid);
+    return formatIOSSelectionResponse(selected.device.info.name, deviceUdid);
   }
 
   // Auto-select when only one device is available
@@ -389,7 +423,10 @@ async function handleIOSDeviceSelection(
     if (!selected.ok) {
       return selected.result;
     }
-    return formatIOSSelectionResponse(selected.device.name, devices[0].udid);
+    return formatIOSSelectionResponse(
+      selected.device.info.name,
+      devices[0].udid
+    );
   }
 
   return formatIOSListResponse(devices, iosDeviceType!);
