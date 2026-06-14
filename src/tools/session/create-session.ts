@@ -96,6 +96,9 @@ export function buildAndroidCapabilities(
   };
 
   if (selectedLocalDevice) {
+    // clear the selected device since we're now using it to create a session,
+    // so it doesn't affect future session creations that don't specify a device.
+    // Clearing it later would cause race conditions if multiple session creations happen in parallel.
     clearSelectedDevice();
   }
 
@@ -188,6 +191,9 @@ export async function buildIOSCapabilities(
   };
 
   if (selectedIOSDevice) {
+    // clear the selected device since we're now using it to create a session,
+    // so it doesn't affect future session creations that don't specify a device.
+    // Clearing it later would cause race conditions if multiple session creations happen in parallel.
     clearSelectedDevice();
   }
 

@@ -25,6 +25,10 @@ type SelectIOSOk = { ok: true; device: SelectedLocalDevice };
 type SelectIOSFail = { ok: false; result: ContentResult };
 
 export class SelectedLocalDevice {
+  /**
+   * Represents a selected local device for session creation.
+   * This is used to store the user's device selection from the select_device tool.
+   */
   private _udid: string;
   private _platform: 'android' | 'ios' | null;
   private _type: 'simulator' | 'real' | null;
