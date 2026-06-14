@@ -41,6 +41,11 @@ Before you begin, ensure you have the following installed:
 - **Android SDK** (for Android testing)
 - **Xcode** (for iOS testing on macOS)
 
+MCP Appium supports two driver modes:
+
+- **Embedded local drivers**: when `appium_session_management` creates an `android` or `ios` session without `remoteServerUrl`, MCP Appium uses the bundled `appium-uiautomator2-driver` or `appium-xcuitest-driver` dependency directly. You still need the platform toolchains below, but you do not need to install a global Appium server or run `appium driver install uiautomator2` / `appium driver install xcuitest` for this mode.
+- **Remote WebDriver/Appium server**: when `remoteServerUrl` is provided to `action=create` or `action=attach`, MCP Appium uses the `webdriver` client to talk to that existing server. In this mode the remote server is responsible for its installed drivers, plugins, device access, and capability handling. Use this mode for `platform=general`; embedded local creation is available only for Android and iOS.
+
 ### Mobile Testing Setup
 
 #### Android
@@ -49,7 +54,7 @@ Before you begin, ensure you have the following installed:
 2.  Set the `ANDROID_HOME` environment variable.
 3.  Add the Android SDK tools to your system's PATH.
 4.  Enable USB debugging on your Android device.
-5.  Install the Appium UiAutomator2 driver dependencies.
+5.  Install the Android platform tools/build tools and keep `adb` available on `PATH`.
 
 #### iOS (macOS only)
 
@@ -135,7 +140,7 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 
 ### Environment Variables
 
-> **Note:** Appium driver prerequisites (`ANDROID_HOME`, `JAVA_HOME`, UiAutomator2/XCUITest driver setup) are not listed here, they are system-level requirements. Once this MCP server is configured, ask your AI assistant to set up the environment for you using the built-in `appium_skills` tool.
+> **Note:** For embedded local Android/iOS sessions, MCP Appium already includes the UiAutomator2 and XCUITest driver packages. The system-level requirements are the platform toolchains (`ANDROID_HOME`, Java, Android SDK tools, Xcode/iOS signing or simulator setup). For remote sessions, configure those requirements on the remote Appium/WebDriver server instead.
 
 | Variable                                  | Required                               | Description                                                                                                                                                                                                                                                                                                                                        |
 | ----------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -495,6 +500,7 @@ MCP Appium provides a comprehensive set of tools organized into the following ca
 | `appium_driver_settings`       | Read or update Appium driver session settings in one tool. `action=get` returns current settings as JSON; `action=update` merges a `settings` map (driver-specific keys; use `action=get` first to inspect).                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 The remote server URL in `appium_session_management` (action=create or action=attach) can be set via the `remoteServerUrl` parameter.
+When `remoteServerUrl` is omitted, `action=create` starts an embedded local UiAutomator2 or XCUITest driver for `platform=android` or `platform=ios`. `platform=general` requires `remoteServerUrl`. When `remoteServerUrl` is present, `action=create` calls WebDriver `newSession` on the remote server, and `action=attach` connects MCP Appium to an existing remote session without owning its lifecycle.
 If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
 This allows you to restrict which remote servers can be used with your MCP Appium instance, preventing unauthorized connections.
 The default regex pattern allows any URL that starts with `http://` or `https://`.
