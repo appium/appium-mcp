@@ -12,11 +12,20 @@ const mockAttachToSession = jest.fn<
 let mockSelectedDevicePlatform: 'android' | 'ios' | null = 'ios';
 
 jest.unstable_mockModule('../../../tools/session/select-device', () => ({
-  getSelectedDevice: () => 'device-udid',
-  getSelectedDevicePlatform: () => mockSelectedDevicePlatform,
-  getSelectedDeviceType: () =>
-    mockSelectedDevicePlatform === 'ios' ? 'simulator' : null,
-  getSelectedDeviceInfo: () => ({ name: 'iPhone 12', platform: '16.0' }),
+  getSelectedLocalDevice: () => ({
+    get udid() {
+      return 'device-udid';
+    },
+    get platform() {
+      return mockSelectedDevicePlatform;
+    },
+    get type() {
+      return mockSelectedDevicePlatform === 'ios' ? 'simulator' : null;
+    },
+    get info() {
+      return { name: 'iPhone 12', platform: '16.0' };
+    },
+  }),
   clearSelectedDevice: () => {},
 }));
 

@@ -6,11 +6,8 @@ import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
 import { setSession, listSessions } from '../../session-store.js';
 import {
-  getSelectedDevice,
-  getSelectedDevicePlatform,
-  getSelectedDeviceType,
-  getSelectedDeviceInfo,
   clearSelectedDevice,
+  getSelectedLocalDevice,
 } from './select-device.js';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
@@ -76,9 +73,10 @@ export function buildAndroidCapabilities(
     'appium:deviceName': 'Android Device',
   };
 
+  const selectedLocalDevice = getSelectedLocalDevice();
   const selectedDeviceUdid =
-    !isRemoteServer && getSelectedDevicePlatform() === 'android'
-      ? getSelectedDevice()
+    !isRemoteServer && selectedLocalDevice?.platform === 'android'
+      ? selectedLocalDevice?.udid
       : undefined;
 
   const additionalCaps = {
@@ -97,7 +95,10 @@ export function buildAndroidCapabilities(
     ...customCaps,
   };
 
-  if (selectedDeviceUdid) {
+  if (selectedLocalDevice) {
+    // clear the selected device since we're now using it to create a session,
+    // so it doesn't affect future session creations that don't specify a device.
+    // Clearing it later would cause race conditions if multiple session creations happen in parallel.
     clearSelectedDevice();
   }
 
@@ -118,7 +119,8 @@ export async function validateIOSDeviceSelection(
   const devices = await iosManager.getDevicesByType(deviceType);
 
   if (devices.length > 1) {
-    const selectedDevice = getSelectedDevice();
+    const selectedLocalDevice = getSelectedLocalDevice();
+    const selectedDevice = selectedLocalDevice?.udid;
     if (!selectedDevice) {
       throw new Error(
         `Multiple iOS ${deviceType === 'simulator' ? 'simulators' : 'devices'} found (${devices.length}). Use select_device with platform=ios and iosDeviceType=${deviceType} to choose one, then call appium_session_management with action=create.`
@@ -135,18 +137,18 @@ export async function buildIOSCapabilities(
   customCaps: Record<string, any> | undefined,
   isRemoteServer: boolean
 ): Promise<Capabilities> {
-  const deviceType = isRemoteServer ? null : getSelectedDeviceType();
+  const selectedLocalDevice = getSelectedLocalDevice();
+  const selectedIOSDevice =
+    !isRemoteServer && selectedLocalDevice?.platform === 'ios'
+      ? selectedLocalDevice
+      : null;
+
+  const deviceType = selectedIOSDevice?.type || null;
   await validateIOSDeviceSelection(deviceType);
 
   // Get selected device info BEFORE constructing defaultCaps so we can use the actual device name
-  const hasSelectedIOSDevice =
-    !isRemoteServer && getSelectedDevicePlatform() === 'ios';
-  const selectedDeviceUdid = hasSelectedIOSDevice
-    ? getSelectedDevice()
-    : undefined;
-  const selectedDeviceInfo = hasSelectedIOSDevice
-    ? getSelectedDeviceInfo()
-    : undefined;
+  const selectedDeviceUdid = selectedIOSDevice?.udid;
+  const selectedDeviceInfo = selectedIOSDevice?.info;
 
   log.debug('Selected device info:', selectedDeviceInfo);
 
@@ -188,7 +190,10 @@ export async function buildIOSCapabilities(
     ...customCaps,
   };
 
-  if (selectedDeviceUdid) {
+  if (selectedIOSDevice) {
+    // clear the selected device since we're now using it to create a session,
+    // so it doesn't affect future session creations that don't specify a device.
+    // Clearing it later would cause race conditions if multiple session creations happen in parallel.
     clearSelectedDevice();
   }
 
@@ -206,7 +211,9 @@ export function validateLocalCreatePlatformMatch(
     return undefined;
   }
 
-  const selectedPlatform = getSelectedDevicePlatform();
+  const selectedLocalDevice = getSelectedLocalDevice();
+
+  const selectedPlatform = selectedLocalDevice?.platform;
   if (selectedPlatform && selectedPlatform !== platform) {
     return errorResult(
       `platform=${platform} does not match select_device (platform=${selectedPlatform}).`
@@ -415,7 +422,7 @@ function buildCreateSessionFailureMessage(
   const caps: Record<string, any> = ctx.finalCapabilities ?? {};
   const hasDeviceTarget =
     Boolean(caps['appium:udid'] || caps['appium:deviceName']) ||
-    Boolean(getSelectedDevice());
+    Boolean(getSelectedLocalDevice());
 
   if (
     !hasDeviceTarget &&
