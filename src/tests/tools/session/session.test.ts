@@ -10,23 +10,41 @@ const mockAttachToSession = jest.fn<
 }));
 
 let mockSelectedDevicePlatform: 'android' | 'ios' | null = 'ios';
+let mockSelectedDevice: string | null = 'device-udid';
+
+const mockGetConnectedDevices = jest.fn<() => Promise<{ udid: string }[]>>(
+  async () => [{ udid: 'u1' }]
+);
 
 jest.unstable_mockModule('../../../tools/session/select-device', () => ({
-  getSelectedLocalDevice: () => ({
-    get udid() {
-      return 'device-udid';
-    },
-    get platform() {
-      return mockSelectedDevicePlatform;
-    },
-    get type() {
-      return mockSelectedDevicePlatform === 'ios' ? 'simulator' : null;
-    },
-    get info() {
-      return { name: 'iPhone 12', platform: '16.0' };
-    },
-  }),
+  getSelectedLocalDevice: () =>
+    mockSelectedDevice
+      ? {
+          get udid() {
+            return mockSelectedDevice;
+          },
+          get platform() {
+            return mockSelectedDevicePlatform;
+          },
+          get type() {
+            return mockSelectedDevicePlatform === 'ios' ? 'simulator' : null;
+          },
+          get info() {
+            return { name: 'iPhone 12', platform: '16.0' };
+          },
+        }
+      : null,
   clearSelectedDevice: () => {},
+}));
+
+jest.unstable_mockModule('../../../devicemanager/adb-manager', () => ({
+  ADBManager: {
+    getInstance: () => ({
+      initialize: async () => ({
+        getConnectedDevices: mockGetConnectedDevices,
+      }),
+    }),
+  },
 }));
 
 jest.unstable_mockModule('../../../devicemanager/ios-manager', () => ({
@@ -121,6 +139,7 @@ const {
   getPortFromUrl,
   validateRemoteServerUrl,
   validateLocalCreatePlatformMatch,
+  validateAndroidDeviceSelection,
 } = await import('../../../tools/session/create-session.js');
 
 // ── tool helper ───────────────────────────────────────────────────────────────
@@ -134,6 +153,8 @@ let mockFetch: jest.MockedFunction<typeof fetch>;
 beforeEach(() => {
   jest.clearAllMocks();
   mockSelectedDevicePlatform = 'ios';
+  mockSelectedDevice = 'device-udid';
+  mockGetConnectedDevices.mockResolvedValue([{ udid: 'u1' }]);
   mockGetSessionOwnership.mockReturnValue(null);
   mockAttachToSession.mockResolvedValue({
     sessionId: 'attached-session-id',
@@ -572,10 +593,10 @@ describe('appium_session_management tool', () => {
 // ── capability builder tests ──────────────────────────────────────────────────
 
 describe('buildAndroidCapabilities', () => {
-  test('includes udid for local server and removes empty values', () => {
+  test('includes udid for local server and removes empty values', async () => {
     mockSelectedDevicePlatform = 'android';
 
-    const caps = buildAndroidCapabilities(
+    const caps = await buildAndroidCapabilities(
       { 'appium:app': '/path/app.apk' },
       { 'appium:deviceName': '' },
       false
@@ -589,19 +610,94 @@ describe('buildAndroidCapabilities', () => {
     expect(caps['appium:settings[waitForSelectorTimeout]']).toBe(0);
   });
 
-  test('ignores selected iOS device for local server', () => {
+  test('ignores selected iOS device for local server', async () => {
     mockSelectedDevicePlatform = 'ios';
 
-    const caps = buildAndroidCapabilities({}, undefined, false);
+    const caps = await buildAndroidCapabilities({}, undefined, false);
 
     expect(caps.platformName).toBe('Android');
     expect(caps).not.toHaveProperty('appium:udid');
   });
 
-  test('does not include udid for remote server', () => {
-    const caps = buildAndroidCapabilities({}, undefined, true);
+  test('does not include udid for remote server', async () => {
+    const caps = await buildAndroidCapabilities({}, undefined, true);
     expect(caps.platformName).toBe('Android');
     expect(caps).not.toHaveProperty('appium:udid');
+  });
+});
+
+describe('validateAndroidDeviceSelection', () => {
+  test('skips validation for remote server', async () => {
+    mockGetConnectedDevices.mockResolvedValue([
+      { udid: 'a' },
+      { udid: 'b' },
+    ]);
+    mockSelectedDevice = null;
+
+    await expect(
+      validateAndroidDeviceSelection(true, undefined)
+    ).resolves.toBeUndefined();
+  });
+
+  test('allows single connected device without select_device', async () => {
+    mockGetConnectedDevices.mockResolvedValue([{ udid: 'only-one' }]);
+    mockSelectedDevice = null;
+
+    await expect(
+      validateAndroidDeviceSelection(false, undefined)
+    ).resolves.toBeUndefined();
+  });
+
+  test('allows multiple devices when select_device was used', async () => {
+    mockGetConnectedDevices.mockResolvedValue([
+      { udid: 'a' },
+      { udid: 'b' },
+    ]);
+    mockSelectedDevice = 'a';
+    mockSelectedDevicePlatform = 'android';
+
+    await expect(
+      validateAndroidDeviceSelection(false, undefined)
+    ).resolves.toBeUndefined();
+  });
+
+  test('allows multiple devices when appium:udid is in capabilities', async () => {
+    mockGetConnectedDevices.mockResolvedValue([
+      { udid: 'a' },
+      { udid: 'b' },
+    ]);
+    mockSelectedDevice = null;
+
+    await expect(
+      validateAndroidDeviceSelection(false, { 'appium:udid': 'b' })
+    ).resolves.toBeUndefined();
+  });
+
+  test('throws when multiple devices and no explicit target', async () => {
+    mockGetConnectedDevices.mockResolvedValue([
+      { udid: 'a' },
+      { udid: 'b' },
+    ]);
+    mockSelectedDevice = null;
+
+    await expect(
+      validateAndroidDeviceSelection(false, undefined)
+    ).rejects.toThrow(
+      'Multiple Android devices found (2). Use select_device with platform=android'
+    );
+  });
+
+  test('buildAndroidCapabilities throws when multiple devices and no selection', async () => {
+    mockGetConnectedDevices.mockResolvedValue([
+      { udid: 'a' },
+      { udid: 'b' },
+    ]);
+    mockSelectedDevice = null;
+    mockSelectedDevicePlatform = 'android';
+
+    await expect(buildAndroidCapabilities({}, undefined, false)).rejects.toThrow(
+      'Multiple Android devices found (2). Use select_device with platform=android'
+    );
   });
 });
 
