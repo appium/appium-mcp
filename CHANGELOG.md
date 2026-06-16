@@ -1,3 +1,13 @@
+## [1.85.7](https://github.com/appium/appium-mcp/compare/v1.85.6...v1.85.7) (2026-06-16)
+
+### Miscellaneous Chores
+
+* **otel:** add OTEL_RESOURCE_ATTRIBUTES env ([#408](https://github.com/appium/appium-mcp/issues/408)) ([d4cbbfb](https://github.com/appium/appium-mcp/commit/d4cbbfbbefd7520853d8fd2e58e6fe6e4a8628e9))
+
+### Code Refactoring
+
+* store local selected device as one class ([#406](https://github.com/appium/appium-mcp/issues/406)) ([a44107e](https://github.com/appium/appium-mcp/commit/a44107e144d6c8221515689913d52e6f492b63a6))
+
 ## [1.85.6](https://github.com/appium/appium-mcp/compare/v1.85.5...v1.85.6) (2026-06-14)
 
 ### Miscellaneous Chores
