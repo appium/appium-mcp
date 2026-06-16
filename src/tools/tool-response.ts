@@ -96,6 +96,7 @@ export async function resolveDriver(
   let driver = getDriver(sessionId);
   if (!driver) {
     if (!sessionId) {
+      // No active session or no sessionId specified.
       return { ok: false, result: noActiveDriverSessionResult() };
     }
     const rehydrated = await rehydrateAttachedSession(sessionId);
