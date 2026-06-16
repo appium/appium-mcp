@@ -628,10 +628,7 @@ describe('buildAndroidCapabilities', () => {
 
 describe('validateAndroidDeviceSelection', () => {
   test('skips validation for remote server', async () => {
-    mockGetConnectedDevices.mockResolvedValue([
-      { udid: 'a' },
-      { udid: 'b' },
-    ]);
+    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
     mockSelectedDevice = null;
 
     await expect(
@@ -649,10 +646,7 @@ describe('validateAndroidDeviceSelection', () => {
   });
 
   test('allows multiple devices when select_device was used', async () => {
-    mockGetConnectedDevices.mockResolvedValue([
-      { udid: 'a' },
-      { udid: 'b' },
-    ]);
+    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
     mockSelectedDevice = 'a';
     mockSelectedDevicePlatform = 'android';
 
@@ -662,10 +656,7 @@ describe('validateAndroidDeviceSelection', () => {
   });
 
   test('allows multiple devices when appium:udid is in capabilities', async () => {
-    mockGetConnectedDevices.mockResolvedValue([
-      { udid: 'a' },
-      { udid: 'b' },
-    ]);
+    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
     mockSelectedDevice = null;
 
     await expect(
@@ -674,10 +665,7 @@ describe('validateAndroidDeviceSelection', () => {
   });
 
   test('throws when multiple devices and no explicit target', async () => {
-    mockGetConnectedDevices.mockResolvedValue([
-      { udid: 'a' },
-      { udid: 'b' },
-    ]);
+    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
     mockSelectedDevice = null;
 
     await expect(
@@ -688,14 +676,13 @@ describe('validateAndroidDeviceSelection', () => {
   });
 
   test('buildAndroidCapabilities throws when multiple devices and no selection', async () => {
-    mockGetConnectedDevices.mockResolvedValue([
-      { udid: 'a' },
-      { udid: 'b' },
-    ]);
+    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
     mockSelectedDevice = null;
     mockSelectedDevicePlatform = 'android';
 
-    await expect(buildAndroidCapabilities({}, undefined, false)).rejects.toThrow(
+    await expect(
+      buildAndroidCapabilities({}, undefined, false)
+    ).rejects.toThrow(
       'Multiple Android devices found (2). Use select_device with platform=android'
     );
   });
