@@ -165,6 +165,7 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `OTEL_SERVICE_NAME` | Optional | Service name reported to the OpenTelemetry collector (example: `appium-mcp`). |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Optional | OTLP/HTTP traces endpoint (example: `http://127.0.0.1:4318/v1/traces`). |
 | `OTEL_TRACES_SAMPLER` | Optional | Trace sampling strategy; `parentbased_always_on` samples new root traces and follows parent decisions. |
+| `OTEL_RESOURCE_ATTRIBUTES` | Optional | Comma-separated `key=value` pairs attached as resource attributes to every span (example: `testcase.id=my-test-123,team=platform`). |
 
 ### OpenTelemetry tracing
 
@@ -174,6 +175,8 @@ OpenTelemetry tracing is disabled by default. Set `APPIUM_MCP_OTEL_ENABLED=true`
 APPIUM_MCP_OTEL_ENABLED=true
 # Optional: include sanitized non-sensitive argument values in spans.
 # APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES=true
+# Optional: attach custom key=value pairs to every span (e.g. test case ID, team name).
+# OTEL_RESOURCE_ATTRIBUTES=testcase.id=my-test-123,team=platform
 OTEL_SERVICE_NAME=appium-mcp
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces
 OTEL_TRACES_SAMPLER=parentbased_always_on

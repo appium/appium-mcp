@@ -247,6 +247,8 @@ describe('telemetry attributes', () => {
     process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
     process.env.OTEL_SERVICE_NAME = 'appium-mcp-test';
     process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = receiver.endpoint;
+    process.env.OTEL_RESOURCE_ATTRIBUTES =
+      'testcase.id=my-test-123,team=platform';
 
     const server = {
       tools: [] as any[],
@@ -361,12 +363,30 @@ describe('telemetry attributes', () => {
           }),
         ])
       );
+
+      const resourceSpanAttrs = flattenOtlpResourceAttributes(
+        receiver.requests[0].body
+      );
+      expect(resourceSpanAttrs).toMatchObject({
+        'testcase.id': 'my-test-123',
+        team: 'platform',
+      });
     } finally {
       await shutdownOpenTelemetry();
       await receiver.close();
     }
   });
 });
+
+function flattenOtlpResourceAttributes(body: unknown): Record<string, unknown> {
+  const resourceSpan = (body as any)?.resourceSpans?.[0];
+  return Object.fromEntries(
+    (resourceSpan?.resource?.attributes ?? []).map((attr: any) => [
+      attr.key,
+      otlpValue(attr.value),
+    ])
+  );
+}
 
 function flattenOtlpSpans(bodies: unknown[]): any[] {
   return bodies.flatMap((body: any) =>
