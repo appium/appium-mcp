@@ -182,6 +182,8 @@ OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces
 OTEL_TRACES_SAMPLER=parentbased_always_on
 ```
 
+(Please check the [official document](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) as well)
+
 When enabled, appium-mcp creates spans for MCP tool calls, prompt loads, resource reads, and resource template reads. Error status is recorded for thrown operation errors and MCP tool results marked with `isError`. Span attributes intentionally avoid raw screenshots, XML page source, prompts, credentials, and other high-cardinality or sensitive payloads.
 
 For local trace inspection, use the Jaeger setup in `tools/telemetry`:
