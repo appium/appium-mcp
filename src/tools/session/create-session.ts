@@ -9,6 +9,7 @@ import {
   clearSelectedDevice,
   getSelectedLocalDevice,
 } from './select-device.js';
+import { ADBManager } from '../../devicemanager/adb-manager.js';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
 import {
@@ -60,13 +61,46 @@ export function filterEmptyCapabilities(
 }
 
 /**
+ * Validate Android device selection when multiple devices are available
+ */
+export async function validateAndroidDeviceSelection(
+  isRemoteServer: boolean,
+  explicitDeviceCaps?: Record<string, any>
+): Promise<void> {
+  if (isRemoteServer) {
+    return;
+  }
+
+  if (explicitDeviceCaps?.['appium:udid']) {
+    return;
+  }
+
+  const adb = await ADBManager.getInstance().initialize();
+  const devices = await adb.getConnectedDevices();
+
+  if (devices.length > 1) {
+    const selectedDevice = getSelectedLocalDevice()?.udid;
+    if (!selectedDevice) {
+      throw new Error(
+        `Multiple Android devices found (${devices.length}). Use select_device with platform=android to choose one, then call appium_session_management with action=create.`
+      );
+    }
+  }
+}
+
+/**
  * Build Android capabilities by merging defaults, config, device selection, and custom capabilities
  */
-export function buildAndroidCapabilities(
+export async function buildAndroidCapabilities(
   configCaps: Record<string, any>,
   customCaps: Record<string, any> | undefined,
   isRemoteServer: boolean
-): Capabilities {
+): Promise<Capabilities> {
+  await validateAndroidDeviceSelection(isRemoteServer, {
+    ...configCaps,
+    ...customCaps,
+  });
+
   const defaultCaps: Capabilities = {
     platformName: 'Android',
     'appium:automationName': 'UiAutomator2',
@@ -287,7 +321,7 @@ export async function createSessionAction(args: {
 
     const configCapabilities = await loadCapabilitiesConfig();
     if (platform === 'android') {
-      finalCapabilities = buildAndroidCapabilities(
+      finalCapabilities = await buildAndroidCapabilities(
         configCapabilities.android,
         customCapabilities,
         !!remoteServerUrl
