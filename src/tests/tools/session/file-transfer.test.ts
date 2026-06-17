@@ -64,6 +64,25 @@ describe('appium_mobile_file', () => {
     );
   });
 
+  test('returns error with sessionId when no driver is active for that session', async () => {
+    const tool = await registerTool();
+
+    const result = await tool.execute(
+      {
+        action: 'push',
+        remotePath: '/sdcard/x.txt',
+        payloadBase64: 'YQ==',
+        sessionId: 'session-123',
+      },
+      undefined
+    );
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toBe(
+      "No active driver session for session 'session-123'. Use appium_session_management (action=create or action=attach), or pass a valid sessionId."
+    );
+  });
+
   test('push: Android uses path and data', async () => {
     const tool = await registerTool();
     mockGetDriver.mockReturnValue({} as any);

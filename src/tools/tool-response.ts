@@ -95,6 +95,10 @@ export async function resolveDriver(
 ): Promise<DriverOrError> {
   let driver = getDriver(sessionId);
   if (!driver) {
+    if (!sessionId) {
+      // No active session or no sessionId specified.
+      return { ok: false, result: noActiveDriverSessionResult() };
+    }
     const rehydrated = await rehydrateAttachedSession(sessionId);
     if (rehydrated) {
       driver = getDriver(sessionId ?? rehydrated.sessionId);
@@ -121,15 +125,13 @@ export function platformMismatch(
 }
 
 async function rehydrateAttachedSession(
-  sessionId?: string
+  sessionId: string
 ): Promise<{ sessionId: string } | null> {
   const persisted = await readAllPersistedSessions();
   if (persisted.length === 0) {
     return null;
   }
-  const candidates = sessionId
-    ? persisted.filter((p) => p.sessionId === sessionId)
-    : persisted;
+  const candidates = persisted.filter((p) => p.sessionId === sessionId);
   for (const entry of candidates) {
     try {
       const client = await attachToRemoteSession({
