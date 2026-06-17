@@ -1,3 +1,9 @@
+## [1.85.8](https://github.com/appium/appium-mcp/compare/v1.85.7...v1.85.8) (2026-06-17)
+
+### Bug Fixes
+
+* require session id to get persistent session ([#409](https://github.com/appium/appium-mcp/issues/409)) ([f224459](https://github.com/appium/appium-mcp/commit/f224459cf6b8774927236d5ce3cf07a819241766))
+
 ## [1.85.7](https://github.com/appium/appium-mcp/compare/v1.85.6...v1.85.7) (2026-06-16)
 
 ### Miscellaneous Chores
