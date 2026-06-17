@@ -60,34 +60,6 @@ export function filterEmptyCapabilities(
 }
 
 /**
- * Validate Android device selection when multiple devices are available
- */
-export async function validateAndroidDeviceSelection(
-  isRemoteServer: boolean,
-  explicitDeviceCaps?: Record<string, any>
-): Promise<void> {
-  if (isRemoteServer) {
-    return;
-  }
-
-  if (explicitDeviceCaps?.['appium:udid']) {
-    return;
-  }
-
-  const adb = await ADBManager.getInstance().initialize();
-  const devices = await adb.getConnectedDevices();
-
-  if (devices.length > 1) {
-    const selectedDevice = getSelectedLocalDevice()?.udid;
-    if (!selectedDevice) {
-      throw new Error(
-        `Multiple Android devices found (${devices.length}). Use select_device with platform=android to choose one, then call appium_session_management with action=create.`
-      );
-    }
-  }
-}
-
-/**
  * Build Android capabilities by merging defaults, config, device selection, and custom capabilities
  */
 export function buildAndroidCapabilities(
