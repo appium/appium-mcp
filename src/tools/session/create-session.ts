@@ -9,7 +9,6 @@ import {
   clearSelectedDevice,
   getSelectedLocalDevice,
 } from './select-device.js';
-import { ADBManager } from '../../devicemanager/adb-manager.js';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
 import {
@@ -91,27 +90,25 @@ export async function validateAndroidDeviceSelection(
 /**
  * Build Android capabilities by merging defaults, config, device selection, and custom capabilities
  */
-export async function buildAndroidCapabilities(
+export function buildAndroidCapabilities(
   configCaps: Record<string, any>,
   customCaps: Record<string, any> | undefined,
   isRemoteServer: boolean
-): Promise<Capabilities> {
-  await validateAndroidDeviceSelection(isRemoteServer, {
-    ...configCaps,
-    ...customCaps,
-  });
+): Capabilities {
+  const givenCaps = { ...configCaps, ...customCaps };
+  const selectedLocalDevice = getSelectedLocalDevice();
+  const selectedDeviceUdid =
+    !isRemoteServer &&
+    !givenCaps['appium:udid'] &&
+    selectedLocalDevice?.platform === 'android'
+      ? selectedLocalDevice.udid
+      : undefined;
 
   const defaultCaps: Capabilities = {
     platformName: 'Android',
     'appium:automationName': 'UiAutomator2',
     'appium:deviceName': 'Android Device',
   };
-
-  const selectedLocalDevice = getSelectedLocalDevice();
-  const selectedDeviceUdid =
-    !isRemoteServer && selectedLocalDevice?.platform === 'android'
-      ? selectedLocalDevice?.udid
-      : undefined;
 
   const additionalCaps = {
     'appium:settings[actionAcknowledgmentTimeout]': 0,
@@ -180,8 +177,13 @@ export async function buildIOSCapabilities(
   const deviceType = selectedIOSDevice?.type || null;
   await validateIOSDeviceSelection(deviceType);
 
-  // Get selected device info BEFORE constructing defaultCaps so we can use the actual device name
-  const selectedDeviceUdid = selectedIOSDevice?.udid;
+  const givenCaps = { ...configCaps, ...customCaps };
+  const selectedDeviceUdid =
+    !isRemoteServer &&
+    !givenCaps['appium:udid'] &&
+    selectedIOSDevice?.platform === 'ios'
+      ? selectedIOSDevice.udid
+      : undefined;
   const selectedDeviceInfo = selectedIOSDevice?.info;
 
   log.debug('Selected device info:', selectedDeviceInfo);
@@ -321,7 +323,7 @@ export async function createSessionAction(args: {
 
     const configCapabilities = await loadCapabilitiesConfig();
     if (platform === 'android') {
-      finalCapabilities = await buildAndroidCapabilities(
+      finalCapabilities = buildAndroidCapabilities(
         configCapabilities.android,
         customCapabilities,
         !!remoteServerUrl

@@ -12,10 +12,6 @@ const mockAttachToSession = jest.fn<
 let mockSelectedDevicePlatform: 'android' | 'ios' | null = 'ios';
 let mockSelectedDevice: string | null = 'device-udid';
 
-const mockGetConnectedDevices = jest.fn<() => Promise<{ udid: string }[]>>(
-  async () => [{ udid: 'u1' }]
-);
-
 jest.unstable_mockModule('../../../tools/session/select-device', () => ({
   getSelectedLocalDevice: () =>
     mockSelectedDevice
@@ -35,16 +31,6 @@ jest.unstable_mockModule('../../../tools/session/select-device', () => ({
         }
       : null,
   clearSelectedDevice: () => {},
-}));
-
-jest.unstable_mockModule('../../../devicemanager/adb-manager', () => ({
-  ADBManager: {
-    getInstance: () => ({
-      initialize: async () => ({
-        getConnectedDevices: mockGetConnectedDevices,
-      }),
-    }),
-  },
 }));
 
 jest.unstable_mockModule('../../../devicemanager/ios-manager', () => ({
@@ -139,7 +125,6 @@ const {
   getPortFromUrl,
   validateRemoteServerUrl,
   validateLocalCreatePlatformMatch,
-  validateAndroidDeviceSelection,
 } = await import('../../../tools/session/create-session.js');
 
 // ── tool helper ───────────────────────────────────────────────────────────────
@@ -154,7 +139,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockSelectedDevicePlatform = 'ios';
   mockSelectedDevice = 'device-udid';
-  mockGetConnectedDevices.mockResolvedValue([{ udid: 'u1' }]);
   mockGetSessionOwnership.mockReturnValue(null);
   mockAttachToSession.mockResolvedValue({
     sessionId: 'attached-session-id',
@@ -593,10 +577,10 @@ describe('appium_session_management tool', () => {
 // ── capability builder tests ──────────────────────────────────────────────────
 
 describe('buildAndroidCapabilities', () => {
-  test('includes udid for local server and removes empty values', async () => {
+  test('includes udid for local server and removes empty values', () => {
     mockSelectedDevicePlatform = 'android';
 
-    const caps = await buildAndroidCapabilities(
+    const caps = buildAndroidCapabilities(
       { 'appium:app': '/path/app.apk' },
       { 'appium:deviceName': '' },
       false
@@ -610,81 +594,43 @@ describe('buildAndroidCapabilities', () => {
     expect(caps['appium:settings[waitForSelectorTimeout]']).toBe(0);
   });
 
-  test('ignores selected iOS device for local server', async () => {
+  test('does not override explicit appium:udid from capabilities', () => {
+    mockSelectedDevicePlatform = 'android';
+
+    const caps = buildAndroidCapabilities(
+      {},
+      { 'appium:udid': 'explicit-udid' },
+      false
+    );
+
+    expect(caps['appium:udid']).toBe('explicit-udid');
+  });
+
+  test('does not override appium:udid from config capabilities', () => {
+    mockSelectedDevicePlatform = 'android';
+
+    const caps = buildAndroidCapabilities(
+      { 'appium:udid': 'config-udid' },
+      undefined,
+      false
+    );
+
+    expect(caps['appium:udid']).toBe('config-udid');
+  });
+
+  test('ignores selected iOS device for local server', () => {
     mockSelectedDevicePlatform = 'ios';
 
-    const caps = await buildAndroidCapabilities({}, undefined, false);
+    const caps = buildAndroidCapabilities({}, undefined, false);
 
     expect(caps.platformName).toBe('Android');
     expect(caps).not.toHaveProperty('appium:udid');
   });
 
-  test('does not include udid for remote server', async () => {
-    const caps = await buildAndroidCapabilities({}, undefined, true);
+  test('does not include udid for remote server', () => {
+    const caps = buildAndroidCapabilities({}, undefined, true);
     expect(caps.platformName).toBe('Android');
     expect(caps).not.toHaveProperty('appium:udid');
-  });
-});
-
-describe('validateAndroidDeviceSelection', () => {
-  test('skips validation for remote server', async () => {
-    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
-    mockSelectedDevice = null;
-
-    await expect(
-      validateAndroidDeviceSelection(true, undefined)
-    ).resolves.toBeUndefined();
-  });
-
-  test('allows single connected device without select_device', async () => {
-    mockGetConnectedDevices.mockResolvedValue([{ udid: 'only-one' }]);
-    mockSelectedDevice = null;
-
-    await expect(
-      validateAndroidDeviceSelection(false, undefined)
-    ).resolves.toBeUndefined();
-  });
-
-  test('allows multiple devices when select_device was used', async () => {
-    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
-    mockSelectedDevice = 'a';
-    mockSelectedDevicePlatform = 'android';
-
-    await expect(
-      validateAndroidDeviceSelection(false, undefined)
-    ).resolves.toBeUndefined();
-  });
-
-  test('allows multiple devices when appium:udid is in capabilities', async () => {
-    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
-    mockSelectedDevice = null;
-
-    await expect(
-      validateAndroidDeviceSelection(false, { 'appium:udid': 'b' })
-    ).resolves.toBeUndefined();
-  });
-
-  test('throws when multiple devices and no explicit target', async () => {
-    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
-    mockSelectedDevice = null;
-
-    await expect(
-      validateAndroidDeviceSelection(false, undefined)
-    ).rejects.toThrow(
-      'Multiple Android devices found (2). Use select_device with platform=android'
-    );
-  });
-
-  test('buildAndroidCapabilities throws when multiple devices and no selection', async () => {
-    mockGetConnectedDevices.mockResolvedValue([{ udid: 'a' }, { udid: 'b' }]);
-    mockSelectedDevice = null;
-    mockSelectedDevicePlatform = 'android';
-
-    await expect(
-      buildAndroidCapabilities({}, undefined, false)
-    ).rejects.toThrow(
-      'Multiple Android devices found (2). Use select_device with platform=android'
-    );
   });
 });
 
@@ -704,6 +650,18 @@ describe('buildIOSCapabilities', () => {
     expect(caps['appium:wdaStartupRetries']).toBe(4);
     expect(caps['custom:cap']).toBe('value');
     expect(caps['appium:bundleId']).toBe('com.example.app');
+  });
+
+  test('does not override explicit appium:udid from capabilities', async () => {
+    mockSelectedDevicePlatform = 'ios';
+
+    const caps = await buildIOSCapabilities(
+      {},
+      { 'appium:udid': 'explicit-udid' },
+      false
+    );
+
+    expect(caps['appium:udid']).toBe('explicit-udid');
   });
 
   test('ignores selected Android device for local server', async () => {
