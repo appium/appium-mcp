@@ -720,24 +720,24 @@ export function createLocatorGeneratorUI(
       (element, index) => `
     <div class="locator-card" data-index="${index}">
       <div class="locator-header">
-        <h3>${element.tagName}</h3>
+        <h3>${escapeHtml(element.tagName)}</h3>
         <div class="badges">
           ${element.clickable ? '<span class="badge badge-clickable">Clickable</span>' : ''}
           ${element.enabled ? '<span class="badge badge-enabled">Enabled</span>' : ''}
           ${element.displayed ? '<span class="badge badge-displayed">Displayed</span>' : ''}
         </div>
       </div>
-      ${element.text ? `<p class="element-text"><strong>Text:</strong> ${element.text}</p>` : ''}
-      ${element.contentDesc ? `<p class="element-text"><strong>Content Desc:</strong> ${element.contentDesc}</p>` : ''}
-      ${element.resourceId ? `<p class="element-text"><strong>Resource ID:</strong> <code>${element.resourceId}</code></p>` : ''}
+      ${element.text ? `<p class="element-text"><strong>Text:</strong> ${escapeHtml(element.text)}</p>` : ''}
+      ${element.contentDesc ? `<p class="element-text"><strong>Content Desc:</strong> ${escapeHtml(element.contentDesc)}</p>` : ''}
+      ${element.resourceId ? `<p class="element-text"><strong>Resource ID:</strong> <code>${escapeHtml(element.resourceId)}</code></p>` : ''}
       <div class="locators-list">
         ${Object.entries(element.locators)
           .map(
             ([strategy, selector]) => `
           <div class="locator-item">
-            <span class="strategy">${strategy}</span>
-            <code class="selector">${selector}</code>
-            <button class="test-btn" onclick="testLocator('${strategy}', \`${selector.replace(/`/g, '\\`')}\`)">Test</button>
+            <span class="strategy">${escapeHtml(strategy)}</span>
+            <code class="selector">${escapeHtml(selector)}</code>
+            <button class="test-btn" data-strategy="${escapeHtml(strategy)}" data-selector="${escapeHtml(selector)}">Test</button>
           </div>
         `
           )
@@ -895,6 +895,16 @@ export function createLocatorGeneratorUI(
         }
       }, '*');
     }
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      const button = target instanceof Element ? target.closest('.test-btn') : null;
+      if (!button) {
+        return;
+      }
+
+      testLocator(button.dataset.strategy || '', button.dataset.selector || '');
+    });
   </script>
 </body>
 </html>
@@ -1632,4 +1642,13 @@ export function addUIResourceToResponse(
   return {
     content: [...response.content, uiResource],
   };
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
