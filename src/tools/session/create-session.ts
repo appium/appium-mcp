@@ -67,17 +67,20 @@ export function buildAndroidCapabilities(
   customCaps: Record<string, any> | undefined,
   isRemoteServer: boolean
 ): Capabilities {
+  const givenCaps = { ...configCaps, ...customCaps };
+  const selectedLocalDevice = getSelectedLocalDevice();
+  const selectedDeviceUdid =
+    !isRemoteServer &&
+    !givenCaps['appium:udid'] &&
+    selectedLocalDevice?.platform === 'android'
+      ? selectedLocalDevice.udid
+      : undefined;
+
   const defaultCaps: Capabilities = {
     platformName: 'Android',
     'appium:automationName': 'UiAutomator2',
     'appium:deviceName': 'Android Device',
   };
-
-  const selectedLocalDevice = getSelectedLocalDevice();
-  const selectedDeviceUdid =
-    !isRemoteServer && selectedLocalDevice?.platform === 'android'
-      ? selectedLocalDevice?.udid
-      : undefined;
 
   const additionalCaps = {
     'appium:settings[actionAcknowledgmentTimeout]': 0,
@@ -146,8 +149,13 @@ export async function buildIOSCapabilities(
   const deviceType = selectedIOSDevice?.type || null;
   await validateIOSDeviceSelection(deviceType);
 
-  // Get selected device info BEFORE constructing defaultCaps so we can use the actual device name
-  const selectedDeviceUdid = selectedIOSDevice?.udid;
+  const givenCaps = { ...configCaps, ...customCaps };
+  const selectedDeviceUdid =
+    !isRemoteServer &&
+    !givenCaps['appium:udid'] &&
+    selectedIOSDevice?.platform === 'ios'
+      ? selectedIOSDevice.udid
+      : undefined;
   const selectedDeviceInfo = selectedIOSDevice?.info;
 
   log.debug('Selected device info:', selectedDeviceInfo);
