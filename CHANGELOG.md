@@ -1,3 +1,9 @@
+## [1.85.10](https://github.com/appium/appium-mcp/compare/v1.85.9...v1.85.10) (2026-06-18)
+
+### Bug Fixes
+
+* add escape for ui ([#411](https://github.com/appium/appium-mcp/issues/411)) ([e222bbb](https://github.com/appium/appium-mcp/commit/e222bbbd6fe2b656a320efcd143563f08061a83d))
+
 ## [1.85.9](https://github.com/appium/appium-mcp/compare/v1.85.8...v1.85.9) (2026-06-18)
 
 ### Bug Fixes
