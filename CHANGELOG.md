@@ -1,3 +1,9 @@
+## [1.85.9](https://github.com/appium/appium-mcp/compare/v1.85.8...v1.85.9) (2026-06-18)
+
+### Bug Fixes
+
+* **session:** local Android create when multiple devices unselected ([#410](https://github.com/appium/appium-mcp/issues/410)) ([9fb5bc3](https://github.com/appium/appium-mcp/commit/9fb5bc3fc9816ae6ab9a472b4eeada2f267fdf41))
+
 ## [1.85.8](https://github.com/appium/appium-mcp/compare/v1.85.7...v1.85.8) (2026-06-17)
 
 ### Bug Fixes
