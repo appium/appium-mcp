@@ -22,14 +22,14 @@
 
 import type { AppiumMcpPlugin } from './core.js';
 import log from './logger.js';
+import { isTruthyEnvValue } from './utils/env.js';
 
 const ENABLED_FLAG = 'APPIUM_MCP_DOCS_ENABLED';
 const PACKAGE_NAME = '@appium/mcp-documentation';
 
 /** True when the user has opted into the documentation tools. */
 export function isDocumentationEnabled(): boolean {
-  const raw = process.env[ENABLED_FLAG]?.trim().toLowerCase();
-  return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
+  return isTruthyEnvValue(process.env[ENABLED_FLAG]);
 }
 
 /**
