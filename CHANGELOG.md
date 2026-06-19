@@ -1,3 +1,9 @@
+## [1.86.0](https://github.com/appium/appium-mcp/compare/v1.85.10...v1.86.0) (2026-06-19)
+
+### Features
+
+* **docs:** make documentation plugin optional with opt-in config ([#413](https://github.com/appium/appium-mcp/issues/413)) ([21d709f](https://github.com/appium/appium-mcp/commit/21d709fb285ece5633484775b2fca354b2a80063))
+
 ## [1.85.10](https://github.com/appium/appium-mcp/compare/v1.85.9...v1.85.10) (2026-06-18)
 
 ### Bug Fixes
