@@ -157,7 +157,8 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `AI_VISION_COORD_TYPE`                    | Optional                               | Coordinate type: `normalized` (default) or `absolute`                                                                                                                                                                                                                                                                                              |
 | `AI_VISION_IMAGE_MAX_WIDTH`               | Optional                               | Max image width in pixels before compression (default: `1080`)                                                                                                                                                                                                                                                                                     |
 | `AI_VISION_IMAGE_QUALITY`                 | Optional                               | JPEG quality 1–100 for compressed screenshots sent to the vision API (default: `80`)                                                                                                                                                                                                                                                               |
-| `SENTENCE_TRANSFORMERS_MODEL`             | Optional                               | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`)                                                                                                                                                                                                                                   |
+| `APPIUM_MCP_DOCS_ENABLED`                 | Optional                               | Set to `true` (or `1`/`yes`/`on`) to register the documentation tools (`appium_documentation_query`, `appium_skills`). **Opt-in and disabled by default.** Requires the optional `@appium/mcp-documentation` package (embeddings cache + ML stack) to be installed separately; when unset it is **never downloaded**. See [Documentation Tools (opt-in)](#documentation-tools-opt-in).                                                                                                                                                                                                                                                |
+| `SENTENCE_TRANSFORMERS_MODEL`             | Optional                               | Hugging Face model used for semantic search in Appium documentation queries (default: `Xenova/all-MiniLM-L6-v2`). Only applies when `APPIUM_MCP_DOCS_ENABLED` is set.                                                                                                                                                                                                                                   |
 | `APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH` | Optional | Directory path for persisted attached remote session info. When set, attached remote sessions are stored as JSON files in that directory and can be rehydrated after restart. |
 | `APPIUM_MCP_EVIDENCE`                     | Optional                               | Set to `true` or `1` to attach a structured **action evidence record** (locator, resolved element id, context, timing, normalized error code) to `appium_find_element` and `appium_gesture` responses as an `application/vnd.appium.evidence+json` resource block, for CI/debugging. Disabled by default; responses are unchanged when unset.        |
 | `APPIUM_MCP_OTEL_ENABLED` | Optional | Set to `true` to enable OpenTelemetry tracing (disabled by default). |
@@ -372,6 +373,42 @@ The following tools return lightweight text-only responses when NO_UI is enabled
 - ✅ Scripted automation where human interaction is not needed
 - ❌ Interactive debugging and exploration (keep UI enabled for better experience)
 
+#### Documentation Tools (opt-in)
+
+The documentation tools — `appium_documentation_query` (RAG search over the Appium docs) and `appium_skills` — live in a separate package, `@appium/mcp-documentation`, that carries a multi-megabyte embeddings cache and pulls in a heavy ML stack (`@xenova/transformers`, `@langchain/*`). To keep the default install lean, **this package is not a runtime dependency of appium-mcp and is never downloaded unless you opt in.** It is declared as an _optional peer dependency_.
+
+Enabling the tools is a two-step opt-in:
+
+**1. Install the optional package** (in the same project/environment as appium-mcp):
+
+```bash
+npm install @appium/mcp-documentation
+```
+
+Installing it with your own package manager dedupes against appium-mcp's existing dependencies, so only the genuinely new code is added.
+
+**2. Set `APPIUM_MCP_DOCS_ENABLED`** in your MCP server config:
+
+```json
+{
+  "appium-mcp": {
+    "env": {
+      "APPIUM_MCP_DOCS_ENABLED": "true",
+      "ANDROID_HOME": "/path/to/android/sdk"
+    }
+  }
+}
+```
+
+Behavior:
+
+- **Unset / not truthy (default):** the documentation tools are **not registered**, and nothing related to them (cache, embeddings, ML dependencies) is loaded.
+- **Truthy (`true`/`1`/`yes`/`on`):** the server registers the documentation tools if `@appium/mcp-documentation` is installed. If the flag is set but the package is **not** installed, the server starts normally **without** the documentation tools and logs a hint to run `npm install @appium/mcp-documentation`.
+
+The gate is governed by the env var, not by mere presence of the package: with `APPIUM_MCP_DOCS_ENABLED` unset, the tools stay hidden even if the package happens to be installed.
+
+Pre-installing it that way also avoids the first-run download delay.
+
 #### MCP disconnect behavior
 
 By default (`APPIUM_MCP_ON_CLIENT_DISCONNECT` unset or `delete_all`), when the **MCP client disconnects**, this server **deletes every MCP-owned Appium session** (the same sessions `safeDeleteAllSessions` targets) so embedded drivers are not left running after a short-lived assistant run. **Attached** sessions (`ownership=attached`) are unchanged by this teardown.
@@ -569,8 +606,8 @@ The default regex pattern allows any URL that starts with `http://` or `https://
 | ---------------------------- | ------------------------------------------------------------------------------------------------- |
 | `generate_locators`          | Generate intelligent locators for all interactive elements on the current screen                  |
 | `appium_generate_tests`      | Generate automated test code from natural language scenarios                                      |
-| `appium_documentation_query` | Query Appium documentation using RAG for help and guidance                                        |
-| `appium_skills`              | Return ordered setup or troubleshooting skills from `appium/skills` for local Appium environments |
+| `appium_documentation_query` | **Opt-in (gated by `APPIUM_MCP_DOCS_ENABLED`).** Query Appium documentation using RAG for help and guidance                                        |
+| `appium_skills`              | **Opt-in (gated by `APPIUM_MCP_DOCS_ENABLED`).** Return ordered setup or troubleshooting skills from `appium/skills` for local Appium environments |
 
 ## 🤖 Client Support
 
