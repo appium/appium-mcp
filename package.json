@@ -1,7 +1,7 @@
 {
   "name": "appium-mcp",
   "mcpName": "io.github.appium/appium-mcp",
-  "version": "1.86.0",
+  "version": "1.86.1",
   "type": "module",
   "repository": {
     "type": "git",
@@ -94,7 +94,7 @@
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.0.9",
+    "@types/node": "^26.0.0",
     "conventional-changelog-conventionalcommits": "^9.1.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0",

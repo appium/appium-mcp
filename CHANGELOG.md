@@ -1,3 +1,9 @@
+## [1.86.1](https://github.com/appium/appium-mcp/compare/v1.86.0...v1.86.1) (2026-06-19)
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump @types/node from 25.9.4 to 26.0.0 ([#416](https://github.com/appium/appium-mcp/issues/416)) ([00bcac5](https://github.com/appium/appium-mcp/commit/00bcac51f50025f1bc4fa71d80c6915eb11cdf13))
+
 ## [1.86.0](https://github.com/appium/appium-mcp/compare/v1.85.10...v1.86.0) (2026-06-19)
 
 ### Features
