@@ -8,10 +8,8 @@ import { z } from 'zod';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
-import { access, mkdir, unlink, readdir, stat, rm } from 'node:fs/promises';
-import { constants } from 'node:fs';
 import os from 'node:os';
-import { net, plist, zip } from '@appium/support';
+import { fs, net, plist, zip } from '@appium/support';
 import { Simctl } from 'node-simctl';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
@@ -44,19 +42,14 @@ interface WDAState {
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath, constants.F_OK);
-    return true;
-  } catch {
-    return false;
-  }
+  return await fs.hasAccess(filePath);
 }
 
 // ── WDA download helpers ──
 
 async function cleanupFile(filePath: string): Promise<void> {
   try {
-    await unlink(filePath);
+    await fs.unlink(filePath);
   } catch (err: any) {
     if (err.code !== 'ENOENT') {
       throw err;
@@ -105,11 +98,11 @@ async function getLatestWDAVersionFromCache(): Promise<string | null> {
     return null;
   }
 
-  const entries = await readdir(wdaCacheDir);
+  const entries = await fs.readdir(wdaCacheDir);
   const versions = await Promise.all(
     entries.map(async (dir) => {
       const dirPath = path.join(wdaCacheDir, dir);
-      const stats = await stat(dirPath);
+      const stats = await fs.stat(dirPath);
       return stats.isDirectory() ? dir : null;
     })
   );
@@ -263,11 +256,11 @@ async function resolveWdaAppPath(
 
   // Clean any prior (possibly partial) extraction before downloading
   if (await fileExists(extractDir)) {
-    await rm(extractDir, { recursive: true, force: true });
+    await fs.rimraf(extractDir);
   }
 
-  await mkdir(versionCacheDir, { recursive: true });
-  await mkdir(extractDir, { recursive: true });
+  await fs.mkdirp(versionCacheDir);
+  await fs.mkdirp(extractDir);
 
   const downloadUrl = `https://github.com/appium/WebDriverAgent/releases/download/v${wdaVersion}/${artifactPrefix}-Build-Sim-${archStr}.zip`;
   log.info(`Downloading prebuilt WDA v${wdaVersion}...`);

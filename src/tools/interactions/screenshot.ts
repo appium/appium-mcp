@@ -2,7 +2,7 @@ import type { FastMCP } from 'fastmcp';
 import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
 import type { NullableDriverInstance } from '../../session-store.js';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { fs, imageUtil } from '@appium/support';
 import { join } from 'node:path';
 import {
   createUIResource,
@@ -11,7 +11,6 @@ import {
 } from '../../ui/mcp-ui-utils.js';
 import { getScreenshot } from '../../command.js';
 import z from 'zod';
-import { imageUtil } from '@appium/support';
 import { resolveScreenshotDir } from '../../utils/paths.js';
 import {
   textResult,
@@ -24,16 +23,19 @@ export { resolveScreenshotDir };
 
 export interface ScreenshotDeps {
   getDriver: (sessionId?: string) => NullableDriverInstance;
-  writeFile: typeof writeFile;
-  mkdir: typeof mkdir;
+  writeFile: (filePath: string, data: Buffer) => Promise<unknown>;
+  mkdir: (
+    dirPath: string,
+    options?: { recursive?: boolean }
+  ) => Promise<unknown>;
   resolveScreenshotDir: typeof resolveScreenshotDir;
   dateNow: () => number;
 }
 
 const defaultDeps: ScreenshotDeps = {
   getDriver,
-  writeFile,
-  mkdir,
+  writeFile: fs.writeFile,
+  mkdir: async (dirPath) => await fs.mkdirp(dirPath),
   resolveScreenshotDir,
   dateNow: () => Date.now(),
 };
