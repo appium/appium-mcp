@@ -1,5 +1,4 @@
-import { access, readFile } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { fs } from '@appium/support';
 import { URL } from 'node:url';
 import { getPortFromUrl } from '../../utils/url.js';
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
@@ -452,8 +451,12 @@ async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
   }
 
   try {
-    await access(configPath, constants.F_OK);
-    const configContent = await readFile(configPath, 'utf8');
+    if (!(await fs.hasAccess(configPath))) {
+      throw new Error(
+        `Capabilities config does not exist or is not accessible: ${configPath}`
+      );
+    }
+    const configContent = await fs.readFile(configPath, 'utf8');
     return JSON.parse(configContent);
   } catch (error: unknown) {
     log.warn(`Failed to parse capabilities config: ${toolErrorMessage(error)}`);

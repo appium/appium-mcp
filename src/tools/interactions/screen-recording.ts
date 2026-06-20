@@ -1,6 +1,6 @@
 import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { fs } from '@appium/support';
 import { join } from 'node:path';
 import { getPlatformName, PLATFORM } from '../../session-store.js';
 import {
@@ -60,10 +60,10 @@ export interface AndroidRecordingOptions {
 
 async function saveRecording(base64Video: string): Promise<string> {
   const videoDir = resolveScreenshotDir();
-  await mkdir(videoDir, { recursive: true });
+  await fs.mkdirp(videoDir);
   const filename = `recording_${Date.now()}_${crypto.randomUUID()}.mp4`;
   const filepath = join(videoDir, filename);
-  await writeFile(filepath, Buffer.from(base64Video, 'base64'));
+  await fs.writeFile(filepath, Buffer.from(base64Video, 'base64'));
   return filepath;
 }
 

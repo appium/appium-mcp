@@ -21,7 +21,7 @@
  * and never blocks server startup.
  */
 
-import { readFileSync } from 'node:fs';
+import { fs } from '@appium/support';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -102,7 +102,7 @@ async function importDocumentationModule(): Promise<DocumentationModule | null> 
     }
   }
 
-  const globalEntry = resolveGlobalEntryUrl();
+  const globalEntry = await resolveGlobalEntryUrl();
   if (!globalEntry) {
     return null;
   }
@@ -117,7 +117,7 @@ async function importDocumentationModule(): Promise<DocumentationModule | null> 
  * rather than resolving the package directly: the package's "." export is
  * ESM-only, so `require.resolve(PACKAGE_NAME)` fails with ERR_PACKAGE_PATH_NOT_EXPORTED.
  */
-function resolveGlobalEntryUrl(): string | null {
+async function resolveGlobalEntryUrl(): Promise<string | null> {
   try {
     const require = createRequire(import.meta.url);
     const execDir = path.dirname(process.execPath);
@@ -130,7 +130,7 @@ function resolveGlobalEntryUrl(): string | null {
       paths,
     });
     const pkgDir = path.dirname(pkgJsonPath);
-    const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8')) as {
+    const pkg = JSON.parse(await fs.readFile(pkgJsonPath, 'utf8')) as {
       main?: string;
       exports?: { ['.']?: { import?: string; default?: string } };
     };

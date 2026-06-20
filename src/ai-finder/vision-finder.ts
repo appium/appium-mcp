@@ -5,9 +5,8 @@
  * Implementation aligns with benchmark_model.ts standards.
  */
 
-import { imageUtil } from '@appium/support';
+import { fs, imageUtil } from '@appium/support';
 import crypto from 'node:crypto';
-import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { resolveScreenshotDir } from '../utils/paths.js';
 import { LRUCache } from 'lru-cache';
@@ -549,14 +548,14 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
       const screenshotDir = resolveScreenshotDir();
 
       // Create directory if it doesn't exist
-      await mkdir(screenshotDir, { recursive: true });
+      await fs.mkdirp(screenshotDir);
 
       // Generate filename with UUID for uniqueness
       const filename = `ai_vision_annotated_${crypto.randomUUID()}.png`;
       const filepath = join(screenshotDir, filename);
 
       // Save annotated image to file
-      await writeFile(filepath, annotatedBuffer);
+      await fs.writeFile(filepath, annotatedBuffer);
 
       log.info(`AI Vision: Annotated image saved to: ${filepath}`);
       log.debug(

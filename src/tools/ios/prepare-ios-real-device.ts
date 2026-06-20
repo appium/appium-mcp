@@ -17,9 +17,7 @@ import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import path from 'node:path';
 import os from 'node:os';
-import { access, mkdir, readdir, readFile, rm, cp } from 'node:fs/promises';
-import { constants, existsSync } from 'node:fs';
-import { net, plist, zip } from '@appium/support';
+import { fs, net, plist, zip } from '@appium/support';
 import { BOOTSTRAP_PATH } from 'appium-webdriveragent';
 // @ts-ignore: No type definitions for 'applesign'
 import Applesign from 'applesign';
@@ -74,12 +72,7 @@ interface PipelineInputs {
 // ── Provisioning profile discovery ──
 
 async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath, constants.F_OK);
-    return true;
-  } catch {
-    return false;
-  }
+  return await fs.hasAccess(filePath);
 }
 
 function getProvisioningProfileDir(): string {
@@ -93,7 +86,7 @@ function getProvisioningProfileDir(): string {
 
 async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
   const dir = getProvisioningProfileDir();
-  if (!existsSync(dir)) {
+  if (!(await fs.hasAccess(dir))) {
     throw new Error(
       `No provisioning profiles directory found at ${dir}.\n` +
         `To create profiles: open Xcode → Settings → Accounts → add your Apple ID, ` +
@@ -102,7 +95,7 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
     );
   }
 
-  const files = (await readdir(dir)).filter((f) =>
+  const files = (await fs.readdir(dir)).filter((f) =>
     f.endsWith('.mobileprovision')
   );
   if (files.length === 0) {
@@ -141,7 +134,7 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
 async function getWdaPackageVersion(): Promise<string> {
   try {
     const pkgPath = path.join(BOOTSTRAP_PATH, 'package.json');
-    const raw = await readFile(pkgPath, 'utf8');
+    const raw = await fs.readFile(pkgPath, 'utf8');
     const pkg = JSON.parse(raw) as { version?: string };
     return pkg.version ?? 'unknown';
   } catch {
@@ -156,7 +149,7 @@ async function downloadWdaApp(
   const url = `https://github.com/appium/WebDriverAgent/releases/download/v${version}/WebDriverAgentRunner-Runner.zip`;
   const zipPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.zip');
 
-  await mkdir(downloadDir, { recursive: true });
+  await fs.mkdirp(downloadDir);
 
   try {
     log.info(`Downloading WDA v${version} from ${url}...`);
@@ -167,7 +160,7 @@ async function downloadWdaApp(
     log.info('Extracting WDA zip...');
     await zip.extractAllTo(zipPath, downloadDir, { useSystemUnzip: true });
   } finally {
-    await rm(zipPath, { force: true });
+    await fs.rimraf(zipPath);
   }
 
   const appPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.app');
@@ -187,8 +180,8 @@ async function stripFrameworks(appPath: string): Promise<void> {
   if (!(await fileExists(frameworksDir))) {
     return;
   }
-  for (const f of await readdir(frameworksDir)) {
-    await rm(path.join(frameworksDir, f), { recursive: true, force: true });
+  for (const f of await fs.readdir(frameworksDir)) {
+    await fs.rimraf(path.join(frameworksDir, f));
   }
 }
 
@@ -204,11 +197,9 @@ async function packageAppAsIpa(
     `staging-${path.basename(outIpaPath, '.ipa')}`
   );
   const payloadDir = path.join(stagingDir, 'Payload');
-  await rm(stagingDir, { recursive: true, force: true });
-  await mkdir(payloadDir, { recursive: true });
-  await cp(appPath, path.join(payloadDir, path.basename(appPath)), {
-    recursive: true,
-  });
+  await fs.rimraf(stagingDir);
+  await fs.mkdirp(payloadDir);
+  await fs.copyFile(appPath, path.join(payloadDir, path.basename(appPath)));
 
   await zip.toArchive(
     outIpaPath,
@@ -216,7 +207,7 @@ async function packageAppAsIpa(
     { level: 9 }
   );
 
-  await rm(stagingDir, { recursive: true, force: true });
+  await fs.rimraf(stagingDir);
 }
 
 // ── Bundle ID extraction (from the signed IPA) ──
@@ -255,7 +246,7 @@ async function signIpa(
 async function extractBundleIdFromIpa(ipaPath: string): Promise<string> {
   const tmpDir = path.join(path.dirname(ipaPath), `bundleid-${Date.now()}`);
   let bundleId: string | undefined;
-  await mkdir(tmpDir, { recursive: true });
+  await fs.mkdirp(tmpDir);
   try {
     await zip.readEntries(ipaPath, async ({ entry, extractEntryTo }) => {
       if (!/^Payload\/[^/]+\.app\/Info\.plist$/.test(entry.fileName)) {
@@ -276,7 +267,7 @@ async function extractBundleIdFromIpa(ipaPath: string): Promise<string> {
     }
     return bundleId;
   } finally {
-    await rm(tmpDir, { recursive: true, force: true });
+    await fs.rimraf(tmpDir);
   }
 }
 
@@ -364,7 +355,7 @@ async function runPipeline(
       };
     } else {
       if (await fileExists(downloadDir)) {
-        await rm(downloadDir, { recursive: true, force: true });
+        await fs.rimraf(downloadDir);
       }
       appPath = await downloadWdaApp(wdaVersion, downloadDir);
       await stripFrameworks(appPath);
@@ -405,10 +396,10 @@ async function runPipeline(
   let bundleId: string;
   try {
     // Wipe any prior signed artifacts for this profile so applesign starts clean.
-    await rm(signedDir, { recursive: true, force: true });
-    await mkdir(signedDir, { recursive: true });
+    await fs.rimraf(signedDir);
+    await fs.mkdirp(signedDir);
     // applesign mutates / writes alongside the input IPA; copy fresh into the per-profile dir first
-    await cp(unsignedIpaPath, stagedIpaPath);
+    await fs.copyFile(unsignedIpaPath, stagedIpaPath);
     log.info(
       `Signing IPA with profile ${profile.uuid} (wildcard=${profile.isWildcard})...`
     );
@@ -416,7 +407,7 @@ async function runPipeline(
     // signIpa returns "<basename>-resigned.ipa" alongside the staged copy — that
     // already matches resignedIpaPath, but assert to be defensive.
     if (path.resolve(producedPath) !== path.resolve(resignedIpaPath)) {
-      await cp(producedPath, resignedIpaPath);
+      await fs.copyFile(producedPath, resignedIpaPath);
     }
     bundleId = await extractBundleIdFromIpa(resignedIpaPath);
     result.wda_sign = {
