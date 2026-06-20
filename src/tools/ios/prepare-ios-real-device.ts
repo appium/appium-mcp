@@ -17,6 +17,7 @@ import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import path from 'node:path';
 import os from 'node:os';
+import { cp as nodeFsCp } from 'node:fs/promises';
 import { fs, net, plist, zip } from '@appium/support';
 import { BOOTSTRAP_PATH } from 'appium-webdriveragent';
 // @ts-ignore: No type definitions for 'applesign'
@@ -199,7 +200,9 @@ async function packageAppAsIpa(
   const payloadDir = path.join(stagingDir, 'Payload');
   await fs.rimraf(stagingDir);
   await fs.mkdirp(payloadDir);
-  await fs.copyFile(appPath, path.join(payloadDir, path.basename(appPath)));
+  await nodeFsCp(appPath, path.join(payloadDir, path.basename(appPath)), {
+    recursive: true,
+  });
 
   await zip.toArchive(
     outIpaPath,
