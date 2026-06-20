@@ -1,3 +1,9 @@
+## [1.86.3](https://github.com/appium/appium-mcp/compare/v1.86.2...v1.86.3) (2026-06-20)
+
+### Miscellaneous Chores
+
+* use appium/support for file handling ([#419](https://github.com/appium/appium-mcp/issues/419)) ([8fb9660](https://github.com/appium/appium-mcp/commit/8fb96608f6cc312dd16233bd22ab82c96e530dce))
+
 ## [1.86.2](https://github.com/appium/appium-mcp/compare/v1.86.1...v1.86.2) (2026-06-20)
 
 ### Bug Fixes
