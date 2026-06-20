@@ -1,3 +1,9 @@
+## [1.86.2](https://github.com/appium/appium-mcp/compare/v1.86.1...v1.86.2) (2026-06-20)
+
+### Bug Fixes
+
+* **docs:** support global resolution of doc package ([#417](https://github.com/appium/appium-mcp/issues/417)) ([dfeea2f](https://github.com/appium/appium-mcp/commit/dfeea2ffe16389d57b1cec0c95ddfed30c3c6dfa))
+
 ## [1.86.1](https://github.com/appium/appium-mcp/compare/v1.86.0...v1.86.1) (2026-06-19)
 
 ### Miscellaneous Chores
