@@ -59,23 +59,29 @@ export function createDevicePickerUI(
       : 'Android Devices';
 
   const deviceCards = devices
-    .map(
-      (device, index) => `
-    <div class="device-card" data-udid="${device.udid}" data-index="${index}">
+    .map((device, index) => {
+      const udid = String(device.udid);
+      const name = device.name || udid;
+      const state = device.state ? String(device.state) : undefined;
+      const type = device.type ? String(device.type) : undefined;
+      const stateClass = state ? sanitizeClassName(state) : '';
+
+      return `
+    <div class="device-card" data-udid="${escapeHtml(udid)}" data-index="${index}">
       <div class="device-header">
-        <h3>${device.name || device.udid}</h3>
-        ${device.state ? `<span class="device-state ${device.state.toLowerCase()}">${device.state}</span>` : ''}
+        <h3>${escapeHtml(name)}</h3>
+        ${state ? `<span class="device-state ${stateClass}">${escapeHtml(state)}</span>` : ''}
       </div>
       <div class="device-details">
-        <p><strong>UDID:</strong> <code>${device.udid}</code></p>
-        ${device.type ? `<p><strong>Type:</strong> ${device.type}</p>` : ''}
+        <p><strong>UDID:</strong> <code>${escapeHtml(udid)}</code></p>
+        ${type ? `<p><strong>Type:</strong> ${escapeHtml(type)}</p>` : ''}
       </div>
-      <button class="select-device-btn" onclick="selectDevice('${device.udid}')">
+      <button class="select-device-btn" data-udid="${escapeHtml(udid)}" onclick="selectDevice(this.dataset.udid)">
         Select Device
       </button>
     </div>
-  `
-    )
+  `;
+    })
     .join('');
 
   return `
@@ -215,8 +221,8 @@ export function createDevicePickerUI(
         payload: {
           intent: 'select-device',
           params: {
-            platform: '${platform}',
-            ${deviceType ? `iosDeviceType: '${deviceType}',` : ''}
+            platform: ${escapeScriptValue(platform)},
+            ${deviceType ? `iosDeviceType: ${escapeScriptValue(deviceType)},` : ''}
             deviceUdid: udid
           }
         }
@@ -247,6 +253,8 @@ export function createScreenshotViewerUI(
   screenshotBase64: string,
   filepath: string
 ): string {
+  const downloadFilename = filepath.split('/').pop() || 'screenshot.png';
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -370,7 +378,7 @@ export function createScreenshotViewerUI(
     <div class="toolbar">
       <div class="toolbar-left">
         <span style="font-size: 14px; font-weight: 500;">📸 Screenshot</span>
-        <span class="filepath">${filepath}</span>
+        <span class="filepath">${escapeHtml(filepath)}</span>
       </div>
       <div class="toolbar-right">
         <button class="btn btn-secondary" onclick="downloadScreenshot()">Download</button>
@@ -378,7 +386,7 @@ export function createScreenshotViewerUI(
       </div>
     </div>
     <div class="image-container" id="imageContainer">
-      <img src="data:image/png;base64,${screenshotBase64}"
+      <img src="data:image/png;base64,${escapeHtml(screenshotBase64)}"
            alt="Screenshot"
            class="screenshot-img"
            id="screenshotImg"
@@ -420,7 +428,7 @@ export function createScreenshotViewerUI(
     function downloadScreenshot() {
       const link = document.createElement('a');
       link.href = img.src;
-      link.download = '${filepath.split('/').pop() || 'screenshot.png'}';
+      link.download = ${escapeScriptValue(downloadFilename)};
       link.click();
     }
 
@@ -470,6 +478,9 @@ export function createSessionDashboardUI(sessionInfo: {
     sessionIdStr.length > 8
       ? `${sessionIdStr.substring(0, 8)}...`
       : sessionIdStr;
+  const deviceName = sessionInfo.deviceName;
+  const platformVersion = sessionInfo.platformVersion;
+  const udid = sessionInfo.udid;
 
   return `
 <!DOCTYPE html>
@@ -590,42 +601,42 @@ export function createSessionDashboardUI(sessionInfo: {
       <div class="info-grid">
         <div class="info-card">
           <label>Session ID</label>
-          <value>${sessionIdDisplay}</value>
+          <value>${escapeHtml(sessionIdDisplay)}</value>
         </div>
         <div class="info-card">
           <label>Platform</label>
-          <value>${sessionInfo.platform}</value>
+          <value>${escapeHtml(sessionInfo.platform)}</value>
         </div>
         <div class="info-card">
           <label>Automation</label>
-          <value>${sessionInfo.automationName}</value>
+          <value>${escapeHtml(sessionInfo.automationName)}</value>
         </div>
         ${
-          sessionInfo.deviceName
+          deviceName
             ? `
         <div class="info-card">
           <label>Device</label>
-          <value>${sessionInfo.deviceName}</value>
+          <value>${escapeHtml(deviceName)}</value>
         </div>
         `
             : ''
         }
         ${
-          sessionInfo.platformVersion
+          platformVersion
             ? `
         <div class="info-card">
           <label>Platform Version</label>
-          <value>${sessionInfo.platformVersion}</value>
+          <value>${escapeHtml(platformVersion)}</value>
         </div>
         `
             : ''
         }
         ${
-          sessionInfo.udid
+          udid
             ? `
         <div class="info-card">
           <label>UDID</label>
-          <value><code style="font-size: 12px;">${sessionInfo.udid}</code></value>
+          <value><code style="font-size: 12px;">${escapeHtml(udid)}</code></value>
         </div>
         `
             : ''
@@ -1260,17 +1271,17 @@ export function createAppListUI(
   const appCards = apps
     .map(
       (app) => `
-    <div class="app-card" data-package="${app.packageName}">
+    <div class="app-card" data-package="${escapeHtml(app.packageName)}">
       <div class="app-header">
-        <h3>${app.appName || app.packageName}</h3>
+        <h3>${escapeHtml(app.appName || app.packageName)}</h3>
       </div>
       <div class="app-details">
-        <p><strong>Package:</strong> <code>${app.packageName}</code></p>
+        <p><strong>Package:</strong> <code>${escapeHtml(app.packageName)}</code></p>
       </div>
       <div class="app-actions">
-        <button class="btn btn-primary" onclick="activateApp('${app.packageName}')">Activate</button>
-        <button class="btn btn-secondary" onclick="terminateApp('${app.packageName}')">Terminate</button>
-        <button class="btn btn-danger" onclick="uninstallApp('${app.packageName}')">Uninstall</button>
+        <button class="btn btn-primary" data-package="${escapeHtml(app.packageName)}" onclick="activateApp(this.dataset.package)">Activate</button>
+        <button class="btn btn-secondary" data-package="${escapeHtml(app.packageName)}" onclick="terminateApp(this.dataset.package)">Terminate</button>
+        <button class="btn btn-danger" data-package="${escapeHtml(app.packageName)}" onclick="uninstallApp(this.dataset.package)">Uninstall</button>
       </div>
     </div>
   `
@@ -1651,4 +1662,22 @@ function escapeHtml(value: unknown): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function escapeScriptValue(value: unknown): string {
+  return JSON.stringify(String(value))
+    .replace(/</g, '\\u003C')
+    .replace(/>/g, '\\u003E')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+function sanitizeClassName(value: unknown): string {
+  return escapeHtml(
+    String(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  );
 }
