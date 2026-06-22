@@ -1,3 +1,9 @@
+## [1.86.4](https://github.com/appium/appium-mcp/compare/v1.86.3...v1.86.4) (2026-06-22)
+
+### Bug Fixes
+
+* escape more ([#420](https://github.com/appium/appium-mcp/issues/420)) ([78acf26](https://github.com/appium/appium-mcp/commit/78acf260d62af82a83077d1d30a32e28a7714087))
+
 ## [1.86.3](https://github.com/appium/appium-mcp/compare/v1.86.2...v1.86.3) (2026-06-20)
 
 ### Miscellaneous Chores
