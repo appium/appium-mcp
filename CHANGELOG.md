@@ -1,3 +1,9 @@
+## [1.86.5](https://github.com/appium/appium-mcp/compare/v1.86.4...v1.86.5) (2026-06-27)
+
+### Bug Fixes
+
+* use teen_process ([#423](https://github.com/appium/appium-mcp/issues/423)) ([90716e4](https://github.com/appium/appium-mcp/commit/90716e4256098fd3a234e6973bbdd5d66bdb6071))
+
 ## [1.86.4](https://github.com/appium/appium-mcp/compare/v1.86.3...v1.86.4) (2026-06-22)
 
 ### Bug Fixes
