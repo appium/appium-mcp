@@ -6,10 +6,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import https from 'node:https';
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
-
-const execAsync = promisify(exec);
+import { exec } from 'teen_process';
 
 async function downloadFile(url: string, destPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -70,7 +67,7 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
 
 async function unzipFile(zipPath: string, destDir: string): Promise<void> {
   console.log(`   Extracting to: ${destDir}`);
-  await execAsync(`unzip -q "${zipPath}" -d "${destDir}"`);
+  await exec('unzip', ['-q', zipPath, '-d', destDir]);
   console.log('   ✅ Extraction complete');
 }
 
