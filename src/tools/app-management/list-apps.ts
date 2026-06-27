@@ -1,6 +1,5 @@
 import type { ContentResult } from 'fastmcp';
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
+import { exec } from 'teen_process';
 import type { DriverInstance } from '../../session-store.js';
 import {
   getPlatformName,
@@ -23,8 +22,6 @@ import {
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
-
-const execAsync = promisify(exec);
 
 export async function listAppsFromDevice(
   driver: DriverInstance,
@@ -58,9 +55,18 @@ export async function listAppsFromDevice(
           'Could not determine simulator UDID from session capabilities'
         );
       }
-      const { stdout } = await execAsync(
-        `xcrun simctl listapps "${udid}" | plutil -convert json -o - -`
-      );
+      const { stdout } = await exec('xcrun', [
+        'simctl',
+        'listapps',
+        udid,
+        '|',
+        'plutil',
+        '-convert',
+        'json',
+        '-o',
+        '-',
+        '-',
+      ]);
       const result = JSON.parse(stdout);
       return normalizeListAppsResult(result || {});
     }
