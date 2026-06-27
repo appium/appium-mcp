@@ -70,27 +70,19 @@
     "ios-mobileprovision-finder": "^1.2.1",
     "lru-cache": "^11.5.0",
     "node-simctl": "^8.0.4",
-    "teen_process": "^4.0.4",
     "webdriver": "^9.23.0",
     "xpath": "^0.0.34",
     "zod": "^4.3.6"
   },
-  "peerDependencies": {
+  "optionalDependencies": {
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
-    "@opentelemetry/sdk-node": "^0.219.0",
+    "@opentelemetry/sdk-node": "^0.219.0"
+  },
+  "peerDependencies": {
     "@appium/mcp-documentation": "^1.0.1"
   },
   "peerDependenciesMeta": {
-    "@opentelemetry/api": {
-      "optional": true
-    },
-    "@opentelemetry/exporter-trace-otlp-http": {
-      "optional": true
-    },
-    "@opentelemetry/sdk-node": {
-      "optional": true
-    },
     "@appium/mcp-documentation": {
       "optional": true
     }
