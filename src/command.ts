@@ -233,7 +233,9 @@ export async function setValue(
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.setValue(text, elementUUID);
   }
-  return await (driver as Client).elementSendKeys(elementUUID, text);
+  const result = await (driver as Client).elementSendKeys(elementUUID, text);
+  throwIfSwallowedRemoteError(result);
+  return result;
 }
 
 /**
@@ -297,21 +299,7 @@ export async function findElement(
     return await driver.findElement(strategy, selector);
   }
   const result = await (driver as Client).findElement(strategy, selector);
-  if (
-    typeof result === 'object' &&
-    result !== null &&
-    'error' in result &&
-    (result as { error?: unknown }).error === 'no such element'
-  ) {
-    const message = (result as { message?: unknown }).message;
-    const err = new Error(
-      typeof message === 'string'
-        ? message
-        : 'no such element: An element could not be located on the page using the given search parameters'
-    );
-    err.name = 'no such element';
-    throw err;
-  }
+  throwIfSwallowedRemoteError(result);
   return result;
 }
 
@@ -425,7 +413,9 @@ export async function getElementText(
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.getText(elementUUID);
   }
-  return await driver.getElementText(elementUUID);
+  const result = await driver.getElementText(elementUUID);
+  throwIfSwallowedRemoteError(result);
+  return result;
 }
 
 /**
@@ -446,7 +436,9 @@ export async function getElementAttribute(
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.getAttribute(attribute, elementUUID);
   }
-  return await driver.getElementAttribute(elementUUID, attribute);
+  const result = await driver.getElementAttribute(elementUUID, attribute);
+  throwIfSwallowedRemoteError(result);
+  return result;
 }
 
 export async function getActiveElement(
@@ -458,6 +450,7 @@ export async function getActiveElement(
     return await driver.active();
   }
   const result = await driver.getActiveElement();
+  throwIfSwallowedRemoteError(result);
   return result as unknown as AppiumElement;
 }
 
@@ -608,4 +601,25 @@ export async function back(driver: DriverInstance): Promise<void> {
     return await driver.back();
   }
   return await (driver as Client).back();
+}
+
+/**
+ * Remote WebDriver clients treat a W3C "no such element" 404 as success and
+ * resolve with the error value `{ error, message }` instead of throwing. Re-throw
+ * it so callers' catch handles it like the embedded drivers do.
+ */
+function throwIfSwallowedRemoteError(result: unknown): void {
+  if (
+    typeof result === 'object' &&
+    result !== null &&
+    'error' in result &&
+    typeof (result as { error?: unknown }).error === 'string'
+  ) {
+    const { error, message } = result as { error: string; message?: unknown };
+    const err = new Error(
+      typeof message === 'string' && message.length > 0 ? message : error
+    );
+    err.name = error;
+    throw err;
+  }
 }
