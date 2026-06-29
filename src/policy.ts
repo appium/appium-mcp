@@ -9,9 +9,7 @@ export interface AppiumMcpPolicy {
 export type PolicyTargetKind = 'tool' | 'resource';
 
 export type PolicyDecisionReason =
-  | 'empty_allowlist'
-  | 'matched_allowlist'
-  | 'not_in_allowlist';
+  'empty_allowlist' | 'matched_allowlist' | 'not_in_allowlist';
 
 export interface PolicyDecision {
   allowed: boolean;

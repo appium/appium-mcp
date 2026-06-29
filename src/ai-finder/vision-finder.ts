@@ -34,8 +34,7 @@ export class AIVisionFinder {
       apiBaseUrl: process.env.AI_VISION_API_BASE_URL || '',
       apiToken: process.env.AI_VISION_API_KEY || '',
       coordType: (process.env.AI_VISION_COORD_TYPE || 'normalized') as
-        | 'normalized'
-        | 'absolute',
+        'normalized' | 'absolute',
       imageMaxWidth: parseInt(
         process.env.AI_VISION_IMAGE_MAX_WIDTH || '1080',
         10
