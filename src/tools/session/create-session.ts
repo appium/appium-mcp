@@ -92,17 +92,25 @@ export async function assignEmbeddedDriverPorts(
 ): Promise<{ capabilities: Capabilities; allocatedPorts: number[] }> {
   const result = { ...capabilities };
   const allocatedPorts: number[] = [];
-  for (const cap of EMBEDDED_PORT_CAPABILITIES[platform]) {
-    if (result[cap] === undefined || result[cap] === '') {
-      const port = await findFreePort();
-      result[cap] = port;
-      allocatedPorts.push(port);
-      log.debug(
-        `Auto-allocated ${cap}=${port} for embedded ${platform} session`
-      );
+
+  try {
+    for (const cap of EMBEDDED_PORT_CAPABILITIES[platform]) {
+      if (result[cap] == null || result[cap] === '') {
+        const port = await findFreePort();
+        result[cap] = port;
+        allocatedPorts.push(port);
+        log.debug(
+          `Auto-allocated ${cap}=${port} for embedded ${platform} session`
+        );
+      }
     }
+
+    return { capabilities: result, allocatedPorts };
+  } catch (err) {
+    // If we reserved any ports before failing, release them to avoid leaking.
+    releaseReservedPorts(allocatedPorts);
+    throw err;
   }
-  return { capabilities: result, allocatedPorts };
 }
 
 /**
