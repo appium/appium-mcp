@@ -9,9 +9,7 @@ import {
 
 // Type aliases for driver variants used throughout the project.
 export type DriverInstance =
-  | Client
-  | AndroidUiautomator2Driver
-  | XCUITestDriver;
+  Client | AndroidUiautomator2Driver | XCUITestDriver;
 export type NullableDriverInstance = DriverInstance | null;
 export type SessionCapabilities = Record<string, any>;
 export type SessionOwnership = 'owned' | 'attached';

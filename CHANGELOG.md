@@ -1,3 +1,9 @@
+## [1.86.6](https://github.com/appium/appium-mcp/compare/v1.86.5...v1.86.6) (2026-06-29)
+
+### Miscellaneous Chores
+
+* fix format ([#425](https://github.com/appium/appium-mcp/issues/425)) ([bdbe91d](https://github.com/appium/appium-mcp/commit/bdbe91db2f22998c56df3a4a8e57fc79167f44e5))
+
 ## [1.86.5](https://github.com/appium/appium-mcp/compare/v1.86.4...v1.86.5) (2026-06-27)
 
 ### Bug Fixes

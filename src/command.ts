@@ -467,8 +467,7 @@ export async function getOrientation(
     return await driver.getOrientation();
   } else if (isXCUITestDriverSession(driver)) {
     return (await driver.proxyCommand('/orientation', 'GET')) as
-      | 'LANDSCAPE'
-      | 'PORTRAIT';
+      'LANDSCAPE' | 'PORTRAIT';
   }
   return (await driver.getOrientation()) as 'LANDSCAPE' | 'PORTRAIT';
 }
