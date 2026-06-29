@@ -16,8 +16,7 @@ import log from '../logger.js';
 const W3C_ELEMENT_ID = 'element-6066-11e4-a52e-4f735466cecf';
 
 export type DriverOrError =
-  | { ok: true; driver: DriverInstance }
-  | { ok: false; result: ContentResult };
+  { ok: true; driver: DriverInstance } | { ok: false; result: ContentResult };
 
 /**
  * Normalizes unknown errors into a message string for tool responses.
