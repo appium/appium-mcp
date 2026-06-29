@@ -122,10 +122,14 @@ const mockSetSession = setSession as jest.MockedFunction<typeof setSession>;
 const {
   buildAndroidCapabilities,
   buildIOSCapabilities,
+  assignEmbeddedDriverPorts,
   getPortFromUrl,
   validateRemoteServerUrl,
   validateLocalCreatePlatformMatch,
 } = await import('../../../tools/session/create-session.js');
+
+const { releaseReservedPorts, reservedPortCount } =
+  await import('../../../utils/ports.js');
 
 // ── tool helper ───────────────────────────────────────────────────────────────
 
@@ -681,6 +685,88 @@ describe('buildIOSCapabilities', () => {
     expect(caps.platformName).toBe('iOS');
     expect(caps['appium:deviceName']).toBe('iPhone Simulator');
     expect(caps).not.toHaveProperty('appium:udid');
+  });
+});
+
+describe('assignEmbeddedDriverPorts', () => {
+  const ANDROID_CAPS = {
+    platformName: 'Android',
+    'appium:automationName': 'UiAutomator2',
+  };
+
+  test('auto-allocates Android systemPort and mjpegServerPort when unset', async () => {
+    const { capabilities, allocatedPorts } = await assignEmbeddedDriverPorts(
+      'android',
+      { ...ANDROID_CAPS }
+    );
+
+    expect(typeof capabilities['appium:systemPort']).toBe('number');
+    expect(typeof capabilities['appium:mjpegServerPort']).toBe('number');
+    expect(capabilities['appium:systemPort']).not.toBe(
+      capabilities['appium:mjpegServerPort']
+    );
+    // Both reserved ports are reported so the caller can release them.
+    expect(allocatedPorts).toEqual([
+      capabilities['appium:systemPort'],
+      capabilities['appium:mjpegServerPort'],
+    ]);
+    releaseReservedPorts(allocatedPorts);
+  });
+
+  test('auto-allocates iOS wdaLocalPort and mjpegServerPort when unset', async () => {
+    const { capabilities, allocatedPorts } = await assignEmbeddedDriverPorts(
+      'ios',
+      {
+        platformName: 'iOS',
+        'appium:automationName': 'XCUITest',
+      }
+    );
+
+    expect(typeof capabilities['appium:wdaLocalPort']).toBe('number');
+    expect(typeof capabilities['appium:mjpegServerPort']).toBe('number');
+    expect(capabilities['appium:wdaLocalPort']).not.toBe(
+      capabilities['appium:mjpegServerPort']
+    );
+    releaseReservedPorts(allocatedPorts);
+  });
+
+  test('preserves caller-provided ports and only reserves the missing one', async () => {
+    const { capabilities, allocatedPorts } = await assignEmbeddedDriverPorts(
+      'android',
+      { ...ANDROID_CAPS, 'appium:systemPort': 8200 }
+    );
+
+    expect(capabilities['appium:systemPort']).toBe(8200);
+    expect(typeof capabilities['appium:mjpegServerPort']).toBe('number');
+    // Only the auto-filled port is reported as reserved; the caller's is not.
+    expect(allocatedPorts).toEqual([capabilities['appium:mjpegServerPort']]);
+    releaseReservedPorts(allocatedPorts);
+  });
+
+  test('gives distinct ports to concurrent embedded sessions', async () => {
+    const [a, b] = await Promise.all([
+      assignEmbeddedDriverPorts('android', { ...ANDROID_CAPS }),
+      assignEmbeddedDriverPorts('android', { ...ANDROID_CAPS }),
+    ]);
+
+    expect(a.capabilities['appium:systemPort']).not.toBe(
+      b.capabilities['appium:systemPort']
+    );
+    expect(a.capabilities['appium:mjpegServerPort']).not.toBe(
+      b.capabilities['appium:mjpegServerPort']
+    );
+    releaseReservedPorts([...a.allocatedPorts, ...b.allocatedPorts]);
+  });
+
+  test('releasing the reservation lets the port be handed out again', async () => {
+    const before = reservedPortCount();
+    const { allocatedPorts } = await assignEmbeddedDriverPorts('android', {
+      ...ANDROID_CAPS,
+    });
+    expect(reservedPortCount()).toBe(before + allocatedPorts.length);
+
+    releaseReservedPorts(allocatedPorts);
+    expect(reservedPortCount()).toBe(before);
   });
 });
 

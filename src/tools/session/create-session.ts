@@ -1,6 +1,7 @@
 import { fs } from '@appium/support';
 import { URL } from 'node:url';
 import { getPortFromUrl } from '../../utils/url.js';
+import { findFreePort, releaseReservedPorts } from '../../utils/ports.js';
 import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
 import { XCUITestDriver } from 'appium-xcuitest-driver';
 import { setSession, listSessions } from '../../session-store.js';
@@ -56,6 +57,52 @@ export function filterEmptyCapabilities(
     }
   });
   return filtered;
+}
+
+/**
+ * Driver port capabilities to auto-allocate per platform for embedded sessions.
+ *
+ * Each embedded Appium driver defaults these to a fixed port (Android
+ * `systemPort` 8200 / `mjpegServerPort` 7810, iOS `wdaLocalPort` 8100), so two
+ * sessions created in the same process collide unless they get distinct ports.
+ * Remote callers can't pick free ports on the host, so we must do it server-side
+ * where the drivers actually run.
+ */
+const EMBEDDED_PORT_CAPABILITIES: Record<'android' | 'ios', string[]> = {
+  android: ['appium:systemPort', 'appium:mjpegServerPort'],
+  ios: ['appium:wdaLocalPort', 'appium:mjpegServerPort'],
+};
+
+/**
+ * Auto-allocate driver ports for an embedded (local) session.
+ *
+ * Purely additive: only fills a port capability the caller (config or custom
+ * caps) hasn't already set, so any explicitly provided value is preserved. This
+ * keeps concurrent embedded sessions from binding the drivers' shared default
+ * ports. No-op for remote sessions, where ports belong to the remote host.
+ *
+ * Returns the capabilities plus the list of ports this call reserved, so the
+ * caller can release them via {@link releaseReservedPorts} once session creation
+ * settles (the reservation only needs to guard the creation window). Caller-set
+ * ports are not in `allocatedPorts` — they were never reserved by us.
+ */
+export async function assignEmbeddedDriverPorts(
+  platform: 'android' | 'ios',
+  capabilities: Capabilities
+): Promise<{ capabilities: Capabilities; allocatedPorts: number[] }> {
+  const result = { ...capabilities };
+  const allocatedPorts: number[] = [];
+  for (const cap of EMBEDDED_PORT_CAPABILITIES[platform]) {
+    if (result[cap] === undefined || result[cap] === '') {
+      const port = await findFreePort();
+      result[cap] = port;
+      allocatedPorts.push(port);
+      log.debug(
+        `Auto-allocated ${cap}=${port} for embedded ${platform} session`
+      );
+    }
+  }
+  return { capabilities: result, allocatedPorts };
 }
 
 /**
@@ -361,9 +408,21 @@ export async function createSessionAction(args: {
       if (platform === 'general') {
         return errorResult('platform=general requires remoteServerUrl.');
       }
+      const allocation = await assignEmbeddedDriverPorts(
+        platform,
+        finalCapabilities
+      );
+      finalCapabilities = allocation.capabilities;
       const driver = createDriverForPlatform(platform);
       log.info(`Sending session with ${driver.constructor.name}`);
-      sessionId = await createDriverSession(driver, finalCapabilities);
+      try {
+        sessionId = await createDriverSession(driver, finalCapabilities);
+      } finally {
+        // Release the reservations now that creation has settled: on success
+        // Appium has bound the ports (the OS prevents reuse); on failure they're
+        // free again. Either way the creation window they guarded is over.
+        releaseReservedPorts(allocation.allocatedPorts);
+      }
       await setSession(driver, sessionId, finalCapabilities, 'owned');
     }
 
