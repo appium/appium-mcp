@@ -13,6 +13,7 @@ import { Simctl } from 'node-simctl';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
 import { textResult } from '../tool-response.js';
+import { findFreePort, releaseReservedPort } from '../../utils/ports.js';
 import { resolveAppiumMcpCachePath } from '../../utils/paths.js';
 
 type StepStatus = 'completed' | 'skipped' | 'failed';
@@ -29,6 +30,9 @@ interface PrepareResult {
   ready: boolean;
   udid: string;
   wdaAppPath?: string;
+  wdaLocalPort?: number;
+  webDriverAgentUrl?: string;
+  capabilitiesHint?: Record<string, any>;
 }
 
 // ── Filesystem helpers ──
@@ -120,9 +124,44 @@ async function installAppOnSimulator(
 
 async function launchAppOnSimulator(
   bundleId: string,
+  simulatorUdid: string,
+  wdaPort: number
+): Promise<void> {
+  // simctl forwards env vars prefixed with SIMCTL_CHILD_ to the launched app.
+  // WDA reads USE_PORT to choose which local port to listen on inside the
+  // simulator, so each simulator's WDA can run on its own port instead of all
+  // colliding on the default 8100.
+  await exec('xcrun', ['simctl', 'launch', simulatorUdid, bundleId], {
+    env: { ...process.env, SIMCTL_CHILD_USE_PORT: String(wdaPort) },
+  });
+}
+
+async function terminateAppOnSimulator(
+  bundleId: string,
   simulatorUdid: string
 ): Promise<void> {
-  await exec('xcrun', ['simctl', 'launch', simulatorUdid, bundleId]);
+  try {
+    await exec('xcrun', ['simctl', 'terminate', simulatorUdid, bundleId]);
+  } catch {
+    // Nothing running to terminate — ignore.
+  }
+}
+
+/** Poll WDA's /status until it responds or the attempt budget is exhausted. */
+async function waitForWdaReady(port: number): Promise<boolean> {
+  const url = `http://127.0.0.1:${port}/status`;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+      if (res.ok) {
+        return true;
+      }
+    } catch {
+      // Not up yet — retry.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  return false;
 }
 
 async function getAppBundleId(appPath: string): Promise<string> {
@@ -294,33 +333,51 @@ async function installWdaStep(
 ): Promise<void> {
   try {
     const wdaState = await getWDAState(udid);
+    const bundleId = await getAppBundleId(wdaAppPath);
 
-    // Check if already running
-    if (wdaState.running) {
-      result.wda_install = {
-        status: 'skipped',
-        detail: 'WDA is already running on the simulator',
-      };
-      result.ready = true;
-      return;
-    }
-
-    // Install if not already installed
+    // Install if not already installed.
     if (!wdaState.installed) {
       log.info(`Installing WDA on simulator ${udid}...`);
       await installAppOnSimulator(wdaAppPath, udid);
     }
 
-    // Launch
-    const bundleId = await getAppBundleId(wdaAppPath);
-    log.info(`Launching WDA with bundle ID: ${bundleId}`);
-    await launchAppOnSimulator(bundleId, udid);
+    // XCUITest won't reuse a WDA it didn't start (its connection factory needs
+    // wdaLocalPort free), so the session connects to this instance via the
+    // returned webDriverAgentUrl instead. Launch on a freshly allocated port so
+    // each simulator gets its own — terminate any prior instance first so the
+    // port we report is the one actually serving.
+    if (wdaState.running) {
+      log.info(`Terminating existing WDA (${bundleId}) before relaunch...`);
+      await terminateAppOnSimulator(bundleId, udid);
+    }
 
+    const wdaPort = await findFreePort();
+    let ready = false;
+    try {
+      log.info(`Launching WDA (${bundleId}) on port ${wdaPort}...`);
+      await launchAppOnSimulator(bundleId, udid, wdaPort);
+      ready = await waitForWdaReady(wdaPort);
+    } finally {
+      // Once WDA has bound the port the OS guards it; on failure it's free again.
+      // Either way the reservation has served its purpose — release it.
+      releaseReservedPort(wdaPort);
+    }
+
+    if (!ready) {
+      result.wda_install = {
+        status: 'failed',
+        detail: `WDA launched on port ${wdaPort} but did not become ready`,
+      };
+      return;
+    }
+
+    const webDriverAgentUrl = `http://127.0.0.1:${wdaPort}`;
+    result.wdaLocalPort = wdaPort;
+    result.webDriverAgentUrl = webDriverAgentUrl;
+    result.capabilitiesHint = { 'appium:webDriverAgentUrl': webDriverAgentUrl };
     result.wda_install = {
       status: 'completed',
-      detail: wdaState.installed
-        ? `WDA already installed, launched (${bundleId})`
-        : `WDA installed and launched (${bundleId})`,
+      detail: `WDA ${wdaState.installed ? 'already installed, ' : ''}launched and ready on ${webDriverAgentUrl}`,
     };
     result.ready = true;
   } catch (error: any) {
@@ -454,7 +511,7 @@ export default function prepareIosSimulator(server: FastMCP): void {
   server.addTool({
     name: 'prepare_ios_simulator',
     description:
-      'Prepare an iOS/tvOS simulator for Appium testing in a single call. Automatically boots the simulator, downloads prebuilt WDA (if not cached), and installs/launches WDA. Each step is skipped if already satisfied. Use skipWda=true to only boot without WDA. Set APPIUM_MCP_WDA_APP_PATH to an absolute path to a pre-extracted WebDriverAgentRunner-Runner.app to skip download entirely (useful in environments where external downloads are blocked).',
+      'Prepare an iOS/tvOS simulator for Appium testing in a single call. Automatically boots the simulator, downloads prebuilt WDA (if not cached), and installs/launches WDA on a free per-simulator port (so multiple simulators can run in parallel without colliding on the default 8100). Pass the returned capabilitiesHint (appium:webDriverAgentUrl) to appium_session_management (action=create) so the session reuses this running WDA instead of trying to start its own. Use skipWda=true to only boot without WDA. Set APPIUM_MCP_WDA_APP_PATH to an absolute path to a pre-extracted WebDriverAgentRunner-Runner.app to skip download entirely (useful in environments where external downloads are blocked).',
     parameters: prepareIosSimulatorSchema,
     annotations: {
       readOnlyHint: false,
