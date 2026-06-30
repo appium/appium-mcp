@@ -147,9 +147,14 @@ async function terminateAppOnSimulator(
   }
 }
 
+/** Loopback base URL a simulator's WDA is reachable at for a given local port. */
+function wdaBaseUrl(port: number): string {
+  return `http://127.0.0.1:${port}`;
+}
+
 /** Poll WDA's /status until it responds or the attempt budget is exhausted. */
 async function waitForWdaReady(port: number): Promise<boolean> {
-  const url = `http://127.0.0.1:${port}/status`;
+  const url = `${wdaBaseUrl(port)}/status`;
   for (let attempt = 0; attempt < 30; attempt++) {
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
@@ -371,7 +376,7 @@ async function installWdaStep(
       return;
     }
 
-    const webDriverAgentUrl = `http://127.0.0.1:${wdaPort}`;
+    const webDriverAgentUrl = wdaBaseUrl(wdaPort);
     result.wdaLocalPort = wdaPort;
     result.webDriverAgentUrl = webDriverAgentUrl;
     result.capabilitiesHint = { 'appium:webDriverAgentUrl': webDriverAgentUrl };
