@@ -93,6 +93,13 @@ export async function assignEmbeddedDriverPorts(
   const result = { ...capabilities };
   const allocatedPorts: number[] = [];
 
+  // When the session points at an externally-managed WDA (e.g. a simulator's
+  // WDA already launched by prepare_ios_simulator), that WDA owns its ports.
+  // wdaLocalPort/mjpegServerPort would be ignored, so don't reserve them.
+  if (platform === 'ios' && result['appium:webDriverAgentUrl']) {
+    return { capabilities: result, allocatedPorts };
+  }
+
   try {
     for (const cap of EMBEDDED_PORT_CAPABILITIES[platform]) {
       if (result[cap] == null || result[cap] === '') {

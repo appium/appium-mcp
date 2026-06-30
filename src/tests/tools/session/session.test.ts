@@ -768,6 +768,27 @@ describe('assignEmbeddedDriverPorts', () => {
     releaseReservedPorts(allocatedPorts);
     expect(reservedPortCount()).toBe(before);
   });
+
+  test('skips iOS allocation when webDriverAgentUrl points at an external WDA', async () => {
+    const before = reservedPortCount();
+    const { capabilities, allocatedPorts } = await assignEmbeddedDriverPorts(
+      'ios',
+      {
+        platformName: 'iOS',
+        'appium:automationName': 'XCUITest',
+        'appium:webDriverAgentUrl': 'http://127.0.0.1:8123',
+      }
+    );
+
+    // No ports reserved, the external WDA at the URL owns its ports.
+    expect(allocatedPorts).toEqual([]);
+    expect(capabilities['appium:wdaLocalPort']).toBeUndefined();
+    expect(capabilities['appium:mjpegServerPort']).toBeUndefined();
+    expect(capabilities['appium:webDriverAgentUrl']).toBe(
+      'http://127.0.0.1:8123'
+    );
+    expect(reservedPortCount()).toBe(before);
+  });
 });
 
 // ── URL helpers ───────────────────────────────────────────────────────────────
