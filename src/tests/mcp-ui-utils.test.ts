@@ -64,7 +64,7 @@ describe('createContextSwitcherUI', () => {
 });
 
 describe('createPageSourceInspectorUI', () => {
-  test('escapes page source for HTML and script contexts', () => {
+  test('escapes page source and does not embed it into script context', () => {
     const html = createPageSourceInspectorUI(
       '<node text="</script><img src=x onerror=alert(1)>"/>'
     );
@@ -75,11 +75,12 @@ describe('createPageSourceInspectorUI', () => {
     expect(html).not.toContain('content.innerHTML');
     expect(html).not.toContain('new RegExp');
     expect(html).not.toContain('</script><img src=x');
+    expect(html).not.toContain('const originalSource = "<node');
 
     expect(html).toContain(
       '&lt;node text=&quot;&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;&quot;/&gt;'
     );
-    expect(html).toContain('\\u003C/script\\u003E');
+    expect(html).toContain('const originalSource = xmlContent.textContent;');
   });
 });
 

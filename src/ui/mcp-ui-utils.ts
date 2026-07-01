@@ -929,7 +929,6 @@ export function createLocatorGeneratorUI(
  */
 export function createPageSourceInspectorUI(pageSource: string): string {
   const escapedSource = escapeHtml(pageSource);
-  const pageSourceScriptValue = escapeScriptValue(pageSource);
 
   return `
 <!DOCTYPE html>
@@ -1074,8 +1073,8 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       }, '*');
     }
 
-    const originalSource = ${pageSourceScriptValue};
     const xmlContent = document.getElementById('xmlContent');
+    const originalSource = xmlContent.textContent;
 
     function appendTextWithHighlights(container, text, searchTerm) {
       const searchLower = searchTerm.toLowerCase();
