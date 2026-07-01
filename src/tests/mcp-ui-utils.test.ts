@@ -1,6 +1,11 @@
 import { describe, expect, test } from '@jest/globals';
 
-import { createLocatorGeneratorUI } from '../ui/mcp-ui-utils.js';
+import {
+  createContextSwitcherUI,
+  createLocatorGeneratorUI,
+  createPageSourceInspectorUI,
+  createTestCodeViewerUI,
+} from '../ui/mcp-ui-utils.js';
 
 describe('createLocatorGeneratorUI', () => {
   test('escapes locator metadata and selectors before rendering HTML', () => {
@@ -34,6 +39,68 @@ describe('createLocatorGeneratorUI', () => {
     expect(html).toContain('&lt;u&gt;xss-resource-id&lt;/u&gt;');
     expect(html).toContain(
       'data-selector="com.attacker.app/`&lt;img src=x onerror=alert(1)&gt;"'
+    );
+  });
+});
+
+describe('createContextSwitcherUI', () => {
+  test('escapes context names and avoids inline context handlers', () => {
+    const html = createContextSwitcherUI(
+      ["WEBVIEW_<img src=x onerror='alert(1)'>"],
+      null
+    );
+
+    expect(html).not.toContain('<h3>WEBVIEW_<img');
+    expect(html).not.toContain("switchContext('WEBVIEW_");
+    expect(html).not.toContain("onclick='alert");
+
+    expect(html).toContain(
+      'data-context="WEBVIEW_&lt;img src=x onerror=&#039;alert(1)&#039;&gt;"'
+    );
+    expect(html).toContain(
+      '<h3>WEBVIEW_&lt;img src=x onerror=&#039;alert(1)&#039;&gt;</h3>'
+    );
+  });
+});
+
+describe('createPageSourceInspectorUI', () => {
+  test('escapes page source for HTML and script contexts', () => {
+    const html = createPageSourceInspectorUI(
+      '<node text="</script><img src=x onerror=alert(1)>"/>'
+    );
+
+    expect(html).not.toContain(
+      '<pre class="xml-content" id="xmlContent"><node'
+    );
+    expect(html).not.toContain('content.innerHTML');
+    expect(html).not.toContain('new RegExp');
+    expect(html).not.toContain('</script><img src=x');
+
+    expect(html).toContain(
+      '&lt;node text=&quot;&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;&quot;/&gt;'
+    );
+    expect(html).toContain('\\u003C/script\\u003E');
+  });
+});
+
+describe('createTestCodeViewerUI', () => {
+  test('escapes code and language labels without rebuilding code through innerHTML', () => {
+    const html = createTestCodeViewerUI(
+      '<script>alert(1)</script>',
+      'java<script>alert(2)</script>'
+    );
+
+    expect(html).not.toContain(
+      '<pre class="code-content" id="codeContent"><script'
+    );
+    expect(html).not.toContain(
+      '<span class="language-badge">java<script>alert(2)</script></span>'
+    );
+    expect(html).not.toContain('content.innerHTML');
+
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(html).toContain(
+      '<span class="language-badge">java&lt;script&gt;alert(2)&lt;/script&gt;</span>'
     );
   });
 });
