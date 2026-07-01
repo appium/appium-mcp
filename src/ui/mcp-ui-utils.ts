@@ -928,13 +928,7 @@ export function createLocatorGeneratorUI(
  * @returns HTML string for page source inspector
  */
 export function createPageSourceInspectorUI(pageSource: string): string {
-  // Escape HTML for safe display
-  const escapedSource = pageSource
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  const escapedSource = escapeHtml(pageSource);
 
   return `
 <!DOCTYPE html>
@@ -1079,19 +1073,50 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       }, '*');
     }
 
+    const xmlContent = document.getElementById('xmlContent');
+    const originalSource = xmlContent.textContent;
+
+    function appendTextWithHighlights(container, text, searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const textLower = text.toLowerCase();
+      let position = 0;
+
+      while (position < text.length) {
+        const matchIndex = textLower.indexOf(searchLower, position);
+        if (matchIndex === -1) {
+          container.appendChild(document.createTextNode(text.slice(position)));
+          return;
+        }
+
+        if (matchIndex > position) {
+          container.appendChild(
+            document.createTextNode(text.slice(position, matchIndex))
+          );
+        }
+
+        const mark = document.createElement('mark');
+        mark.style.background = '#ffd700';
+        mark.style.color = '#000';
+        mark.textContent = text.slice(matchIndex, matchIndex + searchTerm.length);
+        container.appendChild(mark);
+        position = matchIndex + searchTerm.length;
+      }
+    }
+
+    function renderSource(searchTerm = '') {
+      xmlContent.textContent = '';
+      if (!searchTerm) {
+        xmlContent.textContent = originalSource;
+        return;
+      }
+
+      appendTextWithHighlights(xmlContent, originalSource, searchTerm);
+    }
+
     // Search functionality
     document.getElementById('searchBox').addEventListener('input', (e) => {
       const searchTerm = e.target.value.toLowerCase();
-      const content = document.getElementById('xmlContent');
-      if (!searchTerm) {
-        content.innerHTML = \`${escapedSource}\`;
-        return;
-      }
-      const highlighted = content.textContent.replace(
-        new RegExp(\`(\${searchTerm})\`, 'gi'),
-        '<mark style="background: #ffd700; color: #000;">$1</mark>'
-      );
-      content.innerHTML = highlighted;
+      renderSource(searchTerm);
     });
   </script>
 </body>
@@ -1113,15 +1138,15 @@ export function createContextSwitcherUI(
     .map(
       (context) => `
     <div class="context-card ${context === currentContext ? 'active' : ''}"
-         onclick="switchContext('${context}')">
+         data-context="${escapeHtml(context)}">
       <div class="context-header">
-        <h3>${context}</h3>
+        <h3>${escapeHtml(context)}</h3>
         ${context === currentContext ? '<span class="badge-active">Active</span>' : ''}
       </div>
       <div class="context-type">
         ${context === 'NATIVE_APP' ? '📱 Native App' : '🌐 WebView'}
       </div>
-      <button class="switch-btn" onclick="event.stopPropagation(); switchContext('${context}')">
+      <button class="switch-btn">
         ${context === currentContext ? 'Current' : 'Switch'}
       </button>
     </div>
@@ -1254,6 +1279,16 @@ export function createContextSwitcherUI(
         }
       }, '*');
     }
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      const card = target instanceof Element ? target.closest('.context-card') : null;
+      if (!card) {
+        return;
+      }
+
+      switchContext(card.dataset.context || '');
+    });
   </script>
 </body>
 </html>
@@ -1487,13 +1522,9 @@ export function createTestCodeViewerUI(
   code: string,
   language: string = 'java'
 ): string {
-  // Escape HTML for safe display
-  const escapedCode = code
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  const escapedCode = escapeHtml(code);
+  const languageLabel = escapeHtml(language);
+  const downloadExtension = language === 'java' ? 'java' : 'js';
 
   return `
 <!DOCTYPE html>
@@ -1587,7 +1618,7 @@ export function createTestCodeViewerUI(
   <div class="toolbar">
     <div class="toolbar-left">
       <span style="font-size: 14px; font-weight: 500;">💻 Test Code Viewer</span>
-      <span class="language-badge">${language}</span>
+      <span class="language-badge">${languageLabel}</span>
       <span style="font-size: 12px; color: #999;">${code.length} characters, ${code.split('\\n').length} lines</span>
     </div>
     <div class="toolbar-right">
@@ -1613,21 +1644,28 @@ export function createTestCodeViewerUI(
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'TestCode.${language === 'java' ? 'java' : 'js'}';
+      a.download = 'TestCode.${downloadExtension}';
       a.click();
       URL.revokeObjectURL(url);
     }
 
     function formatCode() {
-      // Basic formatting - could be enhanced with a proper formatter
       const content = document.getElementById('codeContent');
       const text = content.textContent;
-      // Add line numbers
       const lines = text.split('\\n');
-      const formatted = lines.map((line, i) =>
-        \`<span class="line-numbers">\${i + 1}</span>\${line}\`
-      ).join('\\n');
-      content.innerHTML = formatted;
+      content.textContent = '';
+
+      lines.forEach((line, index) => {
+        if (index > 0) {
+          content.appendChild(document.createTextNode('\\n'));
+        }
+
+        const lineNumber = document.createElement('span');
+        lineNumber.className = 'line-numbers';
+        lineNumber.textContent = String(index + 1);
+        content.appendChild(lineNumber);
+        content.appendChild(document.createTextNode(line));
+      });
     }
 
     // Initial format
