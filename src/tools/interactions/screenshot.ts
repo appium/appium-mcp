@@ -44,9 +44,16 @@ export async function executeScreenshot(opts: {
   deps?: ScreenshotDeps;
   elementId?: string;
   maxWidth?: number;
+  returnRawBase64?: boolean;
   sessionId?: string;
 }): Promise<any> {
-  const { deps = defaultDeps, elementId, maxWidth, sessionId } = opts;
+  const {
+    deps = defaultDeps,
+    elementId,
+    maxWidth,
+    returnRawBase64,
+    sessionId,
+  } = opts;
 
   const driver = deps.getDriver(sessionId);
   if (!driver) {
@@ -73,6 +80,20 @@ export async function executeScreenshot(opts: {
         screenshotBuffer = Buffer.from(resizedBuffer);
         displayBase64 = screenshotBuffer.toString('base64');
       }
+    }
+
+    // Return the raw base64 image without touching the disk. Useful when the
+    // server runs on a remote machine where the saved file is not reachable.
+    if (returnRawBase64) {
+      return {
+        content: [
+          {
+            type: 'image',
+            data: displayBase64,
+            mimeType: 'image/png',
+          },
+        ],
+      };
     }
 
     // Generate filename with timestamp
@@ -118,6 +139,16 @@ const screenshotSchema = z.object({
     .describe(
       'Optional maximum width in pixels to resize the screenshot. The aspect ratio is preserved. Useful for reducing token usage when sending screenshots to LLMs.'
     ),
+  returnRawBase64: z
+    .boolean()
+    .default(false)
+    .describe(
+      'When true, returns the raw base64-encoded PNG image instead of saving it to disk. ' +
+        'This should only be enabled when a human explicitly invokes the tool manually, ' +
+        'typically to view the screenshot on a different machine (e.g. when the server runs ' +
+        'on a remote machine and the saved file is not accessible). ' +
+        'An LLM must always keep this false and rely on the saved file path.'
+    ),
   sessionId: z
     .string()
     .optional()
@@ -138,6 +169,7 @@ export default function screenshot(server: FastMCP): void {
       executeScreenshot({
         elementId: args.elementUUID,
         maxWidth: args.maxWidth,
+        returnRawBase64: args.returnRawBase64,
         sessionId: args.sessionId,
       }),
   });
