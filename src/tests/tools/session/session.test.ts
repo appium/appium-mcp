@@ -256,7 +256,23 @@ describe('appium_session_management tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('action=detach');
+      expect(result.content[0].text).toContain('force=true');
       expect(mockSafeDeleteSession).not.toHaveBeenCalled();
+    });
+
+    test('deletes attached session when force is true', async () => {
+      const tool = await getToolExecute();
+      mockGetSessionOwnership.mockReturnValue('attached');
+      mockSafeDeleteSession.mockResolvedValue(true as any);
+
+      const result = await tool.execute(
+        { action: 'delete', sessionId: 'borrowed', force: true },
+        undefined
+      );
+
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('deleted successfully');
+      expect(mockSafeDeleteSession).toHaveBeenCalledWith('borrowed');
     });
 
     test('reports not found when session does not exist', async () => {
