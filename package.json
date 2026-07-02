@@ -62,7 +62,7 @@
     "@xmldom/xmldom": "^0.9.8",
     "appium-adb": "^15.0.0",
     "appium-ios-device": "^3.1.0",
-    "appium-uiautomator2-driver": "^7.0.0",
+    "appium-uiautomator2-driver": "^8.0.0",
     "appium-webdriveragent": "^12.1.1",
     "appium-xcuitest-driver": "^11.0.0",
     "applesign": "^5.0.0",
