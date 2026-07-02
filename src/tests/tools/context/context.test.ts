@@ -1,7 +1,9 @@
 import { beforeEach, describe, test, expect, jest } from '@jest/globals';
 
 const mockDriver = {};
-const mockSetCurrentContext = jest.fn(() => true);
+const mockSetCurrentContext = jest.fn<
+  (context: string, sessionId?: string) => boolean
+>(() => true);
 
 jest.unstable_mockModule('../../../session-store', () => ({
   setCurrentContext: mockSetCurrentContext,
