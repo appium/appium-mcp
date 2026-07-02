@@ -1,3 +1,9 @@
+## [1.87.0](https://github.com/appium/appium-mcp/compare/v1.86.13...v1.87.0) (2026-07-02)
+
+### Features
+
+* **screenshot:** add returnRawBase64 param to return inline image ([#440](https://github.com/appium/appium-mcp/issues/440)) ([91c7aa2](https://github.com/appium/appium-mcp/commit/91c7aa2dbc970d9f869316072a1c63bb59bd4e95))
+
 ## [1.86.13](https://github.com/appium/appium-mcp/compare/v1.86.12...v1.86.13) (2026-07-02)
 
 ### Miscellaneous Chores
