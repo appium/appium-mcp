@@ -57,7 +57,7 @@ export default function context(server: FastMCP): void {
         ]);
 
         if (currentContext) {
-          setCurrentContext(currentContext);
+          setCurrentContext(currentContext, args.sessionId);
         }
 
         if (args.action === 'list') {
@@ -97,7 +97,7 @@ export default function context(server: FastMCP): void {
 
         await setContext(driver, args.context);
         const newContext = await getCurrentContext(driver);
-        setCurrentContext(newContext);
+        setCurrentContext(newContext, args.sessionId);
 
         return textResult(
           `Successfully switched context from "${currentContext}" to "${newContext}".`
