@@ -245,31 +245,32 @@ describe('appium_session_management tool', () => {
       expect(result.content[0].text).toContain('deleted successfully');
     });
 
-    test('allows deleting an attached session when explicitly requested', async () => {
+    test('rejects deleting an attached session', async () => {
       const tool = await getToolExecute();
-      mockSafeDeleteSession.mockResolvedValue(true as any);
+      mockGetSessionOwnership.mockReturnValue('attached');
 
       const result = await tool.execute(
         { action: 'delete', sessionId: 'borrowed' },
         undefined
       );
 
-      expect(result.isError).toBeFalsy();
-      expect(result.content[0].text).toContain('deleted successfully');
-      expect(mockSafeDeleteSession).toHaveBeenCalledWith('borrowed');
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('action=detach');
+      expect(mockSafeDeleteSession).not.toHaveBeenCalled();
     });
 
     test('reports not found when session does not exist', async () => {
       const tool = await getToolExecute();
-      mockGetSessionOwnership.mockReturnValue('owned');
-      mockSafeDeleteSession.mockResolvedValue(false as any);
+      mockGetSessionOwnership.mockReturnValue(null);
 
       const result = await tool.execute(
         { action: 'delete', sessionId: 'ghost' },
         undefined
       );
+      expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('ghost');
       expect(result.content[0].text).toContain('not found');
+      expect(mockSafeDeleteSession).not.toHaveBeenCalled();
     });
   });
 
