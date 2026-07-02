@@ -12,13 +12,33 @@
 
 ## [1.86.11](https://github.com/appium/appium-mcp/compare/v1.86.10...v1.86.11) (2026-07-01)
 
+### Bug Fixes
+
+* more escapes ([#433](https://github.com/appium/appium-mcp/issues/433)) ([f59cba1](https://github.com/appium/appium-mcp/commit/f59cba177484101ce0babc4bacd615de0987bdf9))
+
 ## [1.86.10](https://github.com/appium/appium-mcp/compare/v1.86.9...v1.86.10) (2026-07-01)
+
+### Miscellaneous Chores
+
+* **prepare-ios-simulator:** create wdaBaseUrl ([#432](https://github.com/appium/appium-mcp/issues/432)) ([6c0e578](https://github.com/appium/appium-mcp/commit/6c0e578bbaec8210c52e649df5241677a0d2e68f))
 
 ## [1.86.9](https://github.com/appium/appium-mcp/compare/v1.86.8...v1.86.9) (2026-06-30)
 
+### Bug Fixes
+
+* **session:** allow multiple sessions on simulator ([#430](https://github.com/appium/appium-mcp/issues/430)) ([aee9241](https://github.com/appium/appium-mcp/commit/aee92419351061245a3948c690f62a56036b8c9f))
+
 ## [1.86.8](https://github.com/appium/appium-mcp/compare/v1.86.7...v1.86.8) (2026-06-30)
 
+### Bug Fixes
+
+* allow SSE version to handle unique ports ([#429](https://github.com/appium/appium-mcp/issues/429)) ([5acb2d6](https://github.com/appium/appium-mcp/commit/5acb2d6826ec86cfb335e1d2794f1eba67a5ad4f))
+
 ## [1.86.7](https://github.com/appium/appium-mcp/compare/v1.86.6...v1.86.7) (2026-06-29)
+
+### Bug Fixes
+
+* remote no such element error code ([#424](https://github.com/appium/appium-mcp/issues/424)) ([51bf42c](https://github.com/appium/appium-mcp/commit/51bf42c056b8e9172a671421d5c36338b0d1eb52))
 
 ## [1.86.6](https://github.com/appium/appium-mcp/compare/v1.86.5...v1.86.6) (2026-06-29)
 
