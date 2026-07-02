@@ -1,3 +1,9 @@
+## [1.86.13](https://github.com/appium/appium-mcp/compare/v1.86.12...v1.86.13) (2026-07-02)
+
+### Miscellaneous Chores
+
+* **deps:** bump appium-uiautomator2-driver from 7.6.2 to 8.0.0 ([#426](https://github.com/appium/appium-mcp/issues/426)) ([62e04d5](https://github.com/appium/appium-mcp/commit/62e04d5c5d3183fdf0be705b40720984e572faa4))
+
 ## [1.86.12](https://github.com/appium/appium-mcp/compare/v1.86.11...v1.86.12) (2026-07-02)
 
 ### Miscellaneous Chores
