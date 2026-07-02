@@ -1,3 +1,9 @@
+## [1.86.12](https://github.com/appium/appium-mcp/compare/v1.86.11...v1.86.12) (2026-07-02)
+
+### Miscellaneous Chores
+
+* downgrade conventional-changelog-conventionalcommits to v9 ([#435](https://github.com/appium/appium-mcp/issues/435)) ([b2d330a](https://github.com/appium/appium-mcp/commit/b2d330abbe6fe73cc640cc06f3fff0c3a985e9c2))
+
 ## [1.86.11](https://github.com/appium/appium-mcp/compare/v1.86.10...v1.86.11) (2026-07-01)
 
 ## [1.86.10](https://github.com/appium/appium-mcp/compare/v1.86.9...v1.86.10) (2026-07-01)
