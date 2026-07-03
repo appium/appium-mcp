@@ -36,6 +36,14 @@ const SERVER_INSTRUCTIONS = [
   '- For local Appium install, doctor, or smoke tests, run appium_skills before guessing commands.',
 ].join('\n');
 
+const FAST_MCP_LOGGER = {
+  debug: (...args: unknown[]) => log.debug(...args),
+  error: (...args: unknown[]) => log.error(...args),
+  info: (...args: unknown[]) => log.info(...args),
+  log: (...args: unknown[]) => log.info(...args),
+  warn: (...args: unknown[]) => log.warn(...args),
+};
+
 export interface CreateAppiumMcpServerOptions {
   /**
    * List of plugins to register with the server.
@@ -105,6 +113,7 @@ export async function createAppiumMcpServer(
     name: serverName,
     version: serverVersion,
     instructions,
+    logger: FAST_MCP_LOGGER,
     // Appium MCP will not allow client to ask the local workspace/project folders.
     roots: {
       enabled: false,
