@@ -171,6 +171,9 @@ afterEach(() => {
   registeredServers.length = 0;
   sessions = [];
   safeDeleteAllSessions.mockReset();
+  jest.mocked(log.debug).mockReset();
+  jest.mocked(log.error).mockReset();
+  jest.mocked(log.info).mockReset();
   jest.mocked(log.warn).mockReset();
   delete process.env.APPIUM_MCP_ON_CLIENT_DISCONNECT;
 });
@@ -184,6 +187,20 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
         enabled: false,
       },
     });
+  });
+
+  test('passes the appium logger to FastMCP', () => {
+    createAppiumMcpServer();
+
+    const options = registeredServers[0]?.options as {
+      logger: Record<string, (...args: unknown[]) => void>;
+    };
+
+    options.logger.debug('fastmcp debug');
+    options.logger.log('fastmcp log');
+
+    expect(log.debug).toHaveBeenCalledWith('fastmcp debug');
+    expect(log.info).toHaveBeenCalledWith('fastmcp log');
   });
 
   test('registers plugin capabilities during construction but initializes lazily', async () => {
