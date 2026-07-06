@@ -77,7 +77,7 @@
   "optionalDependencies": {
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
-    "@opentelemetry/sdk-node": "^0.219.0"
+    "@opentelemetry/sdk-node": "^0.220.0"
   },
   "peerDependencies": {
     "@appium/mcp-documentation": "^1.0.1"
