@@ -1,3 +1,13 @@
+## [1.87.2](https://github.com/appium/appium-mcp/compare/v1.87.1...v1.87.2) (2026-07-06)
+
+### Bug Fixes
+
+* keep FastMCP logs off stdio stdout ([#444](https://github.com/appium/appium-mcp/issues/444)) ([5b517bc](https://github.com/appium/appium-mcp/commit/5b517bc388eeddbe309ebea208d9cf73f801e51a))
+
+### Miscellaneous Chores
+
+* **deps:** bump @opentelemetry/exporter-trace-otlp-http ([#442](https://github.com/appium/appium-mcp/issues/442)) ([e2ea212](https://github.com/appium/appium-mcp/commit/e2ea212444f7bcc6addb6757dfdb50bcaedbecc9))
+
 ## [1.87.1](https://github.com/appium/appium-mcp/compare/v1.87.0...v1.87.1) (2026-07-06)
 
 ### Miscellaneous Chores
