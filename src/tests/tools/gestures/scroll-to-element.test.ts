@@ -33,6 +33,10 @@ jest.unstable_mockModule(
 const { handleScrollToElement } =
   await import('../../../tools/gestures/handlers/scroll-to-element.js');
 
+function resultText(result: { content: Array<{ type: string }> }): string {
+  return (result.content[0] as unknown as { text: string }).text;
+}
+
 const NO_SUCH_ELEMENT = {
   error: 'no such element',
   message:
@@ -51,14 +55,15 @@ describe('handleScrollToElement', () => {
     mockPerformVerticalScroll.mockClear();
 
     const result = await handleScrollToElement(remoteDriver as never, {
+      action: 'scroll_to_element',
       strategy: 'accessibility id',
       selector: 'missing',
       maxScrollAttempts: 1,
     });
 
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('not found after 1 scroll');
-    expect(result.content[0].text).not.toContain('already visible');
+    expect(resultText(result)).toContain('not found after 1 scroll');
+    expect(resultText(result)).not.toContain('already visible');
     expect(mockPerformVerticalScroll).toHaveBeenCalledTimes(1);
   });
 
@@ -72,13 +77,14 @@ describe('handleScrollToElement', () => {
     mockPerformVerticalScroll.mockClear();
 
     const result = await handleScrollToElement(remoteDriver as never, {
+      action: 'scroll_to_element',
       strategy: 'accessibility id',
       selector: 'submit',
       maxScrollAttempts: 1,
     });
 
     expect(result.isError).toBeFalsy();
-    expect(result.content[0].text).toContain('already visible');
+    expect(resultText(result)).toContain('already visible');
     expect(mockPerformVerticalScroll).not.toHaveBeenCalled();
   });
 });
