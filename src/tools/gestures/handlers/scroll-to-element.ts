@@ -1,6 +1,6 @@
 import type { ContentResult } from 'fastmcp';
 import type { DriverInstance } from '../../../session-store.js';
-import { getPageSource } from '../../../command.js';
+import { findElement, getPageSource } from '../../../command.js';
 import log from '../../../logger.js';
 import {
   errorResult,
@@ -98,7 +98,7 @@ async function tryFindElement(
   selector: string
 ): Promise<boolean> {
   try {
-    await driver.findElement(strategy, selector);
+    await findElement(driver, strategy, selector);
     return true;
   } catch {
     return false;
