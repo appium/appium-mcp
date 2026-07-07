@@ -1,3 +1,9 @@
+## [1.87.3](https://github.com/appium/appium-mcp/compare/v1.87.2...v1.87.3) (2026-07-07)
+
+### Bug Fixes
+
+* **gestures:** use findElement in scroll_to_element visibility check ([#446](https://github.com/appium/appium-mcp/issues/446)) ([3d83ec0](https://github.com/appium/appium-mcp/commit/3d83ec0daa67da4f37f2f7b7696b4d5ea06546a7))
+
 ## [1.87.2](https://github.com/appium/appium-mcp/compare/v1.87.1...v1.87.2) (2026-07-06)
 
 ### Bug Fixes
