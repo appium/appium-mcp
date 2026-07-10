@@ -3,7 +3,12 @@ import { z } from 'zod';
 import { generateAllElementLocators } from '../../locators/generate-all-locators.js';
 import { getPlatformName, PLATFORM } from '../../session-store.js';
 import type { DriverInstance } from '../../session-store.js';
-import { elementClick, execute, getPageSource } from '../../command.js';
+import {
+  elementClick,
+  execute,
+  findElement,
+  getPageSource,
+} from '../../command.js';
 import {
   resolveDriver,
   textResult,
@@ -134,7 +139,7 @@ async function handleAndroidAlert(
         continue;
       }
       try {
-        button = await driver.findElement(strategy, selector);
+        button = await findElement(driver, strategy, selector);
         break;
       } catch {
         continue;
