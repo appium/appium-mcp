@@ -1,3 +1,9 @@
+## [1.87.4](https://github.com/appium/appium-mcp/compare/v1.87.3...v1.87.4) (2026-07-11)
+
+### Bug Fixes
+
+* **alert:** use findElement in Android custom button lookup ([#449](https://github.com/appium/appium-mcp/issues/449)) ([98ead11](https://github.com/appium/appium-mcp/commit/98ead11de040340d74933e390ed7b594047605f1))
+
 ## [1.87.3](https://github.com/appium/appium-mcp/compare/v1.87.2...v1.87.3) (2026-07-07)
 
 ### Bug Fixes
