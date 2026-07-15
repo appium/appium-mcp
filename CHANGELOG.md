@@ -1,3 +1,9 @@
+## [1.87.5](https://github.com/appium/appium-mcp/compare/v1.87.4...v1.87.5) (2026-07-15)
+
+### Bug Fixes
+
+* limit the node version to not use 26 ([#455](https://github.com/appium/appium-mcp/issues/455)) ([52b2d1a](https://github.com/appium/appium-mcp/commit/52b2d1a63fb8eccf6aed4991aba87ea28c156bec))
+
 ## [1.87.4](https://github.com/appium/appium-mcp/compare/v1.87.3...v1.87.4) (2026-07-11)
 
 ### Bug Fixes
