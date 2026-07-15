@@ -124,5 +124,8 @@
     "src/**/*.{js,json}": [
       "prettier --write"
     ]
+  },
+  "engines": {
+    "node": ">=22 <26"
   }
 }
