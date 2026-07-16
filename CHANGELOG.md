@@ -1,3 +1,9 @@
+## [1.87.6](https://github.com/appium/appium-mcp/compare/v1.87.5...v1.87.6) (2026-07-16)
+
+### Bug Fixes
+
+* **context:** pass sessionId to setCurrentContext ([#437](https://github.com/appium/appium-mcp/issues/437)) ([f7d4f3e](https://github.com/appium/appium-mcp/commit/f7d4f3ed909e2c38b42350c113d1de5cf2b260f3))
+
 ## [1.87.5](https://github.com/appium/appium-mcp/compare/v1.87.4...v1.87.5) (2026-07-15)
 
 ### Bug Fixes
