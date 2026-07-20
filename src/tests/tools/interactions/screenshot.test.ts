@@ -1,10 +1,12 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 
-const mockGetDriver = jest.fn();
+const mockGetDriver = jest.fn((_sessionId?: string): any => null);
 const mockSetSession = jest.fn(async () => {});
-const mockReadAllPersistedSessions = jest.fn(async () => []);
+const mockReadAllPersistedSessions = jest.fn(async (): Promise<any[]> => []);
 const mockRemovePersistedSession = jest.fn(async () => {});
-const mockAttachToRemoteSession = jest.fn();
+const mockAttachToRemoteSession = jest.fn(
+  async (_opts: any): Promise<any> => ({})
+);
 const mockGetScreenshot = jest.fn(async () => 'dGVzdA=='); // "test" base64
 
 jest.unstable_mockModule('../../../session-store.js', () => ({
