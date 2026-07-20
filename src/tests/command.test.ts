@@ -16,6 +16,9 @@ const {
   getElementText,
   getElementAttribute,
   getActiveElement,
+  elementClick,
+  getElementRect,
+  getScreenshot,
 } = await import('../command.js');
 
 // What the remote client resolves with when it swallows a "no such element" 404.
@@ -121,6 +124,54 @@ describe('element commands: re-throw swallowed remote "no such element"', () => 
     await expect(
       getActiveElement({ getActiveElement: jest.fn(async () => el) } as never)
     ).resolves.toBe(el);
+  });
+
+  test('elementClick re-throws swallowed error, resolves otherwise', async () => {
+    await expect(
+      elementClick(
+        { elementClick: jest.fn(async () => NO_SUCH_ELEMENT_VALUE) } as never,
+        'bad'
+      )
+    ).rejects.toThrow(/could not be located/i);
+    await expect(
+      elementClick(
+        { elementClick: jest.fn(async () => undefined) } as never,
+        'el'
+      )
+    ).resolves.toBeUndefined();
+  });
+
+  test('getElementRect re-throws swallowed error, returns rect otherwise', async () => {
+    await expect(
+      getElementRect(
+        { getElementRect: jest.fn(async () => NO_SUCH_ELEMENT_VALUE) } as never,
+        'bad'
+      )
+    ).rejects.toThrow(/could not be located/i);
+    const rect = { x: 0, y: 0, width: 100, height: 40 };
+    await expect(
+      getElementRect(
+        { getElementRect: jest.fn(async () => rect) } as never,
+        'el'
+      )
+    ).resolves.toBe(rect);
+  });
+
+  test('getScreenshot(elementId) re-throws swallowed error, returns base64 otherwise', async () => {
+    await expect(
+      getScreenshot(
+        {
+          takeElementScreenshot: jest.fn(async () => NO_SUCH_ELEMENT_VALUE),
+        } as never,
+        'bad'
+      )
+    ).rejects.toThrow(/could not be located/i);
+    await expect(
+      getScreenshot(
+        { takeElementScreenshot: jest.fn(async () => 'base64png') } as never,
+        'el'
+      )
+    ).resolves.toBe('base64png');
   });
 
   test('preserves the W3C error code as the error name (for classifyError)', async () => {
