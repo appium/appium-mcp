@@ -277,7 +277,8 @@ export async function elementClick(
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.click(elementUUID);
   }
-  return await driver.elementClick(elementUUID);
+  const result = await driver.elementClick(elementUUID);
+  throwIfSwallowedRemoteError(result);
 }
 
 /**
@@ -319,7 +320,9 @@ export async function getElementRect(
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.getElementRect(elementUUID);
   }
-  return await driver.getElementRect(elementUUID);
+  const result = await driver.getElementRect(elementUUID);
+  throwIfSwallowedRemoteError(result);
+  return result;
 }
 
 /**
@@ -386,7 +389,9 @@ export async function getScreenshot(
     } else if (isXCUITestDriverSession(driver)) {
       return await driver.getElementScreenshot(elementId);
     }
-    return await driver.takeElementScreenshot(elementId);
+    const result = await driver.takeElementScreenshot(elementId);
+    throwIfSwallowedRemoteError(result);
+    return result;
   }
 
   if (isAndroidUiautomator2DriverSession(driver)) {
