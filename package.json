@@ -92,7 +92,7 @@
     "@appium/tsconfig": "^1.1.2",
     "@jest/globals": "^30.2.0",
     "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/git": "^11.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.0.0",
     "conventional-changelog-conventionalcommits": "^9.3.1",
