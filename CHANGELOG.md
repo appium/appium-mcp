@@ -1,3 +1,9 @@
+## [1.87.7](https://github.com/appium/appium-mcp/compare/v1.87.6...v1.87.7) (2026-07-21)
+
+### Bug Fixes
+
+* **command:** re-throw swallowed remote errors for element click, rect, and screenshot ([#457](https://github.com/appium/appium-mcp/issues/457)) ([940e07e](https://github.com/appium/appium-mcp/commit/940e07e6032b0673e9bb3aa44e25976ab3e69dcf))
+
 ## [1.87.6](https://github.com/appium/appium-mcp/compare/v1.87.5...v1.87.6) (2026-07-16)
 
 ### Bug Fixes
