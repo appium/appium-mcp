@@ -20,8 +20,6 @@ import os from 'node:os';
 import { cp as nodeFsCp } from 'node:fs/promises';
 import { fs, net, plist, zip } from '@appium/support';
 import { BOOTSTRAP_PATH } from 'appium-webdriveragent';
-// @ts-ignore: No type definitions for 'applesign'
-import Applesign from 'applesign';
 import { provision } from 'ios-mobileprovision-finder';
 import { IOSManager } from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
@@ -231,8 +229,10 @@ async function signIpa(
     withGetTaskAllow: true,
     withoutPlugins: true,
   };
-  const as = new Applesign(opts);
-  await as.signIPA(ipaPath);
+  // @ts-expect-error dynamic import of applesign
+  const { default: Applesign } = await import('applesign');
+  const signer = new Applesign(opts);
+  await signer.signIPA(ipaPath);
 
   const resignedPath = path.join(
     path.dirname(ipaPath),
