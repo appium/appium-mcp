@@ -1,7 +1,5 @@
 import type { FastMCP } from 'fastmcp';
-import { getDriver } from '../../session-store.js';
 import { elementUUIDScheme } from '../../schema.js';
-import type { NullableDriverInstance } from '../../session-store.js';
 import { fs, imageUtil } from '@appium/support';
 import { join } from 'node:path';
 import {
@@ -13,16 +11,15 @@ import { getScreenshot } from '../../command.js';
 import z from 'zod';
 import { resolveScreenshotDir } from '../../utils/paths.js';
 import {
+  resolveDriver,
   textResult,
   errorResult,
   toolErrorMessage,
-  noActiveDriverSessionResult,
 } from '../tool-response.js';
 
 export { resolveScreenshotDir };
 
 export interface ScreenshotDeps {
-  getDriver: (sessionId?: string) => NullableDriverInstance;
   writeFile: (filePath: string, data: Buffer) => Promise<unknown>;
   mkdir: (
     dirPath: string,
@@ -33,7 +30,6 @@ export interface ScreenshotDeps {
 }
 
 const defaultDeps: ScreenshotDeps = {
-  getDriver,
   writeFile: fs.writeFile,
   mkdir: async (dirPath) => await fs.mkdirp(dirPath),
   resolveScreenshotDir,
@@ -55,10 +51,11 @@ export async function executeScreenshot(opts: {
     sessionId,
   } = opts;
 
-  const driver = deps.getDriver(sessionId);
-  if (!driver) {
-    return noActiveDriverSessionResult(sessionId);
+  const resolved = await resolveDriver(sessionId);
+  if (!resolved.ok) {
+    return resolved.result;
   }
+  const { driver } = resolved;
 
   try {
     const screenshotBase64 = await getScreenshot(driver, elementId);
