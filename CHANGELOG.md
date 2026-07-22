@@ -1,3 +1,9 @@
+## [1.87.8](https://github.com/appium/appium-mcp/compare/v1.87.7...v1.87.8) (2026-07-22)
+
+### Bug Fixes
+
+* **screenshot:** use resolveDriver for session rehydration parity ([#456](https://github.com/appium/appium-mcp/issues/456)) ([5bda643](https://github.com/appium/appium-mcp/commit/5bda643996bdba7116a2888e86991431cfa7ac60))
+
 ## [1.87.7](https://github.com/appium/appium-mcp/compare/v1.87.6...v1.87.7) (2026-07-21)
 
 ### Bug Fixes
