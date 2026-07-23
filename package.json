@@ -60,7 +60,7 @@
     "@appium/support": "^7.0.2",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@xmldom/xmldom": "^0.9.8",
-    "appium-adb": "^15.0.0",
+    "appium-adb": "^16.0.0",
     "appium-ios-device": "^3.1.0",
     "appium-uiautomator2-driver": "^8.0.0",
     "appium-webdriveragent": "^12.1.1",
