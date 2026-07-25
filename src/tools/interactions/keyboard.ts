@@ -1,31 +1,24 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { execute } from '../../command.js';
-import {
-  resolveDriver,
-  textResult,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {execute} from '../../command.js';
+import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 const schema = z.object({
   action: z
     .enum(['hide', 'is_shown'])
     .describe(
       'hide: dismiss the software keyboard (mobile: hideKeyboard). ' +
-        'is_shown: whether the keyboard is visible (mobile: isKeyboardShown).'
+        'is_shown: whether the keyboard is visible (mobile: isKeyboardShown).',
     ),
   keys: z
     .array(z.string())
     .optional()
     .describe(
       'hide only: optional key names to dismiss the keyboard (e.g. "done"). ' +
-        'Forwarded to mobile: hideKeyboard when non-empty. Ignored for is_shown.'
+        'Forwarded to mobile: hideKeyboard when non-empty. Ignored for is_shown.',
     ),
-  sessionId: z
-    .string()
-    .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 type KeyboardArgs = z.infer<typeof schema>;
@@ -41,10 +34,7 @@ export default function keyboard(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (
-      args: KeyboardArgs,
-      _context: Record<string, unknown> | undefined
-    ): Promise<ContentResult> => {
+    execute: async (args: KeyboardArgs, _context: Record<string, unknown> | undefined): Promise<ContentResult> => {
       try {
         switch (args.action) {
           case 'hide':
@@ -57,25 +47,20 @@ export default function keyboard(server: FastMCP): void {
         if (args.action === 'hide') {
           return errorResult(`Failed to hide keyboard. Error: ${msg}`);
         }
-        return errorResult(
-          `Failed to query keyboard visibility. Error: ${msg}`
-        );
+        return errorResult(`Failed to query keyboard visibility. Error: ${msg}`);
       }
     },
   });
 }
 
-async function handleHide(
-  sessionId: string | undefined,
-  keys: string[] | undefined
-): Promise<ContentResult> {
+async function handleHide(sessionId: string | undefined, keys: string[] | undefined): Promise<ContentResult> {
   const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
-  const { driver } = resolved;
+  const {driver} = resolved;
 
-  const params = keys && keys.length > 0 ? { keys } : {};
+  const params = keys && keys.length > 0 ? {keys} : {};
   await execute(driver, 'mobile: hideKeyboard', params);
   return textResult('Keyboard dismissed successfully.');
 }
@@ -85,8 +70,8 @@ async function handleIsShown(sessionId?: string): Promise<ContentResult> {
   if (!resolved.ok) {
     return resolved.result;
   }
-  const { driver } = resolved;
+  const {driver} = resolved;
 
   const keyboardShown = await execute(driver, 'mobile: isKeyboardShown', {});
-  return textResult(JSON.stringify({ keyboardShown }, null, 2));
+  return textResult(JSON.stringify({keyboardShown}, null, 2));
 }

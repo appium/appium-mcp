@@ -1,20 +1,14 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { fs } from '@appium/support';
-import { join } from 'node:path';
-import { getPlatformName, PLATFORM } from '../../session-store.js';
-import {
-  startRecordingScreen as cmdStartRecording,
-  stopRecordingScreen as cmdStopRecording,
-} from '../../command.js';
-import { resolveScreenshotDir } from '../../utils/paths.js';
 import crypto from 'node:crypto';
-import {
-  resolveDriver,
-  textResult,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import {join} from 'node:path';
+
+import {fs} from '@appium/support';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {startRecordingScreen as cmdStartRecording, stopRecordingScreen as cmdStopRecording} from '../../command.js';
+import {getPlatformName, PLATFORM} from '../../session-store.js';
+import {resolveScreenshotDir} from '../../utils/paths.js';
+import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 /**
  * iOS-specific options for startRecordingScreen.
@@ -71,7 +65,7 @@ const screenRecordingSchema = z.object({
   action: z
     .enum(['start', 'stop'])
     .describe(
-      'Use start to begin recording. Use stop to end the current recording, retrieve it from the driver, and save it to disk.'
+      'Use start to begin recording. Use stop to end the current recording, retrieve it from the driver, and save it to disk.',
     ),
   timeLimit: z
     .number()
@@ -79,75 +73,37 @@ const screenRecordingSchema = z.object({
     .min(1)
     .optional()
     .describe(
-      'Maximum recording duration in seconds for the underlying recorder. This does not automatically stop and save the recording through this tool; call action="stop" to retrieve/save the video. iOS default: 180 (max 4200). Android default: 180 (max 1800).'
+      'Maximum recording duration in seconds for the underlying recorder. This does not automatically stop and save the recording through this tool; call action="stop" to retrieve/save the video. iOS default: 180 (max 4200). Android default: 180 (max 1800).',
     ),
   forceRestart: z
     .boolean()
     .optional()
     .describe(
-      'If true, stop any active recording immediately and start a new one without returning the previous video. Default: false.'
+      'If true, stop any active recording immediately and start a new one without returning the previous video. Default: false.',
     ),
   videoQuality: z
     .enum(['low', 'medium', 'high', 'photo'])
     .optional()
     .describe('iOS only. Video quality preset. Default: medium.'),
-  videoFps: z
-    .number()
-    .int()
-    .min(1)
-    .max(60)
-    .optional()
-    .describe('iOS only. Frames per second. Default: 10.'),
-  videoType: z
-    .string()
-    .optional()
-    .describe('iOS only. Video codec to use (e.g. libx264).'),
-  videoFilters: z
-    .string()
-    .optional()
-    .describe(
-      'iOS only. FFMPEG video filters. Takes precedence over videoScale.'
-    ),
-  videoScale: z
-    .string()
-    .optional()
-    .describe('iOS only. Scaling value (e.g. 1280:720).'),
-  pixelFormat: z
-    .string()
-    .optional()
-    .describe('iOS only. Output pixel format (e.g. yuv420p).'),
+  videoFps: z.number().int().min(1).max(60).optional().describe('iOS only. Frames per second. Default: 10.'),
+  videoType: z.string().optional().describe('iOS only. Video codec to use (e.g. libx264).'),
+  videoFilters: z.string().optional().describe('iOS only. FFMPEG video filters. Takes precedence over videoScale.'),
+  videoScale: z.string().optional().describe('iOS only. Scaling value (e.g. 1280:720).'),
+  pixelFormat: z.string().optional().describe('iOS only. Output pixel format (e.g. yuv420p).'),
   hardwareAcceleration: z
     .enum(['videoToolbox', 'cuda', 'amf_dx11', 'qsv', 'vaapi'])
     .optional()
     .describe('iOS only. FFMPEG hardware acceleration backend.'),
-  videoSize: z
-    .string()
-    .optional()
-    .describe(
-      'Android only. Frame size in WIDTHxHEIGHT format (e.g. 1280x720).'
-    ),
-  bitRate: z
-    .number()
-    .int()
-    .optional()
-    .describe('Android only. Video bit rate in bits per second.'),
-  bugReport: z
-    .boolean()
-    .optional()
-    .describe(
-      'Android only. Display timestamp overlay. Requires API level 27+.'
-    ),
-  sessionId: z
-    .string()
-    .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+  videoSize: z.string().optional().describe('Android only. Frame size in WIDTHxHEIGHT format (e.g. 1280x720).'),
+  bitRate: z.number().int().optional().describe('Android only. Video bit rate in bits per second.'),
+  bugReport: z.boolean().optional().describe('Android only. Display timestamp overlay. Requires API level 27+.'),
+  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 export default function screenRecording(server: FastMCP): void {
   server.addTool({
     name: 'appium_screen_recording',
-    description:
-      'Start or stop screen recording. action=start begins recording; action=stop stops and saves to MP4.',
+    description: 'Start or stop screen recording. action=start begins recording; action=stop stops and saves to MP4.',
     parameters: screenRecordingSchema,
     annotations: {
       readOnlyHint: false,
@@ -155,13 +111,13 @@ export default function screenRecording(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof screenRecordingSchema>,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       try {
         if (args.action === 'stop') {
@@ -176,9 +132,7 @@ export default function screenRecording(server: FastMCP): void {
 
         const platform = getPlatformName(driver);
         if (![PLATFORM.ios, PLATFORM.android].includes(platform)) {
-          return errorResult(
-            `Unsupported platform: ${platform}. Only Android and iOS are supported.`
-          );
+          return errorResult(`Unsupported platform: ${platform}. Only Android and iOS are supported.`);
         }
 
         let options: IOSRecordingOptions | AndroidRecordingOptions;
@@ -232,9 +186,7 @@ export default function screenRecording(server: FastMCP): void {
         await cmdStartRecording(driver, options);
         return textResult('Screen recording started.');
       } catch (err: unknown) {
-        return errorResult(
-          `Failed screen recording action ${args.action}. Error: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed screen recording action ${args.action}. Error: ${toolErrorMessage(err)}`);
       }
     },
   });

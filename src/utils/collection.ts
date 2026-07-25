@@ -41,9 +41,7 @@ export function isEmpty(value: unknown): boolean {
   return false;
 }
 
-export function omitNilValues<T>(
-  values: Record<string, T | null | undefined>
-): Record<string, T> {
+export function omitNilValues<T>(values: Record<string, T | null | undefined>): Record<string, T> {
   const filteredValues: Record<string, T> = {};
 
   for (const [key, value] of Object.entries(values)) {
@@ -56,22 +54,17 @@ export function omitNilValues<T>(
 }
 
 function isLength(value: unknown): value is number {
-  return (
-    typeof value === 'number' &&
-    value >= 0 &&
-    value % 1 === 0 &&
-    value <= Number.MAX_SAFE_INTEGER
-  );
+  return typeof value === 'number' && value >= 0 && value % 1 === 0 && value <= Number.MAX_SAFE_INTEGER;
 }
 
 function isArguments(value: unknown): value is IArguments {
   return Object.prototype.toString.call(value) === '[object Arguments]';
 }
 
-function isTypedArrayLike(value: unknown): value is { length: number } {
+function isTypedArrayLike(value: unknown): value is {length: number} {
   if (!ArrayBuffer.isView(value)) {
     return false;
   }
-  const maybeLength = (value as { length?: unknown }).length;
+  const maybeLength = (value as {length?: unknown}).length;
   return isLength(maybeLength);
 }

@@ -1,6 +1,8 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
-import { z } from 'zod';
+import type {AndroidUiautomator2Driver} from 'appium-uiautomator2-driver';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {execute} from '../../command.js';
 import {
   getPlatformName,
   isAndroidUiautomator2DriverSession,
@@ -9,14 +11,7 @@ import {
   PLATFORM,
   type DriverInstance,
 } from '../../session-store.js';
-import { execute } from '../../command.js';
-import {
-  errorResult,
-  platformMismatch,
-  resolveDriver,
-  textResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import {errorResult, platformMismatch, resolveDriver, textResult, toolErrorMessage} from '../tool-response.js';
 
 const deviceControlSchema = z.object({
   action: z
@@ -26,20 +21,15 @@ const deviceControlSchema = z.object({
         'lock: lock the device (optional seconds for timed lock). ' +
         'unlock: unlock the device. ' +
         'shake: perform shake gesture (iOS only). ' +
-        'open_notifications: open notifications panel (Android only).'
+        'open_notifications: open notifications panel (Android only).',
     ),
-  sessionId: z
-    .string()
-    .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   seconds: z
     .number()
     .int()
     .min(1)
     .optional()
-    .describe(
-      'Only for action=lock: lock duration in seconds before auto-unlock. Omit to remain locked until unlock.'
-    ),
+    .describe('Only for action=lock: lock duration in seconds before auto-unlock. Omit to remain locked until unlock.'),
 });
 
 export default function mobileDeviceControl(server: FastMCP): void {
@@ -54,13 +44,13 @@ export default function mobileDeviceControl(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof deviceControlSchema>,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       if (args.action !== 'lock' && args.seconds !== undefined) {
         return errorResult('seconds is only valid when action is lock');
@@ -78,27 +68,19 @@ export default function mobileDeviceControl(server: FastMCP): void {
             return await handleOpenNotifications(driver);
         }
       } catch (err: unknown) {
-        return errorResult(
-          `Failed device control action ${args.action}. err: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed device control action ${args.action}. err: ${toolErrorMessage(err)}`);
       }
     },
   });
 }
 
-async function handleLock(
-  driver: DriverInstance,
-  seconds?: number
-): Promise<ContentResult> {
-  const params: { seconds?: number } = {};
+async function handleLock(driver: DriverInstance, seconds?: number): Promise<ContentResult> {
+  const params: {seconds?: number} = {};
   if (seconds !== undefined) {
     params.seconds = seconds;
   }
   await execute(driver, 'mobile: lock', params);
-  const msg =
-    seconds !== undefined
-      ? `Device locked for ${seconds} second(s).`
-      : 'Device locked.';
+  const msg = seconds !== undefined ? `Device locked for ${seconds} second(s).` : 'Device locked.';
   return textResult(msg);
 }
 
@@ -115,9 +97,7 @@ async function handleShake(driver: DriverInstance): Promise<ContentResult> {
   return textResult('Shake action performed.');
 }
 
-async function handleOpenNotifications(
-  driver: DriverInstance
-): Promise<ContentResult> {
+async function handleOpenNotifications(driver: DriverInstance): Promise<ContentResult> {
   const platform = getPlatformName(driver);
   if (platform !== PLATFORM.android) {
     return platformMismatch('open_notifications', 'Android', platform);

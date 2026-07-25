@@ -1,10 +1,6 @@
-import { describe, test, expect, jest } from '@jest/globals';
-import type {
-  AppiumMcpPlugin,
-  McpRegistry as McpRegistryType,
-  ToolCallContext,
-  ToolCallResult,
-} from '../plugin.js';
+import {describe, test, expect, jest} from '@jest/globals';
+
+import type {AppiumMcpPlugin, McpRegistry as McpRegistryType, ToolCallContext, ToolCallResult} from '../plugin.js';
 
 await jest.unstable_mockModule('appium-uiautomator2-driver', () => ({
   AndroidUiautomator2Driver: class MockAndroidUiautomator2Driver {},
@@ -27,13 +23,11 @@ await jest.unstable_mockModule('../tools/index', () => ({
   default: jest.fn(),
 }));
 
-const { AppiumMcpCore, PluginManager, McpRegistry } =
-  await import('../plugin.js');
+const {AppiumMcpCore, PluginManager, McpRegistry} = await import('../plugin.js');
 const log = (await import('../logger.js')).default as unknown as {
   warn: jest.Mock;
 };
-const { setSession, safeDeleteAllSessions } =
-  await import('../session-store.js');
+const {setSession, safeDeleteAllSessions} = await import('../session-store.js');
 
 // ---------------------------------------------------------------------------
 // Minimal FastMCP mock
@@ -52,9 +46,7 @@ function makeMockServer() {
   const registeredResourceTemplates: unknown[] = [];
   const server: any = {
     addTool(toolDef: ToolDef) {
-      const existingIndex = registeredTools.findIndex(
-        (tool) => tool.name === toolDef.name
-      );
+      const existingIndex = registeredTools.findIndex((tool) => tool.name === toolDef.name);
       if (existingIndex !== -1) {
         registeredTools.splice(existingIndex, 1);
       }
@@ -94,7 +86,7 @@ describe('McpRegistry', () => {
       description: 'A test tool',
       parameters: {} as any,
       execute: async () => ({
-        content: [{ type: 'text', text: 'ok' }],
+        content: [{type: 'text', text: 'ok'}],
       }),
     });
 
@@ -111,7 +103,7 @@ describe('McpRegistry', () => {
       description: 'first tool',
       parameters: {} as any,
       execute: async () => ({
-        content: [{ type: 'text', text: 'first' }],
+        content: [{type: 'text', text: 'first'}],
       }),
     });
     registry.addTool({
@@ -119,7 +111,7 @@ describe('McpRegistry', () => {
       description: 'second tool',
       parameters: {} as any,
       execute: async () => ({
-        content: [{ type: 'text', text: 'second' }],
+        content: [{type: 'text', text: 'second'}],
       }),
     });
 
@@ -127,7 +119,7 @@ describe('McpRegistry', () => {
     expect(mockServer._tools[0].description).toBe('second tool');
 
     const result = (await mockServer._tools[0].execute({}, {})) as {
-      content: Array<{ text: string }>;
+      content: Array<{text: string}>;
     };
     expect(result.content[0].text).toBe('second');
   });
@@ -143,13 +135,13 @@ describe('McpRegistry', () => {
     registry.addResource({
       uri: 'example://resource',
       name: 'Example Resource',
-      load: async () => ({ text: 'Resource text' }),
+      load: async () => ({text: 'Resource text'}),
     });
     registry.addResourceTemplate({
       uriTemplate: 'example://resource/{name}',
       name: 'Example Resource Template',
-      arguments: [{ name: 'name', required: true }],
-      load: async ({ name }) => ({ text: `Resource ${name}` }),
+      arguments: [{name: 'name', required: true}],
+      load: async ({name}) => ({text: `Resource ${name}`}),
     });
 
     expect(mockServer._prompts).toHaveLength(1);
@@ -164,13 +156,13 @@ describe('McpRegistry', () => {
 describe('AppiumMcpCore', () => {
   test('exposes session identity and ownership state', async () => {
     const core = new AppiumMcpCore();
-    const driver = { deleteSession: async () => {} } as any;
+    const driver = {deleteSession: async () => {}} as any;
 
     await safeDeleteAllSessions();
     expect(core.getSessionId()).toBeNull();
     expect(core.getSessionInfo()).toBeNull();
 
-    await setSession(driver, 'session-1', { platformName: 'Android' }, 'owned');
+    await setSession(driver, 'session-1', {platformName: 'Android'}, 'owned');
 
     expect(core.getSessionId()).toBe('session-1');
     expect(core.getSessionInfo('session-1')).not.toBeNull();
@@ -187,7 +179,7 @@ describe('PluginManager.register', () => {
     const server = makeMockServer();
     const manager = new PluginManager(server);
 
-    const plugin: AppiumMcpPlugin = { name: 'test-plugin', version: '0.1.0' };
+    const plugin: AppiumMcpPlugin = {name: 'test-plugin', version: '0.1.0'};
     manager.register([plugin]);
 
     // No errors thrown means registration succeeded.
@@ -197,7 +189,7 @@ describe('PluginManager.register', () => {
     const server = makeMockServer();
     const manager = new PluginManager(server);
 
-    const plugin: AppiumMcpPlugin = { name: 'dup', version: '1.0.0' };
+    const plugin: AppiumMcpPlugin = {name: 'dup', version: '1.0.0'};
     manager.register([plugin, plugin]);
 
     // Should not throw.
@@ -228,7 +220,7 @@ describe('PluginManager.register', () => {
       description: 'test',
       parameters: {},
       execute: async () => ({
-        content: [{ type: 'text', text: 'original' }],
+        content: [{type: 'text', text: 'original'}],
       }),
     });
 
@@ -242,20 +234,18 @@ describe('PluginManager.register', () => {
     const server = makeMockServer();
     const manager = new PluginManager(server);
 
-    manager.register([{ name: 'batch-plugin', version: '1.0.0' }]);
+    manager.register([{name: 'batch-plugin', version: '1.0.0'}]);
 
     server.addTools([
       {
         name: 'batch_tool',
         description: 'test',
         parameters: {},
-        execute: async () => ({ content: [] }),
+        execute: async () => ({content: []}),
       },
     ]);
 
-    expect(server._tools.map((tool: ToolDef) => tool.name)).toEqual([
-      'batch_tool',
-    ]);
+    expect(server._tools.map((tool: ToolDef) => tool.name)).toEqual(['batch_tool']);
   });
 });
 
@@ -275,7 +265,7 @@ describe('PluginManager beforeCall hook', () => {
       async beforeCall(_ctx: ToolCallContext): Promise<ToolCallResult> {
         return {
           isError: false,
-          content: [{ type: 'text', text: 'intercepted' }],
+          content: [{type: 'text', text: 'intercepted'}],
         };
       },
     };
@@ -289,7 +279,7 @@ describe('PluginManager beforeCall hook', () => {
       parameters: {},
       execute: async () => {
         originalExecuteCalled = true;
-        return { content: [{ type: 'text', text: 'original' }] };
+        return {content: [{type: 'text', text: 'original'}]};
       },
     });
 
@@ -313,10 +303,7 @@ describe('PluginManager afterCall hook', () => {
     const plugin: AppiumMcpPlugin = {
       name: 'result-modifier',
       version: '1.0.0',
-      async afterCall(
-        _ctx: ToolCallContext,
-        result: ToolCallResult
-      ): Promise<ToolCallResult> {
+      async afterCall(_ctx: ToolCallContext, result: ToolCallResult): Promise<ToolCallResult> {
         return {
           ...result,
           content: [
@@ -336,7 +323,7 @@ describe('PluginManager afterCall hook', () => {
       description: 'test',
       parameters: {},
       execute: async () => ({
-        content: [{ type: 'text', text: 'original result' }],
+        content: [{type: 'text', text: 'original result'}],
       }),
     });
 
@@ -366,7 +353,7 @@ describe('PluginManager afterCall hook', () => {
       description: 'test',
       parameters: {},
       execute: async () => ({
-        content: [{ type: 'text', text: 'original result' }],
+        content: [{type: 'text', text: 'original result'}],
       }),
     });
 
@@ -448,7 +435,7 @@ describe('PluginManager.registerPluginCapabilities', () => {
           description: 'A custom tool',
           parameters: {} as any,
           execute: async () => ({
-            content: [{ type: 'text', text: 'custom' }],
+            content: [{type: 'text', text: 'custom'}],
           }),
         });
       },
@@ -478,7 +465,7 @@ describe('PluginManager.registerPluginCapabilities', () => {
           description: 'A repeat tool',
           parameters: {} as any,
           execute: async () => ({
-            content: [{ type: 'text', text: 'repeat' }],
+            content: [{type: 'text', text: 'repeat'}],
           }),
         });
       },
@@ -491,8 +478,6 @@ describe('PluginManager.registerPluginCapabilities', () => {
 
     expect(registerCount).toBe(1);
     expect(server._tools).toHaveLength(1);
-    expect(log.warn).toHaveBeenCalledWith(
-      '[PluginManager] Duplicate plugin name "repeat-registrar" – skipping.'
-    );
+    expect(log.warn).toHaveBeenCalledWith('[PluginManager] Duplicate plugin name "repeat-registrar" – skipping.');
   });
 });

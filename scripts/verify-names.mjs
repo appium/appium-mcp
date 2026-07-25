@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { formatVerificationReport, verifyAppiumMcpNames } from '../dist/plugin.js';
+import {formatVerificationReport, verifyAppiumMcpNames} from '../dist/plugin.js';
 
 const report = verifyAppiumMcpNames();
 const output = formatVerificationReport(report);

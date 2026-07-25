@@ -1,9 +1,11 @@
-import { fs } from '@appium/support';
-import { createHash } from 'node:crypto';
+import {createHash} from 'node:crypto';
 import path from 'node:path';
+
+import {fs} from '@appium/support';
+
 import log from './logger.js';
-import { resolveAppiumMcpSessionsDir } from './utils/paths.js';
-import type { SessionCapabilities, SessionOwnership } from './session-store.js';
+import type {SessionCapabilities, SessionOwnership} from './session-store.js';
+import {resolveAppiumMcpSessionsDir} from './utils/paths.js';
 
 /**
  * On-disk representation of a remote Appium session.
@@ -66,9 +68,7 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
   try {
     entries = await fs.readdir(dir);
   } catch (err) {
-    log.warn(
-      `Failed to read persisted sessions directory: ${(err as Error).message}`
-    );
+    log.warn(`Failed to read persisted sessions directory: ${(err as Error).message}`);
     return [];
   }
   const jsonFiles = entries.filter((name) => name.endsWith('.json'));
@@ -82,12 +82,12 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
       const canonicalName = path.basename(canonicalPath);
       if (name !== canonicalName) {
         try {
-          await fs.writeFile(canonicalPath, raw, { flag: 'wx' });
+          await fs.writeFile(canonicalPath, raw, {flag: 'wx'});
         } catch (err) {
           if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
             await removeDuplicateSessionFile(filePath, name, entry.sessionId);
             log.warn(
-              `Skipping duplicate persisted session file ${name}: canonical file ${canonicalName} already exists`
+              `Skipping duplicate persisted session file ${name}: canonical file ${canonicalName} already exists`,
             );
             continue;
           }
@@ -97,9 +97,7 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
       }
       parsed.push(entry);
     } catch (err) {
-      log.warn(
-        `Skipping persisted session file ${name}: ${(err as Error).message}`
-      );
+      log.warn(`Skipping persisted session file ${name}: ${(err as Error).message}`);
     }
   }
   return parsed;
@@ -113,9 +111,7 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
  * same session id still race on the final rename, but each session lives in
  * its own file so writes to *different* sessions never collide.
  */
-export async function writePersistedSession(
-  entry: PersistedSession
-): Promise<void> {
+export async function writePersistedSession(entry: PersistedSession): Promise<void> {
   const dir = getPersistenceDir();
   if (!dir) {
     return;
@@ -123,14 +119,12 @@ export async function writePersistedSession(
   const target = sessionFilePath(entry.sessionId, dir);
   const tmp = `${target}.${process.pid}.tmp`;
   try {
-    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(dir, {recursive: true});
     await migrateLegacySessionFile(entry.sessionId, dir);
     await fs.writeFile(tmp, JSON.stringify(entry, null, 2), 'utf8');
     await fs.rename(tmp, target);
   } catch (err) {
-    log.warn(
-      `Failed to persist session ${entry.sessionId}: ${(err as Error).message}`
-    );
+    log.warn(`Failed to persist session ${entry.sessionId}: ${(err as Error).message}`);
     // Best-effort cleanup of the tmp file. Ignore if it does not exist.
     try {
       await fs.unlink(tmp);
@@ -157,11 +151,7 @@ export async function removePersistedSession(sessionId: string): Promise<void> {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       return;
     }
-    log.warn(
-      `Failed to remove persisted session ${sessionId}: ${
-        (err as Error).message
-      }`
-    );
+    log.warn(`Failed to remove persisted session ${sessionId}: ${(err as Error).message}`);
   }
 }
 
@@ -170,10 +160,7 @@ function sessionFilePath(sessionId: string, dir: string): string {
   return path.join(dir, `${safeName}.json`);
 }
 
-async function migrateLegacySessionFile(
-  sessionId: string,
-  dir: string
-): Promise<void> {
+async function migrateLegacySessionFile(sessionId: string, dir: string): Promise<void> {
   const legacy = legacySessionFilePath(sessionId, dir);
   if (!legacy) {
     return;
@@ -191,30 +178,18 @@ async function migrateLegacySessionFile(
 
     await fs.rename(legacy, target);
   } catch (err) {
-    log.warn(
-      `Failed to migrate legacy persisted session file for ${sessionId}: ${
-        (err as Error).message
-      }`
-    );
+    log.warn(`Failed to migrate legacy persisted session file for ${sessionId}: ${(err as Error).message}`);
   }
 }
 
-async function removeDuplicateSessionFile(
-  filePath: string,
-  name: string,
-  sessionId: string
-): Promise<void> {
+async function removeDuplicateSessionFile(filePath: string, name: string, sessionId: string): Promise<void> {
   try {
     await fs.unlink(filePath);
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       return;
     }
-    log.warn(
-      `Failed to remove duplicate persisted session file ${name} for ${sessionId}: ${
-        (err as Error).message
-      }`
-    );
+    log.warn(`Failed to remove duplicate persisted session file ${name} for ${sessionId}: ${(err as Error).message}`);
   }
 }
 

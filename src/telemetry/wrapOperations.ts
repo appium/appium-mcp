@@ -5,16 +5,11 @@
  * return values or recording sensitive request/response payloads.
  */
 
-import type { FastMCP } from 'fastmcp';
+import type {FastMCP} from 'fastmcp';
 
-import {
-  isArgumentValueTelemetryEnabled,
-  safeAttributeValue,
-  safeInputKeys,
-  safeSessionId,
-} from './attributes.js';
-import { getActiveSpan, SpanStatusCode, withSpan } from './tracer.js';
-import { isSensitiveKey } from '../utils/sensitive.js';
+import {isSensitiveKey} from '../utils/sensitive.js';
+import {isArgumentValueTelemetryEnabled, safeAttributeValue, safeInputKeys, safeSessionId} from './attributes.js';
+import {getActiveSpan, SpanStatusCode, withSpan} from './tracer.js';
 
 type ToolDef = Parameters<FastMCP['addTool']>[0];
 type PromptDef = Parameters<FastMCP['addPrompt']>[0];
@@ -38,36 +33,25 @@ type ResourceTemplateLoad = NonNullable<ResourceTemplateDef['load']>;
 export function installTelemetryWrappers(server: FastMCP): void {
   const originalAddTool = server.addTool.bind(server) as FastMCP['addTool'];
 
-  server.addTool = ((toolDef: ToolDef) =>
-    originalAddTool(wrapToolWithTelemetry(toolDef))) as FastMCP['addTool'];
+  server.addTool = ((toolDef: ToolDef) => originalAddTool(wrapToolWithTelemetry(toolDef))) as FastMCP['addTool'];
 
   if (typeof server.addPrompt === 'function') {
-    const originalAddPrompt = server.addPrompt.bind(
-      server
-    ) as FastMCP['addPrompt'];
+    const originalAddPrompt = server.addPrompt.bind(server) as FastMCP['addPrompt'];
     server.addPrompt = ((promptDef: PromptDef) =>
-      originalAddPrompt(
-        wrapPromptWithTelemetry(promptDef)
-      )) as FastMCP['addPrompt'];
+      originalAddPrompt(wrapPromptWithTelemetry(promptDef))) as FastMCP['addPrompt'];
   }
 
   if (typeof server.addResource === 'function') {
-    const originalAddResource = server.addResource.bind(
-      server
-    ) as FastMCP['addResource'];
+    const originalAddResource = server.addResource.bind(server) as FastMCP['addResource'];
     server.addResource = ((resourceDef: ResourceDef) =>
-      originalAddResource(
-        wrapResourceWithTelemetry(resourceDef)
-      )) as FastMCP['addResource'];
+      originalAddResource(wrapResourceWithTelemetry(resourceDef))) as FastMCP['addResource'];
   }
 
   if (typeof server.addResourceTemplate === 'function') {
-    const originalAddResourceTemplate = server.addResourceTemplate.bind(
-      server
-    ) as FastMCP['addResourceTemplate'];
+    const originalAddResourceTemplate = server.addResourceTemplate.bind(server) as FastMCP['addResourceTemplate'];
     server.addResourceTemplate = ((resourceTemplateDef: ResourceTemplateDef) =>
       originalAddResourceTemplate(
-        wrapResourceTemplateWithTelemetry(resourceTemplateDef)
+        wrapResourceTemplateWithTelemetry(resourceTemplateDef),
       )) as FastMCP['addResourceTemplate'];
   }
 }
@@ -91,24 +75,18 @@ export function wrapToolWithTelemetry(toolDef: ToolDef): ToolDef {
   return {
     ...toolDef,
     execute: async (args, context) =>
-      withSpan(
-        `tools/call ${toolName}`,
-        toolAttributes(toolName, args),
-        async () => {
-          const result = await execute(args, context);
-          if (isErrorResult(result)) {
-            getActiveSpan()?.setStatus({ code: SpanStatusCode.ERROR });
-            getActiveSpan()?.setAttribute('mcp.tool.result.is_error', true);
-          }
-          return result;
+      withSpan(`tools/call ${toolName}`, toolAttributes(toolName, args), async () => {
+        const result = await execute(args, context);
+        if (isErrorResult(result)) {
+          getActiveSpan()?.setStatus({code: SpanStatusCode.ERROR});
+          getActiveSpan()?.setAttribute('mcp.tool.result.is_error', true);
         }
-      ),
+        return result;
+      }),
   };
 }
 
-export function safeInputValueAttributes(
-  args: unknown
-): Record<string, string | number | boolean | string[]> {
+export function safeInputValueAttributes(args: unknown): Record<string, string | number | boolean | string[]> {
   if (!isArgumentValueTelemetryEnabled()) {
     return {};
   }
@@ -154,7 +132,7 @@ function wrapPromptWithTelemetry(promptDef: PromptDef): PromptDef {
           'mcp.prompt.name': promptName,
           ...inputAttributes(args),
         },
-        () => load(args, auth)
+        () => load(args, auth),
       ),
   };
 }
@@ -175,21 +153,18 @@ function wrapResourceWithTelemetry(resourceDef: ResourceDef): ResourceDef {
         {
           'mcp.resource.uri': uri,
         },
-        () => load()
+        () => load(),
       ),
   };
 }
 
-function wrapResourceTemplateWithTelemetry(
-  resourceTemplateDef: ResourceTemplateDef
-): ResourceTemplateDef {
+function wrapResourceTemplateWithTelemetry(resourceTemplateDef: ResourceTemplateDef): ResourceTemplateDef {
   const load = resourceTemplateDef.load as ResourceTemplateLoad | undefined;
   if (!load) {
     return resourceTemplateDef;
   }
 
-  const uriTemplate =
-    resourceTemplateDef.uriTemplate?.toString() ?? 'unknown_resource_template';
+  const uriTemplate = resourceTemplateDef.uriTemplate?.toString() ?? 'unknown_resource_template';
 
   return {
     ...resourceTemplateDef,
@@ -200,7 +175,7 @@ function wrapResourceTemplateWithTelemetry(
           'mcp.resource.uri_template': uriTemplate,
           ...inputAttributes(args),
         },
-        () => load(args, auth)
+        () => load(args, auth),
       ),
   };
 }
@@ -221,9 +196,7 @@ function toolAttributes(toolName: string, args: unknown) {
   };
 }
 
-function inputAttributes(
-  args: unknown
-): Record<string, string | number | boolean | string[]> {
+function inputAttributes(args: unknown): Record<string, string | number | boolean | string[]> {
   return {
     ...inputKeyAttributes(args),
     ...safeInputValueAttributes(args),
@@ -232,14 +205,11 @@ function inputAttributes(
 
 function inputKeyAttributes(args: unknown): Record<string, string[]> {
   const inputKeys = safeInputKeys(args);
-  return inputKeys.length > 0 ? { 'mcp.input.keys': inputKeys } : {};
+  return inputKeys.length > 0 ? {'mcp.input.keys': inputKeys} : {};
 }
 
 function isErrorResult(result: unknown): boolean {
   return (
-    !!result &&
-    typeof result === 'object' &&
-    'isError' in result &&
-    (result as { isError?: unknown }).isError === true
+    !!result && typeof result === 'object' && 'isError' in result && (result as {isError?: unknown}).isError === true
   );
 }

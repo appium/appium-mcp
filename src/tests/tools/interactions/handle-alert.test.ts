@@ -1,4 +1,4 @@
-import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+import {describe, test, expect, jest, beforeEach} from '@jest/globals';
 
 jest.unstable_mockModule('../../../persistence.js', () => ({
   readAllPersistedSessions: jest.fn(async () => []),
@@ -9,7 +9,7 @@ jest.unstable_mockModule('../../../session-store.js', () => ({
   getDriver: jest.fn(),
   setSession: jest.fn(),
   getPlatformName: jest.fn(() => 'Android'),
-  PLATFORM: { ios: 'iOS', android: 'Android' },
+  PLATFORM: {ios: 'iOS', android: 'Android'},
 }));
 
 jest.unstable_mockModule('../../../command.js', () => ({
@@ -25,18 +25,16 @@ jest.unstable_mockModule('../../../locators/generate-all-locators.js', () => ({
       text: 'OK',
       contentDesc: 'OK',
       clickable: true,
-      locators: { 'accessibility id': 'OK' },
+      locators: {'accessibility id': 'OK'},
     },
   ]),
 }));
 
-const { getDriver } = await import('../../../session-store.js');
-const { elementClick, findElement } = await import('../../../command.js');
+const {getDriver} = await import('../../../session-store.js');
+const {elementClick, findElement} = await import('../../../command.js');
 
 const mockGetDriver = getDriver as jest.MockedFunction<typeof getDriver>;
-const mockElementClick = elementClick as jest.MockedFunction<
-  typeof elementClick
->;
+const mockElementClick = elementClick as jest.MockedFunction<typeof elementClick>;
 const mockFindElement = findElement as jest.MockedFunction<typeof findElement>;
 
 // A remote WebDriver client resolves a missing element as this object instead
@@ -46,21 +44,17 @@ const SWALLOWED_NO_SUCH_ELEMENT = {
   message: 'An element could not be located on the page',
 };
 
-const mockServer = { addTool: jest.fn() } as any;
+const mockServer = {addTool: jest.fn()} as any;
 
 async function loadTool(): Promise<{
   execute: (...args: any[]) => Promise<any>;
 }> {
   const mod = await import('../../../tools/interactions/handle-alert.js');
   mod.default(mockServer);
-  return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-    -1
-  )?.[0];
+  return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(-1)?.[0];
 }
 
-function textFromResult(result: {
-  content: Array<{ type: string; text?: string }>;
-}): string | undefined {
+function textFromResult(result: {content: Array<{type: string; text?: string}>}): string | undefined {
   const block = result.content[0];
   return block && 'text' in block ? block.text : undefined;
 }
@@ -77,15 +71,10 @@ describe('appium_alert Android custom button', () => {
   test('does not click when findElement re-throws a swallowed remote error', async () => {
     // command.findElement surfaces the W3C "no such element" a remote client
     // otherwise resolves silently, so the locator loop must treat it as a miss.
-    mockFindElement.mockRejectedValue(
-      Object.assign(new Error('no such element'), { name: 'no such element' })
-    );
+    mockFindElement.mockRejectedValue(Object.assign(new Error('no such element'), {name: 'no such element'}));
 
     const tool = await loadTool();
-    const result = await tool.execute(
-      { action: 'accept', buttonLabel: 'OK' },
-      undefined
-    );
+    const result = await tool.execute({action: 'accept', buttonLabel: 'OK'}, undefined);
 
     expect(result.isError).toBe(true);
     expect(textFromResult(result)).toContain('Could not find element');
@@ -98,10 +87,7 @@ describe('appium_alert Android custom button', () => {
     });
 
     const tool = await loadTool();
-    const result = await tool.execute(
-      { action: 'accept', buttonLabel: 'OK' },
-      undefined
-    );
+    const result = await tool.execute({action: 'accept', buttonLabel: 'OK'}, undefined);
 
     expect(result.isError).toBeFalsy();
     expect(mockElementClick).toHaveBeenCalledTimes(1);

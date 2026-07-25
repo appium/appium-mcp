@@ -1,15 +1,31 @@
 {
   "name": "appium-mcp",
-  "mcpName": "io.github.appium/appium-mcp",
   "version": "1.88.3",
-  "type": "module",
+  "description": "Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation",
+  "bugs": {
+    "url": "https://github.com/appium/appium-mcp/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/appium/appium-mcp.git"
   },
-  "bugs": {
-    "url": "https://github.com/appium/appium-mcp/issues"
+  "bin": {
+    "appium-mcp": "dist/index.js"
   },
+  "files": [
+    "scripts",
+    "src",
+    "!src/tests",
+    "dist",
+    "!dist/tests",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE",
+    "server.json"
+  ],
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -22,9 +38,6 @@
       "import": "./dist/core.js"
     },
     "./package.json": "./package.json"
-  },
-  "bin": {
-    "appium-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "rimraf dist tsconfig.tsbuildinfo && tsc -b && chmod +x dist/index.js",
@@ -54,9 +67,6 @@
     "sync-version": "node scripts/sync-version.mjs",
     "version": "npm run sync-version"
   },
-  "author": "",
-  "license": "Apache-2.0",
-  "description": "Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation",
   "dependencies": {
     "@appium/support": "^7.0.2",
     "@modelcontextprotocol/sdk": "^1.22.0",
@@ -74,20 +84,6 @@
     "xpath": "^0.0.34",
     "zod": "^4.3.6"
   },
-  "optionalDependencies": {
-    "applesign": "^5.0.0",
-    "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.221.0",
-    "@opentelemetry/sdk-node": "^0.221.0"
-  },
-  "peerDependencies": {
-    "@appium/mcp-documentation": "^1.0.1"
-  },
-  "peerDependenciesMeta": {
-    "@appium/mcp-documentation": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@appium/oxc-config": "^1.1.0",
     "@appium/semantic-release-config": "^1.1.0",
@@ -103,17 +99,20 @@
     "ts-node": "^10.9.2",
     "typescript": "^6.0.2"
   },
-  "files": [
-    "scripts",
-    "src",
-    "!src/tests",
-    "dist",
-    "!dist/tests",
-    "CHANGELOG.md",
-    "README.md",
-    "LICENSE",
-    "server.json"
-  ],
+  "peerDependencies": {
+    "@appium/mcp-documentation": "^1.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@appium/mcp-documentation": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.221.0",
+    "@opentelemetry/sdk-node": "^0.221.0",
+    "applesign": "^5.0.0"
+  },
   "lint-staged": {
     "src/**/*.ts": [
       "eslint src --fix",
@@ -125,5 +124,6 @@
   },
   "engines": {
     "node": ">=22"
-  }
+  },
+  "mcpName": "io.github.appium/appium-mcp"
 }

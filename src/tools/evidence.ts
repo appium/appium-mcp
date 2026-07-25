@@ -1,6 +1,8 @@
-import { randomUUID } from 'node:crypto';
-import type { ContentResult } from 'fastmcp';
-import pkg from '../../package.json' with { type: 'json' };
+import {randomUUID} from 'node:crypto';
+
+import type {ContentResult} from 'fastmcp';
+
+import pkg from '../../package.json' with {type: 'json'};
 
 /**
  * Structured, machine-readable trace of a single tool action, so CI and agents
@@ -11,7 +13,7 @@ import pkg from '../../package.json' with { type: 'json' };
  */
 export interface ActionEvidenceRecord {
   schemaVersion: 1;
-  producer: { name: 'appium-mcp'; version: string };
+  producer: {name: 'appium-mcp'; version: string};
   evidenceId: string;
   status: 'success' | 'error';
   /**
@@ -22,15 +24,15 @@ export interface ActionEvidenceRecord {
   action: {
     name: string;
     stage?: EvidenceStage;
-    locator?: { strategy: string; selector: string };
-    element?: { webdriverId: string };
+    locator?: {strategy: string; selector: string};
+    element?: {webdriverId: string};
   };
   context?: {
     platform?: string;
     contextName?: string;
   };
-  timing: { startedAt: string; finishedAt: string; durationMs: number };
-  error?: { code: EvidenceErrorCode; message: string };
+  timing: {startedAt: string; finishedAt: string; durationMs: number};
+  error?: {code: EvidenceErrorCode; message: string};
 }
 
 export type EvidenceStage = 'locate' | 'interact' | 'capture';
@@ -69,10 +71,7 @@ export function isEvidenceEnabled(): boolean {
  * Attach an evidence record to an existing tool result as a `resource` content
  * block, leaving the original text untouched. No-op when evidence is disabled.
  */
-export function withEvidence(
-  result: ContentResult,
-  input: EvidenceInput
-): ContentResult {
+export function withEvidence(result: ContentResult, input: EvidenceInput): ContentResult {
   if (!isEvidenceEnabled()) {
     return result;
   }
@@ -99,20 +98,18 @@ export function withEvidence(
  * simply omitted. The session-store import is deferred until evidence is
  * enabled so the disabled path pulls in no driver dependencies.
  */
-export async function evidenceContext(
-  sessionId?: string
-): Promise<ActionEvidenceRecord['context'] | undefined> {
+export async function evidenceContext(sessionId?: string): Promise<ActionEvidenceRecord['context'] | undefined> {
   if (!isEvidenceEnabled()) {
     return undefined;
   }
-  const { getSessionInfo } = await import('../session-store.js');
+  const {getSessionInfo} = await import('../session-store.js');
   const info = getSessionInfo(sessionId);
   if (!info) {
     return undefined;
   }
   return {
-    ...(info.metadata.platform ? { platform: info.metadata.platform } : {}),
-    ...(info.currentContext ? { contextName: info.currentContext } : {}),
+    ...(info.metadata.platform ? {platform: info.metadata.platform} : {}),
+    ...(info.currentContext ? {contextName: info.currentContext} : {}),
   };
 }
 
@@ -144,32 +141,28 @@ export function classifyError(err: unknown): EvidenceErrorCode {
   return 'ACTION_FAILED';
 }
 
-function buildRecord(
-  result: ContentResult,
-  input: EvidenceInput
-): ActionEvidenceRecord {
+function buildRecord(result: ContentResult, input: EvidenceInput): ActionEvidenceRecord {
   const finished = Date.now();
-  const status: ActionEvidenceRecord['status'] =
-    result.isError || input.error !== undefined ? 'error' : 'success';
+  const status: ActionEvidenceRecord['status'] = result.isError || input.error !== undefined ? 'error' : 'success';
 
   return {
     schemaVersion: 1,
-    producer: { name: 'appium-mcp', version: pkg.version },
+    producer: {name: 'appium-mcp', version: pkg.version},
     evidenceId: randomUUID(),
     status,
     action: {
       name: input.name,
-      ...(input.stage ? { stage: input.stage } : {}),
-      ...(input.locator ? { locator: input.locator } : {}),
-      ...(input.element ? { element: input.element } : {}),
+      ...(input.stage ? {stage: input.stage} : {}),
+      ...(input.locator ? {locator: input.locator} : {}),
+      ...(input.element ? {element: input.element} : {}),
     },
-    ...(input.context ? { context: input.context } : {}),
+    ...(input.context ? {context: input.context} : {}),
     timing: {
       startedAt: new Date(input.startedAt).toISOString(),
       finishedAt: new Date(finished).toISOString(),
       durationMs: finished - input.startedAt,
     },
-    ...(status === 'error' ? { error: buildError(input.error, result) } : {}),
+    ...(status === 'error' ? {error: buildError(input.error, result)} : {}),
   };
 }
 
@@ -178,12 +171,9 @@ function buildRecord(
  * and message always agree — handlers that swallow errors only expose the
  * result text, so fall back to that when no error object is passed.
  */
-function buildError(
-  err: unknown,
-  result: ContentResult
-): NonNullable<ActionEvidenceRecord['error']> {
+function buildError(err: unknown, result: ContentResult): NonNullable<ActionEvidenceRecord['error']> {
   const message = errorMessage(err, result);
-  return { code: classifyError(err ?? message), message };
+  return {code: classifyError(err ?? message), message};
 }
 
 function errorMessage(err: unknown, result: ContentResult): string {

@@ -1,12 +1,10 @@
-import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+import {describe, test, expect, jest, beforeEach} from '@jest/globals';
 
 const mockGetDriver = jest.fn((_sessionId?: string): any => null);
 const mockSetSession = jest.fn(async () => {});
 const mockReadAllPersistedSessions = jest.fn(async (): Promise<any[]> => []);
 const mockRemovePersistedSession = jest.fn(async () => {});
-const mockAttachToRemoteSession = jest.fn(
-  async (_opts: any): Promise<any> => ({})
-);
+const mockAttachToRemoteSession = jest.fn(async (_opts: any): Promise<any> => ({}));
 const mockGetScreenshot = jest.fn(async () => 'dGVzdA=='); // "test" base64
 
 jest.unstable_mockModule('../../../session-store.js', () => ({
@@ -31,7 +29,7 @@ jest.unstable_mockModule('../../../command.js', () => ({
 }));
 
 jest.unstable_mockModule('../../../logger.js', () => ({
-  default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
+  default: {debug: () => {}, info: () => {}, warn: () => {}, error: () => {}},
 }));
 
 jest.unstable_mockModule('../../../ui/mcp-ui-utils.js', () => ({
@@ -40,11 +38,10 @@ jest.unstable_mockModule('../../../ui/mcp-ui-utils.js', () => ({
   addUIResourceToResponse: jest.fn((response) => response),
 }));
 
-const { executeScreenshot } =
-  await import('../../../tools/interactions/screenshot.js');
+const {executeScreenshot} = await import('../../../tools/interactions/screenshot.js');
 
 function textFromResult(result: {
-  content: Array<{ type: string; text?: string }>;
+  content: Array<{type: string; text?: string}>;
   isError?: boolean;
 }): string | undefined {
   const block = result.content[0];
@@ -107,7 +104,7 @@ describe('executeScreenshot resolveDriver', () => {
         platform: 'Android',
         automationName: 'UiAutomator2',
         deviceName: 'emulator-5554',
-        capabilities: { platformName: 'Android' },
+        capabilities: {platformName: 'Android'},
       },
     ] as any);
     mockAttachToRemoteSession.mockResolvedValue(remoteClient);
@@ -121,7 +118,7 @@ describe('executeScreenshot resolveDriver', () => {
     expect(mockAttachToRemoteSession).toHaveBeenCalledWith({
       remoteServerUrl: 'http://remote:4723',
       sessionId: 'persisted-1',
-      capabilities: { platformName: 'Android' },
+      capabilities: {platformName: 'Android'},
     });
     expect(mockSetSession).toHaveBeenCalled();
     expect(mockGetScreenshot).toHaveBeenCalledTimes(1);

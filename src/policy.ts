@@ -1,4 +1,5 @@
-import type { FastMCP } from 'fastmcp';
+import type {FastMCP} from 'fastmcp';
+
 import log from './logger.js';
 
 export interface AppiumMcpPolicy {
@@ -8,8 +9,7 @@ export interface AppiumMcpPolicy {
 
 export type PolicyTargetKind = 'tool' | 'resource';
 
-export type PolicyDecisionReason =
-  'empty_allowlist' | 'matched_allowlist' | 'not_in_allowlist';
+export type PolicyDecisionReason = 'empty_allowlist' | 'matched_allowlist' | 'not_in_allowlist';
 
 export interface PolicyDecision {
   allowed: boolean;
@@ -30,10 +30,9 @@ type PolicyResourceParam = AddResourceParam | AddResourceTemplateParam;
 export function evaluatePolicyTarget(
   policy: AppiumMcpPolicy | undefined,
   targetKind: PolicyTargetKind,
-  target: string
+  target: string,
 ): PolicyDecision {
-  const allowlist =
-    targetKind === 'tool' ? policy?.allowTools : policy?.allowResources;
+  const allowlist = targetKind === 'tool' ? policy?.allowTools : policy?.allowResources;
 
   if (!allowlist || allowlist.length === 0) {
     return {
@@ -80,12 +79,8 @@ export function installPolicy(server: FastMCP, policy?: AppiumMcpPolicy): void {
   }) as FastMCP['addTool'];
 
   const originalAddTools = server.addTools.bind(server);
-  server.addTools = ((
-    toolDefs: AddToolsParam
-  ): ReturnType<FastMCP['addTools']> => {
-    const allowedToolDefs = toolDefs.filter((toolDef) =>
-      isToolAllowed(policy, toolDef)
-    ) as AddToolsParam;
+  server.addTools = ((toolDefs: AddToolsParam): ReturnType<FastMCP['addTools']> => {
+    const allowedToolDefs = toolDefs.filter((toolDef) => isToolAllowed(policy, toolDef)) as AddToolsParam;
     if (allowedToolDefs.length === 0) {
       return;
     }
@@ -93,9 +88,7 @@ export function installPolicy(server: FastMCP, policy?: AppiumMcpPolicy): void {
   }) as FastMCP['addTools'];
 
   const originalAddResource = server.addResource.bind(server);
-  server.addResource = ((
-    resourceDef: AddResourceParam
-  ): ReturnType<FastMCP['addResource']> => {
+  server.addResource = ((resourceDef: AddResourceParam): ReturnType<FastMCP['addResource']> => {
     if (!isResourceAllowed(policy, resourceDef, 'resource')) {
       return;
     }
@@ -103,11 +96,9 @@ export function installPolicy(server: FastMCP, policy?: AppiumMcpPolicy): void {
   }) as FastMCP['addResource'];
 
   const originalAddResources = server.addResources.bind(server);
-  server.addResources = ((
-    resourceDefs: AddResourcesParam
-  ): ReturnType<FastMCP['addResources']> => {
+  server.addResources = ((resourceDefs: AddResourcesParam): ReturnType<FastMCP['addResources']> => {
     const allowedResourceDefs = resourceDefs.filter((resourceDef) =>
-      isResourceAllowed(policy, resourceDef, 'resource')
+      isResourceAllowed(policy, resourceDef, 'resource'),
     ) as AddResourcesParam;
     if (allowedResourceDefs.length === 0) {
       return;
@@ -117,7 +108,7 @@ export function installPolicy(server: FastMCP, policy?: AppiumMcpPolicy): void {
 
   const originalAddResourceTemplate = server.addResourceTemplate.bind(server);
   server.addResourceTemplate = ((
-    resourceTemplateDef: AddResourceTemplateParam
+    resourceTemplateDef: AddResourceTemplateParam,
   ): ReturnType<FastMCP['addResourceTemplate']> => {
     if (!isResourceAllowed(policy, resourceTemplateDef, 'resource template')) {
       return;
@@ -127,11 +118,10 @@ export function installPolicy(server: FastMCP, policy?: AppiumMcpPolicy): void {
 
   const originalAddResourceTemplates = server.addResourceTemplates.bind(server);
   server.addResourceTemplates = ((
-    resourceTemplateDefs: AddResourceTemplatesParam
+    resourceTemplateDefs: AddResourceTemplatesParam,
   ): ReturnType<FastMCP['addResourceTemplates']> => {
-    const allowedResourceTemplateDefs = resourceTemplateDefs.filter(
-      (resourceTemplateDef) =>
-        isResourceAllowed(policy, resourceTemplateDef, 'resource template')
+    const allowedResourceTemplateDefs = resourceTemplateDefs.filter((resourceTemplateDef) =>
+      isResourceAllowed(policy, resourceTemplateDef, 'resource template'),
     ) as AddResourceTemplatesParam;
     if (allowedResourceTemplateDefs.length === 0) {
       return;
@@ -140,15 +130,10 @@ export function installPolicy(server: FastMCP, policy?: AppiumMcpPolicy): void {
   }) as FastMCP['addResourceTemplates'];
 }
 
-function isToolAllowed(
-  policy: AppiumMcpPolicy,
-  toolDef: AddToolParam
-): boolean {
+function isToolAllowed(policy: AppiumMcpPolicy, toolDef: AddToolParam): boolean {
   const decision = evaluatePolicyTarget(policy, 'tool', toolDef.name);
   if (!decision.allowed) {
-    log.warn(
-      `Policy denied tool registration: ${formatPolicyTargetForLog(decision.target)} (${decision.reason})`
-    );
+    log.warn(`Policy denied tool registration: ${formatPolicyTargetForLog(decision.target)} (${decision.reason})`);
   }
   return decision.allowed;
 }
@@ -156,13 +141,13 @@ function isToolAllowed(
 function isResourceAllowed(
   policy: AppiumMcpPolicy,
   resourceDef: PolicyResourceParam,
-  label: 'resource' | 'resource template'
+  label: 'resource' | 'resource template',
 ): boolean {
   const target = readResourceName(resourceDef);
   const decision = evaluatePolicyTarget(policy, 'resource', target);
   if (!decision.allowed) {
     log.warn(
-      `Policy denied ${label} registration: ${formatResourceTargetForLog(resourceDef, decision.target)} (${decision.reason})`
+      `Policy denied ${label} registration: ${formatResourceTargetForLog(resourceDef, decision.target)} (${decision.reason})`,
     );
   }
   return decision.allowed;
@@ -177,10 +162,7 @@ function validatePolicy(policy: AppiumMcpPolicy): void {
   validateAllowlist(policy.allowResources, 'policy.allowResources');
 }
 
-function validateAllowlist(
-  allowlist: readonly RegExp[] | undefined,
-  label: string
-): void {
+function validateAllowlist(allowlist: readonly RegExp[] | undefined, label: string): void {
   if (allowlist === undefined) {
     return;
   }
@@ -200,19 +182,14 @@ function formatPolicyTargetForLog(target: string): string {
   return target.length > 0 ? target : '<unnamed>';
 }
 
-function formatResourceTargetForLog(
-  resourceDef: PolicyResourceParam,
-  target: string
-): string {
+function formatResourceTargetForLog(resourceDef: PolicyResourceParam, target: string): string {
   const label = formatPolicyTargetForLog(target);
   const identifiers = readResourceLogIdentifiers(resourceDef);
 
   return identifiers.length > 0 ? `${label}; ${identifiers.join('; ')}` : label;
 }
 
-function readResourceLogIdentifiers(
-  resourceDef: PolicyResourceParam
-): string[] {
+function readResourceLogIdentifiers(resourceDef: PolicyResourceParam): string[] {
   const identifiers: string[] = [];
   if ('uri' in resourceDef && resourceDef.uri.length > 0) {
     identifiers.push(`uri=${resourceDef.uri}`);

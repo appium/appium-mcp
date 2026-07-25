@@ -21,13 +21,15 @@
  * and never blocks server startup.
  */
 
-import { fs } from '@appium/support';
-import { createRequire } from 'node:module';
+import {createRequire} from 'node:module';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
-import type { AppiumMcpPlugin } from './core.js';
+import {pathToFileURL} from 'node:url';
+
+import {fs} from '@appium/support';
+
+import type {AppiumMcpPlugin} from './core.js';
 import log from './logger.js';
-import { isTruthyEnvValue } from './utils/env.js';
+import {isTruthyEnvValue} from './utils/env.js';
 
 const ENABLED_FLAG = 'APPIUM_MCP_DOCS_ENABLED';
 const PACKAGE_NAME = '@appium/mcp-documentation';
@@ -65,7 +67,7 @@ export async function loadDocumentationPlugin(): Promise<AppiumMcpPlugin | null>
         '  - globally (recommended; works with npx / global / standalone use):\n' +
         `      npm install -g ${PACKAGE_NAME}\n` +
         '  - or, only if appium-mcp is a dependency of your project, in that project root:\n' +
-        `      npm install ${PACKAGE_NAME}`
+        `      npm install ${PACKAGE_NAME}`,
     );
     return null;
   }
@@ -132,13 +134,9 @@ async function resolveGlobalEntryUrl(): Promise<string | null> {
     const pkgDir = path.dirname(pkgJsonPath);
     const pkg = JSON.parse(await fs.readFile(pkgJsonPath, 'utf8')) as {
       main?: string;
-      exports?: { ['.']?: { import?: string; default?: string } };
+      exports?: {['.']?: {import?: string; default?: string}};
     };
-    const entryRelative =
-      pkg.exports?.['.']?.import ??
-      pkg.exports?.['.']?.default ??
-      pkg.main ??
-      'index.js';
+    const entryRelative = pkg.exports?.['.']?.import ?? pkg.exports?.['.']?.default ?? pkg.main ?? 'index.js';
     return pathToFileURL(path.join(pkgDir, entryRelative)).href;
   } catch {
     return null;
@@ -149,6 +147,6 @@ function isModuleNotFound(err: unknown): boolean {
   if (typeof err !== 'object' || err === null || !('code' in err)) {
     return false;
   }
-  const code = (err as { code?: unknown }).code;
+  const code = (err as {code?: unknown}).code;
   return code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND';
 }

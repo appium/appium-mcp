@@ -1,4 +1,8 @@
-import type { Client } from 'webdriver';
+import {util} from '@appium/support';
+import type {ActionSequence, Element as AppiumElement, Rect, StringRecord} from '@appium/types';
+import type {Client} from 'webdriver';
+
+import log from './logger.js';
 import {
   getPlatformName,
   isAndroidUiautomator2DriverSession,
@@ -8,19 +12,8 @@ import {
   getCurrentContext as getStorecCurrentContext,
   getSessionInfo,
 } from './session-store.js';
-import type { DriverInstance } from './session-store.js';
-import type {
-  ActionSequence,
-  Element as AppiumElement,
-  Rect,
-  StringRecord,
-} from '@appium/types';
-import { util } from '@appium/support';
-import type {
-  IOSRecordingOptions,
-  AndroidRecordingOptions,
-} from './tools/interactions/screen-recording.js';
-import log from './logger.js';
+import type {DriverInstance} from './session-store.js';
+import type {IOSRecordingOptions, AndroidRecordingOptions} from './tools/interactions/screen-recording.js';
 
 /**
  * Execute a driver command.
@@ -34,11 +27,7 @@ import log from './logger.js';
  * @param params - Parameters for the command.
  * @returns The result of the executed command.
  */
-export async function execute(
-  driver: DriverInstance,
-  cmd: string,
-  params: any
-): Promise<any> {
+export async function execute(driver: DriverInstance, cmd: string, params: any): Promise<any> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.execute(cmd, params);
   } else if (isXCUITestDriverSession(driver)) {
@@ -59,29 +48,20 @@ export async function execute(
  * @param appId - Application identifier to query.
  * @returns Numeric app state.
  */
-export async function queryAppState(
-  driver: DriverInstance,
-  appId: string
-): Promise<number> {
+export async function queryAppState(driver: DriverInstance, appId: string): Promise<number> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.queryAppState(appId);
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.queryAppState(appId);
   }
-  return Number(
-    await (driver as Client).executeScript('mobile: queryAppState', [
-      { appId, bundleId: appId },
-    ])
-  );
+  return Number(await (driver as Client).executeScript('mobile: queryAppState', [{appId, bundleId: appId}]));
 }
 
 /**
  * Read current Appium driver session settings (embedded drivers or remote
  * WebDriver `GET /session/:id/appium/settings`).
  */
-export async function getSessionDriverSettings(
-  driver: DriverInstance
-): Promise<StringRecord<unknown>> {
+export async function getSessionDriverSettings(driver: DriverInstance): Promise<StringRecord<unknown>> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.getSettings();
   } else if (isXCUITestDriverSession(driver)) {
@@ -96,7 +76,7 @@ export async function getSessionDriverSettings(
  */
 export async function updateSessionDriverSettings(
   driver: DriverInstance,
-  settings: StringRecord<unknown>
+  settings: StringRecord<unknown>,
 ): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     await driver.updateSettings(settings as never);
@@ -116,10 +96,7 @@ export async function updateSessionDriverSettings(
  * @param driver - The driver instance to use.
  * @param appId - Application identifier to activate.
  */
-export async function activateApp(
-  driver: DriverInstance,
-  appId: string
-): Promise<void> {
+export async function activateApp(driver: DriverInstance, appId: string): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.activateApp(appId);
   } else if (isXCUITestDriverSession(driver)) {
@@ -134,9 +111,7 @@ export async function activateApp(
  * @param driver - The driver instance to query.
  * @returns The name of the current context.
  */
-export async function getCurrentContext(
-  driver: DriverInstance
-): Promise<string> {
+export async function getCurrentContext(driver: DriverInstance): Promise<string> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.getCurrentContext();
   } else if (isXCUITestDriverSession(driver)) {
@@ -171,10 +146,7 @@ export async function getContexts(driver: DriverInstance): Promise<string[]> {
  * @param driver - The driver instance to operate on.
  * @param name - The context name to switch to (if omitted, behavior depends on driver).
  */
-export async function setContext(
-  driver: DriverInstance,
-  name?: string
-): Promise<void> {
+export async function setContext(driver: DriverInstance, name?: string): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.setContext(name);
   } else if (isXCUITestDriverSession(driver)) {
@@ -198,8 +170,8 @@ export async function setContext(
  */
 export function buildW3cKeyActions(text: string): StringRecord<any> {
   const actions = text.split('').flatMap((char) => [
-    { type: 'keyDown', value: char },
-    { type: 'keyUp', value: char },
+    {type: 'keyDown', value: char},
+    {type: 'keyUp', value: char},
   ]);
 
   return {
@@ -219,12 +191,7 @@ export function buildW3cKeyActions(text: string): StringRecord<any> {
  *   of the driver-specific setValue. Works on both Android and iOS.
  * @returns Driver-specific result (often void or element value).
  */
-export async function setValue(
-  driver: DriverInstance,
-  elementUUID: string,
-  text: string,
-  w3cActions = false
-) {
+export async function setValue(driver: DriverInstance, elementUUID: string, text: string, w3cActions = false) {
   if (w3cActions) {
     return await performActions(driver, [buildW3cKeyActions(text)]);
   }
@@ -244,31 +211,19 @@ export async function setValue(
  * @param driver - The driver instance to use.
  * @param elementUUID - Identifier of the element to click.
  */
-export async function elementClick(
-  driver: DriverInstance,
-  elementUUID: string
-): Promise<void> {
+export async function elementClick(driver: DriverInstance, elementUUID: string): Promise<void> {
   if (
     getPlatformName(driver) === PLATFORM.ios &&
-    getStorecCurrentContext(driver.sessionId as string | undefined)?.startsWith(
-      'WEBVIEW_'
-    )
+    getStorecCurrentContext(driver.sessionId as string | undefined)?.startsWith('WEBVIEW_')
   ) {
     const caps = getSessionInfo(driver.sessionId || undefined);
     const settings = await getSessionDriverSettings(driver);
     // nativeWebTap === true means we should use the native tap (elementClick) even in webview context
-    if (
-      caps?.metadata?.capabilities?.['appium:nativeWebTap'] !== true ||
-      settings.nativeWebTap !== true
-    ) {
+    if (caps?.metadata?.capabilities?.['appium:nativeWebTap'] !== true || settings.nativeWebTap !== true) {
       log.debug(
-        `Using arguments[0].click() to click element ${elementUUID} in webview context (nativeWebTap not enabled)`
+        `Using arguments[0].click() to click element ${elementUUID} in webview context (nativeWebTap not enabled)`,
       );
-      return await execute(
-        driver,
-        'arguments[0].click();',
-        util.wrapElement(elementUUID)
-      );
+      return await execute(driver, 'arguments[0].click();', util.wrapElement(elementUUID));
     }
   }
 
@@ -289,11 +244,7 @@ export async function elementClick(
  * @param selector
  * @returns An element
  */
-export async function findElement(
-  driver: DriverInstance,
-  strategy: string,
-  selector: string
-): Promise<unknown> {
+export async function findElement(driver: DriverInstance, strategy: string, selector: string): Promise<unknown> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.findElement(strategy, selector);
   } else if (isXCUITestDriverSession(driver)) {
@@ -311,10 +262,7 @@ export async function findElement(
  * @param elementUUID - Element identifier.
  * @returns A `Rect` describing the element bounds.
  */
-export async function getElementRect(
-  driver: DriverInstance,
-  elementUUID: string
-): Promise<Rect> {
+export async function getElementRect(driver: DriverInstance, elementUUID: string): Promise<Rect> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.getElementRect(elementUUID);
   } else if (isXCUITestDriverSession(driver)) {
@@ -348,7 +296,7 @@ export async function getWindowRect(driver: DriverInstance): Promise<Rect> {
  */
 export async function performActions(
   driver: DriverInstance,
-  operation: StringRecord<any>[] | ActionSequence[]
+  operation: StringRecord<any>[] | ActionSequence[],
 ): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.performActions(operation);
@@ -379,10 +327,7 @@ export async function getPageSource(driver: DriverInstance): Promise<string> {
  * @param driver - The driver instance to capture from.
  * @returns Base64-encoded PNG string.
  */
-export async function getScreenshot(
-  driver: DriverInstance,
-  elementId?: string
-): Promise<string> {
+export async function getScreenshot(driver: DriverInstance, elementId?: string): Promise<string> {
   if (elementId) {
     if (isAndroidUiautomator2DriverSession(driver)) {
       return await driver.getElementScreenshot(elementId);
@@ -409,10 +354,7 @@ export async function getScreenshot(
  * @param elementUUID - Identifier of the element.
  * @returns The element's text content.
  */
-export async function getElementText(
-  driver: DriverInstance,
-  elementUUID: string
-): Promise<string> {
+export async function getElementText(driver: DriverInstance, elementUUID: string): Promise<string> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.getText(elementUUID);
   } else if (isXCUITestDriverSession(driver)) {
@@ -434,7 +376,7 @@ export async function getElementText(
 export async function getElementAttribute(
   driver: DriverInstance,
   elementUUID: string,
-  attribute: string
+  attribute: string,
 ): Promise<string | null> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.getAttribute(attribute, elementUUID);
@@ -446,9 +388,7 @@ export async function getElementAttribute(
   return result;
 }
 
-export async function getActiveElement(
-  driver: DriverInstance
-): Promise<AppiumElement> {
+export async function getActiveElement(driver: DriverInstance): Promise<AppiumElement> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.active();
   } else if (isXCUITestDriverSession(driver)) {
@@ -465,14 +405,11 @@ export async function getActiveElement(
  * @param driver - The driver instance to query.
  * @returns Orientation string: LANDSCAPE or PORTRAIT.
  */
-export async function getOrientation(
-  driver: DriverInstance
-): Promise<'LANDSCAPE' | 'PORTRAIT'> {
+export async function getOrientation(driver: DriverInstance): Promise<'LANDSCAPE' | 'PORTRAIT'> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.getOrientation();
   } else if (isXCUITestDriverSession(driver)) {
-    return (await driver.proxyCommand('/orientation', 'GET')) as
-      'LANDSCAPE' | 'PORTRAIT';
+    return (await driver.proxyCommand('/orientation', 'GET')) as 'LANDSCAPE' | 'PORTRAIT';
   }
   return (await driver.getOrientation()) as 'LANDSCAPE' | 'PORTRAIT';
 }
@@ -483,14 +420,11 @@ export async function getOrientation(
  * @param driver - The driver instance to use.
  * @param orientation - LANDSCAPE or PORTRAIT.
  */
-export async function setOrientation(
-  driver: DriverInstance,
-  orientation: 'LANDSCAPE' | 'PORTRAIT'
-): Promise<void> {
+export async function setOrientation(driver: DriverInstance, orientation: 'LANDSCAPE' | 'PORTRAIT'): Promise<void> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.setOrientation(orientation);
   } else if (isXCUITestDriverSession(driver)) {
-    return await driver.proxyCommand('/orientation', 'POST', { orientation });
+    return await driver.proxyCommand('/orientation', 'POST', {orientation});
   }
   return await driver.setOrientation(orientation);
 }
@@ -504,12 +438,10 @@ export async function setOrientation(
  */
 export async function startRecordingScreen(
   driver: DriverInstance,
-  options: IOSRecordingOptions | AndroidRecordingOptions = {}
+  options: IOSRecordingOptions | AndroidRecordingOptions = {},
 ): Promise<string> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    return await driver.startRecordingScreen(
-      options as AndroidRecordingOptions
-    );
+    return await driver.startRecordingScreen(options as AndroidRecordingOptions);
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.startRecordingScreen(options as IOSRecordingOptions);
   }
@@ -522,9 +454,7 @@ export async function startRecordingScreen(
  * @param driver - The driver instance to use.
  * @returns Base64-encoded MP4 video content.
  */
-export async function stopRecordingScreen(
-  driver: DriverInstance
-): Promise<string> {
+export async function stopRecordingScreen(driver: DriverInstance): Promise<string> {
   if (isAndroidUiautomator2DriverSession(driver)) {
     return await driver.stopRecordingScreen({});
   } else if (isXCUITestDriverSession(driver)) {
@@ -539,18 +469,16 @@ export async function stopRecordingScreen(
  * @param driver - The driver instance to query.
  * @returns An object with `width` and `height` in pixels.
  */
-export async function getWindowSize(
-  driver: DriverInstance
-): Promise<{ width: number; height: number }> {
+export async function getWindowSize(driver: DriverInstance): Promise<{width: number; height: number}> {
   if (isAndroidUiautomator2DriverSession(driver)) {
-    const { width, height } = await driver.getWindowRect();
-    return { width, height };
+    const {width, height} = await driver.getWindowRect();
+    return {width, height};
   } else if (isXCUITestDriverSession(driver)) {
-    const { width, height } = await driver.getWindowRect();
-    return { width, height };
+    const {width, height} = await driver.getWindowRect();
+    return {width, height};
   }
-  const { width, height } = await (driver as Client).getWindowRect();
-  return { width, height };
+  const {width, height} = await (driver as Client).getWindowRect();
+  return {width, height};
 }
 
 /**
@@ -582,10 +510,7 @@ export async function getClipboard(driver: DriverInstance): Promise<string> {
  * @param driver - The driver instance to use.
  * @param content - Plain text string to write to the clipboard.
  */
-export async function setClipboard(
-  driver: DriverInstance,
-  content: string
-): Promise<void> {
+export async function setClipboard(driver: DriverInstance, content: string): Promise<void> {
   const base64Content = Buffer.from(content, 'utf-8').toString('base64');
   await execute(driver, 'mobile: setClipboard', {
     content: base64Content,
@@ -617,12 +542,10 @@ function throwIfSwallowedRemoteError(result: unknown): void {
     typeof result === 'object' &&
     result !== null &&
     'error' in result &&
-    typeof (result as { error?: unknown }).error === 'string'
+    typeof (result as {error?: unknown}).error === 'string'
   ) {
-    const { error, message } = result as { error: string; message?: unknown };
-    const err = new Error(
-      typeof message === 'string' && message.length > 0 ? message : error
-    );
+    const {error, message} = result as {error: string; message?: unknown};
+    const err = new Error(typeof message === 'string' && message.length > 0 ? message : error);
     err.name = error;
     throw err;
   }

@@ -4,15 +4,9 @@
  * disabled-telemetry behavior stay consistent across MCP operation types.
  */
 
-import {
-  context,
-  SpanKind,
-  SpanStatusCode,
-  trace,
-  type Attributes,
-} from '@opentelemetry/api';
+import {context, SpanKind, SpanStatusCode, trace, type Attributes} from '@opentelemetry/api';
 
-import { isTelemetryEnabled } from './attributes.js';
+import {isTelemetryEnabled} from './attributes.js';
 
 const TRACER_NAME = 'appium-mcp';
 
@@ -44,11 +38,7 @@ export function getActiveSpan() {
  * @param operation The asynchronous operation to run within the span.
  * @returns The result of the asynchronous operation.
  */
-export async function withSpan<T>(
-  name: string,
-  attributes: Attributes,
-  operation: () => Promise<T>
-): Promise<T> {
+export async function withSpan<T>(name: string, attributes: Attributes, operation: () => Promise<T>): Promise<T> {
   if (!isTelemetryEnabled()) {
     return operation();
   }
@@ -72,4 +62,4 @@ export async function withSpan<T>(
   }
 }
 
-export { SpanStatusCode };
+export {SpanStatusCode};

@@ -1,7 +1,8 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { resolveDriver } from '../tool-response.js';
-import { AI_ACTIONS, aiSchema, type AIArgs } from './schema.js';
-import { handleFindElement } from './handlers/find-element.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+
+import {resolveDriver} from '../tool-response.js';
+import {handleFindElement} from './handlers/find-element.js';
+import {AI_ACTIONS, aiSchema, type AIArgs} from './schema.js';
 
 export default function ai(server: FastMCP): void {
   server.addTool({
@@ -17,15 +18,12 @@ export default function ai(server: FastMCP): void {
       readOnlyHint: true,
       openWorldHint: true,
     },
-    execute: async (
-      args: AIArgs,
-      _context: Record<string, unknown> | undefined
-    ): Promise<ContentResult> => {
+    execute: async (args: AIArgs, _context: Record<string, unknown> | undefined): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       switch (args.action) {
         case 'find_element':

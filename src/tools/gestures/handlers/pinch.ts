@@ -1,19 +1,12 @@
-import type { ContentResult } from 'fastmcp';
-import type { DriverInstance } from '../../../session-store.js';
-import { getPlatformName, PLATFORM } from '../../../session-store.js';
-import { execute, getWindowRect, performActions } from '../../../command.js';
-import {
-  errorResult,
-  textResult,
-  toolErrorMessage,
-} from '../../tool-response.js';
-import { isAIEnabled } from '../../ai/config.js';
-import {
-  aiDisabledResult,
-  isAiElementUUID,
-  resolveTargetRect,
-} from './ai-element.js';
-import type { GestureArgs } from '../schema.js';
+import type {ContentResult} from 'fastmcp';
+
+import {execute, getWindowRect, performActions} from '../../../command.js';
+import type {DriverInstance} from '../../../session-store.js';
+import {getPlatformName, PLATFORM} from '../../../session-store.js';
+import {isAIEnabled} from '../../ai/config.js';
+import {errorResult, textResult, toolErrorMessage} from '../../tool-response.js';
+import type {GestureArgs} from '../schema.js';
+import {aiDisabledResult, isAiElementUUID, resolveTargetRect} from './ai-element.js';
 
 const DEFAULT_VELOCITY = 2.2;
 const DEFAULT_PINCH_SPREAD_RATIO = 0.3;
@@ -32,10 +25,7 @@ type PinchTarget = {
   spread: number;
 };
 
-export function resolveElementPinchTarget(
-  elementRect: RectLike,
-  windowRect: RectLike
-): PinchTarget {
+export function resolveElementPinchTarget(elementRect: RectLike, windowRect: RectLike): PinchTarget {
   const windowLeft = windowRect.x ?? 0;
   const windowTop = windowRect.y ?? 0;
   const windowRight = windowLeft + windowRect.width;
@@ -44,19 +34,12 @@ export function resolveElementPinchTarget(
   const visibleLeft = Math.max(windowLeft, elementRect.x);
   const visibleTop = Math.max(windowTop, elementRect.y);
   const visibleRight = Math.min(windowRight, elementRect.x + elementRect.width);
-  const visibleBottom = Math.min(
-    windowBottom,
-    elementRect.y + elementRect.height
-  );
+  const visibleBottom = Math.min(windowBottom, elementRect.y + elementRect.height);
 
   const rawCx =
-    visibleRight > visibleLeft
-      ? visibleLeft + (visibleRight - visibleLeft) / 2
-      : elementRect.x + elementRect.width / 2;
+    visibleRight > visibleLeft ? visibleLeft + (visibleRight - visibleLeft) / 2 : elementRect.x + elementRect.width / 2;
   const rawCy =
-    visibleBottom > visibleTop
-      ? visibleTop + (visibleBottom - visibleTop) / 2
-      : elementRect.y + elementRect.height / 2;
+    visibleBottom > visibleTop ? visibleTop + (visibleBottom - visibleTop) / 2 : elementRect.y + elementRect.height / 2;
 
   const cx = Math.floor(clamp(rawCx, windowLeft, windowRight - 1));
   const cy = Math.floor(clamp(rawCy, windowTop, windowBottom - 1));
@@ -64,12 +47,9 @@ export function resolveElementPinchTarget(
   const elementBase = Math.min(elementRect.width, elementRect.height);
   const desired = Math.max(
     Math.floor(elementBase * DEFAULT_PINCH_SPREAD_RATIO),
-    Math.floor(windowBase * MIN_ELEMENT_PINCH_SPREAD_RATIO)
+    Math.floor(windowBase * MIN_ELEMENT_PINCH_SPREAD_RATIO),
   );
-  const cappedDesired = Math.min(
-    desired,
-    Math.floor(windowBase * DEFAULT_PINCH_SPREAD_RATIO)
-  );
+  const cappedDesired = Math.min(desired, Math.floor(windowBase * DEFAULT_PINCH_SPREAD_RATIO));
 
   return {
     cx,
@@ -78,25 +58,17 @@ export function resolveElementPinchTarget(
   };
 }
 
-export async function handlePinchZoom(
-  driver: DriverInstance,
-  args: GestureArgs
-): Promise<ContentResult> {
+export async function handlePinchZoom(driver: DriverInstance, args: GestureArgs): Promise<ContentResult> {
   if (args.scale === undefined) {
-    return errorResult(
-      'pinch_zoom requires a scale value (e.g. 0.5 to zoom out, 2.0 to zoom in).'
-    );
+    return errorResult('pinch_zoom requires a scale value (e.g. 0.5 to zoom out, 2.0 to zoom in).');
   }
   const scale = args.scale;
   const velocity = args.velocity ?? DEFAULT_VELOCITY;
 
   if (!args.elementUUID && (args.x !== undefined) !== (args.y !== undefined)) {
-    return errorResult(
-      'pinch_zoom requires both x and y when using custom coordinates.'
-    );
+    return errorResult('pinch_zoom requires both x and y when using custom coordinates.');
   }
-  const useCustomCoords =
-    !args.elementUUID && args.x !== undefined && args.y !== undefined;
+  const useCustomCoords = !args.elementUUID && args.x !== undefined && args.y !== undefined;
   // ai-element UUIDs are coordinate UUIDs, not real element ids: drive the
   // gesture from the bbox and skip the iOS/Android native paths that need
   // a real `elementId`.
@@ -120,17 +92,17 @@ export async function handlePinchZoom(
       if ('error' in rect) {
         return errorResult(rect.error);
       }
-      ({ cx, cy, spread } = resolveElementPinchTarget(rect, windowRect));
+      ({cx, cy, spread} = resolveElementPinchTarget(rect, windowRect));
     } else if (useCustomCoords) {
       windowRect = await getWindowRect(driver);
       const target = resolveCoordinatePinchTarget(args.x!, args.y!, windowRect);
       if (typeof target === 'string') {
         return errorResult(target);
       }
-      ({ cx, cy, spread } = target);
+      ({cx, cy, spread} = target);
     } else {
       windowRect = await getWindowRect(driver);
-      ({ cx, cy, spread } = resolveWindowPinchTarget(windowRect));
+      ({cx, cy, spread} = resolveWindowPinchTarget(windowRect));
     }
 
     if (scale < 1) {
@@ -143,23 +115,23 @@ export async function handlePinchZoom(
         {
           type: 'pointer',
           id: 'finger1',
-          parameters: { pointerType: 'touch' },
+          parameters: {pointerType: 'touch'},
           actions: [
-            { type: 'pointerMove', duration: 0, x: cx - startSpread, y: cy },
-            { type: 'pointerDown', button: 0 },
-            { type: 'pointerMove', duration, x: cx - endSpread, y: cy },
-            { type: 'pointerUp', button: 0 },
+            {type: 'pointerMove', duration: 0, x: cx - startSpread, y: cy},
+            {type: 'pointerDown', button: 0},
+            {type: 'pointerMove', duration, x: cx - endSpread, y: cy},
+            {type: 'pointerUp', button: 0},
           ],
         },
         {
           type: 'pointer',
           id: 'finger2',
-          parameters: { pointerType: 'touch' },
+          parameters: {pointerType: 'touch'},
           actions: [
-            { type: 'pointerMove', duration: 0, x: cx + startSpread, y: cy },
-            { type: 'pointerDown', button: 0 },
-            { type: 'pointerMove', duration, x: cx + endSpread, y: cy },
-            { type: 'pointerUp', button: 0 },
+            {type: 'pointerMove', duration: 0, x: cx + startSpread, y: cy},
+            {type: 'pointerDown', button: 0},
+            {type: 'pointerMove', duration, x: cx + endSpread, y: cy},
+            {type: 'pointerUp', button: 0},
           ],
         },
       ]);
@@ -188,23 +160,23 @@ export async function handlePinchZoom(
         {
           type: 'pointer',
           id: 'finger1',
-          parameters: { pointerType: 'touch' },
+          parameters: {pointerType: 'touch'},
           actions: [
-            { type: 'pointerMove', duration: 0, x: cx - startSpread, y: cy },
-            { type: 'pointerDown', button: 0 },
-            { type: 'pointerMove', duration, x: cx - endSpread, y: cy },
-            { type: 'pointerUp', button: 0 },
+            {type: 'pointerMove', duration: 0, x: cx - startSpread, y: cy},
+            {type: 'pointerDown', button: 0},
+            {type: 'pointerMove', duration, x: cx - endSpread, y: cy},
+            {type: 'pointerUp', button: 0},
           ],
         },
         {
           type: 'pointer',
           id: 'finger2',
-          parameters: { pointerType: 'touch' },
+          parameters: {pointerType: 'touch'},
           actions: [
-            { type: 'pointerMove', duration: 0, x: cx + startSpread, y: cy },
-            { type: 'pointerDown', button: 0 },
-            { type: 'pointerMove', duration, x: cx + endSpread, y: cy },
-            { type: 'pointerUp', button: 0 },
+            {type: 'pointerMove', duration: 0, x: cx + startSpread, y: cy},
+            {type: 'pointerDown', button: 0},
+            {type: 'pointerMove', duration, x: cx + endSpread, y: cy},
+            {type: 'pointerUp', button: 0},
           ],
         },
       ]);
@@ -221,7 +193,7 @@ export async function handlePinchZoom(
       // Convert scale factor to percent (0-1) for pinchOpenGesture.
       // scale=2 -> 0.5, scale=4 -> 0.75, scale=10 -> 0.9. Capped at 0.99.
       const percent = Math.min(0.99, 1 - 1 / scale);
-      const params: Record<string, unknown> = { percent };
+      const params: Record<string, unknown> = {percent};
       if (args.elementUUID) {
         params.elementId = args.elementUUID;
       } else {
@@ -233,9 +205,7 @@ export async function handlePinchZoom(
       }
       await execute(driver, 'mobile: pinchOpenGesture', params);
     } else {
-      return errorResult(
-        `pinch_zoom is not supported on platform '${platform}'. Supported: iOS, Android.`
-      );
+      return errorResult(`pinch_zoom is not supported on platform '${platform}'. Supported: iOS, Android.`);
     }
 
     const direction = scale < 1 ? 'out' : 'in';
@@ -246,13 +216,9 @@ export async function handlePinchZoom(
         : useCustomCoords
           ? `coordinates (${cx}, ${cy})`
           : 'screen';
-    return textResult(
-      `Successfully pinched ${direction} (scale=${scale}) on ${target}.`
-    );
+    return textResult(`Successfully pinched ${direction} (scale=${scale}) on ${target}.`);
   } catch (err) {
-    return errorResult(
-      `Failed to perform pinch_zoom. ${toolErrorMessage(err)}`
-    );
+    return errorResult(`Failed to perform pinch_zoom. ${toolErrorMessage(err)}`);
   }
 }
 
@@ -260,11 +226,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function maxSpreadForCenter(
-  cx: number,
-  cy: number,
-  windowRect: RectLike
-): number {
+function maxSpreadForCenter(cx: number, cy: number, windowRect: RectLike): number {
   const left = windowRect.x ?? 0;
   const top = windowRect.y ?? 0;
   const right = left + windowRect.width - 1;
@@ -280,17 +242,11 @@ function resolveWindowPinchTarget(windowRect: RectLike): PinchTarget {
   return {
     cx,
     cy,
-    spread: Math.floor(
-      Math.min(windowRect.width, windowRect.height) * DEFAULT_PINCH_SPREAD_RATIO
-    ),
+    spread: Math.floor(Math.min(windowRect.width, windowRect.height) * DEFAULT_PINCH_SPREAD_RATIO),
   };
 }
 
-function resolveCoordinatePinchTarget(
-  x: number,
-  y: number,
-  windowRect: RectLike
-): PinchTarget | string {
+function resolveCoordinatePinchTarget(x: number, y: number, windowRect: RectLike): PinchTarget | string {
   const left = windowRect.x ?? 0;
   const top = windowRect.y ?? 0;
   const right = left + windowRect.width;
@@ -300,9 +256,7 @@ function resolveCoordinatePinchTarget(
     return `pinch_zoom coordinates (${x}, ${y}) are outside window bounds (${windowRect.width}x${windowRect.height}).`;
   }
 
-  const desired = Math.floor(
-    Math.min(windowRect.width, windowRect.height) * DEFAULT_PINCH_SPREAD_RATIO
-  );
+  const desired = Math.floor(Math.min(windowRect.width, windowRect.height) * DEFAULT_PINCH_SPREAD_RATIO);
 
   return {
     cx: x,

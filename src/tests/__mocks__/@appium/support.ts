@@ -1,4 +1,4 @@
-import { constants, existsSync, promises as fsPromises } from 'node:fs';
+import {constants, existsSync, promises as fsPromises} from 'node:fs';
 
 const noop = () => {};
 
@@ -24,15 +24,12 @@ export const fs = {
   exists: async (p: string) => existsSync(p),
   readdir: (p: string) => fsPromises.readdir(p),
   stat: (p: string) => fsPromises.stat(p),
-  readFile: (p: string, encoding?: BufferEncoding) =>
-    fsPromises.readFile(p, encoding),
-  writeFile: (p: string, data: string | Buffer, encoding?: BufferEncoding) =>
-    fsPromises.writeFile(p, data, encoding),
+  readFile: (p: string, encoding?: BufferEncoding) => fsPromises.readFile(p, encoding),
+  writeFile: (p: string, data: string | Buffer, encoding?: BufferEncoding) => fsPromises.writeFile(p, data, encoding),
   unlink: (p: string) => fsPromises.unlink(p),
   rename: (from: string, to: string) => fsPromises.rename(from, to),
-  mkdir: (p: string, opts?: { recursive?: boolean }) =>
-    fsPromises.mkdir(p, opts),
-  mkdirp: (p: string) => fsPromises.mkdir(p, { recursive: true }),
+  mkdir: (p: string, opts?: {recursive?: boolean}) => fsPromises.mkdir(p, opts),
+  mkdirp: (p: string) => fsPromises.mkdir(p, {recursive: true}),
   mv: async (from: string, to: string) => {
     await fsPromises.rename(from, to);
   },

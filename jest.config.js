@@ -1,5 +1,6 @@
-import ts from 'typescript';
 import crypto from 'node:crypto';
+
+import ts from 'typescript';
 
 const TRANSFORM_CACHE_VERSION = 'appium-mcp-ts-transform-esm-v2';
 
@@ -20,21 +21,17 @@ const config = {
   // Ignore compiled files under dist to prevent duplicate test discovery
   testPathIgnorePatterns: ['/dist/', '/node_modules/', '/src/resources/submodules'],
   transform: {
-    '^.+\\.tsx?$': [
-      '<rootDir>/jest.config.js',
-    ],
+    '^.+\\.tsx?$': ['<rootDir>/jest.config.js'],
   },
   // Add this to ensure Jest can handle ESM
   // Exclude ES modules from transformation
-  transformIgnorePatterns: [
-    'node_modules/(?!(@xmldom|fast-xml-parser|xpath|uuid)/)',
-  ],
+  transformIgnorePatterns: ['node_modules/(?!(@xmldom|fast-xml-parser|xpath|uuid)/)'],
 };
 
 Object.defineProperty(config, 'process', {
   enumerable: false,
   value(sourceText, sourcePath) {
-    const { outputText } = ts.transpileModule(sourceText, {
+    const {outputText} = ts.transpileModule(sourceText, {
       fileName: sourcePath,
       compilerOptions: {
         module: ts.ModuleKind.ESNext,

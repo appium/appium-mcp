@@ -1,6 +1,8 @@
-import { describe, expect, test } from '@jest/globals';
 import net from 'node:net';
-import { findFreePort, releaseReservedPort } from '../../utils/ports.js';
+
+import {describe, expect, test} from '@jest/globals';
+
+import {findFreePort, releaseReservedPort} from '../../utils/ports.js';
 
 describe('findFreePort', () => {
   test('returns a usable TCP port', async () => {
@@ -20,9 +22,7 @@ describe('findFreePort', () => {
   });
 
   test('hands out distinct ports for concurrent allocations', async () => {
-    const ports = await Promise.all(
-      Array.from({ length: 25 }, () => findFreePort())
-    );
+    const ports = await Promise.all(Array.from({length: 25}, () => findFreePort()));
     const unique = new Set(ports);
     expect(unique.size).toBe(ports.length);
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import {existsSync} from 'node:fs';
+import {dirname, join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+
+import {Client} from '@modelcontextprotocol/sdk/client/index.js';
+import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const MAX_DISCOVERY_CHARS = 47_000;
 const ESTIMATED_CHARS_PER_TOKEN = 4;
@@ -15,9 +16,7 @@ const projectRoot = join(scriptDir, '..');
 const serverEntry = join(projectRoot, 'dist', 'index.js');
 
 if (!existsSync(serverEntry)) {
-  console.error(
-    `Built server not found at ${serverEntry}. Run "npm run build" first.`
-  );
+  console.error(`Built server not found at ${serverEntry}. Run "npm run build" first.`);
   process.exit(1);
 }
 
@@ -42,12 +41,8 @@ try {
   await client.connect(transport);
   const result = await client.listTools();
   const payloadChars = JSON.stringify(result).length;
-  const withoutDescriptionsChars = JSON.stringify(
-    removeDescriptionFields(result)
-  ).length;
-  const withoutParameterDescriptionsChars = JSON.stringify(
-    removeParameterDescriptions(result)
-  ).length;
+  const withoutDescriptionsChars = JSON.stringify(removeDescriptionFields(result)).length;
+  const withoutParameterDescriptionsChars = JSON.stringify(removeParameterDescriptions(result)).length;
   const estimatedTokens = Math.ceil(payloadChars / ESTIMATED_CHARS_PER_TOKEN);
   const remainingChars = MAX_DISCOVERY_CHARS - payloadChars;
   const largestTools = result.tools
@@ -60,36 +55,26 @@ try {
 
   console.log('MCP tool discovery footprint');
   console.log(`Tools: ${formatNumber(result.tools.length)}`);
+  console.log(`Payload: ${formatNumber(payloadChars)} chars (~${formatNumber(estimatedTokens)} tokens)`);
+  console.log(`Description overhead: ${formatNumber(payloadChars - withoutDescriptionsChars)} chars`);
   console.log(
-    `Payload: ${formatNumber(payloadChars)} chars (~${formatNumber(estimatedTokens)} tokens)`
+    `Parameter-description overhead: ${formatNumber(payloadChars - withoutParameterDescriptionsChars)} chars`,
   );
-  console.log(
-    `Description overhead: ${formatNumber(payloadChars - withoutDescriptionsChars)} chars`
-  );
-  console.log(
-    `Parameter-description overhead: ${formatNumber(payloadChars - withoutParameterDescriptionsChars)} chars`
-  );
-  console.log(
-    `Budget: ${formatNumber(MAX_DISCOVERY_CHARS)} chars (${formatSignedNumber(remainingChars)} remaining)`
-  );
+  console.log(`Budget: ${formatNumber(MAX_DISCOVERY_CHARS)} chars (${formatSignedNumber(remainingChars)} remaining)`);
   console.log('Largest tools:');
   for (const tool of largestTools) {
     console.log(`  ${tool.name}: ${formatNumber(tool.chars)} chars`);
   }
 
   if (remainingChars < 0) {
-    console.error(
-      `Tool discovery payload exceeds the budget by ${formatNumber(-remainingChars)} chars.`
-    );
+    console.error(`Tool discovery payload exceeds the budget by ${formatNumber(-remainingChars)} chars.`);
     process.exitCode = 1;
   } else {
     console.log('Tool discovery payload is within budget.');
   }
 } catch (error) {
   console.error(
-    `Failed to audit MCP tool discovery footprint: ${
-      error instanceof Error ? error.message : String(error)
-    }`
+    `Failed to audit MCP tool discovery footprint: ${error instanceof Error ? error.message : String(error)}`,
   );
   process.exitCode = 1;
 } finally {
@@ -106,7 +91,7 @@ function removeDescriptionFields(value) {
   return Object.fromEntries(
     Object.entries(value)
       .filter(([key]) => key !== 'description')
-      .map(([key, child]) => [key, removeDescriptionFields(child)])
+      .map(([key, child]) => [key, removeDescriptionFields(child)]),
   );
 }
 

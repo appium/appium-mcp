@@ -1,24 +1,15 @@
-import type { FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { attachSessionAction } from './attach-session.js';
-import {
-  createSessionAction,
-  DRIVER_MODE_PLATFORMS,
-} from './create-session.js';
-import { deleteSessionAction } from './delete-session.js';
-import { detachSessionAction } from './detach-session.js';
-import { listSessionsAction } from './list-sessions.js';
-import { selectSessionAction } from './select-session.js';
-import { errorResult, toolErrorMessage } from '../tool-response.js';
+import type {FastMCP} from 'fastmcp';
+import {z} from 'zod';
 
-const SESSION_ACTIONS = [
-  'create',
-  'attach',
-  'detach',
-  'delete',
-  'list',
-  'select',
-] as const;
+import {errorResult, toolErrorMessage} from '../tool-response.js';
+import {attachSessionAction} from './attach-session.js';
+import {createSessionAction, DRIVER_MODE_PLATFORMS} from './create-session.js';
+import {deleteSessionAction} from './delete-session.js';
+import {detachSessionAction} from './detach-session.js';
+import {listSessionsAction} from './list-sessions.js';
+import {selectSessionAction} from './select-session.js';
+
+const SESSION_ACTIONS = ['create', 'attach', 'detach', 'delete', 'list', 'select'] as const;
 
 const CREATE_SESSION_DESCRIPTION = `Create a new Appium session with Android, iOS or any device/driver Appium supports.
       DEFAULT MODE (no remoteServerUrl) — USE THIS UNLESS THE USER EXPLICITLY PROVIDES A SERVER URL:
@@ -46,7 +37,7 @@ const schema = z.object({
         'detach: Remove an attached Appium session from MCP Appium without deleting the real remote session. Defaults to the active session.' +
         'delete: Delete a mobile session and clean up resources. If sessionId is omitted, deletes the active session.' +
         'list: List all active Appium sessions managed by this MCP server, including active flag, ownership, and current context.' +
-        'select: Set an existing Appium session as the active session for subsequent tool calls (requires sessionId).'
+        'select: Set an existing Appium session as the active session for subsequent tool calls (requires sessionId).',
     ),
   platform: z
     .enum(DRIVER_MODE_PLATFORMS)
@@ -55,7 +46,7 @@ const schema = z.object({
       'Required for create. ' +
         'For local servers, must match the platform selected via select_device. ' +
         'Use "general" for non-Android/iOS drivers (Windows, macOS, custom). ' +
-        'For remote servers, infer from context.'
+        'For remote servers, infer from context.',
     ),
   capabilities: z
     .string()
@@ -63,19 +54,19 @@ const schema = z.object({
     .describe(
       'Optional W3C capabilities for create. Provide as a JSON string (e.g. \'{"appium:app":"/path/to/app","appium:platformVersion":"17.0"}\'). ' +
         'For create: applied on top of defaults for ios/android, or used as-is for general. Common: appium:app, appium:deviceName, appium:platformVersion, appium:bundleId. When passing from a capabilitiesHint result, serialize the full object to JSON — do NOT drop boolean or numeric values. ' +
-        'For attach: always include platformName ("iOS" or "Android") so the WebDriver client loads the correct Appium protocol commands (e.g. \'{"platformName":"iOS"}\').'
+        'For attach: always include platformName ("iOS" or "Android") so the WebDriver client loads the correct Appium protocol commands (e.g. \'{"platformName":"iOS"}\').',
     ),
   remoteServerUrl: z
     .string()
     .optional()
     .describe(
-      'Remote Appium server URL for create or attach (e.g. http://localhost:4723). Omit to use local server for create.'
+      'Remote Appium server URL for create or attach (e.g. http://localhost:4723). Omit to use local server for create.',
     ),
   sessionId: z
     .string()
     .optional()
     .describe(
-      'For attach: existing session to connect to. For delete: session to remove (defaults to active). For detach: attached session to remove from MCP (defaults to active). For select: session to activate. Required for attach and select.'
+      'For attach: existing session to connect to. For delete: session to remove (defaults to active). For detach: attached session to remove from MCP (defaults to active). For select: session to activate. Required for attach and select.',
     ),
 });
 
@@ -96,14 +87,9 @@ export default function session(server: FastMCP): void {
         let parsedCapabilities: Record<string, any> | undefined;
         if (typeof args.capabilities === 'string') {
           try {
-            parsedCapabilities = JSON.parse(args.capabilities) as Record<
-              string,
-              any
-            >;
+            parsedCapabilities = JSON.parse(args.capabilities) as Record<string, any>;
           } catch (err: unknown) {
-            return errorResult(
-              `Invalid capabilities JSON: ${toolErrorMessage(err)}`
-            );
+            return errorResult(`Invalid capabilities JSON: ${toolErrorMessage(err)}`);
           }
         } else {
           parsedCapabilities = args.capabilities;
@@ -155,9 +141,7 @@ export default function session(server: FastMCP): void {
 
         return errorResult(`Unknown action: ${args.action}`);
       } catch (err: unknown) {
-        return errorResult(
-          `Session action '${args.action}' failed: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Session action '${args.action}' failed: ${toolErrorMessage(err)}`);
       }
     },
   });

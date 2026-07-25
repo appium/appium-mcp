@@ -1,5 +1,6 @@
-import { describe, expect, test } from '@jest/globals';
-import { isEmpty, isNil, omitNilValues } from '../../utils/collection.js';
+import {describe, expect, test} from '@jest/globals';
+
+import {isEmpty, isNil, omitNilValues} from '../../utils/collection.js';
 
 function createArgumentsObject(): IArguments;
 function createArgumentsObject(arg0: unknown): IArguments;
@@ -46,9 +47,9 @@ describe('collection utilities', () => {
 
     test('handles objects and plain objects with length', () => {
       expect(isEmpty({})).toBe(true);
-      expect(isEmpty({ a: 1 })).toBe(false);
-      expect(isEmpty({ length: 0 })).toBe(false);
-      expect(isEmpty({ length: 2, 0: 'x' })).toBe(false);
+      expect(isEmpty({a: 1})).toBe(false);
+      expect(isEmpty({length: 0})).toBe(false);
+      expect(isEmpty({length: 2, 0: 'x'})).toBe(false);
     });
 
     test('handles known array-like collections', () => {
@@ -87,7 +88,7 @@ describe('collection utilities', () => {
         d: '',
       });
 
-      expect(result).toEqual({ a: 'x', d: '' });
+      expect(result).toEqual({a: 'x', d: ''});
     });
 
     test('works with non-string value types', () => {
@@ -98,7 +99,7 @@ describe('collection utilities', () => {
         maybeEnabled: null,
       });
 
-      expect(result).toEqual({ count: 1, enabled: false });
+      expect(result).toEqual({count: 1, enabled: false});
     });
   });
 });

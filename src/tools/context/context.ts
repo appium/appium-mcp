@@ -1,33 +1,18 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { setCurrentContext } from '../../session-store.js';
-import { getContexts, getCurrentContext, setContext } from '../../command.js';
-import {
-  createUIResource,
-  createContextSwitcherUI,
-  addUIResourceToResponse,
-} from '../../ui/mcp-ui-utils.js';
-import {
-  resolveDriver,
-  textResult,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {getContexts, getCurrentContext, setContext} from '../../command.js';
+import {setCurrentContext} from '../../session-store.js';
+import {createUIResource, createContextSwitcherUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
+import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 const contextSchema = z.object({
-  action: z
-    .enum(['list', 'switch'])
-    .describe('Use list to fetch contexts or switch to change context.'),
+  action: z.enum(['list', 'switch']).describe('Use list to fetch contexts or switch to change context.'),
   context: z
     .string()
     .optional()
-    .describe(
-      'Required when action is switch. Common values: NATIVE_APP or WEBVIEW_<id>/WEBVIEW_<package>.'
-    ),
-  sessionId: z
-    .string()
-    .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('Required when action is switch. Common values: NATIVE_APP or WEBVIEW_<id>/WEBVIEW_<package>.'),
+  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 export default function context(server: FastMCP): void {
@@ -42,13 +27,13 @@ export default function context(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof contextSchema>,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       try {
         const [currentContext, availableContexts] = await Promise.all([
@@ -66,14 +51,14 @@ export default function context(server: FastMCP): void {
           }
 
           const textResponse = textResult(
-            `Available contexts: ${JSON.stringify(availableContexts, null, 2)}\nCurrent context: ${currentContext}`
+            `Available contexts: ${JSON.stringify(availableContexts, null, 2)}\nCurrent context: ${currentContext}`,
           );
 
           return addUIResourceToResponse(textResponse, () =>
             createUIResource(
               `ui://appium-mcp/context-switcher/${Date.now()}`,
-              createContextSwitcherUI(availableContexts, currentContext)
-            )
+              createContextSwitcherUI(availableContexts, currentContext),
+            ),
           );
         }
 
@@ -91,7 +76,7 @@ export default function context(server: FastMCP): void {
 
         if (!availableContexts.includes(args.context)) {
           return errorResult(
-            `Context "${args.context}" not found. Available contexts: ${JSON.stringify(availableContexts, null, 2)}`
+            `Context "${args.context}" not found. Available contexts: ${JSON.stringify(availableContexts, null, 2)}`,
           );
         }
 
@@ -99,13 +84,9 @@ export default function context(server: FastMCP): void {
         const newContext = await getCurrentContext(driver);
         setCurrentContext(newContext, args.sessionId);
 
-        return textResult(
-          `Successfully switched context from "${currentContext}" to "${newContext}".`
-        );
+        return textResult(`Successfully switched context from "${currentContext}" to "${newContext}".`);
       } catch (err: unknown) {
-        return errorResult(
-          `Failed context action ${args.action}. err: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed context action ${args.action}. err: ${toolErrorMessage(err)}`);
       }
     },
   });

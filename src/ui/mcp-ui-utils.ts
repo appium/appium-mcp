@@ -15,7 +15,7 @@
  */
 export function createUIResource(
   uri: string,
-  htmlContent: string
+  htmlContent: string,
 ): {
   type: 'resource';
   resource: {
@@ -49,7 +49,7 @@ export function createDevicePickerUI(
     type?: string;
   }>,
   platform: 'android' | 'ios',
-  deviceType?: 'simulator' | 'real'
+  deviceType?: 'simulator' | 'real',
 ): string {
   const deviceTypeLabel =
     platform === 'ios' && deviceType
@@ -249,10 +249,7 @@ export function createDevicePickerUI(
  * @param filepath - Path where screenshot was saved
  * @returns HTML string for screenshot viewer
  */
-export function createScreenshotViewerUI(
-  screenshotBase64: string,
-  filepath: string
-): string {
+export function createScreenshotViewerUI(screenshotBase64: string, filepath: string): string {
   const downloadFilename = filepath.split('/').pop() || 'screenshot.png';
 
   return `
@@ -469,15 +466,10 @@ export function createSessionDashboardUI(sessionInfo: {
 }): string {
   // Safely convert sessionId to string
   const sessionIdStr =
-    typeof sessionInfo.sessionId === 'string'
-      ? sessionInfo.sessionId
-      : String(sessionInfo.sessionId || 'Unknown');
+    typeof sessionInfo.sessionId === 'string' ? sessionInfo.sessionId : String(sessionInfo.sessionId || 'Unknown');
 
   // Get first 8 characters for display, or full string if shorter
-  const sessionIdDisplay =
-    sessionIdStr.length > 8
-      ? `${sessionIdStr.substring(0, 8)}...`
-      : sessionIdStr;
+  const sessionIdDisplay = sessionIdStr.length > 8 ? `${sessionIdStr.substring(0, 8)}...` : sessionIdStr;
   const deviceName = sessionInfo.deviceName;
   const platformVersion = sessionInfo.platformVersion;
   const udid = sessionInfo.udid;
@@ -724,7 +716,7 @@ export function createLocatorGeneratorUI(
     clickable: boolean;
     enabled: boolean;
     displayed: boolean;
-  }>
+  }>,
 ): string {
   const locatorCards = locators
     .map(
@@ -750,12 +742,12 @@ export function createLocatorGeneratorUI(
             <code class="selector">${escapeHtml(selector)}</code>
             <button class="test-btn" data-strategy="${escapeHtml(strategy)}" data-selector="${escapeHtml(selector)}">Test</button>
           </div>
-        `
+        `,
           )
           .join('')}
       </div>
     </div>
-  `
+  `,
     )
     .join('');
 
@@ -1130,10 +1122,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
  * @param currentContext - Currently active context name
  * @returns HTML string for context switcher
  */
-export function createContextSwitcherUI(
-  contexts: string[],
-  currentContext: string | null
-): string {
+export function createContextSwitcherUI(contexts: string[], currentContext: string | null): string {
   const contextCards = contexts
     .map(
       (context) => `
@@ -1150,7 +1139,7 @@ export function createContextSwitcherUI(
         ${context === currentContext ? 'Current' : 'Switch'}
       </button>
     </div>
-  `
+  `,
     )
     .join('');
 
@@ -1300,9 +1289,7 @@ export function createContextSwitcherUI(
  * @param apps - Array of app objects with packageName and appName
  * @returns HTML string for app list
  */
-export function createAppListUI(
-  apps: Array<{ packageName: string; appName?: string }>
-): string {
+export function createAppListUI(apps: Array<{packageName: string; appName?: string}>): string {
   const appCards = apps
     .map(
       (app) => `
@@ -1319,7 +1306,7 @@ export function createAppListUI(
         <button class="btn btn-danger" data-package="${escapeHtml(app.packageName)}" onclick="uninstallApp(this.dataset.package)">Uninstall</button>
       </div>
     </div>
-  `
+  `,
     )
     .join('');
 
@@ -1518,10 +1505,7 @@ export function createAppListUI(
  * @param language - Code language (java, javascript, etc.)
  * @returns HTML string for test code viewer
  */
-export function createTestCodeViewerUI(
-  code: string,
-  language: string = 'java'
-): string {
+export function createTestCodeViewerUI(code: string, language: string = 'java'): string {
   const escapedCode = escapeHtml(code);
   const languageLabel = escapeHtml(language);
   const downloadExtension = language === 'java' ? 'java' : 'js';
@@ -1682,17 +1666,14 @@ export function createTestCodeViewerUI(
  * Returns both text and UI resource for backward compatibility.
  */
 export function addUIResourceToResponse(
-  response: { content: Array<{ type: string; text?: string }> },
-  uiResource:
-    | ReturnType<typeof createUIResource>
-    | (() => ReturnType<typeof createUIResource>)
-): { content: Array<any> } {
+  response: {content: Array<{type: string; text?: string}>},
+  uiResource: ReturnType<typeof createUIResource> | (() => ReturnType<typeof createUIResource>),
+): {content: Array<any>} {
   if (process.env.NO_UI === 'true' || process.env.NO_UI === '1') {
     return response;
   }
 
-  const resolvedUIResource =
-    typeof uiResource === 'function' ? uiResource() : uiResource;
+  const resolvedUIResource = typeof uiResource === 'function' ? uiResource() : uiResource;
 
   return {
     content: [...response.content, resolvedUIResource],
@@ -1722,6 +1703,6 @@ function sanitizeClassName(value: unknown): string {
     String(value)
       .toLowerCase()
       .replace(/[^a-z0-9_-]+/g, '-')
-      .replace(/^-+|-+$/g, '')
+      .replace(/^-+|-+$/g, ''),
   );
 }

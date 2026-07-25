@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from '@jest/globals';
+import {afterEach, describe, expect, test} from '@jest/globals';
 
 import {
   isArgumentValueTelemetryEnabled,
@@ -7,20 +7,14 @@ import {
   safeInputKeys,
   safeSessionId,
 } from '../telemetry/attributes.js';
-import {
-  initializeOpenTelemetry,
-  shutdownOpenTelemetry,
-} from '../telemetry/init.js';
-import {
-  installTelemetryWrappers,
-  safeInputValueAttributes,
-} from '../telemetry/wrapOperations.js';
-import { startOtlpHttpReceiver } from './telemetry-tools/otlp-http-receiver.js';
+import {initializeOpenTelemetry, shutdownOpenTelemetry} from '../telemetry/init.js';
+import {installTelemetryWrappers, safeInputValueAttributes} from '../telemetry/wrapOperations.js';
+import {startOtlpHttpReceiver} from './telemetry-tools/otlp-http-receiver.js';
 
-const originalEnv = { ...process.env };
+const originalEnv = {...process.env};
 
 afterEach(() => {
-  process.env = { ...originalEnv };
+  process.env = {...originalEnv};
 });
 
 describe('telemetry attributes', () => {
@@ -49,7 +43,7 @@ describe('telemetry attributes', () => {
     expect(
       safeInputValueAttributes({
         platformName: 'iOS',
-      })
+      }),
     ).toEqual({});
   });
 
@@ -63,11 +57,10 @@ describe('telemetry attributes', () => {
         platformName: 'iOS',
         strict: true,
         timeout: 1000,
-        capabilities: { platformName: 'iOS', deviceName: 'iPhone 15' },
-      })
+        capabilities: {platformName: 'iOS', deviceName: 'iPhone 15'},
+      }),
     ).toEqual({
-      'mcp.input.value.capabilities':
-        '{"platformName":"iOS","deviceName":"iPhone 15"}',
+      'mcp.input.value.capabilities': '{"platformName":"iOS","deviceName":"iPhone 15"}',
       'mcp.input.value.platformName': 'iOS',
       'mcp.input.value.strict': true,
       'mcp.input.value.timeout': 1000,
@@ -95,7 +88,7 @@ describe('telemetry attributes', () => {
             appiumApiKey: 'also-secret',
           },
         },
-      })
+      }),
     ).toEqual({
       'mcp.input.value.capabilities':
         '{"platformName":"iOS","password":"[REDACTED]","nested":{"appiumApiKey":"[REDACTED]"}}',
@@ -107,7 +100,7 @@ describe('telemetry attributes', () => {
     const circular: Record<string, unknown> = {};
     circular.self = circular;
 
-    expect(safeInputValueAttributes({ metadata: circular })).toEqual({
+    expect(safeInputValueAttributes({metadata: circular})).toEqual({
       'mcp.input.value.metadata': '[object Object]',
     });
   });
@@ -116,7 +109,7 @@ describe('telemetry attributes', () => {
     process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
 
     const attributes = safeInputValueAttributes({
-      metadata: { text: 'x'.repeat(2100) },
+      metadata: {text: 'x'.repeat(2100)},
     });
     const value = attributes['mcp.input.value.metadata'];
 
@@ -145,7 +138,7 @@ describe('telemetry attributes', () => {
             password: 'also-secret',
           },
         ],
-      })
+      }),
     ).toBe(
       JSON.stringify({
         capabilities: {
@@ -157,7 +150,7 @@ describe('telemetry attributes', () => {
             password: '[REDACTED]',
           },
         ],
-      })
+      }),
     );
   });
 
@@ -169,7 +162,7 @@ describe('telemetry attributes', () => {
   });
 
   test('truncates long serialized attribute values', () => {
-    const value = safeAttributeValue({ text: 'x'.repeat(2100) });
+    const value = safeAttributeValue({text: 'x'.repeat(2100)});
 
     expect(typeof value).toBe('string');
     expect(value).toHaveLength(2051);
@@ -184,13 +177,13 @@ describe('telemetry attributes', () => {
         platformName: 'iOS',
         remoteServerUrl: 'https://user:pass@example.test/wd/hub',
         sessionId: 'session-1',
-      })
+      }),
     ).toEqual(['platformName', 'sessionId']);
   });
 
   test('extracts only string session IDs', () => {
-    expect(safeSessionId({ sessionId: 'session-1' })).toBe('session-1');
-    expect(safeSessionId({ sessionId: 123 })).toBeUndefined();
+    expect(safeSessionId({sessionId: 'session-1'})).toBe('session-1');
+    expect(safeSessionId({sessionId: 123})).toBeUndefined();
   });
 
   test('wraps tools, prompts, resources, and resource templates without changing results', async () => {
@@ -235,9 +228,7 @@ describe('telemetry attributes', () => {
     await expect(server.tools[0].execute({}, {})).resolves.toBe('tool-result');
     await expect(server.prompts[0].load({}, {})).resolves.toBe('prompt-result');
     await expect(server.resources[0].load()).resolves.toBe('resource-result');
-    await expect(server.resourceTemplates[0].load({}, {})).resolves.toBe(
-      'resource-template-result'
-    );
+    await expect(server.resourceTemplates[0].load({}, {})).resolves.toBe('resource-template-result');
   });
 
   test('exports actual OTLP span data for wrapped MCP operations', async () => {
@@ -247,8 +238,7 @@ describe('telemetry attributes', () => {
     process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
     process.env.OTEL_SERVICE_NAME = 'appium-mcp-test';
     process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = receiver.endpoint;
-    process.env.OTEL_RESOURCE_ATTRIBUTES =
-      'testcase.id=my-test-123,team=platform';
+    process.env.OTEL_RESOURCE_ATTRIBUTES = 'testcase.id=my-test-123,team=platform';
 
     const server = {
       tools: [] as any[],
@@ -275,50 +265,43 @@ describe('telemetry attributes', () => {
 
       server.addTool({
         name: 'plugin_tool',
-        execute: async () => ({ content: [{ type: 'text', text: 'ok' }] }),
+        execute: async () => ({content: [{type: 'text', text: 'ok'}]}),
       });
       server.addPrompt({
         name: 'plugin_prompt',
-        load: async () => ({ messages: [] }),
+        load: async () => ({messages: []}),
       });
       server.addResource({
         uri: 'plugin://resource',
-        load: async () => ({ contents: [] }),
+        load: async () => ({contents: []}),
       });
       server.addResourceTemplate({
         uriTemplate: 'plugin://resource/{id}',
-        load: async () => ({ contents: [] }),
+        load: async () => ({contents: []}),
       });
 
       await server.tools[0].execute(
         {
           apiKey: 'secret',
-          capabilities: { platformName: 'iOS', deviceName: 'iPhone 15' },
+          capabilities: {platformName: 'iOS', deviceName: 'iPhone 15'},
           platformName: 'iOS',
           sessionId: 'session-1',
         },
-        {}
+        {},
       );
-      await server.prompts[0].load(
-        { password: 'secret', promptArg: 'value' },
-        {}
-      );
+      await server.prompts[0].load({password: 'secret', promptArg: 'value'}, {});
       await server.resources[0].load();
-      await server.resourceTemplates[0].load({ id: '123' }, {});
+      await server.resourceTemplates[0].load({id: '123'}, {});
 
       await shutdownOpenTelemetry();
 
-      const spans = flattenOtlpSpans(
-        receiver.requests.map((request) => request.body)
-      );
+      const spans = flattenOtlpSpans(receiver.requests.map((request) => request.body));
       const spanNames = spans.map((span) => span.name).sort();
 
       expect(receiver.requests).toHaveLength(1);
       expect(receiver.requests[0].method).toBe('POST');
       expect(receiver.requests[0].url).toBe('/v1/traces');
-      expect(receiver.requests[0].headers['content-type']).toContain(
-        'application/json'
-      );
+      expect(receiver.requests[0].headers['content-type']).toContain('application/json');
       expect(spanNames).toEqual([
         'prompts/get plugin_prompt',
         'resources/read',
@@ -326,47 +309,36 @@ describe('telemetry attributes', () => {
         'tools/call plugin_tool',
       ]);
 
-      const toolSpan = spans.find(
-        (span) => span.name === 'tools/call plugin_tool'
-      );
+      const toolSpan = spans.find((span) => span.name === 'tools/call plugin_tool');
       expect(otlpAttributes(toolSpan)).toMatchObject({
         'appium.session.id': 'session-1',
-        'mcp.input.value.capabilities':
-          '{"platformName":"iOS","deviceName":"iPhone 15"}',
+        'mcp.input.value.capabilities': '{"platformName":"iOS","deviceName":"iPhone 15"}',
         'mcp.input.value.platformName': 'iOS',
         'mcp.tool.name': 'plugin_tool',
       });
-      expect(otlpAttributes(toolSpan)).not.toHaveProperty(
-        'mcp.input.value.apiKey'
-      );
+      expect(otlpAttributes(toolSpan)).not.toHaveProperty('mcp.input.value.apiKey');
 
-      const promptSpan = spans.find(
-        (span) => span.name === 'prompts/get plugin_prompt'
-      );
+      const promptSpan = spans.find((span) => span.name === 'prompts/get plugin_prompt');
       expect(otlpAttributes(promptSpan)).toMatchObject({
         'mcp.input.value.promptArg': 'value',
         'mcp.prompt.name': 'plugin_prompt',
       });
-      expect(otlpAttributes(promptSpan)).not.toHaveProperty(
-        'mcp.input.value.password'
-      );
+      expect(otlpAttributes(promptSpan)).not.toHaveProperty('mcp.input.value.password');
 
       const resourceAttributes = spans
         .filter((span) => span.name === 'resources/read')
         .map((span) => otlpAttributes(span));
       expect(resourceAttributes).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ 'mcp.resource.uri': 'plugin://resource' }),
+          expect.objectContaining({'mcp.resource.uri': 'plugin://resource'}),
           expect.objectContaining({
             'mcp.input.value.id': '123',
             'mcp.resource.uri_template': 'plugin://resource/{id}',
           }),
-        ])
+        ]),
       );
 
-      const resourceSpanAttrs = flattenOtlpResourceAttributes(
-        receiver.requests[0].body
-      );
+      const resourceSpanAttrs = flattenOtlpResourceAttributes(receiver.requests[0].body);
       expect(resourceSpanAttrs).toMatchObject({
         'testcase.id': 'my-test-123',
         team: 'platform',
@@ -381,29 +353,21 @@ describe('telemetry attributes', () => {
 function flattenOtlpResourceAttributes(body: unknown): Record<string, unknown> {
   const resourceSpan = (body as any)?.resourceSpans?.[0];
   return Object.fromEntries(
-    (resourceSpan?.resource?.attributes ?? []).map((attr: any) => [
-      attr.key,
-      otlpValue(attr.value),
-    ])
+    (resourceSpan?.resource?.attributes ?? []).map((attr: any) => [attr.key, otlpValue(attr.value)]),
   );
 }
 
 function flattenOtlpSpans(bodies: unknown[]): any[] {
   return bodies.flatMap((body: any) =>
     (body?.resourceSpans ?? []).flatMap((resourceSpan: any) =>
-      (resourceSpan.scopeSpans ?? []).flatMap(
-        (scopeSpan: any) => scopeSpan.spans ?? []
-      )
-    )
+      (resourceSpan.scopeSpans ?? []).flatMap((scopeSpan: any) => scopeSpan.spans ?? []),
+    ),
   );
 }
 
 function otlpAttributes(span: any): Record<string, unknown> {
   return Object.fromEntries(
-    (span?.attributes ?? []).map((attribute: any) => [
-      attribute.key,
-      otlpValue(attribute.value),
-    ])
+    (span?.attributes ?? []).map((attribute: any) => [attribute.key, otlpValue(attribute.value)]),
   );
 }
 

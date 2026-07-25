@@ -35,7 +35,7 @@ export interface BBoxCoordinates {
  */
 export interface AIFindResult {
   bbox: BBox;
-  center: { x: number; y: number };
+  center: {x: number; y: number};
   target: string;
   annotatedImagePath?: string;
 }

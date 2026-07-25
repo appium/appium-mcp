@@ -1,3 +1,9 @@
+import {cp as nodeFsCp} from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+
+import {fs, net, plist, zip} from '@appium/support';
+import {BOOTSTRAP_PATH} from 'appium-webdriveragent';
 /**
  * Single-call tool to prepare an iOS real device for Appium testing.
  *
@@ -13,18 +19,14 @@
  * should pass the returned `capabilitiesHint` so Appium installs and launches
  * the signed prebuilt WDA bundle instead of rebuilding it.
  */
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import path from 'node:path';
-import os from 'node:os';
-import { cp as nodeFsCp } from 'node:fs/promises';
-import { fs, net, plist, zip } from '@appium/support';
-import { BOOTSTRAP_PATH } from 'appium-webdriveragent';
-import { provision } from 'ios-mobileprovision-finder';
-import { IOSManager } from '../../devicemanager/ios-manager.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {provision} from 'ios-mobileprovision-finder';
+import {z} from 'zod';
+
+import {IOSManager} from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
-import { textResult } from '../tool-response.js';
-import { resolveAppiumMcpCachePath } from '../../utils/paths.js';
+import {resolveAppiumMcpCachePath} from '../../utils/paths.js';
+import {textResult} from '../tool-response.js';
 
 type StepStatus = 'completed' | 'skipped' | 'failed';
 
@@ -57,8 +59,7 @@ interface ProfileChoice {
 }
 
 // default signing bundle ID when the chosen provisioning profile is a wildcard ('*')
-const WDA_RUNNER_BUNDLE_ID_FOR_XCTEST =
-  'com.facebook.WebDriverAgentRunner.xctrunner';
+const WDA_RUNNER_BUNDLE_ID_FOR_XCTEST = 'com.facebook.WebDriverAgentRunner.xctrunner';
 
 // ── Filesystem helpers ──
 
@@ -75,10 +76,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 function getProvisioningProfileDir(): string {
-  return path.join(
-    os.homedir(),
-    'Library/Developer/Xcode/UserData/Provisioning Profiles'
-  );
+  return path.join(os.homedir(), 'Library/Developer/Xcode/UserData/Provisioning Profiles');
 }
 
 // ── WDA release resolution ──
@@ -90,19 +88,17 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
       `No provisioning profiles directory found at ${dir}.\n` +
         `To create profiles: open Xcode → Settings → Accounts → add your Apple ID, ` +
         `then open any iOS project and let Xcode auto-generate signing profiles, ` +
-        `or create a new iOS project and run it on your device once.`
+        `or create a new iOS project and run it on your device once.`,
     );
   }
 
-  const files = (await fs.readdir(dir)).filter((f) =>
-    f.endsWith('.mobileprovision')
-  );
+  const files = (await fs.readdir(dir)).filter((f) => f.endsWith('.mobileprovision'));
   if (files.length === 0) {
     throw new Error(
       `No .mobileprovision files found in ${dir}.\n` +
         `To create profiles: open Xcode → Settings → Accounts → add your Apple ID, ` +
         `then open any iOS project and let Xcode auto-generate signing profiles, ` +
-        `or create a new iOS project and run it on your device once.`
+        `or create a new iOS project and run it on your device once.`,
     );
   }
 
@@ -118,9 +114,7 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
       teamName: mp.TeamName,
       bundleId: bundleIdFromName,
       filePath: fullPath,
-      expiresAt: mp.ExpirationDate
-        ? new Date(mp.ExpirationDate).toISOString()
-        : undefined,
+      expiresAt: mp.ExpirationDate ? new Date(mp.ExpirationDate).toISOString() : undefined,
       // Wildcards work too, we substitute a concrete .xctrunner bundle ID at sign time.
       // Specific profiles must already end in .xctrunner since the xcuitest driver re-appends
       // that suffix on launch (see appium-webdriveragent/lib/constants.ts DEFAULT_TEST_BUNDLE_SUFFIX).
@@ -134,17 +128,14 @@ async function getWdaPackageVersion(): Promise<string> {
   try {
     const pkgPath = path.join(BOOTSTRAP_PATH, 'package.json');
     const raw = await fs.readFile(pkgPath, 'utf8');
-    const pkg = JSON.parse(raw) as { version?: string };
+    const pkg = JSON.parse(raw) as {version?: string};
     return pkg.version ?? 'unknown';
   } catch {
     return 'unknown';
   }
 }
 
-async function downloadWdaApp(
-  version: string,
-  downloadDir: string
-): Promise<string> {
+async function downloadWdaApp(version: string, downloadDir: string): Promise<string> {
   const url = `https://github.com/appium/WebDriverAgent/releases/download/v${version}/WebDriverAgentRunner-Runner.zip`;
   const zipPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.zip');
 
@@ -153,11 +144,11 @@ async function downloadWdaApp(
   try {
     log.info(`Downloading WDA v${version} from ${url}...`);
     await net.downloadFile(url, zipPath, {
-      headers: { 'User-Agent': 'appium-mcp' },
+      headers: {'User-Agent': 'appium-mcp'},
     });
 
     log.info('Extracting WDA zip...');
-    await zip.extractAllTo(zipPath, downloadDir, { useSystemUnzip: true });
+    await zip.extractAllTo(zipPath, downloadDir, {useSystemUnzip: true});
   } finally {
     await fs.rimraf(zipPath);
   }
@@ -166,7 +157,7 @@ async function downloadWdaApp(
   if (!(await fileExists(appPath))) {
     throw new Error(
       `WebDriverAgentRunner-Runner.app not found after extracting ${url}. ` +
-        `The release asset format may have changed.`
+        `The release asset format may have changed.`,
     );
   }
   return appPath;
@@ -186,15 +177,9 @@ async function stripFrameworks(appPath: string): Promise<void> {
 
 // ── Signing ──
 
-async function packageAppAsIpa(
-  appPath: string,
-  outIpaPath: string
-): Promise<void> {
+async function packageAppAsIpa(appPath: string, outIpaPath: string): Promise<void> {
   // The IPA spec wants the .app bundle nested inside a top-level "Payload" dir.
-  const stagingDir = path.join(
-    path.dirname(outIpaPath),
-    `staging-${path.basename(outIpaPath, '.ipa')}`
-  );
+  const stagingDir = path.join(path.dirname(outIpaPath), `staging-${path.basename(outIpaPath, '.ipa')}`);
   const payloadDir = path.join(stagingDir, 'Payload');
   await fs.rimraf(stagingDir);
   await fs.mkdirp(payloadDir);
@@ -202,26 +187,17 @@ async function packageAppAsIpa(
     recursive: true,
   });
 
-  await zip.toArchive(
-    outIpaPath,
-    { cwd: stagingDir, pattern: 'Payload/**' },
-    { level: 9 }
-  );
+  await zip.toArchive(outIpaPath, {cwd: stagingDir, pattern: 'Payload/**'}, {level: 9});
 
   await fs.rimraf(stagingDir);
 }
 
 // ── Bundle ID extraction (from the signed IPA) ──
 
-async function signIpa(
-  ipaPath: string,
-  profile: ProfileChoice
-): Promise<string> {
+async function signIpa(ipaPath: string, profile: ProfileChoice): Promise<string> {
   // For wildcard profiles, applesign needs a concrete value, substitute the canonical WDA Runner bundle ID,
   // which the xcuitest driver expects to find at launch.
-  const targetBundleId = profile.isWildcard
-    ? WDA_RUNNER_BUNDLE_ID_FOR_XCTEST
-    : profile.bundleId.trim();
+  const targetBundleId = profile.isWildcard ? WDA_RUNNER_BUNDLE_ID_FOR_XCTEST : profile.bundleId.trim();
   const opts: Record<string, unknown> = {
     file: ipaPath,
     mobileprovision: profile.filePath,
@@ -230,20 +206,15 @@ async function signIpa(
     withoutPlugins: true,
   };
   // @ts-expect-error applesign has no type definitions and is an optional dependency
-  const { default: Applesign } = await import('applesign').catch(
-    (err: unknown) => {
-      throw new Error(
-        `Unable to load optional dependency "applesign" needed for IPA signing. Install it to enable signing. Original error: ${(err as Error).message}`
-      );
-    }
-  );
+  const {default: Applesign} = await import('applesign').catch((err: unknown) => {
+    throw new Error(
+      `Unable to load optional dependency "applesign" needed for IPA signing. Install it to enable signing. Original error: ${(err as Error).message}`,
+    );
+  });
   const signer = new Applesign(opts);
   await signer.signIPA(ipaPath);
 
-  const resignedPath = path.join(
-    path.dirname(ipaPath),
-    `${path.basename(ipaPath, '.ipa')}-resigned.ipa`
-  );
+  const resignedPath = path.join(path.dirname(ipaPath), `${path.basename(ipaPath, '.ipa')}-resigned.ipa`);
   if (!(await fileExists(resignedPath))) {
     throw new Error(`applesign did not produce ${resignedPath}`);
   }
@@ -257,7 +228,7 @@ async function extractBundleIdFromIpa(ipaPath: string): Promise<string> {
   let bundleId: string | undefined;
   await fs.mkdirp(tmpDir);
   try {
-    await zip.readEntries(ipaPath, async ({ entry, extractEntryTo }) => {
+    await zip.readEntries(ipaPath, async ({entry, extractEntryTo}) => {
       if (!/^Payload\/[^/]+\.app\/Info\.plist$/.test(entry.fileName)) {
         return true;
       }
@@ -280,14 +251,12 @@ async function extractBundleIdFromIpa(ipaPath: string): Promise<string> {
   }
 }
 
-async function runPipeline(
-  inputs: PipelineInputs
-): Promise<PrepareRealDeviceResult> {
+async function runPipeline(inputs: PipelineInputs): Promise<PrepareRealDeviceResult> {
   const result: PrepareRealDeviceResult = {
-    validate_device: { status: 'skipped', detail: '' },
-    wda_download: { status: 'skipped', detail: '' },
-    wda_package: { status: 'skipped', detail: '' },
-    wda_sign: { status: 'skipped', detail: '' },
+    validate_device: {status: 'skipped', detail: ''},
+    wda_download: {status: 'skipped', detail: ''},
+    wda_package: {status: 'skipped', detail: ''},
+    wda_sign: {status: 'skipped', detail: ''},
     ready: false,
     udid: inputs.udid,
   };
@@ -321,10 +290,7 @@ async function runPipeline(
   let profile: ProfileChoice;
   try {
     const profiles = await listProvisioningProfiles();
-    const found = profiles.find(
-      (p) =>
-        p.uuid.toLowerCase() === inputs.provisioningProfileUuid.toLowerCase()
-    );
+    const found = profiles.find((p) => p.uuid.toLowerCase() === inputs.provisioningProfileUuid.toLowerCase());
     if (!found) {
       result.wda_download = {
         status: 'failed',
@@ -351,10 +317,7 @@ async function runPipeline(
   const resignedIpaPath = path.join(signedDir, 'Payload-resigned.ipa');
 
   // ── Step 2: Download matching WDA release (cached) ──
-  const downloadedAppPath = path.join(
-    downloadDir,
-    'WebDriverAgentRunner-Runner.app'
-  );
+  const downloadedAppPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.app');
   let appPath = downloadedAppPath;
   try {
     if (!inputs.forceRebuild && (await fileExists(downloadedAppPath))) {
@@ -397,7 +360,7 @@ async function runPipeline(
       };
     }
   } catch (err) {
-    result.wda_package = { status: 'failed', detail: (err as Error).message };
+    result.wda_package = {status: 'failed', detail: (err as Error).message};
     return result;
   }
 
@@ -409,9 +372,7 @@ async function runPipeline(
     await fs.mkdirp(signedDir);
     // applesign mutates / writes alongside the input IPA; copy fresh into the per-profile dir first
     await fs.copyFile(unsignedIpaPath, stagedIpaPath);
-    log.info(
-      `Signing IPA with profile ${profile.uuid} (wildcard=${profile.isWildcard})...`
-    );
+    log.info(`Signing IPA with profile ${profile.uuid} (wildcard=${profile.isWildcard})...`);
     const producedPath = await signIpa(stagedIpaPath, profile);
     // signIpa returns "<basename>-resigned.ipa" alongside the staged copy — that
     // already matches resignedIpaPath, but assert to be defensive.
@@ -424,7 +385,7 @@ async function runPipeline(
       detail: `Signed IPA at ${resignedIpaPath} (bundleId=${bundleId})`,
     };
   } catch (err) {
-    result.wda_sign = { status: 'failed', detail: (err as Error).message };
+    result.wda_sign = {status: 'failed', detail: (err as Error).message};
     return result;
   }
 
@@ -444,22 +405,18 @@ async function runPipeline(
 // ── Tool registration ──
 
 const prepareRealDeviceSchema = z.object({
-  udid: z
-    .string()
-    .describe(
-      'UDID of the connected iOS real device. Use select_device to discover it.'
-    ),
+  udid: z.string().describe('UDID of the connected iOS real device. Use select_device to discover it.'),
   provisioningProfileUuid: z
     .string()
     .optional()
     .describe(
-      'UUID of the .mobileprovision profile to sign WDA with. If omitted, the tool returns the list of available profiles so you can ask the user to pick one.'
+      'UUID of the .mobileprovision profile to sign WDA with. If omitted, the tool returns the list of available profiles so you can ask the user to pick one.',
     ),
   forceRebuild: z
     .boolean()
     .optional()
     .describe(
-      'If true, ignore the cached WDA download and unsigned IPA and start clean. The signed IPA is always rebuilt regardless. Default: false.'
+      'If true, ignore the cached WDA download and unsigned IPA and start clean. The signed IPA is always rebuilt regardless. Default: false.',
     ),
 });
 
@@ -480,16 +437,12 @@ export default function prepareIosRealDevice(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (
-      args: z.infer<typeof prepareRealDeviceSchema>
-    ): Promise<ContentResult> => {
+    execute: async (args: z.infer<typeof prepareRealDeviceSchema>): Promise<ContentResult> => {
       if (process.platform !== 'darwin') {
-        throw new Error(
-          'iOS real-device preparation is only supported on macOS'
-        );
+        throw new Error('iOS real-device preparation is only supported on macOS');
       }
 
-      const { udid, provisioningProfileUuid, forceRebuild = false } = args;
+      const {udid, provisioningProfileUuid, forceRebuild = false} = args;
 
       // Discovery mode: no profile chosen yet — return profile list for selection.
       if (!provisioningProfileUuid) {
@@ -501,8 +454,7 @@ export default function prepareIosRealDevice(server: FastMCP): void {
               mode: 'discovery',
               udid,
               profiles,
-              recommendedProfiles:
-                recommended.length > 0 ? recommended : undefined,
+              recommendedProfiles: recommended.length > 0 ? recommended : undefined,
               instructions:
                 'Prefer profiles with recommendedForWda=true. These are profiles whose bundle ID either ends in .xctrunner ' +
                 '(matches what the xcuitest driver re-appends at launch) or is a wildcard "*" (we substitute a concrete WDA bundle ID at sign time). ' +
@@ -510,13 +462,13 @@ export default function prepareIosRealDevice(server: FastMCP): void {
                 'Then call this tool again with provisioningProfileUuid.',
             },
             null,
-            2
-          )
+            2,
+          ),
         );
       }
 
       log.info(
-        `Preparing iOS real device ${udid} with profile ${provisioningProfileUuid} (forceRebuild=${forceRebuild})`
+        `Preparing iOS real device ${udid} with profile ${provisioningProfileUuid} (forceRebuild=${forceRebuild})`,
       );
 
       const result = await runPipeline({
@@ -524,7 +476,7 @@ export default function prepareIosRealDevice(server: FastMCP): void {
         provisioningProfileUuid,
         forceRebuild,
       });
-      return textResult(JSON.stringify({ mode: 'build', ...result }, null, 2));
+      return textResult(JSON.stringify({mode: 'build', ...result}, null, 2));
     },
   });
 }

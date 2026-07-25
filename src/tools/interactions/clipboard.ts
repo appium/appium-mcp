@@ -1,29 +1,15 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { getClipboard, setClipboard } from '../../command.js';
-import {
-  resolveDriver,
-  textResult,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {getClipboard, setClipboard} from '../../command.js';
+import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 const schema = z.object({
   action: z
     .enum(['get', 'set'])
-    .describe(
-      'get: read device clipboard as plain text. set: write plain text to the clipboard.'
-    ),
-  content: z
-    .string()
-    .optional()
-    .describe(
-      'Required when action is set. Plain text to put on the clipboard.'
-    ),
-  sessionId: z
-    .string()
-    .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('get: read device clipboard as plain text. set: write plain text to the clipboard.'),
+  content: z.string().optional().describe('Required when action is set. Plain text to put on the clipboard.'),
+  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 type ClipboardArgs = z.infer<typeof schema>;
@@ -39,10 +25,7 @@ export default function clipboard(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (
-      args: ClipboardArgs,
-      _context: Record<string, unknown> | undefined
-    ): Promise<ContentResult> => {
+    execute: async (args: ClipboardArgs, _context: Record<string, unknown> | undefined): Promise<ContentResult> => {
       try {
         switch (args.action) {
           case 'get':
@@ -55,9 +38,7 @@ export default function clipboard(server: FastMCP): void {
           }
         }
       } catch (err: unknown) {
-        return errorResult(
-          `Failed to ${args.action} clipboard. err: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed to ${args.action} clipboard. err: ${toolErrorMessage(err)}`);
       }
     },
   });
@@ -68,7 +49,7 @@ async function handleGet(sessionId?: string): Promise<ContentResult> {
   if (!resolved.ok) {
     return resolved.result;
   }
-  const { driver } = resolved;
+  const {driver} = resolved;
 
   const text = await getClipboard(driver);
   if (!text) {
@@ -77,15 +58,12 @@ async function handleGet(sessionId?: string): Promise<ContentResult> {
   return textResult(`Clipboard content: ${text}`);
 }
 
-async function handleSet(
-  sessionId: string | undefined,
-  content: string
-): Promise<ContentResult> {
+async function handleSet(sessionId: string | undefined, content: string): Promise<ContentResult> {
   const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
-  const { driver } = resolved;
+  const {driver} = resolved;
 
   await setClipboard(driver, content);
   return textResult(`Successfully set clipboard content to: ${content}`);

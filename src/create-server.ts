@@ -13,17 +13,18 @@
  * ```
  */
 
-import { FastMCP } from 'fastmcp';
-import pkg from '../package.json' with { type: 'json' };
-import registerTools from './tools/index.js';
-import registerResources from './resources/index.js';
-import { safeDeleteAllSessions, listSessions } from './session-store.js';
+import {FastMCP} from 'fastmcp';
+
+import pkg from '../package.json' with {type: 'json'};
 import log from './logger.js';
-import { PluginManager } from './plugin.js';
-import type { AppiumMcpPlugin } from './plugin.js';
-import { installPolicy, type AppiumMcpPolicy } from './policy.js';
-import { initializeOpenTelemetry } from './telemetry/init.js';
-import { installTelemetryWrappers } from './telemetry/wrapOperations.js';
+import {PluginManager} from './plugin.js';
+import type {AppiumMcpPlugin} from './plugin.js';
+import {installPolicy, type AppiumMcpPolicy} from './policy.js';
+import registerResources from './resources/index.js';
+import {safeDeleteAllSessions, listSessions} from './session-store.js';
+import {initializeOpenTelemetry} from './telemetry/init.js';
+import {installTelemetryWrappers} from './telemetry/wrapOperations.js';
+import registerTools from './tools/index.js';
 
 const SERVER_VERSION = pkg.version as `${number}.${number}.${number}`;
 
@@ -94,9 +95,7 @@ type DisconnectSessionPolicy = 'delete_all' | 'skip';
  *
  * @returns A promise resolving to a configured `FastMCP` instance ready to be `start()`-ed.
  */
-export async function createAppiumMcpServer(
-  options: CreateAppiumMcpServerOptions = {}
-): Promise<FastMCP> {
+export async function createAppiumMcpServer(options: CreateAppiumMcpServerOptions = {}): Promise<FastMCP> {
   const {
     plugins = [],
     serverName = 'MCP Appium',
@@ -125,10 +124,7 @@ export async function createAppiumMcpServer(
     await initializeOpenTelemetry();
     installTelemetryWrappers(server);
   } catch (error) {
-    log.error(
-      'Failed to initialize OpenTelemetry, telemetry will not be available:',
-      error
-    );
+    log.error('Failed to initialize OpenTelemetry, telemetry will not be available:', error);
   }
 
   // -------------------------------------------------------------------------
@@ -244,24 +240,18 @@ export async function createAppiumMcpServer(
     }
 
     const policy = disconnectSessionPolicyFromEnv();
-    const ownedSessions = listSessions().filter(
-      (session) => session.ownership === 'owned'
-    );
+    const ownedSessions = listSessions().filter((session) => session.ownership === 'owned');
 
     if (ownedSessions.length > 0 && policy === 'skip') {
       log.info(
         `${ownedSessions.length} owned session(s) retained after MCP disconnect ` +
-          '(APPIUM_MCP_ON_CLIENT_DISCONNECT=skip).'
+          '(APPIUM_MCP_ON_CLIENT_DISCONNECT=skip).',
       );
     } else if (ownedSessions.length > 0) {
       try {
-        log.info(
-          `${ownedSessions.length} owned session(s) detected on disconnect, cleaning up...`
-        );
+        log.info(`${ownedSessions.length} owned session(s) detected on disconnect, cleaning up...`);
         const deletedCount = await safeDeleteAllSessions();
-        log.info(
-          `${deletedCount} session(s) cleaned up successfully on disconnect.`
-        );
+        log.info(`${deletedCount} session(s) cleaned up successfully on disconnect.`);
       } catch (error) {
         log.error('Error cleaning up session on disconnect:', error);
       }
@@ -280,9 +270,7 @@ function disconnectSessionPolicyFromEnv(): DisconnectSessionPolicy {
     return 'skip';
   }
   if (raw !== 'delete_all') {
-    log.warn(
-      `APPIUM_MCP_ON_CLIENT_DISCONNECT="${raw}" is not recognized; defaulting to delete_all`
-    );
+    log.warn(`APPIUM_MCP_ON_CLIENT_DISCONNECT="${raw}" is not recognized; defaulting to delete_all`);
   }
   return 'delete_all';
 }

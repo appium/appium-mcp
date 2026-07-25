@@ -20,9 +20,7 @@ const SENSITIVE_KEY_PARTS = [
  */
 export function isSensitiveKey(key: string): boolean {
   const normalized = normalizeKey(key);
-  return SENSITIVE_KEY_PARTS.some((part) =>
-    normalized.includes(normalizeKey(part))
-  );
+  return SENSITIVE_KEY_PARTS.some((part) => normalized.includes(normalizeKey(part)));
 }
 
 function normalizeKey(key: string): string {

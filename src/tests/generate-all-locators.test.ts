@@ -1,5 +1,6 @@
-import { describe, test, expect } from '@jest/globals';
-import { generateAllElementLocators } from '../locators/generate-all-locators.js';
+import {describe, test, expect} from '@jest/globals';
+
+import {generateAllElementLocators} from '../locators/generate-all-locators.js';
 
 describe('generateAllElementLocators', () => {
   // Sample XML for testing
@@ -52,11 +53,7 @@ describe('generateAllElementLocators', () => {
 
   test('should return an empty array when given invalid XML', () => {
     // Call the function with invalid XML (just a root element with no content)
-    const result = generateAllElementLocators(
-      '<hierarchy></hierarchy>',
-      true,
-      'uiautomator2'
-    );
+    const result = generateAllElementLocators('<hierarchy></hierarchy>', true, 'uiautomator2');
 
     // Verify the result is an empty array or at least doesn't throw an error
     expect(Array.isArray(result)).toBe(true);
@@ -72,9 +69,7 @@ describe('generateAllElementLocators', () => {
     // If the filter works, either the result will be empty (if no buttons found)
     // or all elements will be buttons
     if (result.length > 0) {
-      expect(
-        result.every((element) => element.tagName.includes('Button'))
-      ).toBe(true);
+      expect(result.every((element) => element.tagName.includes('Button'))).toBe(true);
     }
   });
 
@@ -85,9 +80,7 @@ describe('generateAllElementLocators', () => {
     });
 
     // Verify no Button elements are included
-    expect(result.every((element) => !element.tagName.includes('Button'))).toBe(
-      true
-    );
+    expect(result.every((element) => !element.tagName.includes('Button'))).toBe(true);
   });
 
   test('should apply minAttributeCount filter correctly', () => {
@@ -100,9 +93,7 @@ describe('generateAllElementLocators', () => {
     if (result.length > 0) {
       // We can't directly check the attributes count since we only have the processed elements
       // But we can verify that elements with fewer attributes are filtered out
-      expect(result.length).toBeLessThanOrEqual(
-        generateAllElementLocators(sampleXML, true, 'uiautomator2').length
-      );
+      expect(result.length).toBeLessThanOrEqual(generateAllElementLocators(sampleXML, true, 'uiautomator2').length);
     }
   });
 
@@ -127,10 +118,8 @@ describe('generateAllElementLocators', () => {
 
       expect(
         result.every(
-          (element) =>
-            interactableTags.some((tag) => element.tagName.includes(tag)) ||
-            element.clickable === true
-        )
+          (element) => interactableTags.some((tag) => element.tagName.includes(tag)) || element.clickable === true,
+        ),
       ).toBe(true);
     }
   });
@@ -155,11 +144,7 @@ describe('generateAllElementLocators', () => {
         'XCUIElementTypeLink',
       ];
 
-      expect(
-        result.every((element) =>
-          interactableTags.some((tag) => element.tagName.includes(tag))
-        )
-      ).toBe(true);
+      expect(result.every((element) => interactableTags.some((tag) => element.tagName.includes(tag)))).toBe(true);
     }
   });
 

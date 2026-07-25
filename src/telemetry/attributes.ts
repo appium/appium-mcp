@@ -5,9 +5,9 @@
  * source XML, prompts, or other user payloads.
  */
 
-import { isTruthyEnvValue } from '../utils/env.js';
-import { isSensitiveKey } from '../utils/sensitive.js';
-import { getSessionId } from '../session-store.js';
+import {getSessionId} from '../session-store.js';
+import {isTruthyEnvValue} from '../utils/env.js';
+import {isSensitiveKey} from '../utils/sensitive.js';
 
 const MAX_ATTRIBUTE_VALUE_LENGTH = 2048;
 
@@ -43,11 +43,7 @@ export function isArgumentValueTelemetryEnabled(): boolean {
  * @returns The safe attribute value.
  */
 export function safeAttributeValue(value: unknown): string | number | boolean {
-  if (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    typeof value === 'boolean'
-  ) {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
     return value;
   }
 
@@ -56,9 +52,7 @@ export function safeAttributeValue(value: unknown): string | number | boolean {
   }
 
   try {
-    const serialized = JSON.stringify(value, (key, val) =>
-      key && isSensitiveKey(key) ? '[REDACTED]' : val
-    );
+    const serialized = JSON.stringify(value, (key, val) => (key && isSensitiveKey(key) ? '[REDACTED]' : val));
     return truncateAttributeValue(serialized ?? String(value));
   } catch {
     return truncateAttributeValue(String(value));
@@ -73,7 +67,7 @@ export function safeAttributeValue(value: unknown): string | number | boolean {
  */
 export function safeSessionId(args: unknown): string | undefined {
   if (args && typeof args === 'object' && 'sessionId' in args) {
-    const sessionId = (args as { sessionId?: unknown }).sessionId;
+    const sessionId = (args as {sessionId?: unknown}).sessionId;
     if (typeof sessionId === 'string' && sessionId.length > 0) {
       return sessionId;
     }
@@ -98,7 +92,5 @@ export function safeInputKeys(args: unknown): string[] {
 }
 
 function truncateAttributeValue(value: string): string {
-  return value.length > MAX_ATTRIBUTE_VALUE_LENGTH
-    ? `${value.slice(0, MAX_ATTRIBUTE_VALUE_LENGTH)}...`
-    : value;
+  return value.length > MAX_ATTRIBUTE_VALUE_LENGTH ? `${value.slice(0, MAX_ATTRIBUTE_VALUE_LENGTH)}...` : value;
 }

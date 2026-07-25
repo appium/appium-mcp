@@ -1,13 +1,9 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { getPlatformName, PLATFORM } from '../../session-store.js';
-import { execute } from '../../command.js';
-import {
-  resolveDriver,
-  textResult,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {execute} from '../../command.js';
+import {getPlatformName, PLATFORM} from '../../session-store.js';
+import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 /**
  * Normalize the return value of mobile: pullFile (driver may return a string
@@ -21,9 +17,9 @@ function normalizePullResult(result: unknown): string {
     result &&
     typeof result === 'object' &&
     'value' in result &&
-    typeof (result as { value: unknown }).value === 'string'
+    typeof (result as {value: unknown}).value === 'string'
   ) {
-    return (result as { value: string }).value;
+    return (result as {value: string}).value;
   }
   return String(result ?? '');
 }
@@ -36,18 +32,10 @@ const remotePathDescription =
 
 export default function fileTransfer(server: FastMCP): void {
   const schema = z.object({
-    action: z
-      .enum(['push', 'pull'])
-      .describe('push uploads a file to device; pull downloads from device.'),
+    action: z.enum(['push', 'pull']).describe('push uploads a file to device; pull downloads from device.'),
     remotePath: z.string().min(1).describe(remotePathDescription),
-    payloadBase64: z
-      .string()
-      .optional()
-      .describe('Required when action=push. Ignored when action=pull.'),
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
+    payloadBase64: z.string().optional().describe('Required when action=push. Ignored when action=pull.'),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -61,13 +49,13 @@ export default function fileTransfer(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof schema>,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       try {
         const platform = getPlatformName(driver);
@@ -88,14 +76,10 @@ export default function fileTransfer(server: FastMCP): void {
               payload: args.payloadBase64,
             });
           } else {
-            return errorResult(
-              `Unsupported platform: ${platform}. Only Android and iOS are supported.`
-            );
+            return errorResult(`Unsupported platform: ${platform}. Only Android and iOS are supported.`);
           }
 
-          return textResult(
-            `Successfully pushed file to device path: ${args.remotePath}`
-          );
+          return textResult(`Successfully pushed file to device path: ${args.remotePath}`);
         }
 
         let raw: unknown;
@@ -108,9 +92,7 @@ export default function fileTransfer(server: FastMCP): void {
             remotePath: args.remotePath,
           });
         } else {
-          return errorResult(
-            `Unsupported platform: ${platform}. Only Android and iOS are supported.`
-          );
+          return errorResult(`Unsupported platform: ${platform}. Only Android and iOS are supported.`);
         }
 
         const base64 = normalizePullResult(raw);
@@ -119,12 +101,10 @@ export default function fileTransfer(server: FastMCP): void {
             remotePath: args.remotePath,
             platform,
             contentBase64: base64,
-          })
+          }),
         );
       } catch (err: unknown) {
-        return errorResult(
-          `Failed file action ${args.action}. err: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed file action ${args.action}. err: ${toolErrorMessage(err)}`);
       }
     },
   });

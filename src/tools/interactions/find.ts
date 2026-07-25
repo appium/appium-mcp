@@ -1,5 +1,8 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {findElement as findSingleElement} from '../../command.js';
+import {withEvidence, evidenceContext} from '../evidence.js';
 import {
   resolveDriver,
   textResultWithPrimaryElementId,
@@ -7,8 +10,6 @@ import {
   toolErrorMessage,
   readWebElementId,
 } from '../tool-response.js';
-import { withEvidence, evidenceContext } from '../evidence.js';
-import { findElement as findSingleElement } from '../../command.js';
 
 export const findElementSchema = z.object({
   strategy: z
@@ -35,18 +36,15 @@ export const findElementSchema = z.object({
         `(8) class name [too generic, usually multi-match], ` +
         `(9) css selector [webview/hybrid contexts only]. ` +
         `Platform tips: iOS prefer (1)→(3)→(4); Android prefer (1)→(2)→(5); xpath last on both. ` +
-        `For natural-language / vision-based find, use the appium_ai tool (action=find_element), not this one.`
+        `For natural-language / vision-based find, use the appium_ai tool (action=find_element), not this one.`,
     ),
   selector: z
     .string()
     .describe(
       `Selector string for the chosen strategy. ` +
-        `Do not pass natural-language descriptions of the target here; use appium_ai (action=find_element) for that.`
+        `Do not pass natural-language descriptions of the target here; use appium_ai (action=find_element) for that.`,
     ),
-  sessionId: z
-    .string()
-    .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 export default function findElement(server: FastMCP): void {
@@ -68,64 +66,52 @@ export default function findElement(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof findElementSchema>,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       const startedAt = Date.now();
-      const locator = { strategy: args.strategy, selector: args.selector };
+      const locator = {strategy: args.strategy, selector: args.selector};
       const context = await evidenceContext(args.sessionId);
       try {
-        const element = await findSingleElement(
-          driver,
-          args.strategy,
-          args.selector
-        );
+        const element = await findSingleElement(driver, args.strategy, args.selector);
         const elementId = readWebElementId(element);
         if (!elementId) {
-          return withEvidence(
-            errorResult('Element was returned without a valid element ID'),
-            {
-              name: 'appium_find_element',
-              stage: 'locate',
-              startedAt,
-              locator,
-              context,
-            }
-          );
+          return withEvidence(errorResult('Element was returned without a valid element ID'), {
+            name: 'appium_find_element',
+            stage: 'locate',
+            startedAt,
+            locator,
+            context,
+          });
         }
         return withEvidence(
           textResultWithPrimaryElementId(
             elementId,
-            `Successfully found element ${args.selector} with strategy ${args.strategy}.`
+            `Successfully found element ${args.selector} with strategy ${args.strategy}.`,
           ),
           {
             name: 'appium_find_element',
             stage: 'locate',
             startedAt,
             locator,
-            element: { webdriverId: elementId },
+            element: {webdriverId: elementId},
             context,
-          }
+          },
         );
       } catch (err: unknown) {
-        return withEvidence(
-          errorResult(
-            `Failed to find element. Error: ${toolErrorMessage(err)}`
-          ),
-          {
-            name: 'appium_find_element',
-            stage: 'locate',
-            startedAt,
-            locator,
-            context,
-            error: err,
-          }
-        );
+        return withEvidence(errorResult(`Failed to find element. Error: ${toolErrorMessage(err)}`), {
+          name: 'appium_find_element',
+          stage: 'locate',
+          startedAt,
+          locator,
+          context,
+          error: err,
+        });
       }
     },
   });

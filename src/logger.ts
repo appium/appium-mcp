@@ -1,9 +1,9 @@
-import { logger } from '@appium/support';
+import {logger} from '@appium/support';
 
 const log = logger.getLogger('appium-mcp');
 
 export default log;
-export { log };
+export {log};
 
 // For backward compatibility, export as named exports
 // Note: @appium/support logger doesn't have trace method, using debug instead

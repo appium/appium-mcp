@@ -29,9 +29,7 @@ export async function findFreePort(maxAttempts = 50): Promise<number> {
       return port;
     }
   }
-  throw new Error(
-    `Unable to allocate a free port after ${maxAttempts} attempts`
-  );
+  throw new Error(`Unable to allocate a free port after ${maxAttempts} attempts`);
 }
 
 /**
@@ -68,8 +66,7 @@ function probeEphemeralPort(): Promise<number> {
     server.once('error', reject);
     server.listen(0, '127.0.0.1', () => {
       const address = server.address();
-      const port =
-        address && typeof address === 'object' ? address.port : undefined;
+      const port = address && typeof address === 'object' ? address.port : undefined;
       server.close((closeErr) => {
         if (closeErr) {
           reject(closeErr);

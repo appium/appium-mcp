@@ -1,13 +1,14 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { textResult } from '../tool-response.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {textResult} from '../tool-response.js';
 
 const generateTestSchema = z.object({
   steps: z.array(z.string()).describe('The steps of the test'),
 });
 
 export default function generateTest(server: FastMCP): void {
-  const instructions = (params: { steps: string[] }) =>
+  const instructions = (params: {steps: string[]}) =>
     [
       `## Instructions`,
       `- You are an Appium test generator.`,
@@ -52,8 +53,7 @@ export default function generateTest(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof generateTestSchema>,
-      _context: Record<string, unknown> | undefined
-    ): Promise<ContentResult> =>
-      textResult(instructions({ steps: args.steps })),
+      _context: Record<string, unknown> | undefined,
+    ): Promise<ContentResult> => textResult(instructions({steps: args.steps})),
   });
 }

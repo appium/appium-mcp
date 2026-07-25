@@ -1,7 +1,9 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { elementUUIDScheme } from '../../schema.js';
-import { setValue as _setValue } from '../../command.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {setValue as _setValue} from '../../command.js';
+import {elementUUIDScheme} from '../../schema.js';
+import {aiElementWebDriverRejectionIfNeeded} from '../gestures/handlers/ai-element.js';
 import {
   resolveDriver,
   textResult,
@@ -9,7 +11,6 @@ import {
   errorResult,
   toolErrorMessage,
 } from '../tool-response.js';
-import { aiElementWebDriverRejectionIfNeeded } from '../gestures/handlers/ai-element.js';
 
 export default function setValue(server: FastMCP): void {
   const setValueSchema = z
@@ -22,12 +23,9 @@ export default function setValue(server: FastMCP): void {
         .describe(
           'When true, type text via the W3C Actions API (performActions) instead of ' +
             'the driver-specific setValue. No elementUUID needed — key events are sent ' +
-            'to whatever element currently has focus. Works on both Android and iOS.'
+            'to whatever element currently has focus. Works on both Android and iOS.',
         ),
-      sessionId: z
-        .string()
-        .optional()
-        .describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
     })
     .refine((v) => v.w3cActions === true || v.elementUUID !== undefined, {
       message: 'elementUUID is required when w3cActions is not true',
@@ -43,30 +41,23 @@ export default function setValue(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof setValueSchema>,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       if (!args.w3cActions) {
-        const aiRejection = aiElementWebDriverRejectionIfNeeded(
-          args.elementUUID
-        );
+        const aiRejection = aiElementWebDriverRejectionIfNeeded(args.elementUUID);
         if (aiRejection) {
           return aiRejection;
         }
       }
 
       try {
-        await _setValue(
-          driver,
-          args.elementUUID ?? '',
-          args.text,
-          args.w3cActions
-        );
+        await _setValue(driver, args.elementUUID ?? '', args.text, args.w3cActions);
         const detail = `Successfully set value ${args.text} into element ${args.elementUUID ?? '(focus)'}${args.w3cActions ? ' via W3C Actions' : ''}.`;
         if (args.elementUUID) {
           return textResultWithPrimaryElementId(args.elementUUID, detail);
@@ -74,7 +65,7 @@ export default function setValue(server: FastMCP): void {
         return textResult(detail);
       } catch (err: unknown) {
         return errorResult(
-          `Failed to set value ${args.text} into element ${args.elementUUID ?? '(focus)'}. err: ${toolErrorMessage(err)}`
+          `Failed to set value ${args.text} into element ${args.elementUUID ?? '(focus)'}. err: ${toolErrorMessage(err)}`,
         );
       }
     },

@@ -1,4 +1,4 @@
-import { describe, expect, jest, test } from '@jest/globals';
+import {describe, expect, jest, test} from '@jest/globals';
 
 // create-session.ts statically imports these appium drivers; mock them so the
 // module loads cleanly in tests without real driver binaries.
@@ -11,7 +11,7 @@ jest.unstable_mockModule('appium-xcuitest-driver', () => ({
 }));
 
 jest.unstable_mockModule('webdriver', () => ({
-  default: { newSession: jest.fn(), attachToSession: jest.fn() },
+  default: {newSession: jest.fn(), attachToSession: jest.fn()},
 }));
 
 // appium-webdriveragent transitively loads @appium/base-driver, which calls
@@ -29,14 +29,14 @@ jest.unstable_mockModule('node-simctl', () => ({
 // adb-manager and ios-manager wrap native CLI tools; mock them to keep the
 // test portable across environments without ADB or simctl installed.
 jest.unstable_mockModule('../../devicemanager/adb-manager', () => ({
-  ADBManager: { getInstance: jest.fn() },
+  ADBManager: {getInstance: jest.fn()},
 }));
 
 jest.unstable_mockModule('../../devicemanager/ios-manager', () => ({
-  IOSManager: { getInstance: jest.fn() },
+  IOSManager: {getInstance: jest.fn()},
 }));
 
-const { default: registerTools } = await import('../../tools/index.js');
+const {default: registerTools} = await import('../../tools/index.js');
 
 // Update this list when a tool is added, removed, or renamed — that is the
 // point of this test.
@@ -86,7 +86,7 @@ describe('registered MCP tool names', () => {
   test('matches expected set', () => {
     const names: string[] = [];
     const mockServer = {
-      addTool: ({ name }: { name: string }) => {
+      addTool: ({name}: {name: string}) => {
         names.push(name);
       },
     };

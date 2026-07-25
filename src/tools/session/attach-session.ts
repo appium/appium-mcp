@@ -1,4 +1,6 @@
-import { type Client } from 'webdriver';
+import {type Client} from 'webdriver';
+
+import {readAllPersistedSessions} from '../../persistence.js';
 import {
   detachSession,
   getSessionOwnership,
@@ -7,10 +9,9 @@ import {
   type SessionCapabilities,
   type SessionOwnership,
 } from '../../session-store.js';
-import { readAllPersistedSessions } from '../../persistence.js';
-import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
-import { validateRemoteServerUrl } from './create-session.js';
-import { attachToRemoteSession, getPortFromUrl } from '../../utils/url.js';
+import {attachToRemoteSession, getPortFromUrl} from '../../utils/url.js';
+import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
+import {validateRemoteServerUrl} from './create-session.js';
 
 /**
  * Normalize capability payloads returned by Appium/WebdriverIO into a flat
@@ -62,53 +63,38 @@ export async function attachSessionAction(args: {
     const existingOwnership = getSessionOwnership(args.sessionId);
     if (existingOwnership === 'owned') {
       return errorResult(
-        `Session ${args.sessionId} is already managed by MCP Appium as an owned session. Use action=select to activate it.`
+        `Session ${args.sessionId} is already managed by MCP Appium as an owned session. Use action=select to activate it.`,
       );
     }
     if (existingOwnership === 'attached') {
       detachSession(args.sessionId);
     }
 
-    validateRemoteServerUrl(
-      args.remoteServerUrl,
-      process.env.REMOTE_SERVER_URL_ALLOW_REGEX
-    );
+    validateRemoteServerUrl(args.remoteServerUrl, process.env.REMOTE_SERVER_URL_ALLOW_REGEX);
 
     // Fetch capabilities from the server BEFORE creating the WebDriver client.
     // This ensures WebDriver.attachToSession receives platformName so that
     // sessionEnvironmentDetector configures isMobile / isAndroid / isIOS
     // correctly. Caller-provided capabilities take the lowest priority; the W3C
     // Appium extension endpoint wins.
-    const [sessionCapabilities, deprecatedSessionCapabilities] =
-      await Promise.all([
-        fetchCapabilitiesFromServer(
-          args.remoteServerUrl,
-          args.sessionId,
-          'appium/session_capabilities'
-        ),
-        fetchCapabilitiesFromServer(args.remoteServerUrl, args.sessionId),
-      ]);
+    const [sessionCapabilities, deprecatedSessionCapabilities] = await Promise.all([
+      fetchCapabilitiesFromServer(args.remoteServerUrl, args.sessionId, 'appium/session_capabilities'),
+      fetchCapabilitiesFromServer(args.remoteServerUrl, args.sessionId),
+    ]);
 
-    if (
-      sessionCapabilities === undefined &&
-      deprecatedSessionCapabilities === undefined
-    ) {
+    if (sessionCapabilities === undefined && deprecatedSessionCapabilities === undefined) {
       return errorResult(
         `Failed to fetch capabilities for session ${args.sessionId} from ${args.remoteServerUrl}. ` +
-          `The server may be unreachable or the session may no longer exist.`
+          `The server may be unreachable or the session may no longer exist.`,
       );
     }
 
-    const sources = [
-      sessionCapabilities,
-      deprecatedSessionCapabilities,
-      args.capabilities,
-    ];
+    const sources = [sessionCapabilities, deprecatedSessionCapabilities, args.capabilities];
     const capabilities: SessionCapabilities = Object.assign(
       {},
       args.capabilities ?? {},
       deprecatedSessionCapabilities ?? {},
-      sessionCapabilities ?? {}
+      sessionCapabilities ?? {},
     );
 
     const client: Client = await attachToRemoteSession({
@@ -121,9 +107,7 @@ export async function attachSessionAction(args: {
     // local session tracking.
     for (const [plainKey, prefixedKey, targetKey] of METADATA_FIELDS) {
       const source = sources.find(
-        (candidate) =>
-          candidate?.[plainKey] !== undefined ||
-          candidate?.[prefixedKey] !== undefined
+        (candidate) => candidate?.[plainKey] !== undefined || candidate?.[prefixedKey] !== undefined,
       );
       const value = source?.[plainKey] ?? source?.[prefixedKey];
       delete capabilities[plainKey];
@@ -147,21 +131,11 @@ export async function attachSessionAction(args: {
     } catch {
       // ignore — falling back to 'attached' is safe
     }
-    await setSession(
-      client,
-      args.sessionId,
-      capabilities,
-      desiredOwnership,
-      args.remoteServerUrl
-    );
+    await setSession(client, args.sessionId, capabilities, desiredOwnership, args.remoteServerUrl);
 
-    return textResult(
-      `Attached to existing session ${args.sessionId}. Active sessions: ${listSessions().length}`
-    );
+    return textResult(`Attached to existing session ${args.sessionId}. Active sessions: ${listSessions().length}`);
   } catch (err: unknown) {
-    return errorResult(
-      `Failed to attach session ${args.sessionId}. ${toolErrorMessage(err)}`
-    );
+    return errorResult(`Failed to attach session ${args.sessionId}. ${toolErrorMessage(err)}`);
   }
 }
 
@@ -180,7 +154,7 @@ export async function attachSessionAction(args: {
 async function fetchCapabilitiesFromServer(
   remoteServerUrl: string,
   sessionId: string,
-  endpoint?: string
+  endpoint?: string,
 ): Promise<SessionCapabilities | undefined> {
   try {
     const url = new URL(remoteServerUrl);
@@ -194,7 +168,7 @@ async function fetchCapabilitiesFromServer(
     };
     if (url.username && url.password) {
       const credentials = Buffer.from(
-        `${decodeURIComponent(url.username)}:${decodeURIComponent(url.password)}`
+        `${decodeURIComponent(url.username)}:${decodeURIComponent(url.password)}`,
       ).toString('base64');
       headers.Authorization = `Basic ${credentials}`;
     }
@@ -207,7 +181,7 @@ async function fetchCapabilitiesFromServer(
       return undefined;
     }
 
-    const json = (await response.json()) as { value?: unknown };
+    const json = (await response.json()) as {value?: unknown};
     return readCapabilities(json.value);
   } catch {
     return undefined;
