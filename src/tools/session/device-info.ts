@@ -2,7 +2,6 @@ import type { ContentResult, FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { getPlatformName, PLATFORM } from '../../session-store.js';
 import { execute } from '../../command.js';
-import { BatteryState } from 'appium-xcuitest-driver/build/lib/commands/enum.js';
 import {
   resolveDriver,
   textResult,
@@ -11,12 +10,12 @@ import {
 } from '../tool-response.js';
 
 // iOS: maps UIDeviceBatteryState values to human-readable strings
-// @see https://github.com/appium/appium-xcuitest-driver/blob/5bdad71/lib/commands/enum.ts#L91
+// @see https://developer.apple.com/documentation/uikit/uidevice/batterystate
 const IOS_BATTERY_STATES: Record<number, string> = {
-  [BatteryState.UIDeviceBatteryStateUnknown]: 'unknown',
-  [BatteryState.UIDeviceBatteryStateUnplugged]: 'unplugged',
-  [BatteryState.UIDeviceBatteryStateCharging]: 'charging',
-  [BatteryState.UIDeviceBatteryStateFull]: 'full',
+  0: 'unknown',
+  1: 'unplugged',
+  2: 'charging',
+  3: 'full',
 };
 
 // Android: state matches BatteryManager constants
