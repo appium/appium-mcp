@@ -145,15 +145,26 @@ describe('LLM-facing MCP tool wording', () => {
       /create.*attach.*detach.*delete.*list.*select/i
     );
 
-    expect(actionDescription).toMatch(/DEFAULT MODE/i);
+    expect(actionDescription).toMatch(/DEFAULT\/LOCAL MODE/i);
     expect(actionDescription).toMatch(/no separate Appium process is needed/i);
-    expect(actionDescription).toMatch(/select_device tool FIRST/i);
+    expect(actionDescription).toMatch(
+      /select_device first.*explicit target capabilities.*appium:udid/i
+    );
     expect(actionDescription).toMatch(/do NOT pass remoteServerUrl/i);
     expect(actionDescription).toMatch(/NEVER invent a localhost URL/i);
-    expect(actionDescription).toMatch(/prepare_ios_simulator.*before create/i);
+    expect(actionDescription).toMatch(
+      /prepare_ios_simulator.*appium_prepare_ios_real_device/i
+    );
+    expect(actionDescription).toMatch(
+      /full returned capabilitiesHint as capabilities/i
+    );
     expect(actionDescription).toMatch(/REMOTE SERVER MODE/i);
     expect(actionDescription).toMatch(
       /only when the user explicitly provides/i
+    );
+    expect(actionDescription).toMatch(/skip select_device/i);
+    expect(actionDescription).toMatch(
+      /platform=general.*requires remoteServerUrl/i
     );
     expect(actionDescription).toMatch(/without taking ownership/i);
     expect(actionDescription).toMatch(
@@ -181,7 +192,10 @@ describe('LLM-facing MCP tool wording', () => {
     );
     expect(description).toMatch(/NEVER use.*REMOTE.*remoteServerUrl/i);
     expect(description).toMatch(
-      /prepare_ios_simulator.*appium_session_management.*create/i
+      /prepare_ios_simulator.*appium_prepare_ios_real_device/i
+    );
+    expect(description).toMatch(
+      /full capabilitiesHint.*appium_session_management.*create/i
     );
     expect(description).toMatch(/Remote devices.*session capabilities/i);
 

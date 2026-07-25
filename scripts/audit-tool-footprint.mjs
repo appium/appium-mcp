@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
-const MAX_DISCOVERY_CHARS = 40_000;
+const MAX_DISCOVERY_CHARS = 42_000;
 const ESTIMATED_CHARS_PER_TOKEN = 4;
 const LARGEST_TOOL_COUNT = 10;
 

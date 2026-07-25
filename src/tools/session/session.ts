@@ -24,10 +24,13 @@ const schema = z.object({
   action: z
     .enum(SESSION_ACTIONS)
     .describe(
-      'Action. DEFAULT MODE: create without remoteServerUrl uses an embedded driver; no separate Appium process is needed. ' +
-        'Run select_device tool FIRST, pass platform, do NOT pass remoteServerUrl, and NEVER invent a localhost URL. ' +
-        'For iOS simulators, run prepare_ios_simulator before create. ' +
-        'REMOTE SERVER MODE: only when the user explicitly provides a URL; create with that URL/capabilities. ' +
+      'Action. DEFAULT/LOCAL MODE: create without remoteServerUrl uses an embedded driver; no separate Appium process is needed. ' +
+        'Normally run select_device first and pass its platform; explicit target capabilities such as appium:udid can be used instead. ' +
+        'Do NOT pass remoteServerUrl for local create, and NEVER invent a localhost URL. ' +
+        'For a selected iOS simulator run prepare_ios_simulator; for a selected iOS real device run appium_prepare_ios_real_device. ' +
+        'Then JSON-serialize the full returned capabilitiesHint as capabilities for create. ' +
+        'REMOTE SERVER MODE: only when the user explicitly provides a URL; skip select_device and create with that URL/capabilities. ' +
+        'platform=general is remote-only and requires remoteServerUrl. ' +
         'attach requires URL + sessionId (+ platformName capabilities) and connects without taking ownership. ' +
         'detach forgets an attached session without deleting the real remote session. delete stops; list shows; select activates.'
     ),
@@ -35,14 +38,14 @@ const schema = z.object({
     .enum(DRIVER_MODE_PLATFORMS)
     .optional()
     .describe(
-      'Required for create; match select_device locally. Use general for other remote drivers.'
+      'Required for create. For local create, match select_device when used. general is for other remote drivers and requires remoteServerUrl.'
     ),
   capabilities: z
     .string()
     .optional()
     .describe(
-      'JSON W3C capabilities. create merges iOS/Android defaults or passes general through. ' +
-        'Serialize full capabilitiesHint values. attach must include platformName.'
+      'JSON-stringified W3C capabilities. create merges these over iOS/Android defaults or passes general through. ' +
+        'When using a capabilitiesHint, serialize the full object without dropping boolean or numeric values. attach must include platformName.'
     ),
   remoteServerUrl: z
     .string()

@@ -83,7 +83,8 @@ export default function selectDevice(server: any): void {
     description:
       'LOCAL servers ONLY; NEVER use for REMOTE/remoteServerUrl. ASK THE USER Android or iOS—do not assume. ' +
       'Call without deviceUdid to list: one result auto-selects; for multiple results ask the user, then call again with the chosen deviceUdid. ' +
-      'For iOS require iosDeviceType and run prepare_ios_simulator before appium_session_management create. ' +
+      'For iOS require iosDeviceType. After selection run prepare_ios_simulator for a simulator or appium_prepare_ios_real_device for a real device, ' +
+      'then pass its full capabilitiesHint to appium_session_management create. ' +
       'Remote devices are selected through session capabilities.',
     parameters: z
       .object({
@@ -292,14 +293,18 @@ function selectIOSDevice(
  */
 function formatIOSSelectionResponse(
   deviceName: string,
-  deviceUdid: string
+  deviceUdid: string,
+  iosDeviceType: 'simulator' | 'real'
 ): ContentResult {
+  const prepareTool =
+    iosDeviceType === 'simulator'
+      ? 'prepare_ios_simulator'
+      : 'appium_prepare_ios_real_device';
   return textResult(
     JSON.stringify(
       {
         message: `✅ Device selected: ${deviceName} (${deviceUdid})`,
-        instructions:
-          '🚀 You can now call the prepare_ios_simulator tool to boot and setup WDA on the simulator or the appium_prepare_ios_real_device tool to setup WDA on ios real device.',
+        instructions: `🚀 Next call ${prepareTool}, then JSON-serialize its full capabilitiesHint as capabilities for appium_session_management with action=create.`,
         platform: 'ios',
         capabilities: {
           'appium:udid': deviceUdid,
@@ -400,7 +405,11 @@ async function handleIOSDeviceSelection(
     if (!selected.ok) {
       return selected.result;
     }
-    return formatIOSSelectionResponse(selected.device.info.name, deviceUdid);
+    return formatIOSSelectionResponse(
+      selected.device.info.name,
+      deviceUdid,
+      iosDeviceType!
+    );
   }
 
   // Auto-select when only one device is available
@@ -411,7 +420,8 @@ async function handleIOSDeviceSelection(
     }
     return formatIOSSelectionResponse(
       selected.device.info.name,
-      devices[0].udid
+      devices[0].udid,
+      iosDeviceType!
     );
   }
 
