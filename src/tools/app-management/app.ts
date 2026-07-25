@@ -33,11 +33,13 @@ const schema = z.object({
   action: z
     .enum(APP_ACTIONS)
     .describe(
-      'activate/terminate/is_installed/clear: require id or name. ' +
+      'activate: foreground app; terminate: stop app; is_installed: check installation; ' +
+        'clear: clear app data without uninstalling (all require id or name). ' +
         'install: requires path. uninstall: requires id/name; Android keepData is optional. ' +
         'list: optional iOS applicationType. ' +
         'query_state: get state 0=not installed,1=not running,2=background suspended,3=background,4=foreground (requires id or name). ' +
-        'background: optional seconds (default 5). deep_link: requires url; id/name is optional.',
+        'background: send foreground app to background; optional seconds (default 5). ' +
+        'deep_link: requires url; id/name is optional.',
     ),
   id: z.string().optional().describe('Android package or iOS bundle ID; takes precedence over name.'),
   name: z.string().optional().describe('Human-readable app name resolved to an ID; alternative to id.'),

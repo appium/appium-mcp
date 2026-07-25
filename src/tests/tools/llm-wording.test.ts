@@ -130,12 +130,13 @@ describe('LLM-facing MCP tool wording', () => {
     const tool = await registerTool('../../tools/app-management/app.js');
     const actionDescription = normalizeText(paramDescription(tool, 'action'));
 
-    expect(actionDescription).toMatch(/activate.*terminate.*is_installed.*clear.*require id or name/i);
+    expect(actionDescription).toMatch(/activate.*foreground.*terminate.*stop.*is_installed.*check installation/i);
+    expect(actionDescription).toMatch(/clear.*app data.*without uninstalling.*require id or name/i);
     expect(actionDescription).toMatch(/install.*requires path/i);
     expect(actionDescription).toMatch(/uninstall.*id\/name.*keepData/i);
     expect(actionDescription).toMatch(/list.*applicationType/i);
     expect(actionDescription).toMatch(/query_state.*0=not installed.*4=foreground.*id or name/i);
-    expect(actionDescription).toMatch(/background.*default 5/i);
+    expect(actionDescription).toMatch(/background.*foreground app.*background.*default 5/i);
     expect(actionDescription).toMatch(/deep_link.*requires url.*id\/name.*optional/i);
 
     expect(normalizeText(paramDescription(tool, 'id'))).toMatch(
