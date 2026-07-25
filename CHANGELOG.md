@@ -1,3 +1,39 @@
+## [1.87.9](https://github.com/appium/appium-mcp/compare/v1.87.8...v1.87.9) (2026-07-23)
+
+### Bug Fixes
+
+* make applesign optional ([#461](https://github.com/appium/appium-mcp/issues/461)) ([02bbb0f](https://github.com/appium/appium-mcp/commit/02bbb0feaf7a3cb7d5257597b521e3c6595c0bf5))
+
+## [1.87.8](https://github.com/appium/appium-mcp/compare/v1.87.7...v1.87.8) (2026-07-22)
+
+### Bug Fixes
+
+* **screenshot:** use resolveDriver for session rehydration parity ([#456](https://github.com/appium/appium-mcp/issues/456)) ([5bda643](https://github.com/appium/appium-mcp/commit/5bda643996bdba7116a2888e86991431cfa7ac60))
+
+## [1.87.7](https://github.com/appium/appium-mcp/compare/v1.87.6...v1.87.7) (2026-07-21)
+
+### Bug Fixes
+
+* **command:** re-throw swallowed remote errors for element click, rect, and screenshot ([#457](https://github.com/appium/appium-mcp/issues/457)) ([940e07e](https://github.com/appium/appium-mcp/commit/940e07e6032b0673e9bb3aa44e25976ab3e69dcf))
+
+## [1.87.6](https://github.com/appium/appium-mcp/compare/v1.87.5...v1.87.6) (2026-07-16)
+
+### Bug Fixes
+
+* **context:** pass sessionId to setCurrentContext ([#437](https://github.com/appium/appium-mcp/issues/437)) ([f7d4f3e](https://github.com/appium/appium-mcp/commit/f7d4f3ed909e2c38b42350c113d1de5cf2b260f3))
+
+## [1.87.5](https://github.com/appium/appium-mcp/compare/v1.87.4...v1.87.5) (2026-07-15)
+
+### Bug Fixes
+
+* limit the node version to not use 26 ([#455](https://github.com/appium/appium-mcp/issues/455)) ([52b2d1a](https://github.com/appium/appium-mcp/commit/52b2d1a63fb8eccf6aed4991aba87ea28c156bec))
+
+## [1.87.4](https://github.com/appium/appium-mcp/compare/v1.87.3...v1.87.4) (2026-07-11)
+
+### Bug Fixes
+
+* **alert:** use findElement in Android custom button lookup ([#449](https://github.com/appium/appium-mcp/issues/449)) ([98ead11](https://github.com/appium/appium-mcp/commit/98ead11de040340d74933e390ed7b594047605f1))
+
 ## [1.87.3](https://github.com/appium/appium-mcp/compare/v1.87.2...v1.87.3) (2026-07-07)
 
 ### Bug Fixes
