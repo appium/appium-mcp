@@ -103,7 +103,7 @@
     "rimraf": "^6.0.1",
     "semantic-release": "^25.0.2",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.2"
+    "typescript": "^7.0.2"
   },
   "files": [
     "scripts",
