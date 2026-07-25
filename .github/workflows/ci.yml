@@ -51,6 +51,9 @@ jobs:
       - run: npm run build
         name: Build
 
+      - name: Audit MCP tool discovery footprint
+        run: npm run audit:tools
+
       - name: Run Unit Tests
         run: npm run test
 
