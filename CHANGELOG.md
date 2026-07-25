@@ -1,3 +1,5 @@
+## [1.87.10](https://github.com/appium/appium-mcp/compare/v1.87.9...v1.87.10) (2026-07-25)
+
 ## [1.87.9](https://github.com/appium/appium-mcp/compare/v1.87.8...v1.87.9) (2026-07-23)
 
 ### Bug Fixes
