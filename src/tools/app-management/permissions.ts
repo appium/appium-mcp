@@ -20,16 +20,12 @@ export default function mobilePermissions(server: FastMCP): void {
     id: z
       .string()
       .optional()
-      .describe(
-        'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. ' +
-          'Optional for Android (defaults to the app under test). Required for iOS get and update.',
-      ),
+      .describe('App ID; overrides name. Android defaults to the app under test; required for iOS get/update.'),
     name: z
       .string()
       .optional()
       .describe(
-        'Human-readable app name (e.g. "Spotify"). Used to resolve the app id. ' +
-          'Optional for Android (defaults to the app under test). Required (as alternative to id) for iOS get and update.',
+        'App name resolved to an ID. Android defaults to the app under test; alternative to id for iOS get/update.',
       ),
     sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
     permissionFilter: z
@@ -65,7 +61,7 @@ export default function mobilePermissions(server: FastMCP): void {
   server.addTool({
     name: 'appium_mobile_permissions',
     description:
-      'Manage mobile app permissions in one place. action=get: Android lists runtime permissions for a package; iOS Simulator reads one service state for an app (needs id or name + service). action=update: Android changes permissions (grant/revoke or AppOps); iOS Simulator sets privacy via access map (needs id or name + access). action=reset: iOS only — resets one privacy service for the AUT (needs service).',
+      'Get/update Android app permissions or iOS Simulator privacy services; reset iOS privacy prompts. See action-specific parameters.',
     parameters: schema,
     annotations: {
       readOnlyHint: false,

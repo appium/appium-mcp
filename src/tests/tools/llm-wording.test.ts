@@ -9,14 +9,21 @@ jest.unstable_mockModule('../../tools/tool-response', () => ({
     content: [{type: 'text', text}],
     isError: true,
   })),
+  noActiveDriverSessionMessage: jest.fn(),
   readWebElementId: jest.fn(),
   resolveDriver: jest.fn(),
+  textResult: jest.fn(),
   textResultWithPrimaryElementId: jest.fn(),
   toolErrorMessage: jest.fn(mockToolErrorMessage),
 }));
 
 jest.unstable_mockModule('../../command', () => ({
+  activateApp: jest.fn(),
+  execute: jest.fn(),
   findElement: jest.fn(),
+  queryAppState: jest.fn(),
+  startRecordingScreen: jest.fn(),
+  stopRecordingScreen: jest.fn(),
 }));
 
 jest.unstable_mockModule('../../tools/session/attach-session', () => ({
@@ -117,5 +124,51 @@ describe('LLM-facing MCP tool wording', () => {
     expect(remoteServerUrlDescription).toMatch(/Omit to use local server/i);
     expect(sessionIdDescription).toMatch(/Required for attach and select/i);
     expect(tool.annotations?.destructiveHint).toBe(true);
+  });
+
+  test('appium_app_lifecycle retains action requirements and special values', async () => {
+    const tool = await registerTool('../../tools/app-management/app.js');
+    const actionDescription = normalizeText(paramDescription(tool, 'action'));
+
+    expect(actionDescription).toMatch(/activate.*terminate.*is_installed.*clear.*require id or name/i);
+    expect(actionDescription).toMatch(/install.*requires path/i);
+    expect(actionDescription).toMatch(/uninstall.*id\/name.*keepData/i);
+    expect(actionDescription).toMatch(/list.*applicationType/i);
+    expect(actionDescription).toMatch(/query_state.*0=not installed.*4=foreground.*id or name/i);
+    expect(actionDescription).toMatch(/background.*default 5/i);
+    expect(actionDescription).toMatch(/deep_link.*requires url.*id\/name.*optional/i);
+
+    expect(normalizeText(paramDescription(tool, 'id'))).toMatch(
+      /Android package.*iOS bundle ID.*precedence over name/i,
+    );
+    expect(normalizeText(paramDescription(tool, 'seconds'))).toMatch(/default 5.*-1.*remain in background/i);
+    expect(normalizeText(paramDescription(tool, 'waitForLaunch'))).toMatch(/Android deep_link.*default true/i);
+  });
+
+  test('appium_screen_recording retains stop and platform limit semantics', async () => {
+    const tool = await registerTool('../../tools/interactions/screen-recording.js');
+
+    expect(normalizeText(paramDescription(tool, 'action'))).toMatch(/start.*recording.*stop.*retrieves.*saves/i);
+    expect(normalizeText(paramDescription(tool, 'timeLimit'))).toMatch(
+      /does not retrieve\/save automatically.*call stop.*iOS.*180.*4200.*Android.*180.*1800/i,
+    );
+    expect(normalizeText(paramDescription(tool, 'forceRestart'))).toMatch(
+      /restart.*discard.*active recording.*default false/i,
+    );
+    expect(normalizeText(paramDescription(tool, 'videoQuality'))).toMatch(/iOS only.*default.*medium/i);
+    expect(normalizeText(paramDescription(tool, 'videoSize'))).toMatch(/Android only.*WIDTHxHEIGHT/i);
+  });
+
+  test('appium_mobile_permissions retains action-specific requirements', async () => {
+    const tool = await registerTool('../../tools/app-management/permissions.js');
+
+    expect(normalizeText(paramDescription(tool, 'action'))).toMatch(
+      /get.*Android.*iOS.*update.*Android.*iOS.*reset.*iOS/i,
+    );
+    expect(normalizeText(paramDescription(tool, 'service'))).toMatch(
+      /iOS get.*service name.*iOS reset.*service name or numeric/i,
+    );
+    expect(normalizeText(paramDescription(tool, 'permissions'))).toMatch(/Android update.*permission.*Required/i);
+    expect(normalizeText(paramDescription(tool, 'access'))).toMatch(/iOS update.*yes.*no.*unset.*limited.*Required/i);
   });
 });

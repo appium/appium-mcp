@@ -62,25 +62,16 @@ async function saveRecording(base64Video: string): Promise<string> {
 }
 
 const screenRecordingSchema = z.object({
-  action: z
-    .enum(['start', 'stop'])
-    .describe(
-      'Use start to begin recording. Use stop to end the current recording, retrieve it from the driver, and save it to disk.',
-    ),
+  action: z.enum(['start', 'stop']).describe('start begins recording; stop ends, retrieves, and saves it.'),
   timeLimit: z
     .number()
     .int()
     .min(1)
     .optional()
     .describe(
-      'Maximum recording duration in seconds for the underlying recorder. This does not automatically stop and save the recording through this tool; call action="stop" to retrieve/save the video. iOS default: 180 (max 4200). Android default: 180 (max 1800).',
+      'Recorder limit in seconds; it does not retrieve/save automatically, so call stop. iOS default 180/max 4200; Android default 180/max 1800.',
     ),
-  forceRestart: z
-    .boolean()
-    .optional()
-    .describe(
-      'If true, stop any active recording immediately and start a new one without returning the previous video. Default: false.',
-    ),
+  forceRestart: z.boolean().optional().describe('Restart and discard any active recording; default false.'),
   videoQuality: z
     .enum(['low', 'medium', 'high', 'photo'])
     .optional()
