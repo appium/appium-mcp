@@ -24,14 +24,14 @@ export const findElementSchema = z.object({
       'css selector',
     ])
     .describe(
-      'Prefer accessibility id (cross-platform, fastest, stable), then id. ' +
-        'iOS: prefer -ios predicate/class chain; Android: prefer -android uiautomator. ' +
-        'Use xpath last. CSS is webview-only; appium_ai handles natural language/vision.'
+      'Priority: (1) accessibility id (cross-platform, fastest, stable), (2) id, ' +
+        '(3) iOS: prefer -ios predicate/class chain; Android: prefer -android uiautomator, (4) xpath LAST RESORT (slow/brittle). ' +
+        'name/class are fallbacks; CSS is webview-only. Use appium_ai action=find_element for natural language/vision.'
     ),
   selector: z
     .string()
     .describe(
-      'Selector for strategy; not natural language (use appium_ai for that).'
+      'Selector string for the chosen strategy. Do not pass natural-language descriptions; use appium_ai action=find_element.'
     ),
   sessionId: z
     .string()
@@ -44,7 +44,8 @@ export default function findElement(server: FastMCP): void {
     name: 'appium_find_element',
     description:
       'Find one element by strategy and selector; return its interaction UUID. ' +
-      'Prefer accessibility id over id before xpath, which is a last resort. Use appium_gesture scroll_to_element off-screen and appium_ai find_element for vision/natural language.',
+      'Prefer accessibility id over id before xpath, which is a last resort. ' +
+      'This tool does not scroll: use appium_gesture scroll_to_element for off-screen targets. Use appium_ai find_element for vision/natural-language targets.',
     parameters: findElementSchema,
     annotations: {
       readOnlyHint: true,

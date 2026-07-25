@@ -22,6 +22,30 @@ jest.unstable_mockModule('../../command', () => ({
   findElement: jest.fn(),
 }));
 
+jest.unstable_mockModule('../../devicemanager/adb-manager', () => ({
+  ADBManager: jest.fn(),
+}));
+
+jest.unstable_mockModule('../../devicemanager/ios-manager', () => ({
+  IOSManager: jest.fn(),
+}));
+
+jest.unstable_mockModule('../../logger', () => ({
+  default: {
+    debug: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+  },
+}));
+
+jest.unstable_mockModule('../../ui/mcp-ui-utils', () => ({
+  addUIResourceToResponse: jest.fn(),
+  createAppListUI: jest.fn(),
+  createDevicePickerUI: jest.fn(),
+  createUIResource: jest.fn(),
+}));
+
 jest.unstable_mockModule('../../tools/session/attach-session', () => ({
   attachSessionAction: jest.fn(),
 }));
@@ -97,7 +121,9 @@ describe('LLM-facing MCP tool wording', () => {
       /Android.*prefer.*android uiautomator/i
     );
     expect(strategyDescription).toMatch(/xpath last/i);
-    expect(selectorDescription).toMatch(/not natural language/i);
+    expect(selectorDescription).toMatch(
+      /do not pass natural-language descriptions/i
+    );
   });
 
   test('appium_session_management explains local vs remote session creation', async () => {
@@ -139,6 +165,35 @@ describe('LLM-facing MCP tool wording', () => {
     expect(remoteServerUrlDescription).toMatch(/omit for embedded create/i);
     expect(sessionIdDescription).toMatch(/required for attach\/select/i);
     expect(tool.annotations?.destructiveHint).toBe(true);
+  });
+
+  test('select_device preserves the local and remote workflow', async () => {
+    const tool = await registerTool('../../tools/session/select-device.js');
+    const description = normalizeText(tool.description);
+
+    expect(tool.name).toBe('select_device');
+    expect(description).toMatch(/LOCAL servers ONLY/i);
+    expect(description).toMatch(/ASK THE USER.*Android.*iOS.*do not assume/i);
+    expect(description).toMatch(/without deviceUdid.*list/i);
+    expect(description).toMatch(/one result.*auto-select/i);
+    expect(description).toMatch(
+      /multiple results.*ask the user.*chosen deviceUdid/i
+    );
+    expect(description).toMatch(/NEVER use.*REMOTE.*remoteServerUrl/i);
+    expect(description).toMatch(
+      /prepare_ios_simulator.*appium_session_management.*create/i
+    );
+    expect(description).toMatch(/Remote devices.*session capabilities/i);
+
+    expect(normalizeText(paramDescription(tool, 'platform'))).toMatch(
+      /user-selected.*never assume/i
+    );
+    expect(normalizeText(paramDescription(tool, 'iosDeviceType'))).toMatch(
+      /Required.*iOS.*simulator.*real/i
+    );
+    expect(normalizeText(paramDescription(tool, 'deviceUdid'))).toMatch(
+      /omit.*list.*ask.*multiple/i
+    );
   });
 
   test('appium_mobile_permissions retains action-specific requirements', async () => {

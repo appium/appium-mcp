@@ -81,14 +81,15 @@ export default function selectDevice(server: any): void {
   server.addTool({
     name: 'select_device',
     description:
-      'LOCAL servers only: ask the user for platform, list devices, then select deviceUdid; one result auto-selects. ' +
-      'For iOS also pass iosDeviceType and prepare simulators before session create. ' +
-      'Skip for REMOTE servers; pass device capabilities to appium_session_management.',
+      'LOCAL servers ONLY; NEVER use for REMOTE/remoteServerUrl. ASK THE USER Android or iOS—do not assume. ' +
+      'Call without deviceUdid to list: one result auto-selects; for multiple results ask the user, then call again with the chosen deviceUdid. ' +
+      'For iOS require iosDeviceType and run prepare_ios_simulator before appium_session_management create. ' +
+      'Remote devices are selected through session capabilities.',
     parameters: z
       .object({
         platform: z
           .enum(['ios', 'android'])
-          .describe('Platform selected by the user.'),
+          .describe('User-selected platform; never assume.'),
         iosDeviceType: z
           .enum(['simulator', 'real'])
           .optional()
@@ -96,7 +97,7 @@ export default function selectDevice(server: any): void {
         deviceUdid: z
           .string()
           .optional()
-          .describe('Chosen UDID; omit to list devices.'),
+          .describe('Chosen UDID; omit to list, then ask if multiple.'),
       })
       .refine(
         (data) => data.platform !== 'ios' || data.iosDeviceType !== undefined,
