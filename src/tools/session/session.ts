@@ -26,6 +26,7 @@ const schema = z.object({
     .describe(
       'Action. DEFAULT MODE: create without remoteServerUrl uses an embedded driver; no separate Appium process is needed. ' +
         'Run select_device tool FIRST, pass platform, do NOT pass remoteServerUrl, and NEVER invent a localhost URL. ' +
+        'For iOS simulators, run prepare_ios_simulator before create. ' +
         'REMOTE SERVER MODE: only when the user explicitly provides a URL; create with that URL/capabilities. ' +
         'attach requires URL + sessionId (+ platformName capabilities) and connects without taking ownership. ' +
         'detach forgets an attached session without deleting the real remote session. delete stops; list shows; select activates.'
@@ -34,7 +35,7 @@ const schema = z.object({
     .enum(DRIVER_MODE_PLATFORMS)
     .optional()
     .describe(
-      'create platform; match select_device locally. Use general for other remote drivers.'
+      'Required for create; match select_device locally. Use general for other remote drivers.'
     ),
   capabilities: z
     .string()

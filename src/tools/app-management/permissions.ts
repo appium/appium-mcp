@@ -17,7 +17,7 @@ export default function mobilePermissions(server: FastMCP): void {
     action: z
       .enum(['get', 'update', 'reset'])
       .describe(
-        'get reads; update changes; reset restores an iOS privacy prompt.'
+        'get: Android list or iOS service state; update: Android permissions or iOS access map; reset: restore an iOS service prompt.'
       ),
     id: z
       .string()
@@ -40,11 +40,15 @@ export default function mobilePermissions(server: FastMCP): void {
     service: z
       .union([z.string(), z.number()])
       .optional()
-      .describe('iOS privacy service; reset also accepts numeric resource ID.'),
+      .describe(
+        'Required for iOS get/reset; get needs a service name, reset also accepts a numeric resource ID.'
+      ),
     permissions: z
       .union([z.string(), z.array(z.string())])
       .optional()
-      .describe('Android update permission(s), all, or appops names.'),
+      .describe(
+        'Required for Android update: permission name(s), all, or appops names.'
+      ),
     permissionChangeAction: z
       .string()
       .optional()
@@ -56,7 +60,9 @@ export default function mobilePermissions(server: FastMCP): void {
     access: z
       .record(z.string(), iosPermissionStateSchema)
       .optional()
-      .describe('iOS update access map; required on Simulator.'),
+      .describe(
+        'Required for iOS update: service → yes|no|unset|limited map (Simulator).'
+      ),
   });
 
   server.addTool({

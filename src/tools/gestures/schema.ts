@@ -84,7 +84,9 @@ export const gestureSchema = z.object({
   direction: z
     .enum(['up', 'down', 'left', 'right'])
     .optional()
-    .describe('scroll/swipe direction; alternative to x, y, endX, endY.'),
+    .describe(
+      'scroll/swipe direction; alternative to coordinates. scroll_to_element uses up/down, default down.'
+    ),
 
   speed: z
     .enum(SWIPE_SPEEDS)

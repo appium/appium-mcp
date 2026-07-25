@@ -61,7 +61,9 @@ export default function pressKey(server: FastMCP): void {
           'SELECT',
         ])
         .optional()
-        .describe('Logical button; availability differs by platform.'),
+        .describe(
+          `Android keys: ${ANDROID_KEYS_DESCRIPTION}. iOS/tvOS buttons: ${IOS_BUTTONS_DESCRIPTION}.`
+        ),
       keyCode: z
         .number()
         .int()

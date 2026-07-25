@@ -500,7 +500,7 @@ export default function prepareIosSimulator(server: FastMCP): void {
   server.addTool({
     name: 'prepare_ios_simulator',
     description:
-      'Boot an iOS/tvOS simulator and optionally install/launch cached WDA on a free port. Pass capabilitiesHint to session create. skipWda boots only; APPIUM_MCP_WDA_APP_PATH supplies local WDA.',
+      'Boot an iOS/tvOS simulator and optionally install/launch cached WDA on a free port. Pass capabilitiesHint to appium_session_management create to reuse WDA. skipWda boots only; APPIUM_MCP_WDA_APP_PATH supplies local WDA.',
     parameters: prepareIosSimulatorSchema,
     annotations: {
       readOnlyHint: false,

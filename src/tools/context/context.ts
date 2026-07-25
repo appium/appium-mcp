@@ -19,7 +19,9 @@ const contextSchema = z.object({
   context: z
     .string()
     .optional()
-    .describe('switch target, e.g. NATIVE_APP or WEBVIEW_<id>.'),
+    .describe(
+      'Required for switch, e.g. NATIVE_APP or WEBVIEW_<id>/<package>.'
+    ),
   sessionId: z
     .string()
     .optional()

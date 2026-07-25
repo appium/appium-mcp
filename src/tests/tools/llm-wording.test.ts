@@ -9,13 +9,16 @@ jest.unstable_mockModule('../../tools/tool-response', () => ({
     content: [{ type: 'text', text }],
     isError: true,
   })),
+  noActiveDriverSessionMessage: jest.fn(),
   readWebElementId: jest.fn(),
   resolveDriver: jest.fn(),
+  textResult: jest.fn(),
   textResultWithPrimaryElementId: jest.fn(),
   toolErrorMessage: jest.fn(mockToolErrorMessage),
 }));
 
 jest.unstable_mockModule('../../command', () => ({
+  execute: jest.fn(),
   findElement: jest.fn(),
 }));
 
@@ -121,6 +124,7 @@ describe('LLM-facing MCP tool wording', () => {
     expect(actionDescription).toMatch(/select_device tool FIRST/i);
     expect(actionDescription).toMatch(/do NOT pass remoteServerUrl/i);
     expect(actionDescription).toMatch(/NEVER invent a localhost URL/i);
+    expect(actionDescription).toMatch(/prepare_ios_simulator.*before create/i);
     expect(actionDescription).toMatch(/REMOTE SERVER MODE/i);
     expect(actionDescription).toMatch(
       /only when the user explicitly provides/i
@@ -130,10 +134,60 @@ describe('LLM-facing MCP tool wording', () => {
       /without deleting the real remote session/i
     );
 
-    expect(platformDescription).toMatch(/create platform/i);
+    expect(platformDescription).toMatch(/Required for create/i);
     expect(platformDescription).toMatch(/general.*other remote drivers/i);
     expect(remoteServerUrlDescription).toMatch(/omit for embedded create/i);
     expect(sessionIdDescription).toMatch(/required for attach\/select/i);
     expect(tool.annotations?.destructiveHint).toBe(true);
+  });
+
+  test('appium_mobile_permissions retains action-specific requirements', async () => {
+    const tool = await registerTool(
+      '../../tools/app-management/permissions.js'
+    );
+
+    expect(normalizeText(paramDescription(tool, 'action'))).toMatch(
+      /get.*Android.*iOS.*update.*Android.*iOS.*reset.*iOS/i
+    );
+    expect(normalizeText(paramDescription(tool, 'service'))).toMatch(
+      /Required.*iOS get\/reset.*service name.*numeric/i
+    );
+    expect(normalizeText(paramDescription(tool, 'permissions'))).toMatch(
+      /Required.*Android update/i
+    );
+    expect(normalizeText(paramDescription(tool, 'access'))).toMatch(
+      /Required.*iOS update.*yes.*no.*unset.*limited/i
+    );
+  });
+
+  test('appium_mobile_file retains platform-specific path syntax', async () => {
+    const tool = await registerTool('../../tools/session/file-transfer.js');
+    const pathDescription = normalizeText(paramDescription(tool, 'remotePath'));
+
+    expect(pathDescription).toMatch(/absolute Android path/i);
+    expect(pathDescription).toMatch(/\/sdcard\/Download/i);
+    expect(pathDescription).toMatch(/@com\.example\.app:documents/i);
+    expect(normalizeText(paramDescription(tool, 'payloadBase64'))).toMatch(
+      /required.*push/i
+    );
+  });
+
+  test('appium_mobile_press_key maps logical keys by platform', async () => {
+    const tool = await registerTool('../../tools/interactions/press-key.js');
+    const keyDescription = normalizeText(paramDescription(tool, 'key'));
+
+    expect(keyDescription).toMatch(/Android.*BACK.*HOME.*APP_SWITCH/i);
+    expect(keyDescription).toMatch(/iOS\/tvOS.*VOLUME_UP.*PLAY_PAUSE.*SELECT/i);
+  });
+
+  test('appium_gesture retains scroll direction defaults', async () => {
+    const { gestureSchema } = await import('../../tools/gestures/schema.js');
+    const directionDescription = normalizeText(
+      gestureSchema.shape.direction.description ?? ''
+    );
+
+    expect(directionDescription).toMatch(
+      /scroll_to_element.*up\/down.*default down/i
+    );
   });
 });

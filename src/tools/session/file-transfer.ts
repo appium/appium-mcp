@@ -29,7 +29,7 @@ function normalizePullResult(result: unknown): string {
 }
 
 const remotePathDescription =
-  'Device path: absolute Android path or XCUITest container/simulator path.';
+  'Device path: absolute Android path (e.g. /sdcard/Download/a.txt) or XCUITest form (e.g. @com.example.app:documents/a.txt).';
 
 export default function fileTransfer(server: FastMCP): void {
   const schema = z.object({
