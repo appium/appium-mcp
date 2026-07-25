@@ -13,27 +13,20 @@ const schema = z.object({
   action: z
     .enum(['get', 'set', 'reset'])
     .describe(
-      'Action to perform. ' +
-        'get: read the current device geolocation. ' +
-        'set: set the device geolocation (requires latitude and longitude; optional altitude for Android). ' +
-        'reset: reset the geolocation to the default/system value. Not supported on Android emulators — use action=set instead.'
+      'get reads; set requires latitude + longitude; reset is unsupported on Android emulators.'
     ),
   latitude: z.coerce
     .number()
     .min(-90)
     .max(90)
     .optional()
-    .describe(
-      'Latitude value (-90 to 90). Measurement of distance north or south of the Equator. Required for: set.'
-    ),
+    .describe('Latitude -90..90; required for set.'),
   longitude: z.coerce
     .number()
     .min(-180)
     .max(180)
     .optional()
-    .describe(
-      'Longitude value (-180 to 180). Measurement of distance east or west of the prime meridian. Required for: set.'
-    ),
+    .describe('Longitude -180..180; required for set.'),
   altitude: z.coerce
     .number()
     .optional()
@@ -41,13 +34,11 @@ const schema = z.object({
       (v) => v === undefined || !isNaN(v),
       'altitude must be a valid number'
     )
-    .describe(
-      'Altitude value in meters. Android only, defaults to 0. Ignored on iOS. Used with: set.'
-    ),
+    .describe('Android set altitude meters; default 0.'),
   sessionId: z
     .string()
     .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('Target session; defaults to active.'),
 });
 
 type GeolocationArgs = z.infer<typeof schema>;
@@ -56,7 +47,7 @@ export default function geolocation(server: FastMCP): void {
   server.addTool({
     name: 'appium_geolocation',
     description:
-      'Get, set, or reset the device geolocation (GPS coordinates). Works on both iOS (simulators and real devices) and Android (emulators and real devices with mock location enabled). Use action=get to read current coordinates, action=set with latitude/longitude (and optional altitude for Android) to simulate a location, or action=reset to restore the system default. Note: On Android emulators, reset is not supported — use action=set to manually restore coordinates instead. On Android real devices, the mocked location may persist until the GPS cache refreshes.',
+      'Get/set/reset device GPS on iOS and Android. Android emulators cannot reset; set coordinates instead.',
     parameters: schema,
     annotations: {
       readOnlyHint: false,

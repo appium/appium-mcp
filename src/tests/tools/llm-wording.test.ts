@@ -89,12 +89,12 @@ describe('LLM-facing MCP tool wording', () => {
     expect(description).toMatch(/appium_ai.*find_element/i);
 
     expect(strategyDescription).toMatch(/cross-platform.*fastest.*stable/i);
-    expect(strategyDescription).toMatch(/iOS prefer/i);
-    expect(strategyDescription).toMatch(/Android prefer/i);
-    expect(strategyDescription).toMatch(/xpath last/i);
-    expect(selectorDescription).toMatch(
-      /Do not pass natural-language descriptions/i
+    expect(strategyDescription).toMatch(/iOS.*prefer.*predicate.*class chain/i);
+    expect(strategyDescription).toMatch(
+      /Android.*prefer.*android uiautomator/i
     );
+    expect(strategyDescription).toMatch(/xpath last/i);
+    expect(selectorDescription).toMatch(/not natural language/i);
   });
 
   test('appium_session_management explains local vs remote session creation', async () => {
@@ -122,16 +122,18 @@ describe('LLM-facing MCP tool wording', () => {
     expect(actionDescription).toMatch(/do NOT pass remoteServerUrl/i);
     expect(actionDescription).toMatch(/NEVER invent a localhost URL/i);
     expect(actionDescription).toMatch(/REMOTE SERVER MODE/i);
-    expect(actionDescription).toMatch(/only when user explicitly provides/i);
+    expect(actionDescription).toMatch(
+      /only when the user explicitly provides/i
+    );
     expect(actionDescription).toMatch(/without taking ownership/i);
     expect(actionDescription).toMatch(
       /without deleting the real remote session/i
     );
 
-    expect(platformDescription).toMatch(/Required for create/i);
-    expect(platformDescription).toMatch(/general.*non-Android\/iOS/i);
-    expect(remoteServerUrlDescription).toMatch(/Omit to use local server/i);
-    expect(sessionIdDescription).toMatch(/Required for attach and select/i);
+    expect(platformDescription).toMatch(/create platform/i);
+    expect(platformDescription).toMatch(/general.*other remote drivers/i);
+    expect(remoteServerUrlDescription).toMatch(/omit for embedded create/i);
+    expect(sessionIdDescription).toMatch(/required for attach\/select/i);
     expect(tool.annotations?.destructiveHint).toBe(true);
   });
 });

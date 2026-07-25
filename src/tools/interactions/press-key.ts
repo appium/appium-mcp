@@ -44,7 +44,7 @@ export default function pressKey(server: FastMCP): void {
       sessionId: z
         .string()
         .optional()
-        .describe('Session ID to target. If omitted, uses the active session.'),
+        .describe('Target session; defaults to active.'),
       key: z
         .enum([
           'BACK',
@@ -61,22 +61,16 @@ export default function pressKey(server: FastMCP): void {
           'SELECT',
         ])
         .optional()
-        .describe(
-          `Logical key/button to press. On Android: ${ANDROID_KEYS_DESCRIPTION}. On iOS/tvOS: ${IOS_BUTTONS_DESCRIPTION}.`
-        ),
+        .describe('Logical button; availability differs by platform.'),
       keyCode: z
         .number()
         .int()
         .optional()
-        .describe(
-          'Android keycode to press. If provided, takes precedence over key for Android.'
-        ),
+        .describe('Android keycode; overrides key.'),
       isLongPress: z
         .boolean()
         .optional()
-        .describe(
-          'Android only. Whether to perform a long press. Defaults to false.'
-        ),
+        .describe('Android long press; default false.'),
     })
     .refine((value) => value.key !== undefined || value.keyCode !== undefined, {
       message: 'Either key or keyCode must be provided',
@@ -85,8 +79,7 @@ export default function pressKey(server: FastMCP): void {
 
   server.addTool({
     name: 'appium_mobile_press_key',
-    description:
-      'Press navigation keys (BACK, HOME, APP_SWITCH) on Android or physical buttons (HOME, volume, etc.) on iOS/tvOS.',
+    description: 'Press Android navigation keys or iOS/tvOS physical buttons.',
     parameters: pressKeySchema,
     annotations: {
       readOnlyHint: false,

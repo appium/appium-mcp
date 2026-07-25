@@ -14,22 +14,15 @@ import {
 const schema = z.object({
   action: z
     .enum(['get', 'update'])
-    .describe(
-      'get: read current Appium driver session settings (timeouts, selector waits, flags). ' +
-        'update: merge a settings map into the session (requires settings).'
-    ),
+    .describe('get reads; update requires settings and merges them.'),
   settings: z
     .record(z.string(), z.any())
     .optional()
-    .describe(
-      'Required when action is update. Driver-specific keys (e.g. Android UiAutomator2: ' +
-        'waitForIdleTimeout, waitForSelectorTimeout, ignoreUnimportantViews; iOS XCUITest has its own set). ' +
-        'Use action=get first to inspect current values.'
-    ),
+    .describe('Driver-specific settings map; inspect with get first.'),
   sessionId: z
     .string()
     .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('Target session; defaults to active.'),
 });
 
 type DriverSettingsArgs = z.infer<typeof schema>;
@@ -38,9 +31,7 @@ export default function driverSettings(server: FastMCP): void {
   server.addTool({
     name: 'appium_driver_settings',
     description:
-      'Read or update Appium driver session settings (e.g. idle timeouts, selector waits). ' +
-      'Use action=get to return JSON settings; action=update merges a map into the session. ' +
-      'Works for embedded UiAutomator2/XCUITest sessions and remote WebDriver clients that support Appium settings.',
+      'Get or update Appium driver settings for embedded or supporting remote sessions.',
     parameters: schema,
     annotations: {
       readOnlyHint: false,

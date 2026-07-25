@@ -11,21 +11,15 @@ import {
 const schema = z.object({
   action: z
     .enum(['hide', 'is_shown'])
-    .describe(
-      'hide: dismiss the software keyboard (mobile: hideKeyboard). ' +
-        'is_shown: whether the keyboard is visible (mobile: isKeyboardShown).'
-    ),
+    .describe('hide dismisses; is_shown checks visibility.'),
   keys: z
     .array(z.string())
     .optional()
-    .describe(
-      'hide only: optional key names to dismiss the keyboard (e.g. "done"). ' +
-        'Forwarded to mobile: hideKeyboard when non-empty. Ignored for is_shown.'
-    ),
+    .describe('hide-only optional dismissal key names.'),
   sessionId: z
     .string()
     .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('Target session; defaults to active.'),
 });
 
 type KeyboardArgs = z.infer<typeof schema>;
@@ -33,9 +27,7 @@ type KeyboardArgs = z.infer<typeof schema>;
 export default function keyboard(server: FastMCP): void {
   server.addTool({
     name: 'appium_mobile_keyboard',
-    description:
-      'Hide the software keyboard or check if it is visible (Android UiAutomator2 / iOS XCUITest). ' +
-      'action=hide uses mobile: hideKeyboard; action=is_shown uses mobile: isKeyboardShown.',
+    description: 'Hide the software keyboard or query visibility.',
     parameters: schema,
     annotations: {
       readOnlyHint: false,

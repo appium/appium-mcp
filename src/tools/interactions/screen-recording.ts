@@ -70,77 +70,54 @@ async function saveRecording(base64Video: string): Promise<string> {
 const screenRecordingSchema = z.object({
   action: z
     .enum(['start', 'stop'])
-    .describe(
-      'Use start to begin recording. Use stop to end the current recording, retrieve it from the driver, and save it to disk.'
-    ),
+    .describe('start begins; stop retrieves and saves the recording.'),
   timeLimit: z
     .number()
     .int()
     .min(1)
     .optional()
     .describe(
-      'Maximum recording duration in seconds for the underlying recorder. This does not automatically stop and save the recording through this tool; call action="stop" to retrieve/save the video. iOS default: 180 (max 4200). Android default: 180 (max 1800).'
+      'Recorder limit seconds; stop still retrieves it. Default 180; max iOS 4200/Android 1800.'
     ),
   forceRestart: z
     .boolean()
     .optional()
-    .describe(
-      'If true, stop any active recording immediately and start a new one without returning the previous video. Default: false.'
-    ),
+    .describe('start: discard active recording; default false.'),
   videoQuality: z
     .enum(['low', 'medium', 'high', 'photo'])
     .optional()
-    .describe('iOS only. Video quality preset. Default: medium.'),
+    .describe('iOS quality; default medium.'),
   videoFps: z
     .number()
     .int()
     .min(1)
     .max(60)
     .optional()
-    .describe('iOS only. Frames per second. Default: 10.'),
-  videoType: z
-    .string()
-    .optional()
-    .describe('iOS only. Video codec to use (e.g. libx264).'),
+    .describe('iOS FPS; default 10.'),
+  videoType: z.string().optional().describe('iOS codec, e.g. libx264.'),
   videoFilters: z
     .string()
     .optional()
-    .describe(
-      'iOS only. FFMPEG video filters. Takes precedence over videoScale.'
-    ),
-  videoScale: z
-    .string()
-    .optional()
-    .describe('iOS only. Scaling value (e.g. 1280:720).'),
+    .describe('iOS FFMPEG filters; overrides videoScale.'),
+  videoScale: z.string().optional().describe('iOS scale, e.g. 1280:720.'),
   pixelFormat: z
     .string()
     .optional()
-    .describe('iOS only. Output pixel format (e.g. yuv420p).'),
+    .describe('iOS pixel format, e.g. yuv420p.'),
   hardwareAcceleration: z
     .enum(['videoToolbox', 'cuda', 'amf_dx11', 'qsv', 'vaapi'])
     .optional()
-    .describe('iOS only. FFMPEG hardware acceleration backend.'),
-  videoSize: z
-    .string()
-    .optional()
-    .describe(
-      'Android only. Frame size in WIDTHxHEIGHT format (e.g. 1280x720).'
-    ),
-  bitRate: z
-    .number()
-    .int()
-    .optional()
-    .describe('Android only. Video bit rate in bits per second.'),
+    .describe('iOS FFMPEG hardware acceleration.'),
+  videoSize: z.string().optional().describe('Android WIDTHxHEIGHT.'),
+  bitRate: z.number().int().optional().describe('Android bits/second.'),
   bugReport: z
     .boolean()
     .optional()
-    .describe(
-      'Android only. Display timestamp overlay. Requires API level 27+.'
-    ),
+    .describe('Android timestamp overlay; API 27+.'),
   sessionId: z
     .string()
     .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('Target session; defaults to active.'),
 });
 
 export default function screenRecording(server: FastMCP): void {

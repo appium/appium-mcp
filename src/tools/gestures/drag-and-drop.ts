@@ -26,67 +26,55 @@ const dragAndDropSchema = z.object({
   sourceElementUUID: elementUUIDScheme
     .optional()
     .describe(
-      AI_UUID_HINT +
-        `UUID of source element to drag from. Either sourceElementUUID or sourceX+sourceY must be provided.`
+      AI_UUID_HINT + 'Source element; otherwise provide sourceX + sourceY.'
     ),
   sourceX: z
     .number()
     .int()
     .min(0)
     .optional()
-    .describe(
-      'Source X coordinate. Required if sourceElementUUID is not provided.'
-    ),
+    .describe('Source X when no source element.'),
   sourceY: z
     .number()
     .int()
     .min(0)
     .optional()
-    .describe(
-      'Source Y coordinate. Required if sourceElementUUID is not provided.'
-    ),
+    .describe('Source Y when no source element.'),
   targetElementUUID: elementUUIDScheme
     .optional()
     .describe(
-      AI_UUID_HINT +
-        `UUID of target element to drop on. Either targetElementUUID or targetX+targetY must be provided.`
+      AI_UUID_HINT + 'Target element; otherwise provide targetX + targetY.'
     ),
   targetX: z
     .number()
     .int()
     .min(0)
     .optional()
-    .describe(
-      'Target X coordinate. Required if targetElementUUID is not provided.'
-    ),
+    .describe('Target X when no target element.'),
   targetY: z
     .number()
     .int()
     .min(0)
     .optional()
-    .describe(
-      'Target Y coordinate. Required if targetElementUUID is not provided.'
-    ),
+    .describe('Target Y when no target element.'),
   duration: z
     .number()
     .int()
     .min(100)
     .max(5000)
     .optional()
-    .describe('Duration of the drag movement in milliseconds. Default 1200.'),
+    .describe('Drag milliseconds; default 1200.'),
   longPressDuration: z
     .number()
     .int()
     .min(400)
     .max(2000)
     .optional()
-    .describe(
-      'Duration of the long press before dragging in milliseconds. Default 600.'
-    ),
+    .describe('Pre-drag hold milliseconds; default 600.'),
   sessionId: z
     .string()
     .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('Target session; defaults to active.'),
 });
 
 type DragArgs = z.infer<typeof dragAndDropSchema>;
@@ -95,10 +83,7 @@ export default function dragAndDrop(server: FastMCP): void {
   server.addTool({
     name: 'appium_drag_and_drop',
     description:
-      'Perform a drag-and-drop gesture from a source location to a target location. ' +
-      'The gesture: long press the source (default 600ms), drag to the target (default 1200ms), then release. ' +
-      'Source and target can each be specified as either an element UUID or coordinates. ' +
-      'Useful for reordering lists, moving items, drag-to-delete.',
+      'Drag between element IDs or coordinates; default hold 600ms and movement 1200ms.',
     parameters: dragAndDropSchema,
     annotations: {
       readOnlyHint: false,

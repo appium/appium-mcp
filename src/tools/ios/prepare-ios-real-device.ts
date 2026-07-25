@@ -444,37 +444,24 @@ async function runPipeline(
 // ── Tool registration ──
 
 const prepareRealDeviceSchema = z.object({
-  udid: z
-    .string()
-    .describe(
-      'UDID of the connected iOS real device. Use select_device to discover it.'
-    ),
+  udid: z.string().describe('Real-device UDID from select_device.'),
   provisioningProfileUuid: z
     .string()
     .optional()
     .describe(
-      'UUID of the .mobileprovision profile to sign WDA with. If omitted, the tool returns the list of available profiles so you can ask the user to pick one.'
+      'Signing profile UUID; omit to list profiles for user selection.'
     ),
   forceRebuild: z
     .boolean()
     .optional()
-    .describe(
-      'If true, ignore the cached WDA download and unsigned IPA and start clean. The signed IPA is always rebuilt regardless. Default: false.'
-    ),
+    .describe('Ignore cached WDA/IPA inputs; signed IPA is always rebuilt.'),
 });
 
 export default function prepareIosRealDevice(server: FastMCP): void {
   server.addTool({
     name: 'appium_prepare_ios_real_device',
     description:
-      'Prepare an iOS real device for Appium testing in a single call. Two-mode flow: ' +
-      '(1) Call without provisioningProfileUuid to receive the list of available .mobileprovision profiles — ' +
-      'present them to the user (highlight any with recommendedForWda=true) and ask them to pick one. ' +
-      '(2) Call again with the chosen UUID to download the matching WebDriverAgent release, package it as an IPA, ' +
-      'and resign it with the chosen profile (wildcard "*" profiles are supported — a concrete WDA bundle ID is substituted at sign time). ' +
-      'WDA download and unsigned IPA are cached per WDA version; the signed IPA is rebuilt every call. ' +
-      'Pass the returned capabilitiesHint to appium_session_management (action=create) so Appium installs and launches the signed prebuilt WDA instead of rebuilding. ' +
-      'Requires macOS, Xcode 16+, and a paired developer-mode device.',
+      'Prepare WDA for an iOS real device (macOS/Xcode 16+). First omit provisioningProfileUuid to list profiles; ask the user to choose, preferring recommendedForWda. Then pass the UUID to sign WDA. Pass capabilitiesHint to appium_session_management create.',
     parameters: prepareRealDeviceSchema,
     annotations: {
       readOnlyHint: false,

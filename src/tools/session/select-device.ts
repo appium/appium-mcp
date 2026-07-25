@@ -80,38 +80,23 @@ export function clearSelectedDevice(): void {
 export default function selectDevice(server: any): void {
   server.addTool({
     name: 'select_device',
-    description: `Discover and select a device for LOCAL Appium servers ONLY.
-      DO NOT use this tool for REMOTE Appium servers - remoteServerUrl indicates a remote server.
-      WORKFLOW FOR LOCAL SERVERS:
-      1. ASK THE USER which platform they want (Android or iOS) - do not assume
-      2. Call this tool with the chosen platform (and iosDeviceType for iOS)
-      3. If only one device is found, it is auto-selected - proceed to appium_session_management (action=create) (or prepare_ios_simulator for iOS simulators)
-      4. If multiple devices are found, ask the user which one they want, then call this tool again with deviceUdid
-      5. After selection, proceed to appium_session_management (action=create) (or prepare_ios_simulator for iOS simulators, then appium_session_management with action=create)
-      WORKFLOW FOR REMOTE SERVERS:
-      - SKIP this tool entirely
-      - Device selection should be handled via capabilities on appium_session_management (action=create) (e.g., appium:deviceName, appium:udid)
-      - The remote Appium server is already configured for specific device(s)
-      `,
+    description:
+      'LOCAL servers only: ask the user for platform, list devices, then select deviceUdid; one result auto-selects. ' +
+      'For iOS also pass iosDeviceType and prepare simulators before session create. ' +
+      'Skip for REMOTE servers; pass device capabilities to appium_session_management.',
     parameters: z
       .object({
         platform: z
           .enum(['ios', 'android'])
-          .describe(
-            'The platform to list devices for (must match previously selected platform)'
-          ),
+          .describe('Platform selected by the user.'),
         iosDeviceType: z
           .enum(['simulator', 'real'])
           .optional()
-          .describe(
-            "For iOS only: Specify whether to use 'simulator' or 'real' device. REQUIRED when platform is 'ios'."
-          ),
+          .describe('Required for iOS: simulator or real.'),
         deviceUdid: z
           .string()
           .optional()
-          .describe(
-            'The UDID of the device selected by the user. If not provided, this tool will list available devices for the user to choose from.'
-          ),
+          .describe('Chosen UDID; omit to list devices.'),
       })
       .refine(
         (data) => data.platform !== 'ios' || data.iosDeviceType !== undefined,

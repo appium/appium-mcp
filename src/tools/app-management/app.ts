@@ -32,76 +32,49 @@ const schema = z.object({
   action: z
     .enum(APP_ACTIONS)
     .describe(
-      'Action to perform. ' +
-        'activate: bring app to foreground (requires id or name). ' +
-        'terminate: stop a running app (requires id or name). ' +
-        'install: install from file path (requires path). ' +
-        'uninstall: remove from device (requires id or name; optional keepData for Android). ' +
-        'list: list installed apps (optional applicationType for iOS). ' +
-        'is_installed: check if app is installed (requires id or name). ' +
-        'query_state: get state 0=not installed,1=not running,2=background suspended,3=background,4=foreground (requires id or name). ' +
-        'background: send foreground app to background (optional seconds, default 5). ' +
-        'clear: clear app data without uninstalling (requires id or name). ' +
-        'deep_link: open a URL with an app (requires url; optional id or name).'
+      'App action. install requires path; deep_link requires url; list/background need no id. ' +
+        'Other actions require id or name. query_state returns WebDriver states 0–4.'
     ),
   id: z
     .string()
     .optional()
-    .describe(
-      'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. Required for: activate, terminate, uninstall, is_installed, query_state, clear.'
-    ),
+    .describe('Android package or iOS bundle ID; preferred over name.'),
   name: z
     .string()
     .optional()
-    .describe(
-      'Human-readable app name (e.g. "Spotify"). Used to resolve the app id. Required (as alternative to id) for: activate, terminate, uninstall, is_installed, query_state, clear.'
-    ),
-  path: z
-    .string()
-    .optional()
-    .describe('Path to the app file to install. Required for: install.'),
+    .describe('App name resolved to an ID; alternative to id.'),
+  path: z.string().optional().describe('App file path; required for install.'),
   keepData: z
     .boolean()
     .optional()
-    .describe(
-      'Keep app data and cache after uninstall. Android only. Used with: uninstall.'
-    ),
+    .describe('Android uninstall: retain data/cache.'),
   applicationType: z
     .enum(['User', 'System'])
     .optional()
-    .describe(
-      'iOS only: filter by "User" (default) or "System" apps. Used with: list.'
-    ),
+    .describe('iOS list filter; default User.'),
   seconds: z
     .number()
     .min(-1)
     .max(86400)
     .optional()
     .describe(
-      `Seconds to keep the app in the background. Defaults to ${DEFAULT_BACKGROUND_SECONDS}. Use -1 to stay in background without auto-resuming. Used with: background.`
+      `background seconds; default ${DEFAULT_BACKGROUND_SECONDS}; -1 stays backgrounded.`
     ),
-  url: z
-    .string()
-    .optional()
-    .describe(
-      'Deep link URL to open (e.g. https://example.com, myapp://path). Required for: deep_link.'
-    ),
+  url: z.string().optional().describe('URL; required for deep_link.'),
   waitForLaunch: z
     .boolean()
     .optional()
-    .describe(
-      'Android only. If false, ADB does not wait for the activity to return. Defaults to true. Used with: deep_link.'
-    ),
+    .describe('Android deep_link: wait for launch; default true.'),
   sessionId: z
     .string()
     .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('Target session; defaults to active.'),
 });
 
 export default function app(server: FastMCP): void {
   server.addTool({
     name: 'appium_app_lifecycle',
-    description: `Manage apps on the device. Use the action parameter to choose what to do: ${APP_ACTIONS.join(', ')}.`,
+    description: `Manage app lifecycle: ${APP_ACTIONS.join(', ')}.`,
     parameters: schema,
     annotations: {
       readOnlyHint: false,

@@ -9,21 +9,12 @@ import {
 } from '../tool-response.js';
 
 const schema = z.object({
-  action: z
-    .enum(['get', 'set'])
-    .describe(
-      'get: read device clipboard as plain text. set: write plain text to the clipboard.'
-    ),
-  content: z
-    .string()
-    .optional()
-    .describe(
-      'Required when action is set. Plain text to put on the clipboard.'
-    ),
+  action: z.enum(['get', 'set']).describe('get reads; set requires content.'),
+  content: z.string().optional().describe('Text required for set.'),
   sessionId: z
     .string()
     .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('Target session; defaults to active.'),
 });
 
 type ClipboardArgs = z.infer<typeof schema>;
@@ -31,9 +22,7 @@ type ClipboardArgs = z.infer<typeof schema>;
 export default function clipboard(server: FastMCP): void {
   server.addTool({
     name: 'appium_mobile_clipboard',
-    description:
-      'Read or set the device clipboard as plain text (Android UiAutomator2 / iOS XCUITest). ' +
-      'action=get returns current text; action=set requires content.',
+    description: 'Read/set device clipboard text.',
     parameters: schema,
     annotations: {
       readOnlyHint: false,

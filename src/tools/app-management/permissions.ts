@@ -17,53 +17,38 @@ export default function mobilePermissions(server: FastMCP): void {
     action: z
       .enum(['get', 'update', 'reset'])
       .describe(
-        'get: list (Android) or read one privacy state (iOS Simulator). ' +
-          'update: grant/revoke (Android) or set privacy map (iOS Simulator). ' +
-          'reset: restore a privacy prompt for the app under test (iOS only).'
+        'get reads; update changes; reset restores an iOS privacy prompt.'
       ),
     id: z
       .string()
       .optional()
       .describe(
-        'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. ' +
-          'Optional for Android (defaults to the app under test). Required for iOS get and update.'
+        'Package/bundle ID; preferred over name. iOS get/update requires id or name.'
       ),
     name: z
       .string()
       .optional()
-      .describe(
-        'Human-readable app name (e.g. "Spotify"). Used to resolve the app id. ' +
-          'Optional for Android (defaults to the app under test). Required (as alternative to id) for iOS get and update.'
-      ),
+      .describe('App name resolved to ID; alternative to id.'),
     sessionId: z
       .string()
       .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
+      .describe('Target session; defaults to active.'),
     permissionFilter: z
       .enum(['denied', 'granted', 'requested'])
       .optional()
-      .describe(
-        'Android get only: which bucket to return. Defaults to requested per UiAutomator2.'
-      ),
+      .describe('Android get bucket; default requested.'),
     service: z
       .union([z.string(), z.number()])
       .optional()
-      .describe(
-        'iOS get: privacy service name (e.g. camera, microphone, photos). ' +
-          'iOS reset: service name or numeric XCUIProtectedResource id.'
-      ),
+      .describe('iOS privacy service; reset also accepts numeric resource ID.'),
     permissions: z
       .union([z.string(), z.array(z.string())])
       .optional()
-      .describe(
-        'Android update only: permission name(s), `all` (with pm target), or appops names. Required for Android update.'
-      ),
+      .describe('Android update permission(s), all, or appops names.'),
     permissionChangeAction: z
       .string()
       .optional()
-      .describe(
-        'Android update: for pm target grant (default) or revoke; for appops allow, deny, ignore, default.'
-      ),
+      .describe('Android update mode: pm grant/revoke or appops mode.'),
     target: z
       .enum(['pm', 'appops'])
       .optional()
@@ -71,15 +56,13 @@ export default function mobilePermissions(server: FastMCP): void {
     access: z
       .record(z.string(), iosPermissionStateSchema)
       .optional()
-      .describe(
-        'iOS update only: map of access rule → yes|no|unset|limited (Simulator + AppleSimulatorUtils). Required for iOS update.'
-      ),
+      .describe('iOS update access map; required on Simulator.'),
   });
 
   server.addTool({
     name: 'appium_mobile_permissions',
     description:
-      'Manage mobile app permissions in one place. action=get: Android lists runtime permissions for a package; iOS Simulator reads one service state for an app (needs id or name + service). action=update: Android changes permissions (grant/revoke or AppOps); iOS Simulator sets privacy via access map (needs id or name + access). action=reset: iOS only — resets one privacy service for the AUT (needs service).',
+      'Get/update Android permissions or iOS Simulator privacy; reset is iOS-only. See action fields for required platform inputs.',
     parameters: schema,
     annotations: {
       readOnlyHint: false,

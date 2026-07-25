@@ -29,31 +29,27 @@ function normalizePullResult(result: unknown): string {
 }
 
 const remotePathDescription =
-  'Path to the file on the device. ' +
-  'Android (UiAutomator2): use an absolute path (e.g. /data/local/tmp/foo.txt or /sdcard/Download/foo.txt). ' +
-  'iOS (XCUITest): use the formats described in the Appium XCUITest file transfer guide ' +
-  '(e.g. @com.example.app:documents/file.txt or simulator-relative paths).';
+  'Device path: absolute Android path or XCUITest container/simulator path.';
 
 export default function fileTransfer(server: FastMCP): void {
   const schema = z.object({
     action: z
       .enum(['push', 'pull'])
-      .describe('push uploads a file to device; pull downloads from device.'),
+      .describe('push uploads; pull returns base64.'),
     remotePath: z.string().min(1).describe(remotePathDescription),
     payloadBase64: z
       .string()
       .optional()
-      .describe('Required when action=push. Ignored when action=pull.'),
+      .describe('Base64 payload required for push.'),
     sessionId: z
       .string()
       .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
+      .describe('Target session; defaults to active.'),
   });
 
   server.addTool({
     name: 'appium_mobile_file',
-    description:
-      'Push or pull a file using Appium mobile extensions. action=push uses payloadBase64, action=pull returns contentBase64.',
+    description: 'Push/pull device files; pull returns contentBase64.',
     parameters: schema,
     annotations: {
       readOnlyHint: false,
