@@ -455,20 +455,21 @@ export async function createSessionAction(args: {
     const textResponse = textResult(
       `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`
     );
+    const sessionCapabilities = finalCapabilities;
 
-    const uiResource = createUIResource(
-      `ui://appium-mcp/session-dashboard/${sessionIdStr}`,
-      createSessionDashboardUI({
-        sessionId: sessionIdStr,
-        platform: finalCapabilities.platformName,
-        automationName: finalCapabilities['appium:automationName'],
-        deviceName: finalCapabilities['appium:deviceName'],
-        platformVersion: finalCapabilities['appium:platformVersion'],
-        udid: finalCapabilities['appium:udid'],
-      })
+    return addUIResourceToResponse(textResponse, () =>
+      createUIResource(
+        `ui://appium-mcp/session-dashboard/${sessionIdStr}`,
+        createSessionDashboardUI({
+          sessionId: sessionIdStr,
+          platform: sessionCapabilities.platformName,
+          automationName: sessionCapabilities['appium:automationName'],
+          deviceName: sessionCapabilities['appium:deviceName'],
+          platformVersion: sessionCapabilities['appium:platformVersion'],
+          udid: sessionCapabilities['appium:udid'],
+        })
+      )
     );
-
-    return addUIResourceToResponse(textResponse, uiResource);
   } catch (error: unknown) {
     log.error('Error creating session:', error);
     return errorResult(

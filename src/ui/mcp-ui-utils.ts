@@ -1678,18 +1678,24 @@ export function createTestCodeViewerUI(
 
 /**
  * Helper function to add UI resource to response content
- * Returns both text and UI resource for backward compatibility
+ * Accepts a lazy factory so NO_UI can skip expensive UI construction.
+ * Returns both text and UI resource for backward compatibility.
  */
 export function addUIResourceToResponse(
   response: { content: Array<{ type: string; text?: string }> },
-  uiResource: ReturnType<typeof createUIResource>
+  uiResource:
+    | ReturnType<typeof createUIResource>
+    | (() => ReturnType<typeof createUIResource>)
 ): { content: Array<any> } {
   if (process.env.NO_UI === 'true' || process.env.NO_UI === '1') {
     return response;
   }
 
+  const resolvedUIResource =
+    typeof uiResource === 'function' ? uiResource() : uiResource;
+
   return {
-    content: [...response.content, uiResource],
+    content: [...response.content, resolvedUIResource],
   };
 }
 

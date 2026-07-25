@@ -1,10 +1,12 @@
-import { describe, expect, test } from '@jest/globals';
+import { afterEach, describe, expect, jest, test } from '@jest/globals';
 
 import {
+  addUIResourceToResponse,
   createContextSwitcherUI,
   createLocatorGeneratorUI,
   createPageSourceInspectorUI,
   createTestCodeViewerUI,
+  createUIResource,
 } from '../ui/mcp-ui-utils.js';
 
 describe('createLocatorGeneratorUI', () => {
@@ -40,6 +42,56 @@ describe('createLocatorGeneratorUI', () => {
     expect(html).toContain(
       'data-selector="com.attacker.app/`&lt;img src=x onerror=alert(1)&gt;"'
     );
+  });
+});
+
+describe('addUIResourceToResponse', () => {
+  const originalNoUI = process.env.NO_UI;
+
+  afterEach(() => {
+    if (originalNoUI === undefined) {
+      delete process.env.NO_UI;
+    } else {
+      process.env.NO_UI = originalNoUI;
+    }
+  });
+
+  test.each(['true', '1'])(
+    'does not construct UI resources when NO_UI=%s',
+    (value) => {
+      process.env.NO_UI = value;
+      const response = { content: [{ type: 'text', text: 'result' }] };
+      const createResource = jest.fn(() =>
+        createUIResource('ui://test/resource', '<html></html>')
+      );
+
+      const result = addUIResourceToResponse(response, createResource);
+
+      expect(result).toBe(response);
+      expect(createResource).not.toHaveBeenCalled();
+    }
+  );
+
+  test('constructs and appends lazy UI resources when UI is enabled', () => {
+    delete process.env.NO_UI;
+    const response = { content: [{ type: 'text', text: 'result' }] };
+    const uiResource = createUIResource('ui://test/resource', '<html></html>');
+    const createResource = jest.fn(() => uiResource);
+
+    const result = addUIResourceToResponse(response, createResource);
+
+    expect(createResource).toHaveBeenCalledTimes(1);
+    expect(result.content).toEqual([...response.content, uiResource]);
+  });
+
+  test('continues to accept prebuilt UI resources', () => {
+    delete process.env.NO_UI;
+    const response = { content: [{ type: 'text', text: 'result' }] };
+    const uiResource = createUIResource('ui://test/resource', '<html></html>');
+
+    const result = addUIResourceToResponse(response, uiResource);
+
+    expect(result.content).toEqual([...response.content, uiResource]);
   });
 });
 

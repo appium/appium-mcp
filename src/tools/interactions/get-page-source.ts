@@ -52,12 +52,12 @@ export default function getPageSource(server: FastMCP): void {
         );
 
         // Add interactive page source inspector UI
-        const uiResource = createUIResource(
-          `ui://appium-mcp/page-source-inspector/${Date.now()}`,
-          createPageSourceInspectorUI(pageSource)
+        return addUIResourceToResponse(textResponse, () =>
+          createUIResource(
+            `ui://appium-mcp/page-source-inspector/${Date.now()}`,
+            createPageSourceInspectorUI(pageSource)
+          )
         );
-
-        return addUIResourceToResponse(textResponse, uiResource);
       } catch (err: unknown) {
         return errorResult(
           `Failed to get page source. Error: ${toolErrorMessage(err)}`

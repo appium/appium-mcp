@@ -69,12 +69,12 @@ export default function context(server: FastMCP): void {
             `Available contexts: ${JSON.stringify(availableContexts, null, 2)}\nCurrent context: ${currentContext}`
           );
 
-          const uiResource = createUIResource(
-            `ui://appium-mcp/context-switcher/${Date.now()}`,
-            createContextSwitcherUI(availableContexts, currentContext)
+          return addUIResourceToResponse(textResponse, () =>
+            createUIResource(
+              `ui://appium-mcp/context-switcher/${Date.now()}`,
+              createContextSwitcherUI(availableContexts, currentContext)
+            )
           );
-
-          return addUIResourceToResponse(textResponse, uiResource);
         }
 
         if (!args.context) {

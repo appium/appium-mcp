@@ -225,12 +225,12 @@ function formatAndroidListResponse(devices: any[]): ContentResult {
   );
 
   // Add interactive UI picker
-  const uiResource = createUIResource(
-    `ui://appium-mcp/device-picker/android-${Date.now()}`,
-    createDevicePickerUI(devices, 'android')
+  return addUIResourceToResponse(textResponse, () =>
+    createUIResource(
+      `ui://appium-mcp/device-picker/android-${Date.now()}`,
+      createDevicePickerUI(devices, 'android')
+    )
   );
-
-  return addUIResourceToResponse(textResponse, uiResource);
 }
 
 /**
@@ -344,12 +344,12 @@ function formatIOSListResponse(
   );
 
   // Add interactive UI picker
-  const uiResource = createUIResource(
-    `ui://appium-mcp/device-picker/ios-${iosDeviceType}-${Date.now()}`,
-    createDevicePickerUI(devices, 'ios', iosDeviceType)
+  return addUIResourceToResponse(textResponse, () =>
+    createUIResource(
+      `ui://appium-mcp/device-picker/ios-${iosDeviceType}-${Date.now()}`,
+      createDevicePickerUI(devices, 'ios', iosDeviceType)
+    )
   );
-
-  return addUIResourceToResponse(textResponse, uiResource);
 }
 
 /**

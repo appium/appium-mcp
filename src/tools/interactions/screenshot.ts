@@ -111,12 +111,12 @@ export async function executeScreenshot(opts: {
     );
 
     // Add interactive screenshot viewer UI
-    const uiResource = createUIResource(
-      `ui://appium-mcp/screenshot-viewer/${Date.now()}`,
-      createScreenshotViewerUI(displayBase64, filepath)
+    return addUIResourceToResponse(textResponse, () =>
+      createUIResource(
+        `ui://appium-mcp/screenshot-viewer/${Date.now()}`,
+        createScreenshotViewerUI(displayBase64, filepath)
+      )
     );
-
-    return addUIResourceToResponse(textResponse, uiResource);
   } catch (err: unknown) {
     return errorResult(
       `Failed to take screenshot. err: ${toolErrorMessage(err)}`

@@ -104,11 +104,12 @@ export async function list(
     const textResponse = textResult(
       `Installed apps: ${JSON.stringify(apps, null, 2)}`
     );
-    const uiResource = createUIResource(
-      `ui://appium-mcp/app-list/${Date.now()}`,
-      createAppListUI(apps)
+    return addUIResourceToResponse(textResponse, () =>
+      createUIResource(
+        `ui://appium-mcp/app-list/${Date.now()}`,
+        createAppListUI(apps)
+      )
     );
-    return addUIResourceToResponse(textResponse, uiResource);
   } catch (err: unknown) {
     return errorResult(`Failed to list apps. err: ${toolErrorMessage(err)}`);
   }

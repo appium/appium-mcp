@@ -85,12 +85,12 @@ export default function generateLocators(server: any): void {
           })
         );
 
-        const uiResource = createUIResource(
-          `ui://appium-mcp/locator-generator/${Date.now()}`,
-          createLocatorGeneratorUI(interactableElements)
+        return addUIResourceToResponse(textResponse, () =>
+          createUIResource(
+            `ui://appium-mcp/locator-generator/${Date.now()}`,
+            createLocatorGeneratorUI(interactableElements)
+          )
         );
-
-        return addUIResourceToResponse(textResponse, uiResource);
       } catch (err: unknown) {
         log.error('Error getting page source:', err);
         return errorResult(
