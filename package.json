@@ -69,7 +69,7 @@
     "ios-mobileprovision-finder": "^1.2.1",
     "lru-cache": "^11.5.0",
     "node-simctl": "^8.0.4",
-    "webdriver": "^9.23.0",
+    "webdriver": "^9.30.0",
     "xpath": "^0.0.34",
     "zod": "^4.3.6"
   },
@@ -126,6 +126,6 @@
     ]
   },
   "engines": {
-    "node": ">=22 <26"
+    "node": ">=22"
   }
 }
