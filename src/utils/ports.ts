@@ -12,31 +12,6 @@ import net from 'node:net';
 const reservedPorts = new Set<number>();
 
 /**
- * Ask the OS for a currently-free TCP port by binding to port 0 on loopback.
- */
-function probeEphemeralPort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      const port =
-        address && typeof address === 'object' ? address.port : undefined;
-      server.close((closeErr) => {
-        if (closeErr) {
-          reject(closeErr);
-        } else if (!port) {
-          reject(new Error('Failed to determine a free port'));
-        } else {
-          resolve(port);
-        }
-      });
-    });
-  });
-}
-
-/**
  * Allocate a free TCP port that has not already been handed out by this process.
  *
  * Used to assign driver ports (e.g. `systemPort`, `wdaLocalPort`,
@@ -81,4 +56,29 @@ export function releaseReservedPorts(ports: Iterable<number>): void {
 /** Snapshot of currently-reserved ports — for diagnostics and tests. */
 export function reservedPortCount(): number {
   return reservedPorts.size;
+}
+
+/**
+ * Ask the OS for a currently-free TCP port by binding to port 0 on loopback.
+ */
+function probeEphemeralPort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      const port =
+        address && typeof address === 'object' ? address.port : undefined;
+      server.close((closeErr) => {
+        if (closeErr) {
+          reject(closeErr);
+        } else if (!port) {
+          reject(new Error('Failed to determine a free port'));
+        } else {
+          resolve(port);
+        }
+      });
+    });
+  });
 }
