@@ -171,8 +171,8 @@ afterEach(() => {
 });
 
 describe('createAppiumMcpServer plugin lifecycle', () => {
-  test('disables FastMCP roots negotiation', () => {
-    createAppiumMcpServer();
+  test('disables FastMCP roots negotiation', async () => {
+    await createAppiumMcpServer();
 
     expect(registeredServers[0]?.options).toMatchObject({
       roots: {
@@ -181,8 +181,8 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     });
   });
 
-  test('passes the appium logger to FastMCP', () => {
-    createAppiumMcpServer();
+  test('passes the appium logger to FastMCP', async () => {
+    await createAppiumMcpServer();
 
     const options = registeredServers[0]?.options as {
       logger: Record<string, (...args: unknown[]) => void>;

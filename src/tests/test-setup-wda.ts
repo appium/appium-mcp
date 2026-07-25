@@ -19,8 +19,13 @@ async function downloadFile(url: string, destPath: string): Promise<void> {
         if (response.statusCode === 302 || response.statusCode === 301) {
           file.close();
           fs.unlinkSync(destPath);
+          const redirectUrl = response.headers.location;
+          if (!redirectUrl) {
+            reject(new Error('Redirect response did not include a Location header'));
+            return;
+          }
           try {
-            await downloadFile(response.headers.location!, destPath);
+            await downloadFile(redirectUrl, destPath);
             resolve();
           } catch (err) {
             reject(err);

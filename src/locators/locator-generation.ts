@@ -204,9 +204,9 @@ export function getOptimalXPath(doc: XMLDocument, domNode: XMLNode): string | nu
     // Go through each of our cases and look for selectors for each case in order
     for (const attrs of cases) {
       const [xpath, isFullyUnique] = getUniqueXPath(doc, domNode, attrs);
-      if (isFullyUnique) {
+      if (isFullyUnique && xpath) {
         // if we ever encounter an actually unique selector, return it straightaway
-        return xpath!;
+        return xpath;
       } else if (!semiUniqueXpath && xpath) {
         // if we have a semin unique selector, and haven't already captured a semi unique selector,
         // hold onto it for later. If we end up without any unique selectors from any of the cases,
@@ -241,7 +241,7 @@ export function getOptimalXPath(doc: XMLDocument, domNode: XMLNode): string | nu
     }
 
     // Make a recursive call to this nodes parents and prepend it to this xpath
-    return getOptimalXPath(doc, domNode.parentNode!) + xpath;
+    return (domNode.parentNode ? getOptimalXPath(doc, domNode.parentNode) : '') + xpath;
   } catch (error) {
     // If there's an unexpected exception, abort
     logLocatorError('XPath', error);
@@ -306,7 +306,7 @@ export function getOptimalClassChain(doc: XMLDocument, domNode: XMLNode): string
     }
 
     // Make a recursive call to this nodes parents and prepend it to this xpath
-    return getOptimalClassChain(doc, domNode.parentNode!) + classChain;
+    return (domNode.parentNode ? getOptimalClassChain(doc, domNode.parentNode) : '') + classChain;
   } catch (error) {
     // If there's an unexpected exception, abort
     logLocatorError('class chain', error);

@@ -221,10 +221,10 @@ describe('listSessions', () => {
     const sessions = listSessions();
     expect(sessions).toHaveLength(2);
 
-    const a = sessions.find((s) => s.sessionId === 'session-a')!;
-    const b = sessions.find((s) => s.sessionId === 'session-b')!;
-    expect(a.isActive).toBe(false);
-    expect(b.isActive).toBe(true);
+    const a = sessions.find((s) => s.sessionId === 'session-a');
+    const b = sessions.find((s) => s.sessionId === 'session-b');
+    expect(a?.isActive).toBe(false);
+    expect(b?.isActive).toBe(true);
   });
 
   test('returns currentContext and capabilities for each session', async () => {

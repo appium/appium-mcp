@@ -492,7 +492,6 @@ function createDriverForPlatform(platform: 'android' | 'ios'): any {
  * Create a new session with the given driver and capabilities
  */
 async function createDriverSession(driver: any, capabilities: Capabilities): Promise<string> {
-  // @ts-ignore
   const result = await driver.createSession(null, {
     alwaysMatch: capabilities,
     firstMatch: [{}],

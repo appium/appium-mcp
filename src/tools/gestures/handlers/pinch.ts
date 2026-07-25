@@ -84,24 +84,21 @@ export async function handlePinchZoom(driver: DriverInstance, args: GestureArgs)
     let cx: number;
     let cy: number;
     let spread: number;
-    let windowRect: Awaited<ReturnType<typeof getWindowRect>> | null = null;
+    const windowRect = await getWindowRect(driver);
 
     if (args.elementUUID) {
-      windowRect = await getWindowRect(driver);
       const rect = await resolveTargetRect(driver, args.elementUUID);
       if ('error' in rect) {
         return errorResult(rect.error);
       }
       ({cx, cy, spread} = resolveElementPinchTarget(rect, windowRect));
-    } else if (useCustomCoords) {
-      windowRect = await getWindowRect(driver);
-      const target = resolveCoordinatePinchTarget(args.x!, args.y!, windowRect);
+    } else if (args.x !== undefined && args.y !== undefined) {
+      const target = resolveCoordinatePinchTarget(args.x, args.y, windowRect);
       if (typeof target === 'string') {
         return errorResult(target);
       }
       ({cx, cy, spread} = target);
     } else {
-      windowRect = await getWindowRect(driver);
       ({cx, cy, spread} = resolveWindowPinchTarget(windowRect));
     }
 
@@ -197,11 +194,10 @@ export async function handlePinchZoom(driver: DriverInstance, args: GestureArgs)
       if (args.elementUUID) {
         params.elementId = args.elementUUID;
       } else {
-        const rect = windowRect!;
-        params.left = rect.x ?? 0;
-        params.top = rect.y ?? 0;
-        params.width = rect.width;
-        params.height = rect.height;
+        params.left = windowRect.x ?? 0;
+        params.top = windowRect.y ?? 0;
+        params.width = windowRect.width;
+        params.height = windowRect.height;
       }
       await execute(driver, 'mobile: pinchOpenGesture', params);
     } else {

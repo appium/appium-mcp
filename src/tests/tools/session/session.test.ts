@@ -718,9 +718,8 @@ describe('validateLocalCreatePlatformMatch', () => {
 
     const result = validateLocalCreatePlatformMatch('android');
 
-    expect(result).toBeDefined();
-    expect(result!.isError).toBe(true);
-    const message = (result!.content[0] as {text: string}).text;
+    expect(result?.isError).toBe(true);
+    const message = (result?.content[0] as {text: string} | undefined)?.text;
     expect(message).toContain('platform=android');
     expect(message).toContain('platform=ios');
   });
@@ -730,9 +729,8 @@ describe('validateLocalCreatePlatformMatch', () => {
 
     const result = validateLocalCreatePlatformMatch('ios');
 
-    expect(result).toBeDefined();
-    expect(result!.isError).toBe(true);
-    const message = (result!.content[0] as {text: string}).text;
+    expect(result?.isError).toBe(true);
+    const message = (result?.content[0] as {text: string} | undefined)?.text;
     expect(message).toContain('platform=ios');
     expect(message).toContain('platform=android');
   });

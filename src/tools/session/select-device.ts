@@ -202,17 +202,6 @@ function formatAndroidListResponse(devices: any[]): ContentResult {
 }
 
 /**
- * Validate iOS device type
- */
-function validateIOSDeviceType(iosDeviceType: 'simulator' | 'real' | undefined): ContentResult | undefined {
-  if (!iosDeviceType) {
-    return errorResult(
-      "iosDeviceType is required when platform=ios. Pass iosDeviceType='simulator' or iosDeviceType='real'.",
-    );
-  }
-  return undefined;
-}
-/**
  * Get and validate iOS devices by type
  */
 async function getIOSDevices(iosDeviceType: 'simulator' | 'real'): Promise<DevicesOk | DevicesFail> {
@@ -344,19 +333,20 @@ async function handleIOSDeviceSelection(
     return errorResult('iOS device selection requires macOS with Xcode installed.');
   }
 
-  const typeError = validateIOSDeviceType(iosDeviceType);
-  if (typeError) {
-    return typeError;
+  if (!iosDeviceType) {
+    return errorResult(
+      "iosDeviceType is required when platform=ios. Pass iosDeviceType='simulator' or iosDeviceType='real'.",
+    );
   }
 
-  const listed = await getIOSDevices(iosDeviceType!);
+  const listed = await getIOSDevices(iosDeviceType);
   if (!listed.ok) {
     return listed.result;
   }
   const {devices} = listed;
 
   if (deviceUdid) {
-    const selected = selectIOSDevice(deviceUdid, devices, iosDeviceType!);
+    const selected = selectIOSDevice(deviceUdid, devices, iosDeviceType);
     if (!selected.ok) {
       return selected.result;
     }
@@ -365,12 +355,12 @@ async function handleIOSDeviceSelection(
 
   // Auto-select when only one device is available
   if (devices.length === 1) {
-    const selected = selectIOSDevice(devices[0].udid, devices, iosDeviceType!);
+    const selected = selectIOSDevice(devices[0].udid, devices, iosDeviceType);
     if (!selected.ok) {
       return selected.result;
     }
     return formatIOSSelectionResponse(selected.device.info.name, devices[0].udid);
   }
 
-  return formatIOSListResponse(devices, iosDeviceType!);
+  return formatIOSListResponse(devices, iosDeviceType);
 }

@@ -202,8 +202,7 @@ describe('AIVisionFinder', () => {
         }>;
       };
       const imageContent = body.messages[0].content.find((c) => c.type === 'image_url');
-      expect(imageContent).toBeDefined();
-      expect(imageContent!.image_url!.url).toMatch(/^data:image\/jpeg;base64,/);
+      expect(imageContent?.image_url?.url).toMatch(/^data:image\/jpeg;base64,/);
     });
   });
 
@@ -483,7 +482,7 @@ describe('AIVisionFinder', () => {
       };
       const imageContent = body.messages[0].content.find((c) => c.type === 'image_url');
       // In fallback mode the original PNG base64 is used directly
-      expect(imageContent!.image_url!.url).toContain('base64,');
+      expect(imageContent?.image_url?.url).toContain('base64,');
     });
   });
 
@@ -525,10 +524,9 @@ describe('AIVisionFinder', () => {
         messages: Array<{content: Array<{type: string; text?: string}>}>;
       };
       const textContent = body.messages[0].content.find((c) => c.type === 'text');
-      expect(textContent).toBeDefined();
-      expect(textContent!.text).toContain(instruction);
-      expect(textContent!.text).toContain(String(IMAGE_WIDTH));
-      expect(textContent!.text).toContain(String(IMAGE_HEIGHT));
+      expect(textContent?.text).toContain(instruction);
+      expect(textContent?.text).toContain(String(IMAGE_WIDTH));
+      expect(textContent?.text).toContain(String(IMAGE_HEIGHT));
     });
 
     test('should use the configured model name in the API request', async () => {

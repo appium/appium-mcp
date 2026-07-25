@@ -79,7 +79,12 @@ describe('readAllPersistedSessions', () => {
 
     await expectFileMissing(path.join(dir, `${sessionId}.json`));
     await expectFileMissing(path.join(dir, 'duplicate-session.json'));
-    await expectCanonicalSession(dir, sessionId, sessions[0]!.remoteServerUrl);
+    const remoteServerUrl = sessions[0]?.remoteServerUrl;
+    expect(remoteServerUrl).toBeDefined();
+    if (remoteServerUrl === undefined) {
+      throw new Error('Expected the migrated session to include a remote server URL');
+    }
+    await expectCanonicalSession(dir, sessionId, remoteServerUrl);
   });
 
   test('still migrates and returns a legacy file when no canonical file exists', async () => {
