@@ -41,15 +41,26 @@ export const gestureSchema = z.object({
   action: z
     .enum(GESTURE_ACTIONS)
     .describe(
-      'Gesture action. scroll browses content; swipe navigates or dismisses. ' +
-        'scroll_to_element requires strategy + selector and stops on match, unchanged page, or maxScrollAttempts.'
+      'Gesture to perform. ' +
+        'tap: tap an element or a coordinate. ' +
+        'double_tap: trigger a double-tap action (e.g. zoom in on an image, favorite a post). ' +
+        'long_press: press and hold to open a context menu or initiate drag. ' +
+        'scroll: browse a list, feed, or page to reveal content. ' +
+        'swipe: dismiss a card, switch screens or tabs, navigate a carousel, or pull-to-refresh (use speed=fast). ' +
+        'pinch_zoom: zoom in (scale > 1) or out (scale < 1) on maps, images, or any zoomable view. ' +
+        'scroll_to_element: scroll until a specific element is on screen (strategy + selector + direction up|down). ' +
+        'Stops when the element is found, page source is unchanged after a scroll (end of scrollable content), or maxScrollAttempts is reached. ' +
+        'Optional scrollDistance (0.05–1) or scrollDistancePreset (small|medium|large). ' +
+        'back: triggers the system back navigation (e.g., Android back button or iOS navigation controller pop).'
     ),
 
   elementUUID: elementUUIDScheme
     .optional()
     .describe(
-      AI_UUID_HINT +
-        'Target for tap/double_tap/long_press/pinch_zoom; scopes directional scroll/swipe when set.'
+      'UUID of the element to act on. ' +
+        AI_UUID_HINT +
+        'Used by: tap, double_tap, long_press, pinch_zoom. ' +
+        'For scroll/swipe, when provided with direction, the gesture is calculated relative to this element instead of the whole screen.'
     ),
 
   x: z

@@ -127,16 +127,24 @@ export async function executeScreenshot(opts: {
 const screenshotSchema = z.object({
   elementUUID: elementUUIDScheme
     .optional()
-    .describe('Element-only capture; omit for full screen.'),
+    .describe(
+      'Optional element UUID. If provided, captures only this element. If omitted, captures full screen.'
+    ),
   maxWidth: z
     .number()
     .optional()
-    .describe('Resize to this max width, preserving aspect ratio.'),
+    .describe(
+      'Optional maximum width in pixels to resize the screenshot. The aspect ratio is preserved. Useful for reducing token usage when sending screenshots to LLMs.'
+    ),
   returnRawBase64: z
     .boolean()
     .default(false)
     .describe(
-      'Manual use only: return PNG inline instead of saving. LLMs must keep false and use the saved path.'
+      'When true, returns the raw base64-encoded PNG image instead of saving it to disk. ' +
+        'This should only be enabled when a human explicitly invokes the tool manually, ' +
+        'typically to view the screenshot on a different machine (e.g. when the server runs ' +
+        'on a remote machine and the saved file is not accessible). ' +
+        'An LLM must always keep this false and rely on the saved file path.'
     ),
   sessionId: z
     .string()
@@ -147,7 +155,8 @@ const screenshotSchema = z.object({
 export default function screenshot(server: FastMCP): void {
   server.addTool({
     name: 'appium_screenshot',
-    description: 'Save a full-screen or element PNG.',
+    description:
+      'Take a screenshot and save as PNG. Optionally provide elementUUID to capture only that element.',
     parameters: screenshotSchema,
     annotations: {
       readOnlyHint: false,

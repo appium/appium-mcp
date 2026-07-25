@@ -15,12 +15,14 @@ export default function setValue(server: FastMCP): void {
   const setValueSchema = z
     .object({
       elementUUID: elementUUIDScheme.optional(),
-      text: z.string().describe('Text to enter.'),
+      text: z.string().describe('The text to enter'),
       w3cActions: z
         .boolean()
         .optional()
         .describe(
-          'Type into the focused element via W3C Actions; no elementUUID required.'
+          'When true, type text via the W3C Actions API (performActions) instead of ' +
+            'the driver-specific setValue. No elementUUID needed — key events are sent ' +
+            'to whatever element currently has focus. Works on both Android and iOS.'
         ),
       sessionId: z
         .string()

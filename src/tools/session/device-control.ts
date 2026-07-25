@@ -22,7 +22,11 @@ const deviceControlSchema = z.object({
   action: z
     .enum(['lock', 'unlock', 'shake', 'open_notifications'])
     .describe(
-      'lock/unlock; shake is iOS-only; open_notifications is Android-only.'
+      'Action to perform. ' +
+        'lock: lock the device (optional seconds for timed lock). ' +
+        'unlock: unlock the device. ' +
+        'shake: perform shake gesture (iOS only). ' +
+        'open_notifications: open notifications panel (Android only).'
     ),
   sessionId: z
     .string()
@@ -33,13 +37,16 @@ const deviceControlSchema = z.object({
     .int()
     .min(1)
     .optional()
-    .describe('Timed lock seconds; omit to remain locked.'),
+    .describe(
+      'Only for action=lock: lock duration in seconds before auto-unlock. Omit to remain locked until unlock.'
+    ),
 });
 
 export default function mobileDeviceControl(server: FastMCP): void {
   server.addTool({
     name: 'appium_mobile_device_control',
-    description: 'Lock/unlock, shake, or open notifications.',
+    description:
+      'Control device behavior: lock/unlock the screen, shake the device, or open the notifications panel. Use the action parameter to choose what to do.',
     parameters: deviceControlSchema,
     annotations: {
       readOnlyHint: false,

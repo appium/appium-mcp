@@ -62,17 +62,21 @@ export default function pressKey(server: FastMCP): void {
         ])
         .optional()
         .describe(
-          `Android keys: ${ANDROID_KEYS_DESCRIPTION}. iOS/tvOS buttons: ${IOS_BUTTONS_DESCRIPTION}.`
+          `Logical key/button to press. On Android: ${ANDROID_KEYS_DESCRIPTION}. On iOS/tvOS: ${IOS_BUTTONS_DESCRIPTION}.`
         ),
       keyCode: z
         .number()
         .int()
         .optional()
-        .describe('Android keycode; overrides key.'),
+        .describe(
+          'Android keycode to press. If provided, takes precedence over key for Android.'
+        ),
       isLongPress: z
         .boolean()
         .optional()
-        .describe('Android long press; default false.'),
+        .describe(
+          'Android only. Whether to perform a long press. Defaults to false.'
+        ),
     })
     .refine((value) => value.key !== undefined || value.keyCode !== undefined, {
       message: 'Either key or keyCode must be provided',
@@ -81,7 +85,8 @@ export default function pressKey(server: FastMCP): void {
 
   server.addTool({
     name: 'appium_mobile_press_key',
-    description: 'Press Android navigation keys or iOS/tvOS physical buttons.',
+    description:
+      'Press navigation keys (BACK, HOME, APP_SWITCH) on Android or physical buttons (HOME, volume, etc.) on iOS/tvOS.',
     parameters: pressKeySchema,
     annotations: {
       readOnlyHint: false,

@@ -28,8 +28,10 @@ export default function gesture(server: FastMCP): void {
   server.addTool({
     name: 'appium_gesture',
     description:
-      `Touch gestures: ${GESTURE_ACTIONS.join(', ')}. ` +
-      'Use scroll to browse, swipe to navigate/dismiss, appium_drag_and_drop to drag, and appium_perform_actions for custom multi-touch.',
+      `Perform a touch gesture. Use 'action' to choose: ${GESTURE_ACTIONS.join(', ')}. ` +
+      'Choose scroll vs swipe by intent: scroll to browse content in a list or feed; ' +
+      'swipe to dismiss, switch screens, navigate carousels, or pull-to-refresh (speed=fast). ' +
+      'For drag-and-drop use appium_drag_and_drop. For custom multi-touch use appium_perform_actions.',
     parameters: gestureSchema,
     annotations: {
       readOnlyHint: false,

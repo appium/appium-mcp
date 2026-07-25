@@ -17,18 +17,24 @@ export default function mobilePermissions(server: FastMCP): void {
     action: z
       .enum(['get', 'update', 'reset'])
       .describe(
-        'get: Android list or iOS service state; update: Android permissions or iOS access map; reset: restore an iOS service prompt.'
+        'get: list (Android) or read one privacy state (iOS Simulator). ' +
+          'update: grant/revoke (Android) or set privacy map (iOS Simulator). ' +
+          'reset: restore a privacy prompt for the app under test (iOS only).'
       ),
     id: z
       .string()
       .optional()
       .describe(
-        'Package/bundle ID; preferred over name. iOS get/update requires id or name.'
+        'App identifier (package name for Android, bundle ID for iOS). Takes precedence over name. ' +
+          'Optional for Android (defaults to the app under test). Required for iOS get and update.'
       ),
     name: z
       .string()
       .optional()
-      .describe('App name resolved to ID; alternative to id.'),
+      .describe(
+        'Human-readable app name (e.g. "Spotify"). Used to resolve the app id. ' +
+          'Optional for Android (defaults to the app under test). Required (as alternative to id) for iOS get and update.'
+      ),
     sessionId: z
       .string()
       .optional()
@@ -36,7 +42,9 @@ export default function mobilePermissions(server: FastMCP): void {
     permissionFilter: z
       .enum(['denied', 'granted', 'requested'])
       .optional()
-      .describe('Android get bucket; default requested.'),
+      .describe(
+        'Android get only: which bucket to return. Defaults to requested per UiAutomator2.'
+      ),
     service: z
       .union([z.string(), z.number()])
       .optional()
@@ -52,7 +60,9 @@ export default function mobilePermissions(server: FastMCP): void {
     permissionChangeAction: z
       .string()
       .optional()
-      .describe('Android update mode: pm grant/revoke or appops mode.'),
+      .describe(
+        'Android update: for pm target grant (default) or revoke; for appops allow, deny, ignore, default.'
+      ),
     target: z
       .enum(['pm', 'appops'])
       .optional()
@@ -68,7 +78,7 @@ export default function mobilePermissions(server: FastMCP): void {
   server.addTool({
     name: 'appium_mobile_permissions',
     description:
-      'Get/update Android permissions or iOS Simulator privacy; reset is iOS-only. See action fields for required platform inputs.',
+      'Manage mobile app permissions in one place. action=get: Android lists runtime permissions for a package; iOS Simulator reads one service state for an app (needs id or name + service). action=update: Android changes permissions (grant/revoke or AppOps); iOS Simulator sets privacy via access map (needs id or name + access). action=reset: iOS only — resets one privacy service for the AUT (needs service).',
     parameters: schema,
     annotations: {
       readOnlyHint: false,

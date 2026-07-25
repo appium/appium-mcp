@@ -486,21 +486,37 @@ async function prepareSimulator(
 // ── Tool registration ──
 
 const prepareIosSimulatorSchema = z.object({
-  udid: z.string().describe('Simulator UDID from select_device.'),
+  udid: z
+    .string()
+    .describe(
+      'The UDID of the iOS simulator to prepare. Use select_device to get this.'
+    ),
   platform: z
     .enum(['ios', 'tvos'])
     .optional()
     .default('ios')
-    .describe('WDA platform; default ios.'),
-  skipWda: z.boolean().optional().describe('Boot only; skip WDA.'),
-  forceRefreshWda: z.boolean().optional().describe('Redownload cached WDA.'),
+    .describe(
+      'The simulator platform to download WDA for. Default is "ios". Use "tvos" for Apple TV simulators.'
+    ),
+  skipWda: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, only boot the simulator without downloading or installing WDA. Default: false.'
+    ),
+  forceRefreshWda: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, re-download WDA even if already cached. Default: false.'
+    ),
 });
 
 export default function prepareIosSimulator(server: FastMCP): void {
   server.addTool({
     name: 'prepare_ios_simulator',
     description:
-      'Boot an iOS/tvOS simulator and optionally install/launch cached WDA on a free port. Pass capabilitiesHint to appium_session_management create to reuse WDA. skipWda boots only; APPIUM_MCP_WDA_APP_PATH supplies local WDA.',
+      'Prepare an iOS/tvOS simulator for Appium testing in a single call. Automatically boots the simulator, downloads prebuilt WDA (if not cached), and installs/launches WDA on a free per-simulator port (so multiple simulators can run in parallel without colliding on the default 8100). Pass the returned capabilitiesHint (appium:webDriverAgentUrl) to appium_session_management (action=create) so the session reuses this running WDA instead of trying to start its own. Use skipWda=true to only boot without WDA. Set APPIUM_MCP_WDA_APP_PATH to an absolute path to a pre-extracted WebDriverAgentRunner-Runner.app to skip download entirely (useful in environments where external downloads are blocked).',
     parameters: prepareIosSimulatorSchema,
     annotations: {
       readOnlyHint: false,

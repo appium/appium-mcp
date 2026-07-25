@@ -31,11 +31,15 @@ export default function deviceInfo(server: FastMCP): void {
   const schema = z.object({
     action: z
       .enum(['info', 'battery', 'time'])
-      .describe('info, battery, or device time.'),
+      .describe(
+        'Action to perform: "info" returns device model/OS/locale/etc., "battery" returns battery level and charging state, "time" returns the current device time.'
+      ),
     format: z
       .string()
       .optional()
-      .describe('time-only moment.js format; default ISO 8601.'),
+      .describe(
+        'Only used when action is "time". moment.js format string for the returned time. Defaults to ISO 8601 (YYYY-MM-DDTHH:mm:ssZ).'
+      ),
     sessionId: z
       .string()
       .optional()
@@ -44,7 +48,8 @@ export default function deviceInfo(server: FastMCP): void {
 
   server.addTool({
     name: 'appium_mobile_device_info',
-    description: 'Read device metadata, battery, or time on iOS/Android.',
+    description:
+      'Get device information, battery status, or current device time in a single call. Use the "action" parameter to select which data to retrieve. Works on both iOS and Android.',
     parameters: schema,
     annotations: {
       readOnlyHint: true,

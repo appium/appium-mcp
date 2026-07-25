@@ -15,12 +15,14 @@ import {
 } from '../tool-response.js';
 
 const contextSchema = z.object({
-  action: z.enum(['list', 'switch']).describe('list or switch.'),
+  action: z
+    .enum(['list', 'switch'])
+    .describe('Use list to fetch contexts or switch to change context.'),
   context: z
     .string()
     .optional()
     .describe(
-      'Required for switch, e.g. NATIVE_APP or WEBVIEW_<id>/<package>.'
+      'Required when action is switch. Common values: NATIVE_APP or WEBVIEW_<id>/WEBVIEW_<package>.'
     ),
   sessionId: z
     .string()
@@ -31,7 +33,8 @@ const contextSchema = z.object({
 export default function context(server: FastMCP): void {
   server.addTool({
     name: 'appium_context',
-    description: 'List or switch Appium contexts.',
+    description:
+      'Manage Appium contexts with one tool. action=list returns all contexts and current context. action=switch changes to a target context.',
     parameters: contextSchema,
     annotations: {
       readOnlyHint: false,

@@ -25,7 +25,7 @@ const actionStepSchema = z.object({
     .int()
     .min(0)
     .optional()
-    .describe('Milliseconds; required for pause/pointerMove.'),
+    .describe('Duration in milliseconds. Required for pause and pointerMove.'),
   x: z.number().int().optional().describe('X coordinate (pointerMove only).'),
   y: z.number().int().optional().describe('Y coordinate (pointerMove only).'),
   button: z
@@ -37,20 +37,30 @@ const actionStepSchema = z.object({
   origin: z
     .string()
     .optional()
-    .describe('Origin: viewport (default) or pointer-relative.'),
+    .describe(
+      'Coordinate origin: "viewport" (default) or "pointer" (relative to current position).'
+    ),
 });
 
 const inputSourceSchema = z.object({
   type: z
     .enum(['pointer', 'key', 'none'])
-    .describe('Source: pointer, key, or none (timing).'),
-  id: z.string().describe('Unique source ID, e.g. finger1.'),
+    .describe(
+      'Input source type. pointer = touch/mouse, key = keyboard, none = pause/timing.'
+    ),
+  id: z
+    .string()
+    .describe(
+      'Unique identifier for this input source (e.g. "finger1", "finger2").'
+    ),
   parameters: z
     .object({
       pointerType: z
         .enum(['touch', 'mouse', 'pen'])
         .optional()
-        .describe('Pointer source kind; use touch for mobile.'),
+        .describe(
+          'Pointer type. Use "touch" for mobile gestures. Only for type=pointer.'
+        ),
     })
     .optional(),
   actions: z
@@ -63,7 +73,9 @@ const performActionsSchema = z.object({
     .array(inputSourceSchema)
     .min(1)
     .describe(
-      'W3C input sources. Multiple sources run in parallel, synchronized by action index.'
+      'W3C Actions API input source array. Each entry is one input source (pointer/key/none) with its action sequence. ' +
+        'Multiple pointer sources enable multi-touch gestures (e.g. two-finger rotate, three-finger swipe). ' +
+        'All sources execute in parallel, synchronized tick-by-tick.'
     ),
   sessionId: z
     .string()
@@ -75,7 +87,10 @@ export default function performActionsTool(server: FastMCP): void {
   server.addTool({
     name: 'appium_perform_actions',
     description:
-      'Raw W3C Actions for precise/custom multi-touch. Prefer appium_gesture for standard gestures.',
+      'Execute raw W3C Actions API sequences for advanced multi-touch gestures not covered by appium_gesture. ' +
+      'Use this for custom multi-finger gestures (rotate, three-finger swipe, edge swipes), complex timing sequences, ' +
+      'or any gesture requiring precise control over individual touch points. ' +
+      'Prefer appium_gesture for standard gestures (tap, scroll, swipe, pinch) — it handles platform differences automatically.',
     parameters: performActionsSchema,
     annotations: {
       readOnlyHint: false,

@@ -16,7 +16,7 @@ export default function getElementAttributeTool(server: FastMCP): void {
     attribute: z
       .string()
       .describe(
-        'Attribute name, e.g. enabled, displayed, text, value, label, resource-id.'
+        'The attribute name to retrieve. Common attributes: "enabled", "selected", "displayed", "checked", "focused", "clickable", "scrollable", "focusable", "name", "value", "label", "text", "content-desc", "resource-id", "class", "package".'
       ),
     sessionId: z
       .string()
@@ -26,7 +26,8 @@ export default function getElementAttributeTool(server: FastMCP): void {
 
   server.addTool({
     name: 'appium_get_element_attribute',
-    description: 'Read an element state/property attribute.',
+    description:
+      'Get the value of an element attribute. Use this to check element state (enabled, selected, checked, focused, displayed, clickable) or read properties (name, value, label, content-desc, resource-id, class).',
     parameters: schema,
     annotations: {
       readOnlyHint: true,

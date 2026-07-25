@@ -164,7 +164,7 @@ describe('LLM-facing MCP tool wording', () => {
     const tool = await registerTool('../../tools/session/file-transfer.js');
     const pathDescription = normalizeText(paramDescription(tool, 'remotePath'));
 
-    expect(pathDescription).toMatch(/absolute Android path/i);
+    expect(pathDescription).toMatch(/Android.*absolute path/i);
     expect(pathDescription).toMatch(/\/sdcard\/Download/i);
     expect(pathDescription).toMatch(/@com\.example\.app:documents/i);
     expect(normalizeText(paramDescription(tool, 'payloadBase64'))).toMatch(
