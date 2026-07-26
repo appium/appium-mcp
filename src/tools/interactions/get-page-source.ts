@@ -47,10 +47,7 @@ export default function getPageSource(server: FastMCP): void {
 
         // Add interactive page source inspector UI
         return addUIResourceToResponse(textResponse, () =>
-          createUIResource(
-            `${PAGE_SOURCE_INSPECTOR_URI}/${Date.now()}`,
-            createPageSourceInspectorUI(pageSource),
-          ),
+          createUIResource(`${PAGE_SOURCE_INSPECTOR_URI}/${Date.now()}`, createPageSourceInspectorUI(pageSource)),
         );
       } catch (err: unknown) {
         return errorResult(`Failed to get page source. Error: ${toolErrorMessage(err)}`);
