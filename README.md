@@ -343,6 +343,11 @@ Set the `NO_UI` environment variable to `true` or `1` to disable UI components a
 }
 ```
 
+When UI is enabled, `appium_get_page_source` automatically uses a cached static MCP App inspector for clients
+that advertise MCP Apps support. The page source remains in the normal text result for the LLM and text-only
+clients, while the inspector reads that same result instead of receiving a duplicated XML copy. Clients without
+MCP Apps support continue to receive the embedded inspector compatibility fallback.
+
 **Benefits:**
 
 - **Significantly Faster Response Times**: UI rendering and data processing are completely skipped, resulting in 50-80% faster tool responses depending on the operation.
