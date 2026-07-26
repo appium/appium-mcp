@@ -48,7 +48,7 @@ export default function getPageSource(server: FastMCP): void {
         // Add interactive page source inspector UI
         return addUIResourceToResponse(textResponse, () =>
           createUIResource(
-            `ui://appium-mcp/page-source-inspector/${Date.now()}`,
+            `${PAGE_SOURCE_INSPECTOR_URI}/${Date.now()}`,
             createPageSourceInspectorUI(pageSource),
           ),
         );
