@@ -189,6 +189,8 @@ OTEL_TRACES_SAMPLER=parentbased_always_on
 
 When enabled, appium-mcp creates spans for MCP tool calls, prompt loads, resource reads, and resource template reads. Error status is recorded for thrown operation errors and MCP tool results marked with `isError`. Span attributes intentionally avoid raw screenshots, XML page source, prompts, credentials, and other high-cardinality or sensitive payloads.
 
+Tool spans include payload-free result-size attributes: `mcp.tool.result.content_count`, `content_types`, `text_chars`, `resource_count`, `resource_text_chars`, `image_count`, `audio_count`, `base64_chars`, and `base64_bytes_estimate` (all prefixed with `mcp.tool.result.`). `content_types` contains only known MCP types or `other`; payload values, resource URIs, MIME types, and unknown type strings are never recorded. Sizes are counted directly from known result fields without serializing or copying the complete result.
+
 For local trace inspection, use the Jaeger setup in `tools/telemetry`:
 
 ```bash

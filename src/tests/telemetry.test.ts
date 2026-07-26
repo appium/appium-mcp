@@ -8,7 +8,11 @@ import {
   safeSessionId,
 } from '../telemetry/attributes.js';
 import {initializeOpenTelemetry, shutdownOpenTelemetry} from '../telemetry/init.js';
-import {installTelemetryWrappers, safeInputValueAttributes} from '../telemetry/wrapOperations.js';
+import {
+  installTelemetryWrappers,
+  safeInputValueAttributes,
+  safeToolResultSizeAttributes,
+} from '../telemetry/wrapOperations.js';
 import {startOtlpHttpReceiver} from './telemetry-tools/otlp-http-receiver.js';
 
 const originalEnv = {...process.env};
@@ -181,6 +185,57 @@ describe('telemetry attributes', () => {
     ).toEqual(['platformName', 'sessionId']);
   });
 
+  test('counts tool result sizes without exposing payload contents', () => {
+    const secretText = 'private page source';
+    const secretHtml = '<html>private screenshot</html>';
+    const attributes = safeToolResultSizeAttributes({
+      content: [
+        {type: 'text', text: secretText},
+        {type: 'resource', resource: {text: secretHtml}},
+        {type: 'resource', resource: {blob: 'YWJj'}},
+        {type: 'image', data: 'c2VjcmV0'},
+        {type: 'audio', data: 'YQ=='},
+        {type: 'resource_link', uri: 'private://resource'},
+        {type: 'private payload type', value: 'must not be recorded'},
+      ],
+    });
+
+    expect(attributes).toEqual({
+      'mcp.tool.result.audio_count': 1,
+      'mcp.tool.result.base64_bytes_estimate': 10,
+      'mcp.tool.result.base64_chars': 16,
+      'mcp.tool.result.content_count': 7,
+      'mcp.tool.result.content_types': ['audio', 'image', 'other', 'resource', 'resource_link', 'text'],
+      'mcp.tool.result.image_count': 1,
+      'mcp.tool.result.resource_count': 2,
+      'mcp.tool.result.resource_text_chars': secretHtml.length,
+      'mcp.tool.result.text_chars': secretText.length,
+    });
+
+    const attributeValues = Object.values(attributes).flat().join(' ');
+    expect(attributeValues).not.toContain(secretText);
+    expect(attributeValues).not.toContain(secretHtml);
+    expect(attributeValues).not.toContain('private payload type');
+    expect(attributeValues).not.toContain('must not be recorded');
+    expect(attributeValues).not.toContain('YWJj');
+    expect(attributeValues).not.toContain('c2VjcmV0');
+  });
+
+  test('measures string tool results and ignores unrelated result shapes', () => {
+    expect(safeToolResultSizeAttributes('tool-result')).toEqual({
+      'mcp.tool.result.text_chars': 11,
+    });
+    expect(safeToolResultSizeAttributes(undefined)).toEqual({});
+    expect(safeToolResultSizeAttributes({messages: []})).toEqual({});
+
+    const circular: Record<string, unknown> = {content: [{type: 'text', text: 'ok'}]};
+    circular.self = circular;
+    expect(safeToolResultSizeAttributes(circular)).toMatchObject({
+      'mcp.tool.result.content_count': 1,
+      'mcp.tool.result.text_chars': 2,
+    });
+  });
+
   test('extracts only string session IDs', () => {
     expect(safeSessionId({sessionId: 'session-1'})).toBe('session-1');
     expect(safeSessionId({sessionId: 123})).toBeUndefined();
@@ -233,6 +288,9 @@ describe('telemetry attributes', () => {
 
   test('exports actual OTLP span data for wrapped MCP operations', async () => {
     const receiver = await startOtlpHttpReceiver();
+    const privateToolText = 'private tool output';
+    const privateResourceText = '<html>private resource</html>';
+    const privateImageData = 'c2VjcmV0';
 
     process.env.APPIUM_MCP_OTEL_ENABLED = 'true';
     process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
@@ -265,7 +323,13 @@ describe('telemetry attributes', () => {
 
       server.addTool({
         name: 'plugin_tool',
-        execute: async () => ({content: [{type: 'text', text: 'ok'}]}),
+        execute: async () => ({
+          content: [
+            {type: 'text', text: privateToolText},
+            {type: 'resource', resource: {text: privateResourceText}},
+            {type: 'image', data: privateImageData},
+          ],
+        }),
       });
       server.addPrompt({
         name: 'plugin_prompt',
@@ -315,8 +379,20 @@ describe('telemetry attributes', () => {
         'mcp.input.value.capabilities': '{"platformName":"iOS","deviceName":"iPhone 15"}',
         'mcp.input.value.platformName': 'iOS',
         'mcp.tool.name': 'plugin_tool',
+        'mcp.tool.result.base64_bytes_estimate': 6,
+        'mcp.tool.result.base64_chars': 8,
+        'mcp.tool.result.content_count': 3,
+        'mcp.tool.result.content_types': ['image', 'resource', 'text'],
+        'mcp.tool.result.image_count': 1,
+        'mcp.tool.result.resource_count': 1,
+        'mcp.tool.result.resource_text_chars': privateResourceText.length,
+        'mcp.tool.result.text_chars': privateToolText.length,
       });
       expect(otlpAttributes(toolSpan)).not.toHaveProperty('mcp.input.value.apiKey');
+      const exportedTelemetry = JSON.stringify(receiver.requests[0].body);
+      expect(exportedTelemetry).not.toContain(privateToolText);
+      expect(exportedTelemetry).not.toContain(privateResourceText);
+      expect(exportedTelemetry).not.toContain(privateImageData);
 
       const promptSpan = spans.find((span) => span.name === 'prompts/get plugin_prompt');
       expect(otlpAttributes(promptSpan)).toMatchObject({
