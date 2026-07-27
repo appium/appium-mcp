@@ -1,5 +1,7 @@
 # MCP Appium - MCP server for Mobile Development and Automation | iOS, Android, Simulator, Emulator, and Real Devices
 
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fappium%2Fappium-mcp.svg)](https://mcptoplist.com/server/glama%2Fappium%2Fappium-mcp)
+
 [![npm version](http://img.shields.io/npm/v/appium-mcp.svg)](https://npmjs.org/package/appium-mcp)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
