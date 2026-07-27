@@ -331,9 +331,14 @@ More models benchmarked can be found [here](src/tests/benchmark_model/TEST_REPOR
 
 #### MCP Apps Mode
 
-`appium_get_page_source` uses a static MCP App inspector by default when the client advertises MCP Apps support.
-The XML remains in the normal text result for the LLM, while the inspector reads that same result instead of
-receiving a duplicated XML copy.
+`appium_get_page_source`, `appium_screenshot`, and `generate_locators` use static MCP App viewers by default when
+the client advertises MCP Apps support.
+
+- Page source XML and generated locator JSON remain in their normal text results for the LLM. Their viewers read
+  those existing results instead of receiving duplicated copies inside generated HTML.
+- Saved screenshot base64 is delivered to the viewer through `structuredContent`, which MCP Apps keeps out of model
+  context. The LLM still receives the saved file path. Explicit `returnRawBase64=true` calls keep their existing raw
+  image result.
 
 For clients with unreliable MCP Apps rendering, set `APPIUM_MCP_APPS_ENABLED` to `false` or `0`:
 
@@ -347,9 +352,9 @@ For clients with unreliable MCP Apps rendering, set `APPIUM_MCP_APPS_ENABLED` to
 }
 ```
 
-This keeps interactive UI enabled but forces the previous embedded page-source inspector. The compatibility mode
-duplicates the XML inside the inspector HTML and therefore uses more result tokens and bandwidth. With a synthetic
-95,000-character page source, the static mode reduced the result from approximately 267 KB to 95 KB (about 64%).
+This keeps interactive UI enabled but forces the previous embedded viewers. The compatibility mode places viewer
+data inside inline HTML and therefore uses more result tokens and bandwidth. With a synthetic 95,000-character page
+source, the static mode reduced the result from approximately 267 KB to 95 KB (about 64%).
 
 `NO_UI=true` or `NO_UI=1` takes precedence over this setting and disables both static and embedded UI.
 
