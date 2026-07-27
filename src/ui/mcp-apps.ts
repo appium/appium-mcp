@@ -7,6 +7,16 @@ export function isUIEnabled(): boolean {
   return process.env.NO_UI !== 'true' && process.env.NO_UI !== '1';
 }
 
+/**
+ * MCP Apps are enabled by default when UI is enabled. Set
+ * APPIUM_MCP_APPS_ENABLED=false or 0 to force the embedded UI compatibility
+ * path for clients whose MCP Apps renderer is unreliable.
+ */
+export function isMcpAppsEnabled(): boolean {
+  const configuredValue = process.env.APPIUM_MCP_APPS_ENABLED;
+  return isUIEnabled() && configuredValue !== 'false' && configuredValue !== '0';
+}
+
 export function supportsMcpAppsCapability(capabilities: unknown): boolean {
   if (!isRecord(capabilities) || !isRecord(capabilities.extensions)) {
     return false;

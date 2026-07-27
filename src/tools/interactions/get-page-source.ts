@@ -3,19 +3,19 @@ import {z} from 'zod';
 
 import {getPageSource as _getPageSource} from '../../command.js';
 import {PAGE_SOURCE_INSPECTOR_URI} from '../../resources/page-source-inspector.js';
-import {clientSupportsMcpApps, isUIEnabled} from '../../ui/mcp-apps.js';
+import {clientSupportsMcpApps, isMcpAppsEnabled} from '../../ui/mcp-apps.js';
 import {createUIResource, createPageSourceInspectorUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
 import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 export default function getPageSource(server: FastMCP): void {
-  const uiEnabled = isUIEnabled();
+  const mcpAppsEnabled = isMcpAppsEnabled();
   const pageSourceSchema = z.object({
     sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
   server.addTool({
     name: 'appium_get_page_source',
     description: 'Get the page source (XML) from the current screen',
-    _meta: uiEnabled ? {ui: {resourceUri: PAGE_SOURCE_INSPECTOR_URI}} : undefined,
+    _meta: mcpAppsEnabled ? {ui: {resourceUri: PAGE_SOURCE_INSPECTOR_URI}} : undefined,
     parameters: pageSourceSchema,
     annotations: {
       readOnlyHint: true,
@@ -41,7 +41,7 @@ export default function getPageSource(server: FastMCP): void {
 
         // MCP Apps-capable clients fetch the static inspector once and pass
         // this existing text result to it, avoiding a second copy of the XML.
-        if (uiEnabled && clientSupportsMcpApps(server, context)) {
+        if (mcpAppsEnabled && clientSupportsMcpApps(server, context)) {
           return textResponse;
         }
 

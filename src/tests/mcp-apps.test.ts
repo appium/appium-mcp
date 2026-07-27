@@ -1,12 +1,44 @@
-import {describe, expect, test} from '@jest/globals';
+import {afterEach, describe, expect, test} from '@jest/globals';
 
 import {
   clientSupportsMcpApps,
+  isMcpAppsEnabled,
   MCP_APPS_EXTENSION_ID,
   MCP_APP_MIME_TYPE,
   supportsMcpAppsCapability,
 } from '../ui/mcp-apps.js';
 import {createPageSourceInspectorAppUI} from '../ui/page-source-inspector-app.js';
+
+describe('MCP Apps feature flag', () => {
+  const originalMcpAppsEnabled = process.env.APPIUM_MCP_APPS_ENABLED;
+  const originalNoUI = process.env.NO_UI;
+
+  afterEach(() => {
+    restoreEnv('APPIUM_MCP_APPS_ENABLED', originalMcpAppsEnabled);
+    restoreEnv('NO_UI', originalNoUI);
+  });
+
+  test('is enabled by default', () => {
+    delete process.env.APPIUM_MCP_APPS_ENABLED;
+    delete process.env.NO_UI;
+
+    expect(isMcpAppsEnabled()).toBe(true);
+  });
+
+  test.each(['false', '0'])('is disabled by APPIUM_MCP_APPS_ENABLED=%s', (value) => {
+    process.env.APPIUM_MCP_APPS_ENABLED = value;
+    delete process.env.NO_UI;
+
+    expect(isMcpAppsEnabled()).toBe(false);
+  });
+
+  test.each(['true', '1'])('is disabled when NO_UI=%s', (value) => {
+    process.env.APPIUM_MCP_APPS_ENABLED = 'true';
+    process.env.NO_UI = value;
+
+    expect(isMcpAppsEnabled()).toBe(false);
+  });
+});
 
 describe('MCP Apps capability detection', () => {
   const supportedCapabilities = {
@@ -51,6 +83,14 @@ describe('MCP Apps capability detection', () => {
     expect(clientSupportsMcpApps(server as never, undefined)).toBe(true);
   });
 });
+
+function restoreEnv(name: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[name];
+  } else {
+    process.env[name] = value;
+  }
+}
 
 describe('page source inspector MCP App', () => {
   test('uses the tool result instead of embedding page source data', () => {

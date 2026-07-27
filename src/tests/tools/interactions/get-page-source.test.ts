@@ -2,6 +2,7 @@ import {beforeEach, describe, expect, jest, test} from '@jest/globals';
 
 const mockGetPageSource = jest.fn(async () => '<hierarchy><node/></hierarchy>');
 const mockClientSupportsMcpApps = jest.fn(() => false);
+const mockIsMcpAppsEnabled = jest.fn(() => true);
 const mockCreatePageSourceInspectorUI = jest.fn((_pageSource: string) => '<html>legacy inspector</html>');
 const mockCreateUIResource = jest.fn((_uri: string, text: string) => ({
   type: 'resource',
@@ -18,7 +19,7 @@ jest.unstable_mockModule('../../../command.js', () => ({
 jest.unstable_mockModule('../../../ui/mcp-apps.js', () => ({
   MCP_APP_MIME_TYPE: 'text/html;profile=mcp-app',
   clientSupportsMcpApps: mockClientSupportsMcpApps,
-  isUIEnabled: jest.fn(() => true),
+  isMcpAppsEnabled: mockIsMcpAppsEnabled,
 }));
 
 jest.unstable_mockModule('../../../ui/mcp-ui-utils.js', () => ({
@@ -56,6 +57,8 @@ describe('appium_get_page_source MCP Apps response', () => {
     mockGetPageSource.mockClear();
     mockClientSupportsMcpApps.mockReset();
     mockClientSupportsMcpApps.mockReturnValue(false);
+    mockIsMcpAppsEnabled.mockReset();
+    mockIsMcpAppsEnabled.mockReturnValue(true);
     mockCreatePageSourceInspectorUI.mockClear();
     mockCreateUIResource.mockClear();
     mockAddUIResourceToResponse.mockClear();
@@ -83,6 +86,19 @@ describe('appium_get_page_source MCP Apps response', () => {
 
     expect(result.content).toHaveLength(2);
     expect(result.content[1]).toMatchObject({type: 'resource'});
+    expect(mockAddUIResourceToResponse).toHaveBeenCalledTimes(1);
+    expect(mockCreatePageSourceInspectorUI).toHaveBeenCalledWith('<hierarchy><node/></hierarchy>');
+  });
+
+  test('omits MCP Apps metadata and forces the embedded fallback when disabled', async () => {
+    mockIsMcpAppsEnabled.mockReturnValue(false);
+    mockClientSupportsMcpApps.mockReturnValue(true);
+    const tool = registerTool();
+
+    const result = await tool.execute({}, {});
+
+    expect(tool._meta).toBeUndefined();
+    expect(result.content).toHaveLength(2);
     expect(mockAddUIResourceToResponse).toHaveBeenCalledTimes(1);
     expect(mockCreatePageSourceInspectorUI).toHaveBeenCalledWith('<hierarchy><node/></hierarchy>');
   });
