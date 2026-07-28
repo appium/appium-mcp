@@ -54,6 +54,23 @@ describe('MCP Apps capability detection', () => {
   });
 
   test.each([
+    ' text/html;profile=mcp-app ',
+    'text/html; profile=mcp-app',
+    'text/html; profile="mcp-app"',
+    'TEXT/HTML; PROFILE="MCP-APP"',
+  ])('normalizes the advertised MIME type %s', (mimeType) => {
+    const capabilities = {
+      extensions: {
+        [MCP_APPS_EXTENSION_ID]: {
+          mimeTypes: [mimeType],
+        },
+      },
+    };
+
+    expect(supportsMcpAppsCapability(capabilities)).toBe(true);
+  });
+
+  test.each([
     undefined,
     {},
     {extensions: {}},
