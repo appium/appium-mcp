@@ -1,6 +1,6 @@
 {
   "name": "appium-mcp",
-  "version": "1.89.0",
+  "version": "1.90.0",
   "description": "Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation",
   "bugs": {
     "url": "https://github.com/appium/appium-mcp/issues"
@@ -79,7 +79,7 @@
     "fastmcp": "^4.0.0",
     "ios-mobileprovision-finder": "^1.2.1",
     "lru-cache": "^11.5.0",
-    "node-simctl": "^8.0.4",
+    "node-simctl": "^9.1.0",
     "webdriver": "^9.30.0",
     "xpath": "^0.0.34",
     "zod": "^4.3.6"

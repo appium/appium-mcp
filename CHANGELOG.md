@@ -1,3 +1,9 @@
+## [1.90.0](https://github.com/appium/appium-mcp/compare/v1.89.0...v1.90.0) (2026-07-28)
+
+### Features
+
+* avoid duplicate page source UI payloads ([#477](https://github.com/appium/appium-mcp/issues/477)) ([b8370df](https://github.com/appium/appium-mcp/commit/b8370df42e6f6f46e043ba31b0935bede44465a3))
+
 ## [1.89.0](https://github.com/appium/appium-mcp/compare/v1.88.5...v1.89.0) (2026-07-26)
 
 ### Features
