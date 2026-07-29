@@ -1,22 +1,15 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { elementUUIDScheme } from '../../schema.js';
-import { getElementText } from '../../command.js';
-import {
-  resolveDriver,
-  textResultWithPrimaryElementId,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
-import { aiElementWebDriverRejectionIfNeeded } from '../gestures/handlers/ai-element.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {getElementText} from '../../command.js';
+import {elementUUIDScheme} from '../../schema.js';
+import {aiElementWebDriverRejectionIfNeeded} from '../gestures/handlers/ai-element.js';
+import {resolveDriver, textResultWithPrimaryElementId, errorResult, toolErrorMessage} from '../tool-response.js';
 
 export default function getText(server: FastMCP): void {
   const getTextSchema = z.object({
     elementUUID: elementUUIDScheme,
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -29,13 +22,13 @@ export default function getText(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof getTextSchema>,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       const aiRejection = aiElementWebDriverRejectionIfNeeded(args.elementUUID);
       if (aiRejection) {
@@ -46,12 +39,10 @@ export default function getText(server: FastMCP): void {
         const text = await getElementText(driver, args.elementUUID);
         return textResultWithPrimaryElementId(
           args.elementUUID,
-          `Successfully got text ${text} from element ${args.elementUUID}.`
+          `Successfully got text ${text} from element ${args.elementUUID}.`,
         );
       } catch (err: unknown) {
-        return errorResult(
-          `Failed to get text from element ${args.elementUUID}. err: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed to get text from element ${args.elementUUID}. err: ${toolErrorMessage(err)}`);
       }
     },
   });

@@ -8,6 +8,8 @@
  *   npx ts-node examples/plugin-example.ts
  */
 
+import {z} from 'zod';
+
 import {
   createAppiumMcpServer,
   type AppiumMcpCore,
@@ -17,9 +19,8 @@ import {
   type ToolCallContext,
   type ToolCallResult,
 } from '../dist/core.js';
-import { z } from 'zod';
 
-const text = (value: string) => ({ type: 'text' as const, text: value });
+const text = (value: string) => ({type: 'text' as const, text: value});
 const checkoutSummaryParameters = z.object({
   orderId: z.string().describe('The order ID to look for on screen'),
 });
@@ -41,20 +42,15 @@ class CheckoutPlugin implements AppiumMcpPlugin {
   register(registry: McpRegistry, core: AppiumMcpCore): void {
     registry.addTool({
       name: 'assert_checkout_summary',
-      description:
-        'Assert that the checkout summary screen shows the expected order ID.',
+      description: 'Assert that the checkout summary screen shows the expected order ID.',
       parameters: checkoutSummaryParameters,
       execute: async (args) => {
-        const { orderId } = checkoutSummaryParameters.parse(args);
+        const {orderId} = checkoutSummaryParameters.parse(args);
         const driver = core.getDriver() as PageSourceDriver | null;
         if (!driver) {
           return {
             isError: true,
-            content: [
-              text(
-                'No active Appium session. Create or attach to a session first.'
-              ),
-            ],
+            content: [text('No active Appium session. Create or attach to a session first.')],
           };
         }
 
@@ -69,7 +65,7 @@ class CheckoutPlugin implements AppiumMcpPlugin {
         return {
           content: [text(`Checkout summary correct for ${orderId}`)],
         };
-      }
+      },
     });
 
     registry.addTools([
@@ -87,23 +83,20 @@ class CheckoutPlugin implements AppiumMcpPlugin {
                     (session) =>
                       `${session.sessionId}: ${session.platform ?? 'unknown'} / ${
                         session.deviceName ?? 'unknown device'
-                      }${session.isActive ? ' (active)' : ''}`
+                      }${session.isActive ? ' (active)' : ''}`,
                   )
                   .join('\n');
 
-          return { content: [text(summary)] };
+          return {content: [text(summary)]};
         },
       },
       {
         name: 'assert_active_session_platform',
-        description:
-          'Assert that the active Appium session is on the expected platform.',
+        description: 'Assert that the active Appium session is on the expected platform.',
         parameters: activeSessionPlatformParameters,
         execute: async (args) => {
-          const { platform } = activeSessionPlatformParameters.parse(args);
-          const activeSession = core
-            .listSessions()
-            .find((session) => session.isActive);
+          const {platform} = activeSessionPlatformParameters.parse(args);
+          const activeSession = core.listSessions().find((session) => session.isActive);
           if (!activeSession) {
             return {
               isError: true,
@@ -114,13 +107,7 @@ class CheckoutPlugin implements AppiumMcpPlugin {
           if (activeSession.platform !== platform) {
             return {
               isError: true,
-              content: [
-                text(
-                  `Expected ${platform}, but active session is ${
-                    activeSession.platform ?? 'unknown'
-                  }.`
-                ),
-              ],
+              content: [text(`Expected ${platform}, but active session is ${activeSession.platform ?? 'unknown'}.`)],
             };
           }
 
@@ -156,7 +143,7 @@ class TestAssetsPlugin implements AppiumMcpPlugin {
           required: true,
         },
       ],
-      load: async ({ screen, symptom }) =>
+      load: async ({screen, symptom}) =>
         [
           `Write a concise mobile bug report for the ${screen} screen.`,
           `Observed symptom: ${symptom}.`,
@@ -176,8 +163,7 @@ class TestAssetsPlugin implements AppiumMcpPlugin {
             enum: ['Android', 'iOS'],
           },
         ],
-        load: async ({ platform }) =>
-          `Create a ${platform} screen model with stable locators and high-level actions.`,
+        load: async ({platform}) => `Create a ${platform} screen model with stable locators and high-level actions.`,
       },
     ]);
 
@@ -207,12 +193,12 @@ class TestAssetsPlugin implements AppiumMcpPlugin {
           text: JSON.stringify(
             {
               users: [
-                { role: 'guest', username: 'guest@example.test' },
-                { role: 'member', username: 'member@example.test' },
+                {role: 'guest', username: 'guest@example.test'},
+                {role: 'member', username: 'member@example.test'},
               ],
             },
             null,
-            2
+            2,
           ),
         }),
       },
@@ -229,13 +215,11 @@ class TestAssetsPlugin implements AppiumMcpPlugin {
           description: 'Screen name',
           required: true,
           complete: async (value) => ({
-            values: ['login', 'checkout', 'settings'].filter((screen) =>
-              screen.startsWith(value)
-            ),
+            values: ['login', 'checkout', 'settings'].filter((screen) => screen.startsWith(value)),
           }),
         },
       ],
-      load: async ({ screen }) => ({
+      load: async ({screen}) => ({
         text: [
           `# ${screen} Screen Playbook`,
           '',
@@ -256,35 +240,20 @@ class LoginGuardPlugin implements AppiumMcpPlugin {
   readonly version = '1.0.0';
 
   async beforeCall(ctx: ToolCallContext): Promise<ToolCallResult | void> {
-    if (
-      ctx.toolName === 'appium_gesture' &&
-      (ctx.args as { action?: string }).action === 'tap'
-    ) {
+    if (ctx.toolName === 'appium_gesture' && (ctx.args as {action?: string}).action === 'tap') {
       const sessionInfo = ctx.session.getSessionInfo();
-      console.error(
-        `[login-guard] Pre-tap check passed for session ${sessionInfo?.sessionId ?? 'none'}`
-      );
+      console.error(`[login-guard] Pre-tap check passed for session ${sessionInfo?.sessionId ?? 'none'}`);
     }
 
-    if (
-      ctx.toolName === 'mobile_clear_app' &&
-      process.env.ALLOW_CLEAR_APP !== 'true'
-    ) {
+    if (ctx.toolName === 'mobile_clear_app' && process.env.ALLOW_CLEAR_APP !== 'true') {
       return {
         isError: true,
-        content: [
-          text(
-            'Blocked mobile_clear_app. Set ALLOW_CLEAR_APP=true to allow destructive app cleanup.'
-          ),
-        ],
+        content: [text('Blocked mobile_clear_app. Set ALLOW_CLEAR_APP=true to allow destructive app cleanup.')],
       };
     }
   }
 
-  async afterCall(
-    ctx: ToolCallContext,
-    result: ToolCallResult
-  ): Promise<ToolCallResult | void> {
+  async afterCall(ctx: ToolCallContext, result: ToolCallResult): Promise<ToolCallResult | void> {
     if (!result.isError) {
       return;
     }
@@ -297,7 +266,7 @@ class LoginGuardPlugin implements AppiumMcpPlugin {
         text(
           `[login-guard] ${ctx.toolName} failed for session ${
             sessionId ?? 'none'
-          }. Capture artifacts here in a real plugin.`
+          }. Capture artifacts here in a real plugin.`,
         ),
       ],
     };
@@ -314,21 +283,12 @@ class ArtifactPipelinePlugin implements AppiumMcpPlugin {
 
   async initialize(ctx: PluginContext): Promise<void> {
     this.connected = true;
-    console.error(
-      `[artifact-pipeline] Connected. Loaded plugins: ${Array.from(
-        ctx.plugins.keys()
-      ).join(', ')}`
-    );
+    console.error(`[artifact-pipeline] Connected. Loaded plugins: ${Array.from(ctx.plugins.keys()).join(', ')}`);
   }
 
-  async afterCall(
-    ctx: ToolCallContext,
-    result: ToolCallResult
-  ): Promise<ToolCallResult | void> {
+  async afterCall(ctx: ToolCallContext, result: ToolCallResult): Promise<ToolCallResult | void> {
     if (this.connected && result.isError) {
-      console.error(
-        `[artifact-pipeline] Upload failure artifacts for ${ctx.toolName}`
-      );
+      console.error(`[artifact-pipeline] Upload failure artifacts for ${ctx.toolName}`);
     }
   }
 
@@ -344,12 +304,7 @@ class ArtifactPipelinePlugin implements AppiumMcpPlugin {
 // Wire everything together
 // ---------------------------------------------------------------------------
 const server = await createAppiumMcpServer({
-  plugins: [
-    new CheckoutPlugin(),
-    new TestAssetsPlugin(),
-    new LoginGuardPlugin(),
-    new ArtifactPipelinePlugin(),
-  ],
+  plugins: [new CheckoutPlugin(), new TestAssetsPlugin(), new LoginGuardPlugin(), new ArtifactPipelinePlugin()],
   additionalInstructions: [
     'Custom checkout policies, screen playbooks, and artifact hooks are active.',
     'Use plugin tools for business-level assertions when they match the task.',
@@ -359,7 +314,5 @@ const server = await createAppiumMcpServer({
 const args = process.argv.slice(2);
 void server.start({
   transportType: args.includes('--httpStream') ? 'httpStream' : 'stdio',
-  ...(args.includes('--httpStream')
-    ? { httpStream: { endpoint: '/sse', port: 8080 } }
-    : {}),
+  ...(args.includes('--httpStream') ? {httpStream: {endpoint: '/sse', port: 8080}} : {}),
 });

@@ -1,24 +1,18 @@
-import type { ContentResult } from 'fastmcp';
-import { imageUtil } from '@appium/support';
-import type { DriverInstance } from '../../../session-store.js';
-import { getScreenshot } from '../../../command.js';
-import { AIVisionFinder } from '../../../ai-finder/vision-finder.js';
+import {imageUtil} from '@appium/support';
+import type {ContentResult} from 'fastmcp';
+
+import {AIVisionFinder} from '../../../ai-finder/vision-finder.js';
+import {getScreenshot} from '../../../command.js';
 import log from '../../../logger.js';
-import {
-  errorResult,
-  textResultWithPrimaryElementId,
-  toolErrorMessage,
-} from '../../tool-response.js';
-import type { AIArgs } from '../schema.js';
+import type {DriverInstance} from '../../../session-store.js';
+import {errorResult, textResultWithPrimaryElementId, toolErrorMessage} from '../../tool-response.js';
+import type {AIArgs} from '../schema.js';
 
 // Module-level singleton: ensures the LRU cache persists across tool calls.
 // Creating a new AIVisionFinder() on every call would reset the cache each time.
 let _finderInstance: AIVisionFinder | null = null;
 
-export async function handleFindElement(
-  driver: DriverInstance,
-  args: AIArgs
-): Promise<ContentResult> {
+export async function handleFindElement(driver: DriverInstance, args: AIArgs): Promise<ContentResult> {
   // `instruction` presence/non-emptiness is enforced at schema level via
   // `aiSchema.superRefine`. Narrow the optional type here for downstream calls.
   const instruction = args.instruction as string;
@@ -36,15 +30,10 @@ export async function handleFindElement(
       throw new Error('Failed to get image dimensions from screenshot');
     }
 
-    const { width, height } = metadata;
+    const {width, height} = metadata;
 
     const finder = getAIVisionFinder();
-    const result = await finder.findElement(
-      screenshotBase64,
-      instruction,
-      width,
-      height
-    );
+    const result = await finder.findElement(screenshotBase64, instruction, width, height);
 
     // Format: "ai-element:{x},{y}:{bbox}" — consumed by appium_gesture handlers.
     const elementUUID = `ai-element:${result.center.x},${result.center.y}:${result.bbox.join(',')}`;

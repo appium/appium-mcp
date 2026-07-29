@@ -12,42 +12,43 @@
  * See src/tools/README.md for tool organization.
  * See src/tools/metadata/README.md for YAML metadata approach.
  */
-import type { ContentResult, FastMCP } from 'fastmcp';
+import type {ContentResult, FastMCP} from 'fastmcp';
+
 import log from '../logger.js';
-import { isSensitiveKey } from '../utils/sensitive.js';
-import session from './session/session.js';
-import generateLocators from './test-generation/locators.js';
-import selectDevice from './session/select-device.js';
-import mobileDeviceControl from './session/device-control.js';
-import geolocation from './session/geolocation.js';
-import deviceInfo from './session/device-info.js';
-import fileTransfer from './session/file-transfer.js';
-import driverSettings from './session/driver-settings.js';
-import prepareIosSimulator from './ios/prepare-ios-simulator.js';
-import prepareIosRealDevice from './ios/prepare-ios-real-device.js';
-import generateTest from './test-generation/generate-tests.js';
-import gesture from './gestures/gesture.js';
-import performActionsTool from './gestures/perform-actions.js';
-import dragAndDrop from './gestures/drag-and-drop.js';
-import findElement from './interactions/find.js';
-import pressKey from './interactions/press-key.js';
-import setValue from './interactions/set-value.js';
-import keyboard from './interactions/keyboard.js';
-import getText from './interactions/get-text.js';
-import getElementAttribute from './interactions/get-element-attribute.js';
-import getActiveElement from './interactions/active-element.js';
-import getPageSource from './interactions/get-page-source.js';
-import orientation from './interactions/orientation.js';
-import clipboard from './interactions/clipboard.js';
-import alert from './interactions/handle-alert.js';
-import screenshot from './interactions/screenshot.js';
-import getWindowSize from './interactions/window-size.js';
-import screenRecording from './interactions/screen-recording.js';
+import {isSensitiveKey} from '../utils/sensitive.js';
+import ai from './ai/ai.js';
+import {isAIEnabled, assertAIConfig} from './ai/config.js';
 import app from './app-management/app.js';
 import mobilePermissions from './app-management/permissions.js';
 import context from './context/context.js';
-import ai from './ai/ai.js';
-import { isAIEnabled, assertAIConfig } from './ai/config.js';
+import dragAndDrop from './gestures/drag-and-drop.js';
+import gesture from './gestures/gesture.js';
+import performActionsTool from './gestures/perform-actions.js';
+import getActiveElement from './interactions/active-element.js';
+import clipboard from './interactions/clipboard.js';
+import findElement from './interactions/find.js';
+import getElementAttribute from './interactions/get-element-attribute.js';
+import getPageSource from './interactions/get-page-source.js';
+import getText from './interactions/get-text.js';
+import alert from './interactions/handle-alert.js';
+import keyboard from './interactions/keyboard.js';
+import orientation from './interactions/orientation.js';
+import pressKey from './interactions/press-key.js';
+import screenRecording from './interactions/screen-recording.js';
+import screenshot from './interactions/screenshot.js';
+import setValue from './interactions/set-value.js';
+import getWindowSize from './interactions/window-size.js';
+import prepareIosRealDevice from './ios/prepare-ios-real-device.js';
+import prepareIosSimulator from './ios/prepare-ios-simulator.js';
+import mobileDeviceControl from './session/device-control.js';
+import deviceInfo from './session/device-info.js';
+import driverSettings from './session/driver-settings.js';
+import fileTransfer from './session/file-transfer.js';
+import geolocation from './session/geolocation.js';
+import selectDevice from './session/select-device.js';
+import session from './session/session.js';
+import generateTest from './test-generation/generate-tests.js';
+import generateLocators from './test-generation/locators.js';
 
 type RegisteredTool = Parameters<FastMCP['addTool']>[0];
 
@@ -74,15 +75,11 @@ export default function registerTools(server: FastMCP): void {
             if (value && typeof value === 'string' && value.length > 2000) {
               return `[string:${value.length}]`;
             }
-            if (
-              value &&
-              typeof Buffer !== 'undefined' &&
-              Buffer.isBuffer(value)
-            ) {
+            if (value && typeof Buffer !== 'undefined' && Buffer.isBuffer(value)) {
               return `[buffer:${(value as Buffer).length}]`;
             }
             return value;
-          })
+          }),
         );
       } catch {
         return '[Unserializable args]';
@@ -102,7 +99,7 @@ export default function registerTools(server: FastMCP): void {
               durationMs,
               sessionId: sessionIdFromToolArgs(args),
               isError: isErrorFromToolResult(result),
-            })
+            }),
           );
           return result;
         } catch (err: unknown) {
@@ -113,10 +110,9 @@ export default function registerTools(server: FastMCP): void {
               durationMs,
               sessionId: sessionIdFromToolArgs(args),
               isError: true,
-            })
+            }),
           );
-          const msg =
-            err instanceof Error ? err.stack || err.message : String(err);
+          const msg = err instanceof Error ? err.stack || err.message : String(err);
           log.error(`[TOOL ERROR] ${toolName} (${durationMs}ms): ${msg}`);
           throw err;
         }
@@ -179,9 +175,7 @@ export default function registerTools(server: FastMCP): void {
     ai(server);
     log.info('appium_ai tool registered (AI_VISION_ENABLED=true)');
   } else {
-    log.info(
-      'appium_ai tool NOT registered (set AI_VISION_ENABLED=true to enable)'
-    );
+    log.info('appium_ai tool NOT registered (set AI_VISION_ENABLED=true to enable)');
   }
 
   log.info('All tools registered');
@@ -192,9 +186,9 @@ function sessionIdFromToolArgs(args: unknown): string | undefined {
     args &&
     typeof args === 'object' &&
     'sessionId' in args &&
-    typeof (args as { sessionId?: unknown }).sessionId === 'string'
+    typeof (args as {sessionId?: unknown}).sessionId === 'string'
   ) {
-    return (args as { sessionId: string }).sessionId;
+    return (args as {sessionId: string}).sessionId;
   }
   return undefined;
 }
@@ -204,7 +198,7 @@ function isErrorFromToolResult(result: unknown): boolean {
     result &&
     typeof result === 'object' &&
     'content' in result &&
-    Array.isArray((result as { content: unknown }).content)
+    Array.isArray((result as {content: unknown}).content)
   ) {
     return (result as ContentResult).isError === true;
   }

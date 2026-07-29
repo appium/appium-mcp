@@ -1,3 +1,4 @@
+import type {Rect} from '@appium/types';
 /**
  * Helpers for the special "ai-element:" UUIDs produced by the appium_ai
  * find_element handler.
@@ -18,11 +19,11 @@
  * a UUID, it goes through `resolveTargetRect` and gets the right thing
  * for both AI and traditional UUIDs.
  */
-import type { ContentResult } from 'fastmcp';
-import type { Rect } from '@appium/types';
-import { getElementRect } from '../../../command.js';
-import type { DriverInstance } from '../../../session-store.js';
-import { errorResult } from '../../tool-response.js';
+import type {ContentResult} from 'fastmcp';
+
+import {getElementRect} from '../../../command.js';
+import type {DriverInstance} from '../../../session-store.js';
+import {errorResult} from '../../tool-response.js';
 
 export const AI_ELEMENT_PREFIX = 'ai-element:';
 
@@ -37,7 +38,7 @@ export const AI_WEBDRIVER_REJECTION =
   `To type after a tap, use appium_set_value with w3cActions on the focused field.`;
 
 export type ParsedAiElement = {
-  center: { x: number; y: number };
+  center: {x: number; y: number};
   rect: Rect;
 };
 
@@ -63,12 +64,10 @@ export function isAiElementUUID(uuid: string | undefined): uuid is string {
  * full bounding box. Otherwise we fall back to a small rect centred on
  * `(cx, cy)`, so directional swipe/scroll still has usable start/end deltas.
  */
-export function parseAiElement(
-  uuid: string
-): ParsedAiElement | { error: string } {
+export function parseAiElement(uuid: string): ParsedAiElement | {error: string} {
   const parts = uuid.split(':');
   if (parts.length < 2) {
-    return { error: 'Invalid ai-element UUID: missing coordinate segment.' };
+    return {error: 'Invalid ai-element UUID: missing coordinate segment.'};
   }
 
   const [cxStr, cyStr] = (parts[1] ?? '').split(',');
@@ -83,12 +82,7 @@ export function parseAiElement(
   let rect = rectAroundCenter(cx, cy);
   if (parts[2]) {
     const bbox = parts[2].split(',').map((v) => Number.parseInt(v, 10));
-    if (
-      bbox.length === 4 &&
-      bbox.every((n) => Number.isFinite(n)) &&
-      bbox[2] > bbox[0] &&
-      bbox[3] > bbox[1]
-    ) {
+    if (bbox.length === 4 && bbox.every((n) => Number.isFinite(n)) && bbox[2] > bbox[0] && bbox[3] > bbox[1]) {
       rect = {
         x: bbox[0],
         y: bbox[1],
@@ -98,7 +92,7 @@ export function parseAiElement(
     }
   }
 
-  return { center: { x: cx, y: cy }, rect };
+  return {center: {x: cx, y: cy}, rect};
 }
 
 /**
@@ -109,10 +103,7 @@ export function parseAiElement(
  * Returns `{ error }` for malformed AI UUIDs or for driver lookup failures (`getElementRect`
  * rejects). Call sites avoid try/catch and handle both cases the same way.
  */
-export async function resolveTargetRect(
-  driver: DriverInstance,
-  elementUUID: string
-): Promise<Rect | { error: string }> {
+export async function resolveTargetRect(driver: DriverInstance, elementUUID: string): Promise<Rect | {error: string}> {
   if (isAiElementUUID(elementUUID)) {
     const parsed = parseAiElement(elementUUID);
     if ('error' in parsed) {
@@ -137,9 +128,7 @@ export function aiElementWebDriverRejectedResult(): ContentResult {
   return errorResult(AI_WEBDRIVER_REJECTION);
 }
 
-export function aiElementWebDriverRejectionIfNeeded(
-  elementUUID: string | undefined
-): ContentResult | undefined {
+export function aiElementWebDriverRejectionIfNeeded(elementUUID: string | undefined): ContentResult | undefined {
   if (isAiElementUUID(elementUUID)) {
     return aiElementWebDriverRejectedResult();
   }

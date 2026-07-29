@@ -5,16 +5,11 @@
  * return values or recording sensitive request/response payloads.
  */
 
-import type { FastMCP } from 'fastmcp';
+import type {FastMCP} from 'fastmcp';
 
-import {
-  isArgumentValueTelemetryEnabled,
-  safeAttributeValue,
-  safeInputKeys,
-  safeSessionId,
-} from './attributes.js';
-import { getActiveSpan, SpanStatusCode, withSpan } from './tracer.js';
-import { isSensitiveKey } from '../utils/sensitive.js';
+import {isSensitiveKey} from '../utils/sensitive.js';
+import {isArgumentValueTelemetryEnabled, safeAttributeValue, safeInputKeys, safeSessionId} from './attributes.js';
+import {getActiveSpan, SpanStatusCode, withSpan} from './tracer.js';
 
 type ToolDef = Parameters<FastMCP['addTool']>[0];
 type PromptDef = Parameters<FastMCP['addPrompt']>[0];
@@ -25,6 +20,8 @@ type ToolExecute = NonNullable<ToolDef['execute']>;
 type PromptLoad = NonNullable<PromptDef['load']>;
 type ResourceLoad = NonNullable<ResourceDef['load']>;
 type ResourceTemplateLoad = NonNullable<ResourceTemplateDef['load']>;
+
+const SAFE_TOOL_CONTENT_TYPES = new Set(['audio', 'image', 'resource', 'resource_link', 'text']);
 
 /**
  * Installs telemetry wrappers on the given FastMCP server instance. This should be
@@ -38,36 +35,25 @@ type ResourceTemplateLoad = NonNullable<ResourceTemplateDef['load']>;
 export function installTelemetryWrappers(server: FastMCP): void {
   const originalAddTool = server.addTool.bind(server) as FastMCP['addTool'];
 
-  server.addTool = ((toolDef: ToolDef) =>
-    originalAddTool(wrapToolWithTelemetry(toolDef))) as FastMCP['addTool'];
+  server.addTool = ((toolDef: ToolDef) => originalAddTool(wrapToolWithTelemetry(toolDef))) as FastMCP['addTool'];
 
   if (typeof server.addPrompt === 'function') {
-    const originalAddPrompt = server.addPrompt.bind(
-      server
-    ) as FastMCP['addPrompt'];
+    const originalAddPrompt = server.addPrompt.bind(server) as FastMCP['addPrompt'];
     server.addPrompt = ((promptDef: PromptDef) =>
-      originalAddPrompt(
-        wrapPromptWithTelemetry(promptDef)
-      )) as FastMCP['addPrompt'];
+      originalAddPrompt(wrapPromptWithTelemetry(promptDef))) as FastMCP['addPrompt'];
   }
 
   if (typeof server.addResource === 'function') {
-    const originalAddResource = server.addResource.bind(
-      server
-    ) as FastMCP['addResource'];
+    const originalAddResource = server.addResource.bind(server) as FastMCP['addResource'];
     server.addResource = ((resourceDef: ResourceDef) =>
-      originalAddResource(
-        wrapResourceWithTelemetry(resourceDef)
-      )) as FastMCP['addResource'];
+      originalAddResource(wrapResourceWithTelemetry(resourceDef))) as FastMCP['addResource'];
   }
 
   if (typeof server.addResourceTemplate === 'function') {
-    const originalAddResourceTemplate = server.addResourceTemplate.bind(
-      server
-    ) as FastMCP['addResourceTemplate'];
+    const originalAddResourceTemplate = server.addResourceTemplate.bind(server) as FastMCP['addResourceTemplate'];
     server.addResourceTemplate = ((resourceTemplateDef: ResourceTemplateDef) =>
       originalAddResourceTemplate(
-        wrapResourceTemplateWithTelemetry(resourceTemplateDef)
+        wrapResourceTemplateWithTelemetry(resourceTemplateDef),
       )) as FastMCP['addResourceTemplate'];
   }
 }
@@ -91,24 +77,101 @@ export function wrapToolWithTelemetry(toolDef: ToolDef): ToolDef {
   return {
     ...toolDef,
     execute: async (args, context) =>
-      withSpan(
-        `tools/call ${toolName}`,
-        toolAttributes(toolName, args),
-        async () => {
-          const result = await execute(args, context);
-          if (isErrorResult(result)) {
-            getActiveSpan()?.setStatus({ code: SpanStatusCode.ERROR });
-            getActiveSpan()?.setAttribute('mcp.tool.result.is_error', true);
-          }
-          return result;
+      withSpan(`tools/call ${toolName}`, toolAttributes(toolName, args), async () => {
+        const result = await execute(args, context);
+        const span = getActiveSpan();
+        span?.setAttributes(safeToolResultSizeAttributes(result));
+        if (isErrorResult(result)) {
+          span?.setStatus({code: SpanStatusCode.ERROR});
+          span?.setAttribute('mcp.tool.result.is_error', true);
         }
-      ),
+        return result;
+      }),
   };
 }
 
-export function safeInputValueAttributes(
-  args: unknown
-): Record<string, string | number | boolean | string[]> {
+/**
+ * Builds payload-free size attributes for a tool result.
+ *
+ * This intentionally counts known MCP content fields directly instead of
+ * serializing the whole result. Large page sources, UI HTML, and base64 data
+ * therefore are not copied or recorded in telemetry.
+ */
+export function safeToolResultSizeAttributes(result: unknown): Record<string, number | string[]> {
+  if (typeof result === 'string') {
+    return {'mcp.tool.result.text_chars': result.length};
+  }
+  if (!isRecord(result) || !Array.isArray(result.content)) {
+    return {};
+  }
+
+  const contentTypes = new Set<string>();
+  let textChars = 0;
+  let resourceCount = 0;
+  let resourceTextChars = 0;
+  let imageCount = 0;
+  let audioCount = 0;
+  let base64Chars = 0;
+  let base64BytesEstimate = 0;
+
+  for (const content of result.content) {
+    if (!isRecord(content)) {
+      contentTypes.add('other');
+      continue;
+    }
+
+    const contentType =
+      typeof content.type === 'string' && SAFE_TOOL_CONTENT_TYPES.has(content.type) ? content.type : 'other';
+    contentTypes.add(contentType);
+
+    if (contentType === 'text' && typeof content.text === 'string') {
+      textChars += content.text.length;
+      continue;
+    }
+
+    if (contentType === 'image' || contentType === 'audio') {
+      if (contentType === 'image') {
+        imageCount += 1;
+      } else {
+        audioCount += 1;
+      }
+      if (typeof content.data === 'string') {
+        base64Chars += content.data.length;
+        base64BytesEstimate += estimateBase64DecodedBytes(content.data);
+      }
+      continue;
+    }
+
+    if (contentType === 'resource') {
+      resourceCount += 1;
+      if (isRecord(content.resource)) {
+        if (typeof content.resource.text === 'string') {
+          resourceTextChars += content.resource.text.length;
+        }
+        if (typeof content.resource.blob === 'string') {
+          base64Chars += content.resource.blob.length;
+          base64BytesEstimate += estimateBase64DecodedBytes(content.resource.blob);
+        }
+      }
+    }
+  }
+
+  const attributes: Record<string, number | string[]> = {
+    'mcp.tool.result.content_count': result.content.length,
+    'mcp.tool.result.content_types': [...contentTypes].sort(),
+    'mcp.tool.result.text_chars': textChars,
+    'mcp.tool.result.resource_count': resourceCount,
+    'mcp.tool.result.resource_text_chars': resourceTextChars,
+    'mcp.tool.result.image_count': imageCount,
+    'mcp.tool.result.audio_count': audioCount,
+    'mcp.tool.result.base64_chars': base64Chars,
+    'mcp.tool.result.base64_bytes_estimate': base64BytesEstimate,
+  };
+
+  return attributes;
+}
+
+export function safeInputValueAttributes(args: unknown): Record<string, string | number | boolean | string[]> {
   if (!isArgumentValueTelemetryEnabled()) {
     return {};
   }
@@ -154,7 +217,7 @@ function wrapPromptWithTelemetry(promptDef: PromptDef): PromptDef {
           'mcp.prompt.name': promptName,
           ...inputAttributes(args),
         },
-        () => load(args, auth)
+        () => load(args, auth),
       ),
   };
 }
@@ -175,21 +238,18 @@ function wrapResourceWithTelemetry(resourceDef: ResourceDef): ResourceDef {
         {
           'mcp.resource.uri': uri,
         },
-        () => load()
+        () => load(),
       ),
   };
 }
 
-function wrapResourceTemplateWithTelemetry(
-  resourceTemplateDef: ResourceTemplateDef
-): ResourceTemplateDef {
+function wrapResourceTemplateWithTelemetry(resourceTemplateDef: ResourceTemplateDef): ResourceTemplateDef {
   const load = resourceTemplateDef.load as ResourceTemplateLoad | undefined;
   if (!load) {
     return resourceTemplateDef;
   }
 
-  const uriTemplate =
-    resourceTemplateDef.uriTemplate?.toString() ?? 'unknown_resource_template';
+  const uriTemplate = resourceTemplateDef.uriTemplate?.toString() ?? 'unknown_resource_template';
 
   return {
     ...resourceTemplateDef,
@@ -200,7 +260,7 @@ function wrapResourceTemplateWithTelemetry(
           'mcp.resource.uri_template': uriTemplate,
           ...inputAttributes(args),
         },
-        () => load(args, auth)
+        () => load(args, auth),
       ),
   };
 }
@@ -221,9 +281,7 @@ function toolAttributes(toolName: string, args: unknown) {
   };
 }
 
-function inputAttributes(
-  args: unknown
-): Record<string, string | number | boolean | string[]> {
+function inputAttributes(args: unknown): Record<string, string | number | boolean | string[]> {
   return {
     ...inputKeyAttributes(args),
     ...safeInputValueAttributes(args),
@@ -232,14 +290,33 @@ function inputAttributes(
 
 function inputKeyAttributes(args: unknown): Record<string, string[]> {
   const inputKeys = safeInputKeys(args);
-  return inputKeys.length > 0 ? { 'mcp.input.keys': inputKeys } : {};
+  return inputKeys.length > 0 ? {'mcp.input.keys': inputKeys} : {};
 }
 
 function isErrorResult(result: unknown): boolean {
   return (
-    !!result &&
-    typeof result === 'object' &&
-    'isError' in result &&
-    (result as { isError?: unknown }).isError === true
+    !!result && typeof result === 'object' && 'isError' in result && (result as {isError?: unknown}).isError === true
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function estimateBase64DecodedBytes(value: string): number {
+  const commaIndex = value.indexOf(',');
+  const hasDataUriPrefix = commaIndex >= 7 && value.slice(commaIndex - 7, commaIndex).toLowerCase() === ';base64';
+  const contentStart = hasDataUriPrefix ? commaIndex + 1 : 0;
+  const encodedLength = value.length - contentStart;
+  if (encodedLength <= 0) {
+    return 0;
+  }
+
+  let padding = 0;
+  if (value.endsWith('==')) {
+    padding = 2;
+  } else if (value.endsWith('=')) {
+    padding = 1;
+  }
+  return Math.max(0, Math.floor((encodedLength * 3) / 4) - padding);
 }

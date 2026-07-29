@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -45,11 +45,14 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      - name: Run Prettier check
+      - name: Run Format check
         run: npm run format:check
 
       - run: npm run build
         name: Build
+
+      - name: Audit MCP tool discovery footprint
+        run: npm run audit:tools
 
       - name: Run Unit Tests
         run: npm run test

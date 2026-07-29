@@ -1,9 +1,6 @@
-import type { AppiumMcpPlugin } from './core.js';
-import { createAppiumMcpServer } from './create-server.js';
-import {
-  isDocumentationEnabled,
-  loadDocumentationPlugin,
-} from './documentation.js';
+import type {AppiumMcpPlugin} from './core.js';
+import {createAppiumMcpServer} from './create-server.js';
+import {isDocumentationEnabled, loadDocumentationPlugin} from './documentation.js';
 
 const plugins: AppiumMcpPlugin[] = [];
 
@@ -17,5 +14,5 @@ if (isDocumentationEnabled()) {
   }
 }
 
-const server = await createAppiumMcpServer({ plugins });
+const server = await createAppiumMcpServer({plugins});
 export default server;

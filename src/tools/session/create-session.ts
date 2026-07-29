@@ -1,24 +1,19 @@
-import { fs } from '@appium/support';
-import { URL } from 'node:url';
-import { getPortFromUrl } from '../../utils/url.js';
-import { findFreePort, releaseReservedPorts } from '../../utils/ports.js';
-import { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
-import { XCUITestDriver } from 'appium-xcuitest-driver';
-import { setSession, listSessions } from '../../session-store.js';
-import {
-  clearSelectedDevice,
-  getSelectedLocalDevice,
-} from './select-device.js';
-import { IOSManager } from '../../devicemanager/ios-manager.js';
-import log from '../../logger.js';
-import {
-  createUIResource,
-  createSessionDashboardUI,
-  addUIResourceToResponse,
-} from '../../ui/mcp-ui-utils.js';
-import type { ContentResult } from 'fastmcp';
-import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
+import {URL} from 'node:url';
+
+import {fs} from '@appium/support';
+import {AndroidUiautomator2Driver} from 'appium-uiautomator2-driver';
+import {XCUITestDriver} from 'appium-xcuitest-driver';
+import type {ContentResult} from 'fastmcp';
 import WebDriver from 'webdriver';
+
+import {IOSManager} from '../../devicemanager/ios-manager.js';
+import log from '../../logger.js';
+import {setSession, listSessions} from '../../session-store.js';
+import {createUIResource, createSessionDashboardUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
+import {findFreePort, releaseReservedPorts} from '../../utils/ports.js';
+import {getPortFromUrl} from '../../utils/url.js';
+import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
+import {clearSelectedDevice, getSelectedLocalDevice} from './select-device.js';
 
 /**
  * What driver should the appium-mcp session management tool create and manage.
@@ -47,10 +42,8 @@ interface CapabilitiesConfig {
 /**
  * Remove empty string values from capabilities object
  */
-export function filterEmptyCapabilities(
-  capabilities: Capabilities
-): Capabilities {
-  const filtered = { ...capabilities };
+export function filterEmptyCapabilities(capabilities: Capabilities): Capabilities {
+  const filtered = {...capabilities};
   Object.keys(filtered).forEach((key) => {
     if (filtered[key] === '') {
       delete filtered[key];
@@ -88,16 +81,16 @@ const EMBEDDED_PORT_CAPABILITIES: Record<'android' | 'ios', string[]> = {
  */
 export async function assignEmbeddedDriverPorts(
   platform: 'android' | 'ios',
-  capabilities: Capabilities
-): Promise<{ capabilities: Capabilities; allocatedPorts: number[] }> {
-  const result = { ...capabilities };
+  capabilities: Capabilities,
+): Promise<{capabilities: Capabilities; allocatedPorts: number[]}> {
+  const result = {...capabilities};
   const allocatedPorts: number[] = [];
 
   // When the session points at an externally-managed WDA (e.g. a simulator's
   // WDA already launched by prepare_ios_simulator), that WDA owns its ports.
   // wdaLocalPort/mjpegServerPort would be ignored, so don't reserve them.
   if (platform === 'ios' && result['appium:webDriverAgentUrl']) {
-    return { capabilities: result, allocatedPorts };
+    return {capabilities: result, allocatedPorts};
   }
 
   try {
@@ -106,13 +99,11 @@ export async function assignEmbeddedDriverPorts(
         const port = await findFreePort();
         result[cap] = port;
         allocatedPorts.push(port);
-        log.debug(
-          `Auto-allocated ${cap}=${port} for embedded ${platform} session`
-        );
+        log.debug(`Auto-allocated ${cap}=${port} for embedded ${platform} session`);
       }
     }
 
-    return { capabilities: result, allocatedPorts };
+    return {capabilities: result, allocatedPorts};
   } catch (err) {
     // If we reserved any ports before failing, release them to avoid leaking.
     releaseReservedPorts(allocatedPorts);
@@ -126,14 +117,12 @@ export async function assignEmbeddedDriverPorts(
 export function buildAndroidCapabilities(
   configCaps: Record<string, any>,
   customCaps: Record<string, any> | undefined,
-  isRemoteServer: boolean
+  isRemoteServer: boolean,
 ): Capabilities {
-  const givenCaps = { ...configCaps, ...customCaps };
+  const givenCaps = {...configCaps, ...customCaps};
   const selectedLocalDevice = getSelectedLocalDevice();
   const selectedDeviceUdid =
-    !isRemoteServer &&
-    !givenCaps['appium:udid'] &&
-    selectedLocalDevice?.platform === 'android'
+    !isRemoteServer && !givenCaps['appium:udid'] && selectedLocalDevice?.platform === 'android'
       ? selectedLocalDevice.udid
       : undefined;
 
@@ -155,7 +144,7 @@ export function buildAndroidCapabilities(
     ...defaultCaps,
     ...additionalCaps,
     ...configCaps,
-    ...(selectedDeviceUdid && { 'appium:udid': selectedDeviceUdid }),
+    ...(selectedDeviceUdid && {'appium:udid': selectedDeviceUdid}),
     ...customCaps,
   };
 
@@ -172,9 +161,7 @@ export function buildAndroidCapabilities(
 /**
  * Validate iOS device selection when multiple devices are available
  */
-export async function validateIOSDeviceSelection(
-  deviceType: 'simulator' | 'real' | null
-): Promise<void> {
+export async function validateIOSDeviceSelection(deviceType: 'simulator' | 'real' | null): Promise<void> {
   if (!deviceType) {
     return;
   }
@@ -187,7 +174,7 @@ export async function validateIOSDeviceSelection(
     const selectedDevice = selectedLocalDevice?.udid;
     if (!selectedDevice) {
       throw new Error(
-        `Multiple iOS ${deviceType === 'simulator' ? 'simulators' : 'devices'} found (${devices.length}). Use select_device with platform=ios and iosDeviceType=${deviceType} to choose one, then call appium_session_management with action=create.`
+        `Multiple iOS ${deviceType === 'simulator' ? 'simulators' : 'devices'} found (${devices.length}). Use select_device with platform=ios and iosDeviceType=${deviceType} to choose one, then call appium_session_management with action=create.`,
       );
     }
   }
@@ -199,22 +186,17 @@ export async function validateIOSDeviceSelection(
 export async function buildIOSCapabilities(
   configCaps: Record<string, any>,
   customCaps: Record<string, any> | undefined,
-  isRemoteServer: boolean
+  isRemoteServer: boolean,
 ): Promise<Capabilities> {
   const selectedLocalDevice = getSelectedLocalDevice();
-  const selectedIOSDevice =
-    !isRemoteServer && selectedLocalDevice?.platform === 'ios'
-      ? selectedLocalDevice
-      : null;
+  const selectedIOSDevice = !isRemoteServer && selectedLocalDevice?.platform === 'ios' ? selectedLocalDevice : null;
 
   const deviceType = selectedIOSDevice?.type || null;
   await validateIOSDeviceSelection(deviceType);
 
-  const givenCaps = { ...configCaps, ...customCaps };
+  const givenCaps = {...configCaps, ...customCaps};
   const selectedDeviceUdid =
-    !isRemoteServer &&
-    !givenCaps['appium:udid'] &&
-    selectedIOSDevice?.platform === 'ios'
+    !isRemoteServer && !givenCaps['appium:udid'] && selectedIOSDevice?.platform === 'ios'
       ? selectedIOSDevice.udid
       : undefined;
   const selectedDeviceInfo = selectedIOSDevice?.info;
@@ -228,9 +210,7 @@ export async function buildIOSCapabilities(
   };
 
   const platformVersion =
-    selectedDeviceInfo?.platform && selectedDeviceInfo.platform.trim() !== ''
-      ? selectedDeviceInfo.platform
-      : undefined;
+    selectedDeviceInfo?.platform && selectedDeviceInfo.platform.trim() !== '' ? selectedDeviceInfo.platform : undefined;
 
   const additionalCaps: Record<string, any> =
     deviceType === 'simulator'
@@ -243,8 +223,7 @@ export async function buildIOSCapabilities(
   additionalCaps['appium:newCommandTimeout'] = 300;
   additionalCaps['appium:settings[animationCoolOffTimeout]'] = 0.5;
   additionalCaps['appium:settings[maxTypingFrequency]'] = 45;
-  additionalCaps['appium:settings[pageSourceExcludedAttributes]'] =
-    'visible,accessible';
+  additionalCaps['appium:settings[pageSourceExcludedAttributes]'] = 'visible,accessible';
 
   log.debug('Platform version:', platformVersion);
 
@@ -252,9 +231,9 @@ export async function buildIOSCapabilities(
     ...defaultCaps,
     ...additionalCaps,
     // Auto-detected platform version as fallback (before config)
-    ...(platformVersion && { 'appium:platformVersion': platformVersion }),
+    ...(platformVersion && {'appium:platformVersion': platformVersion}),
     ...configCaps,
-    ...(selectedDeviceUdid && { 'appium:udid': selectedDeviceUdid }),
+    ...(selectedDeviceUdid && {'appium:udid': selectedDeviceUdid}),
     // customCaps should override additionalCaps.
     ...customCaps,
   };
@@ -274,7 +253,7 @@ export async function buildIOSCapabilities(
  */
 export function validateLocalCreatePlatformMatch(
   platform: (typeof DRIVER_MODE_PLATFORMS)[number],
-  remoteServerUrl?: string
+  remoteServerUrl?: string,
 ): ContentResult | undefined {
   if (remoteServerUrl || platform === 'general') {
     return undefined;
@@ -284,9 +263,7 @@ export function validateLocalCreatePlatformMatch(
 
   const selectedPlatform = selectedLocalDevice?.platform;
   if (selectedPlatform && selectedPlatform !== platform) {
-    return errorResult(
-      `platform=${platform} does not match select_device (platform=${selectedPlatform}).`
-    );
+    return errorResult(`platform=${platform} does not match select_device (platform=${selectedPlatform}).`);
   }
 
   return undefined;
@@ -300,10 +277,7 @@ export function validateLocalCreatePlatformMatch(
  * If the regexRule is provided, the URL must match the regex pattern to be considered valid.
  * @throws {Error} If the URL is invalid.
  */
-export function validateRemoteServerUrl(
-  remoteServerUrl: string,
-  regexRule?: string
-): void {
+export function validateRemoteServerUrl(remoteServerUrl: string, regexRule?: string): void {
   const regexPattern = regexRule ? new RegExp(regexRule) : /^https?:\/\/.+$/;
   if (!regexPattern.test(remoteServerUrl)) {
     throw new Error(`Invalid remoteServerUrl: ${remoteServerUrl}.`);
@@ -340,33 +314,18 @@ export async function createSessionAction(args: {
   let finalCapabilities: Capabilities | undefined;
 
   try {
-    const {
-      platform,
-      capabilities: customCapabilities,
-      remoteServerUrl,
-    } = args;
+    const {platform, capabilities: customCapabilities, remoteServerUrl} = args;
 
-    const platformMismatch = validateLocalCreatePlatformMatch(
-      platform,
-      remoteServerUrl
-    );
+    const platformMismatch = validateLocalCreatePlatformMatch(platform, remoteServerUrl);
     if (platformMismatch) {
       return platformMismatch;
     }
 
     const configCapabilities = await loadCapabilitiesConfig();
     if (platform === 'android') {
-      finalCapabilities = buildAndroidCapabilities(
-        configCapabilities.android,
-        customCapabilities,
-        !!remoteServerUrl
-      );
+      finalCapabilities = buildAndroidCapabilities(configCapabilities.android, customCapabilities, !!remoteServerUrl);
     } else if (platform === 'ios') {
-      finalCapabilities = await buildIOSCapabilities(
-        configCapabilities.ios,
-        customCapabilities,
-        !!remoteServerUrl
-      );
+      finalCapabilities = await buildIOSCapabilities(configCapabilities.ios, customCapabilities, !!remoteServerUrl);
     } else {
       finalCapabilities = {
         ...configCapabilities.general,
@@ -376,57 +335,41 @@ export async function createSessionAction(args: {
 
     log.info(
       `Creating new ${platform.toUpperCase()} session with capabilities:`,
-      JSON.stringify(finalCapabilities, null, 2)
+      JSON.stringify(finalCapabilities, null, 2),
     );
     let sessionId;
     if (remoteServerUrl) {
       try {
-        validateRemoteServerUrl(
-          remoteServerUrl,
-          process.env.REMOTE_SERVER_URL_ALLOW_REGEX
-        );
+        validateRemoteServerUrl(remoteServerUrl, process.env.REMOTE_SERVER_URL_ALLOW_REGEX);
       } catch (err: unknown) {
         return errorResult(
-          `Invalid remoteServerUrl "${remoteServerUrl}". ${toolErrorMessage(err)} Pass a valid http(s) URL, or omit remoteServerUrl to use the local embedded driver.`
+          `Invalid remoteServerUrl "${remoteServerUrl}". ${toolErrorMessage(err)} Pass a valid http(s) URL, or omit remoteServerUrl to use the local embedded driver.`,
         );
       }
 
       const remoteUrl = new URL(remoteServerUrl);
       const protocol = remoteUrl.protocol.replace(':', '');
       const port = getPortFromUrl(remoteUrl);
-      const user = remoteUrl.username
-        ? decodeURIComponent(remoteUrl.username)
-        : undefined;
-      const key = remoteUrl.password
-        ? decodeURIComponent(remoteUrl.password)
-        : undefined;
+      const user = remoteUrl.username ? decodeURIComponent(remoteUrl.username) : undefined;
+      const key = remoteUrl.password ? decodeURIComponent(remoteUrl.password) : undefined;
       log.info(
-        `Sending capabilities to remote server: ${protocol}://${remoteUrl.hostname}:${port}${remoteUrl.pathname}`
+        `Sending capabilities to remote server: ${protocol}://${remoteUrl.hostname}:${port}${remoteUrl.pathname}`,
       );
       const client = await WebDriver.newSession({
         protocol,
         hostname: remoteUrl.hostname,
         port,
         path: remoteUrl.pathname,
-        ...(user && key ? { user, key } : {}),
+        ...(user && key ? {user, key} : {}),
         capabilities: finalCapabilities,
       });
       sessionId = client.sessionId;
-      await setSession(
-        client,
-        client.sessionId,
-        finalCapabilities,
-        'owned',
-        args.remoteServerUrl
-      );
+      await setSession(client, client.sessionId, finalCapabilities, 'owned', args.remoteServerUrl);
     } else {
       if (platform === 'general') {
         return errorResult('platform=general requires remoteServerUrl.');
       }
-      const allocation = await assignEmbeddedDriverPorts(
-        platform,
-        finalCapabilities
-      );
+      const allocation = await assignEmbeddedDriverPorts(platform, finalCapabilities);
       finalCapabilities = allocation.capabilities;
       const driver = createDriverForPlatform(platform);
       log.info(`Sending session with ${driver.constructor.name}`);
@@ -441,34 +384,30 @@ export async function createSessionAction(args: {
       await setSession(driver, sessionId, finalCapabilities, 'owned');
     }
 
-    const sessionIdStr =
-      typeof sessionId === 'string'
-        ? sessionId
-        : String(sessionId || 'Unknown');
+    const sessionIdStr = typeof sessionId === 'string' ? sessionId : String(sessionId || 'Unknown');
 
-    log.info(
-      `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}`
-    );
+    log.info(`${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}`);
 
     const totalSessions = listSessions().length;
 
     const textResponse = textResult(
-      `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`
+      `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`,
     );
+    const sessionCapabilities = finalCapabilities;
 
-    const uiResource = createUIResource(
-      `ui://appium-mcp/session-dashboard/${sessionIdStr}`,
-      createSessionDashboardUI({
-        sessionId: sessionIdStr,
-        platform: finalCapabilities.platformName,
-        automationName: finalCapabilities['appium:automationName'],
-        deviceName: finalCapabilities['appium:deviceName'],
-        platformVersion: finalCapabilities['appium:platformVersion'],
-        udid: finalCapabilities['appium:udid'],
-      })
+    return addUIResourceToResponse(textResponse, () =>
+      createUIResource(
+        `ui://appium-mcp/session-dashboard/${sessionIdStr}`,
+        createSessionDashboardUI({
+          sessionId: sessionIdStr,
+          platform: sessionCapabilities.platformName,
+          automationName: sessionCapabilities['appium:automationName'],
+          deviceName: sessionCapabilities['appium:deviceName'],
+          platformVersion: sessionCapabilities['appium:platformVersion'],
+          udid: sessionCapabilities['appium:udid'],
+        }),
+      ),
     );
-
-    return addUIResourceToResponse(textResponse, uiResource);
   } catch (error: unknown) {
     log.error('Error creating session:', error);
     return errorResult(
@@ -476,7 +415,7 @@ export async function createSessionAction(args: {
         platform: args.platform,
         remoteServerUrl: args.remoteServerUrl,
         finalCapabilities,
-      })
+      }),
     );
   }
 }
@@ -487,7 +426,7 @@ function buildCreateSessionFailureMessage(
     platform: (typeof DRIVER_MODE_PLATFORMS)[number];
     remoteServerUrl?: string;
     finalCapabilities?: Capabilities;
-  }
+  },
 ): string {
   const detail = toolErrorMessage(error);
   const base = `Failed to create session. ${detail}`;
@@ -502,13 +441,9 @@ function buildCreateSessionFailureMessage(
 
   const caps: Record<string, any> = ctx.finalCapabilities ?? {};
   const hasDeviceTarget =
-    Boolean(caps['appium:udid'] || caps['appium:deviceName']) ||
-    Boolean(getSelectedLocalDevice());
+    Boolean(caps['appium:udid'] || caps['appium:deviceName']) || Boolean(getSelectedLocalDevice());
 
-  if (
-    !hasDeviceTarget &&
-    (ctx.platform === 'ios' || ctx.platform === 'android')
-  ) {
+  if (!hasDeviceTarget && (ctx.platform === 'ios' || ctx.platform === 'android')) {
     return `${base} For local sessions without appium:udid (or a prior select_device), use select_device with a matching platform or pass target device capabilities, then action=create.`;
   }
 
@@ -521,20 +456,18 @@ function buildCreateSessionFailureMessage(
 async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
   const configPath = process.env.CAPABILITIES_CONFIG;
   if (!configPath) {
-    return { android: {}, ios: {}, general: {} };
+    return {android: {}, ios: {}, general: {}};
   }
 
   try {
     if (!(await fs.hasAccess(configPath))) {
-      throw new Error(
-        `Capabilities config does not exist or is not accessible: ${configPath}`
-      );
+      throw new Error(`Capabilities config does not exist or is not accessible: ${configPath}`);
     }
     const configContent = await fs.readFile(configPath, 'utf8');
     return JSON.parse(configContent);
   } catch (error: unknown) {
     log.warn(`Failed to parse capabilities config: ${toolErrorMessage(error)}`);
-    return { android: {}, ios: {}, general: {} };
+    return {android: {}, ios: {}, general: {}};
   }
 }
 
@@ -552,19 +485,13 @@ function createDriverForPlatform(platform: 'android' | 'ios'): any {
     driver.relaxedSecurityEnabled = true;
     return driver;
   }
-  throw new Error(
-    `Unsupported platform: ${platform}. Please choose 'android' or 'ios'.`
-  );
+  throw new Error(`Unsupported platform: ${platform}. Please choose 'android' or 'ios'.`);
 }
 
 /**
  * Create a new session with the given driver and capabilities
  */
-async function createDriverSession(
-  driver: any,
-  capabilities: Capabilities
-): Promise<string> {
-  // @ts-ignore
+async function createDriverSession(driver: any, capabilities: Capabilities): Promise<string> {
   const result = await driver.createSession(null, {
     alwaysMatch: capabilities,
     firstMatch: [{}],
@@ -574,4 +501,4 @@ async function createDriverSession(
 }
 
 // Re-export for backward compatibility with consumers that imported from this module.
-export { getPortFromUrl };
+export {getPortFromUrl};

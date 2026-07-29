@@ -1,20 +1,22 @@
+import os from 'node:os';
+import path from 'node:path';
+
+import {fs, net, plist, zip} from '@appium/support';
 /**
  * Single-call tool to prepare an iOS simulator for Appium testing.
  * Chains: boot simulator → download WDA → install & launch WDA.
  * Each step checks preconditions and skips if already satisfied.
  */
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { exec } from 'teen_process';
-import path from 'node:path';
-import os from 'node:os';
-import { fs, net, plist, zip } from '@appium/support';
-import { Simctl } from 'node-simctl';
-import { IOSManager } from '../../devicemanager/ios-manager.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {Simctl} from 'node-simctl';
+import {exec} from 'teen_process';
+import {z} from 'zod';
+
+import {IOSManager} from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
-import { textResult } from '../tool-response.js';
-import { findFreePort, releaseReservedPort } from '../../utils/ports.js';
-import { resolveAppiumMcpCachePath } from '../../utils/paths.js';
+import {resolveAppiumMcpCachePath} from '../../utils/paths.js';
+import {findFreePort, releaseReservedPort} from '../../utils/ports.js';
+import {textResult} from '../tool-response.js';
 
 type StepStatus = 'completed' | 'skipped' | 'failed';
 
@@ -65,29 +67,27 @@ async function getLatestWDAVersionFromGitHub(): Promise<string> {
   const response = await fetch(permalink, {
     method: 'HEAD',
     redirect: 'manual',
-    headers: { 'User-Agent': 'mcp-appium' },
+    headers: {'User-Agent': 'mcp-appium'},
   });
 
   const location = response.headers.get('location');
   if (!location) {
     throw new Error(
-      `Failed to resolve latest WDA version (${response.status} ${response.statusText}): no redirect from ${permalink}`
+      `Failed to resolve latest WDA version (${response.status} ${response.statusText}): no redirect from ${permalink}`,
     );
   }
 
   // Expected format: https://github.com/appium/WebDriverAgent/releases/tag/v<version>
   const match = location.match(/\/releases\/tag\/v?([^/]+)\/?$/);
   if (!match) {
-    throw new Error(
-      `Failed to parse WDA version from redirect location: ${location}`
-    );
+    throw new Error(`Failed to parse WDA version from redirect location: ${location}`);
   }
 
   return match[1];
 }
 
 async function unzipFile(zipPath: string, destDir: string): Promise<void> {
-  await zip.extractAllTo(zipPath, destDir, { useSystemUnzip: true });
+  await zip.extractAllTo(zipPath, destDir, {useSystemUnzip: true});
 }
 
 // ── WDA install helpers ──
@@ -105,41 +105,31 @@ async function getLatestWDAVersionFromCache(): Promise<string | null> {
       const dirPath = path.join(wdaCacheDir, dir);
       const stats = await fs.stat(dirPath);
       return stats.isDirectory() ? dir : null;
-    })
+    }),
   );
 
   const filteredVersions = versions
     .filter((v): v is string => v !== null)
-    .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    .sort((a, b) => b.localeCompare(a, undefined, {numeric: true}));
 
   return filteredVersions.length > 0 ? filteredVersions[0] : null;
 }
 
-async function installAppOnSimulator(
-  appPath: string,
-  simulatorUdid: string
-): Promise<void> {
+async function installAppOnSimulator(appPath: string, simulatorUdid: string): Promise<void> {
   await exec('xcrun', ['simctl', 'install', simulatorUdid, appPath]);
 }
 
-async function launchAppOnSimulator(
-  bundleId: string,
-  simulatorUdid: string,
-  wdaPort: number
-): Promise<void> {
+async function launchAppOnSimulator(bundleId: string, simulatorUdid: string, wdaPort: number): Promise<void> {
   // simctl forwards env vars prefixed with SIMCTL_CHILD_ to the launched app.
   // WDA reads USE_PORT to choose which local port to listen on inside the
   // simulator, so each simulator's WDA can run on its own port instead of all
   // colliding on the default 8100.
   await exec('xcrun', ['simctl', 'launch', simulatorUdid, bundleId], {
-    env: { ...process.env, SIMCTL_CHILD_USE_PORT: String(wdaPort) },
+    env: {...process.env, SIMCTL_CHILD_USE_PORT: String(wdaPort)},
   });
 }
 
-async function terminateAppOnSimulator(
-  bundleId: string,
-  simulatorUdid: string
-): Promise<void> {
+async function terminateAppOnSimulator(bundleId: string, simulatorUdid: string): Promise<void> {
   try {
     await exec('xcrun', ['simctl', 'terminate', simulatorUdid, bundleId]);
   } catch {
@@ -157,7 +147,7 @@ async function waitForWdaReady(port: number): Promise<boolean> {
   const url = `${wdaBaseUrl(port)}/status`;
   for (let attempt = 0; attempt < 30; attempt++) {
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
+      const res = await fetch(url, {signal: AbortSignal.timeout(2000)});
       if (res.ok) {
         return true;
       }
@@ -170,9 +160,7 @@ async function waitForWdaReady(port: number): Promise<boolean> {
 }
 
 async function getAppBundleId(appPath: string): Promise<string> {
-  const manifest = (await plist.parsePlistFile(
-    path.join(appPath, 'Info.plist')
-  )) as { CFBundleIdentifier?: string };
+  const manifest = (await plist.parsePlistFile(path.join(appPath, 'Info.plist'))) as {CFBundleIdentifier?: string};
   if (!manifest.CFBundleIdentifier) {
     throw new Error(`No CFBundleIdentifier found in ${appPath}`);
   }
@@ -184,44 +172,30 @@ async function getWDAState(simulatorUdid: string): Promise<WDAState> {
 
   // Check if installed via simctl listapps
   try {
-    const { stdout } = await exec('xcrun', [
-      'simctl',
-      'listapps',
-      simulatorUdid,
-      '--json',
-    ]);
+    const {stdout} = await exec('xcrun', ['simctl', 'listapps', simulatorUdid, '--json']);
     const data = JSON.parse(stdout);
 
     for (const [bundleId, appInfo] of Object.entries(data)) {
-      if (
-        bundleId.includes('WebDriverAgentRunner') ||
-        (appInfo as any)?.CFBundleName?.includes('WebDriverAgent')
-      ) {
+      if (bundleId.includes('WebDriverAgentRunner') || (appInfo as any)?.CFBundleName?.includes('WebDriverAgent')) {
         installed = true;
         break;
       }
     }
   } catch {
-    return { installed: false, running: false };
+    return {installed: false, running: false};
   }
 
   if (!installed) {
-    return { installed: false, running: false };
+    return {installed: false, running: false};
   }
 
   // Check if actually running via launchctl inside the simulator
   try {
-    const { stdout } = await exec('xcrun', [
-      'simctl',
-      'spawn',
-      simulatorUdid,
-      'launchctl',
-      'list',
-    ]);
+    const {stdout} = await exec('xcrun', ['simctl', 'spawn', simulatorUdid, 'launchctl', 'list']);
     const running = stdout.includes('WebDriverAgentRunner');
-    return { installed: true, running };
+    return {installed: true, running};
   } catch {
-    return { installed: true, running: false };
+    return {installed: true, running: false};
   }
 }
 
@@ -229,7 +203,7 @@ async function getWDAState(simulatorUdid: string): Promise<WDAState> {
 
 async function resolveWdaAppPath(
   forceRefreshWda: boolean,
-  platform: 'ios' | 'tvos' = 'ios'
+  platform: 'ios' | 'tvos' = 'ios',
 ): Promise<{
   wdaAppPath: string;
   version: string;
@@ -239,19 +213,13 @@ async function resolveWdaAppPath(
   const envAppPath = process.env.APPIUM_MCP_WDA_APP_PATH;
   if (envAppPath) {
     if (!envAppPath.endsWith('.app')) {
-      throw new Error(
-        `APPIUM_MCP_WDA_APP_PATH must point to a .app bundle, got: ${envAppPath}`
-      );
+      throw new Error(`APPIUM_MCP_WDA_APP_PATH must point to a .app bundle, got: ${envAppPath}`);
     }
     if (!(await fileExists(envAppPath))) {
-      throw new Error(
-        `APPIUM_MCP_WDA_APP_PATH points to a non-existent path: ${envAppPath}`
-      );
+      throw new Error(`APPIUM_MCP_WDA_APP_PATH points to a non-existent path: ${envAppPath}`);
     }
     if (forceRefreshWda) {
-      log.warn(
-        'forceRefreshWda=true is ignored because APPIUM_MCP_WDA_APP_PATH is set'
-      );
+      log.warn('forceRefreshWda=true is ignored because APPIUM_MCP_WDA_APP_PATH is set');
     }
     return {
       wdaAppPath: envAppPath,
@@ -262,20 +230,15 @@ async function resolveWdaAppPath(
 
   const arch = os.arch();
   const archStr = arch === 'arm64' ? 'arm64' : 'x86_64';
-  const artifactPrefix =
-    platform === 'tvos' ? 'WebDriverAgentRunner_tvOS' : 'WebDriverAgentRunner';
+  const artifactPrefix = platform === 'tvos' ? 'WebDriverAgentRunner_tvOS' : 'WebDriverAgentRunner';
 
   // Check cache first (unless force refresh)
   if (!forceRefreshWda) {
     const cachedVersion = await getLatestWDAVersionFromCache();
     if (cachedVersion) {
       const cachedAppPath = path.join(
-        resolveAppiumMcpCachePath(
-          'wda',
-          cachedVersion,
-          `extracted-${platform}`
-        ),
-        `${artifactPrefix}-Runner.app`
+        resolveAppiumMcpCachePath('wda', cachedVersion, `extracted-${platform}`),
+        `${artifactPrefix}-Runner.app`,
       );
       if (await fileExists(cachedAppPath)) {
         return {
@@ -291,15 +254,12 @@ async function resolveWdaAppPath(
   const wdaVersion = await getLatestWDAVersionFromGitHub();
   const versionCacheDir = resolveAppiumMcpCachePath('wda', wdaVersion);
   const extractDir = path.join(versionCacheDir, `extracted-${platform}`);
-  const zipPath = path.join(
-    versionCacheDir,
-    `${artifactPrefix}-Build-Sim-${archStr}.zip`
-  );
+  const zipPath = path.join(versionCacheDir, `${artifactPrefix}-Build-Sim-${archStr}.zip`);
   const wdaAppPath = path.join(extractDir, `${artifactPrefix}-Runner.app`);
 
   // Check if this specific version is already extracted
   if (!forceRefreshWda && (await fileExists(wdaAppPath))) {
-    return { wdaAppPath, version: wdaVersion, source: 'cache' };
+    return {wdaAppPath, version: wdaVersion, source: 'cache'};
   }
 
   // Clean any prior (possibly partial) extraction before downloading
@@ -313,7 +273,7 @@ async function resolveWdaAppPath(
   const downloadUrl = `https://github.com/appium/WebDriverAgent/releases/download/v${wdaVersion}/${artifactPrefix}-Build-Sim-${archStr}.zip`;
   log.info(`Downloading prebuilt WDA v${wdaVersion}...`);
   await net.downloadFile(downloadUrl, zipPath, {
-    headers: { 'User-Agent': 'appium-mcp' },
+    headers: {'User-Agent': 'appium-mcp'},
   });
 
   try {
@@ -328,14 +288,10 @@ async function resolveWdaAppPath(
     throw new Error('WebDriverAgent extraction failed - app bundle not found');
   }
 
-  return { wdaAppPath, version: wdaVersion, source: 'download' };
+  return {wdaAppPath, version: wdaVersion, source: 'download'};
 }
 
-async function installWdaStep(
-  result: PrepareResult,
-  udid: string,
-  wdaAppPath: string
-): Promise<void> {
+async function installWdaStep(result: PrepareResult, udid: string, wdaAppPath: string): Promise<void> {
   try {
     const wdaState = await getWDAState(udid);
     const bundleId = await getAppBundleId(wdaAppPath);
@@ -379,14 +335,14 @@ async function installWdaStep(
     const webDriverAgentUrl = wdaBaseUrl(wdaPort);
     result.wdaLocalPort = wdaPort;
     result.webDriverAgentUrl = webDriverAgentUrl;
-    result.capabilitiesHint = { 'appium:webDriverAgentUrl': webDriverAgentUrl };
+    result.capabilitiesHint = {'appium:webDriverAgentUrl': webDriverAgentUrl};
     result.wda_install = {
       status: 'completed',
       detail: `WDA ${wdaState.installed ? 'already installed, ' : ''}launched and ready on ${webDriverAgentUrl}`,
     };
     result.ready = true;
   } catch (error: any) {
-    result.wda_install = { status: 'failed', detail: error.message };
+    result.wda_install = {status: 'failed', detail: error.message};
   }
 }
 
@@ -394,12 +350,12 @@ async function prepareSimulator(
   udid: string,
   skipWda: boolean,
   forceRefreshWda: boolean,
-  platform: 'ios' | 'tvos' = 'ios'
+  platform: 'ios' | 'tvos' = 'ios',
 ): Promise<PrepareResult> {
   const result: PrepareResult = {
-    boot: { status: 'skipped', detail: '' },
-    wda_download: { status: 'skipped', detail: '' },
-    wda_install: { status: 'skipped', detail: '' },
+    boot: {status: 'skipped', detail: ''},
+    wda_download: {status: 'skipped', detail: ''},
+    wda_install: {status: 'skipped', detail: ''},
     ready: false,
     udid,
   };
@@ -428,20 +384,20 @@ async function prepareSimulator(
       const simctl = new Simctl();
       simctl.udid = udid;
       await simctl.bootDevice();
-      await simctl.startBootMonitor({ timeout: 120000 });
+      await simctl.startBootMonitor({timeout: 120000});
       result.boot = {
         status: 'completed',
         detail: `${simulator.name} booted successfully`,
       };
     }
   } catch (error: any) {
-    result.boot = { status: 'failed', detail: error.message };
+    result.boot = {status: 'failed', detail: error.message};
     return result;
   }
 
   if (skipWda) {
-    result.wda_download = { status: 'skipped', detail: 'skipWda=true' };
-    result.wda_install = { status: 'skipped', detail: 'skipWda=true' };
+    result.wda_download = {status: 'skipped', detail: 'skipWda=true'};
+    result.wda_install = {status: 'skipped', detail: 'skipWda=true'};
     result.ready = true;
     return result;
   }
@@ -470,7 +426,7 @@ async function prepareSimulator(
       };
     }
   } catch (error: any) {
-    result.wda_download = { status: 'failed', detail: error.message };
+    result.wda_download = {status: 'failed', detail: error.message};
     result.wda_install = {
       status: 'skipped',
       detail: 'WDA download failed',
@@ -486,30 +442,17 @@ async function prepareSimulator(
 // ── Tool registration ──
 
 const prepareIosSimulatorSchema = z.object({
-  udid: z
-    .string()
-    .describe(
-      'The UDID of the iOS simulator to prepare. Use select_device to get this.'
-    ),
+  udid: z.string().describe('The UDID of the iOS simulator to prepare. Use select_device to get this.'),
   platform: z
     .enum(['ios', 'tvos'])
     .optional()
     .default('ios')
-    .describe(
-      'The simulator platform to download WDA for. Default is "ios". Use "tvos" for Apple TV simulators.'
-    ),
+    .describe('The simulator platform to download WDA for. Default is "ios". Use "tvos" for Apple TV simulators.'),
   skipWda: z
     .boolean()
     .optional()
-    .describe(
-      'If true, only boot the simulator without downloading or installing WDA. Default: false.'
-    ),
-  forceRefreshWda: z
-    .boolean()
-    .optional()
-    .describe(
-      'If true, re-download WDA even if already cached. Default: false.'
-    ),
+    .describe('If true, only boot the simulator without downloading or installing WDA. Default: false.'),
+  forceRefreshWda: z.boolean().optional().describe('If true, re-download WDA even if already cached. Default: false.'),
 });
 
 export default function prepareIosSimulator(server: FastMCP): void {
@@ -522,30 +465,16 @@ export default function prepareIosSimulator(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (
-      args: z.infer<typeof prepareIosSimulatorSchema>
-    ): Promise<ContentResult> => {
+    execute: async (args: z.infer<typeof prepareIosSimulatorSchema>): Promise<ContentResult> => {
       if (process.platform !== 'darwin') {
         throw new Error('iOS simulator preparation is only supported on macOS');
       }
 
-      const {
-        udid,
-        platform = 'ios',
-        skipWda = false,
-        forceRefreshWda = false,
-      } = args;
+      const {udid, platform = 'ios', skipWda = false, forceRefreshWda = false} = args;
 
-      log.info(
-        `Preparing ${platform} simulator ${udid} (skipWda=${skipWda}, forceRefreshWda=${forceRefreshWda})`
-      );
+      log.info(`Preparing ${platform} simulator ${udid} (skipWda=${skipWda}, forceRefreshWda=${forceRefreshWda})`);
 
-      const result = await prepareSimulator(
-        udid,
-        skipWda,
-        forceRefreshWda,
-        platform
-      );
+      const result = await prepareSimulator(udid, skipWda, forceRefreshWda, platform);
 
       return textResult(JSON.stringify(result));
     },

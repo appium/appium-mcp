@@ -5,18 +5,15 @@
  * Implementation aligns with benchmark_model.ts standards.
  */
 
-import { fs, imageUtil } from '@appium/support';
 import crypto from 'node:crypto';
-import { join } from 'node:path';
-import { resolveScreenshotDir } from '../utils/paths.js';
-import { LRUCache } from 'lru-cache';
-import type {
-  AIVisionConfig,
-  BBox,
-  BBoxCoordinates,
-  AIFindResult,
-} from './types.js';
+import {join} from 'node:path';
+
+import {fs, imageUtil} from '@appium/support';
+import {LRUCache} from 'lru-cache';
+
 import log from '../logger.js';
+import {resolveScreenshotDir} from '../utils/paths.js';
+import type {AIVisionConfig, BBox, BBoxCoordinates, AIFindResult} from './types.js';
 
 /**
  * AI Vision Finder class
@@ -33,12 +30,8 @@ export class AIVisionFinder {
       model: process.env.AI_VISION_MODEL || 'Qwen3-VL-235B-A22B-Instruct',
       apiBaseUrl: process.env.AI_VISION_API_BASE_URL || '',
       apiToken: process.env.AI_VISION_API_KEY || '',
-      coordType: (process.env.AI_VISION_COORD_TYPE || 'normalized') as
-        'normalized' | 'absolute',
-      imageMaxWidth: parseInt(
-        process.env.AI_VISION_IMAGE_MAX_WIDTH || '1080',
-        10
-      ),
+      coordType: (process.env.AI_VISION_COORD_TYPE || 'normalized') as 'normalized' | 'absolute',
+      imageMaxWidth: parseInt(process.env.AI_VISION_IMAGE_MAX_WIDTH || '1080', 10),
       imageQuality: parseInt(process.env.AI_VISION_IMAGE_QUALITY || '80', 10),
     };
 
@@ -50,19 +43,13 @@ export class AIVisionFinder {
 
     // Validate required environment variables
     if (!this.config.apiBaseUrl) {
-      throw new Error(
-        'AI_VISION_API_BASE_URL environment variable is required for AI vision finding'
-      );
+      throw new Error('AI_VISION_API_BASE_URL environment variable is required for AI vision finding');
     }
     if (!this.config.apiToken) {
-      throw new Error(
-        'AI_VISION_API_KEY environment variable is required for AI vision finding'
-      );
+      throw new Error('AI_VISION_API_KEY environment variable is required for AI vision finding');
     }
 
-    log.info(
-      `AI Vision Finder initialized with model: ${this.config.model}, coordType: ${this.config.coordType}`
-    );
+    log.info(`AI Vision Finder initialized with model: ${this.config.model}, coordType: ${this.config.coordType}`);
   }
 
   /**
@@ -77,7 +64,7 @@ export class AIVisionFinder {
     screenshotBase64: string,
     instruction: string,
     imageWidth: number,
-    imageHeight: number
+    imageHeight: number,
   ): Promise<AIFindResult> {
     try {
       log.info(`AI Vision: Finding element with instruction: "${instruction}"`);
@@ -92,31 +79,24 @@ export class AIVisionFinder {
       }
 
       // Step 1: Compress image using @appium/support
-      const { base64: compressedBase64, mimeType: compressedMimeType } =
-        await this.compressImage(screenshotBase64, imageWidth, imageHeight);
+      const {base64: compressedBase64, mimeType: compressedMimeType} = await this.compressImage(
+        screenshotBase64,
+        imageWidth,
+        imageHeight,
+      );
 
       // Step 2: Build prompt (always use original image dimensions)
       const prompt = this.buildPrompt(instruction, imageWidth, imageHeight);
 
       // Step 3: Call vision model API
-      const response = await this.callVisionAPI(
-        compressedBase64,
-        prompt,
-        compressedMimeType
-      );
+      const response = await this.callVisionAPI(compressedBase64, prompt, compressedMimeType);
 
       // Step 4: Parse bbox from response
-      const { target, bbox_2d } = this.parseBBox(response);
-      log.debug(
-        `AI Vision: Parsed target: "${target}", bbox: [${bbox_2d.join(', ')}]`
-      );
+      const {target, bbox_2d} = this.parseBBox(response);
+      log.debug(`AI Vision: Parsed target: "${target}", bbox: [${bbox_2d.join(', ')}]`);
 
       // Step 5: Convert coordinates (normalized or absolute)
-      const absoluteBBox = this.convertCoordinates(
-        bbox_2d,
-        imageWidth,
-        imageHeight
-      );
+      const absoluteBBox = this.convertCoordinates(bbox_2d, imageWidth, imageHeight);
 
       // Step 6: Calculate center point for tapping
       const center = {
@@ -124,9 +104,7 @@ export class AIVisionFinder {
         y: Math.floor((absoluteBBox[1] + absoluteBBox[3]) / 2),
       };
 
-      log.info(
-        `AI Vision: Final center coordinates: (${center.x}, ${center.y})`
-      );
+      log.info(`AI Vision: Final center coordinates: (${center.x}, ${center.y})`);
 
       // Step 7: Draw bbox on image and save (with error handling)
       let annotatedImagePath: string | undefined;
@@ -136,7 +114,7 @@ export class AIVisionFinder {
           absoluteBBox,
           imageWidth,
           imageHeight,
-          target
+          target,
         );
       } catch (error) {
         // Annotation failure should not block the main flow
@@ -178,8 +156,8 @@ export class AIVisionFinder {
   private async compressImage(
     base64Image: string,
     width: number,
-    height: number
-  ): Promise<{ base64: string; mimeType: string }> {
+    height: number,
+  ): Promise<{base64: string; mimeType: string}> {
     try {
       const imageBuffer = Buffer.from(base64Image, 'base64');
 
@@ -190,40 +168,26 @@ export class AIVisionFinder {
       // Resize only when using normalized coordinates.
       // In absolute mode, resizing would shift the model's returned pixel
       // coordinates away from the original screen dimensions.
-      const shouldResize =
-        this.config.coordType === 'normalized' &&
-        width > this.config.imageMaxWidth;
+      const shouldResize = this.config.coordType === 'normalized' && width > this.config.imageMaxWidth;
 
       if (shouldResize) {
         const scaleFactor = this.config.imageMaxWidth / width;
         const newHeight = Math.floor(height * scaleFactor);
+        log.info(`AI Vision: Resizing image from ${width}x${height} to ${this.config.imageMaxWidth}x${newHeight}`);
+        sharpInstance = sharpInstance.resize(this.config.imageMaxWidth, newHeight);
+      } else if (this.config.coordType === 'absolute' && width > this.config.imageMaxWidth) {
         log.info(
-          `AI Vision: Resizing image from ${width}x${height} to ${this.config.imageMaxWidth}x${newHeight}`
-        );
-        sharpInstance = sharpInstance.resize(
-          this.config.imageMaxWidth,
-          newHeight
-        );
-      } else if (
-        this.config.coordType === 'absolute' &&
-        width > this.config.imageMaxWidth
-      ) {
-        log.info(
-          `AI Vision: Skipping resize in absolute coord mode to preserve coordinate mapping (image: ${width}x${height})`
+          `AI Vision: Skipping resize in absolute coord mode to preserve coordinate mapping (image: ${width}x${height})`,
         );
       }
 
       // Compress to JPEG with quality setting
-      const compressedBuffer = await sharpInstance
-        .jpeg({ quality: this.config.imageQuality })
-        .toBuffer();
+      const compressedBuffer = await sharpInstance.jpeg({quality: this.config.imageQuality}).toBuffer();
 
       const originalSize = imageBuffer.length;
       const compressedSize = compressedBuffer.length;
       const reduction = ((1 - compressedSize / originalSize) * 100).toFixed(1);
-      log.info(
-        `AI Vision: Image compressed: ${originalSize} → ${compressedSize} bytes (${reduction}% reduction)`
-      );
+      log.info(`AI Vision: Image compressed: ${originalSize} → ${compressedSize} bytes (${reduction}% reduction)`);
 
       return {
         base64: compressedBuffer.toString('base64'),
@@ -233,7 +197,7 @@ export class AIVisionFinder {
       // If compression fails, return original PNG image with correct MIME type.
       // Appium screenshots are always PNG, so we must not claim image/jpeg here.
       log.warn('AI Vision: Image compression failed, using original:', error);
-      return { base64: base64Image, mimeType: 'image/png' };
+      return {base64: base64Image, mimeType: 'image/png'};
     }
   }
 
@@ -241,11 +205,7 @@ export class AIVisionFinder {
    * Build prompt for vision model
    * Matches benchmark_model.ts prompt format for consistency
    */
-  private buildPrompt(
-    instruction: string,
-    width: number,
-    height: number
-  ): string {
+  private buildPrompt(instruction: string, width: number, height: number): string {
     const isNormalized = this.config.coordType === 'normalized';
 
     const coordSection = isNormalized
@@ -296,11 +256,7 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
    * Call vision model API
    * Matches benchmark_model.ts implementation
    */
-  private async callVisionAPI(
-    imageBase64: string,
-    prompt: string,
-    mimeType: string = 'image/jpeg'
-  ): Promise<string> {
+  private async callVisionAPI(imageBase64: string, prompt: string, mimeType: string = 'image/jpeg'): Promise<string> {
     const controller = new AbortController();
     const timeoutMs = 120000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -309,54 +265,46 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
       log.info(`AI Vision: Calling API with model: ${this.config.model}`);
       const startTime = Date.now();
 
-      const response = await fetch(
-        `${this.config.apiBaseUrl}/chat/completions`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.config.apiToken}`,
-          },
-          body: JSON.stringify({
-            model: this.config.model,
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  { type: 'text', text: prompt },
-                  {
-                    type: 'image_url',
-                    image_url: {
-                      url: `data:${mimeType};base64,${imageBase64}`,
-                    },
-                    // Image size control parameters (from benchmark_model.ts)
-                    min_pixels: 64 * 32 * 32, // 65536 pixels
-                    max_pixels: 2560 * 32 * 32, // 2621440 pixels
+      const response = await fetch(`${this.config.apiBaseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.apiToken}`,
+        },
+        body: JSON.stringify({
+          model: this.config.model,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {type: 'text', text: prompt},
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:${mimeType};base64,${imageBase64}`,
                   },
-                ],
-              },
-            ],
-            max_tokens: 4096,
-          }),
-          signal: controller.signal,
-        }
-      );
+                  // Image size control parameters (from benchmark_model.ts)
+                  min_pixels: 64 * 32 * 32, // 65536 pixels
+                  max_pixels: 2560 * 32 * 32, // 2621440 pixels
+                },
+              ],
+            },
+          ],
+          max_tokens: 4096,
+        }),
+        signal: controller.signal,
+      });
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(async () => ({ message: await response.text() }));
-        const errorDetail =
-          errorData?.error?.message ||
-          errorData?.message ||
-          `HTTP ${response.status}`;
+        const errorData = await response.json().catch(async () => ({message: await response.text()}));
+        const errorDetail = errorData?.error?.message || errorData?.message || `HTTP ${response.status}`;
         const errorMessage = `HTTP ${response.status}: ${errorDetail}`;
         log.error(`AI Vision: API call failed: ${errorMessage}`);
         throw new Error(`Vision API call failed: ${errorMessage}`);
       }
 
       const data = (await response.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
+        choices?: Array<{message?: {content?: string}}>;
       };
 
       const duration = Date.now() - startTime;
@@ -364,9 +312,7 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
 
       const content = data.choices?.[0]?.message?.content;
       if (!content) {
-        throw new Error(
-          'Vision API response missing choices[0].message.content'
-        );
+        throw new Error('Vision API response missing choices[0].message.content');
       }
 
       return content;
@@ -393,16 +339,10 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
       // Try to match JSON format bbox.
       // Use a key-order-independent regex: locate the object by the presence of
       // "bbox_2d": [...] regardless of whether "target" comes before or after it.
-      const jsonMatch = response.match(
-        /\{[^}]*"bbox_2d"\s*:\s*\[[^\]]+\][^}]*\}/
-      );
+      const jsonMatch = response.match(/\{[^}]*"bbox_2d"\s*:\s*\[[^\]]+\][^}]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
-        if (
-          parsed.bbox_2d &&
-          Array.isArray(parsed.bbox_2d) &&
-          parsed.bbox_2d.length === 4
-        ) {
+        if (parsed.bbox_2d && Array.isArray(parsed.bbox_2d) && parsed.bbox_2d.length === 4) {
           return parsed;
         }
       }
@@ -460,13 +400,11 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
       x2 = Math.floor((x2 / 1000) * width);
       y2 = Math.floor((y2 / 1000) * height);
       log.debug(
-        `AI Vision: Converted normalized coords ${JSON.stringify(originalCoords)} to absolute: [${x1}, ${y1}, ${x2}, ${y2}]`
+        `AI Vision: Converted normalized coords ${JSON.stringify(originalCoords)} to absolute: [${x1}, ${y1}, ${x2}, ${y2}]`,
       );
     } else {
       // Absolute pixel coordinates, use directly
-      log.debug(
-        `AI Vision: Using absolute coords: [${x1}, ${y1}, ${x2}, ${y2}]`
-      );
+      log.debug(`AI Vision: Using absolute coords: [${x1}, ${y1}, ${x2}, ${y2}]`);
     }
 
     // Ensure coordinate order is correct (x1 < x2, y1 < y2)
@@ -487,9 +425,7 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
 
     // Validate final coordinates
     if (x1 >= x2 || y1 >= y2) {
-      throw new Error(
-        `Invalid bbox coordinates after conversion: [${x1}, ${y1}, ${x2}, ${y2}]`
-      );
+      throw new Error(`Invalid bbox coordinates after conversion: [${x1}, ${y1}, ${x2}, ${y2}]`);
     }
 
     return [x1, y1, x2, y2];
@@ -510,7 +446,7 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
     bbox: BBox,
     imageWidth: number,
     imageHeight: number,
-    targetName: string
+    targetName: string,
   ): Promise<string> {
     try {
       const [x1, y1, x2, y2] = bbox;
@@ -557,9 +493,7 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
       await fs.writeFile(filepath, annotatedBuffer);
 
       log.info(`AI Vision: Annotated image saved to: ${filepath}`);
-      log.debug(
-        `AI Vision: BBox drawn: [${x1}, ${y1}, ${x2}, ${y2}] (${boxWidth}x${boxHeight})`
-      );
+      log.debug(`AI Vision: BBox drawn: [${x1}, ${y1}, ${x2}, ${y2}] (${boxWidth}x${boxHeight})`);
 
       return filepath;
     } catch (error) {
@@ -572,11 +506,7 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
    * Generate cache key from instruction and image
    */
   private generateCacheKey(instruction: string, imageBase64: string): string {
-    const imageHash = crypto
-      .createHash('md5')
-      .update(imageBase64)
-      .digest('hex')
-      .substring(0, 16);
+    const imageHash = crypto.createHash('md5').update(imageBase64).digest('hex').substring(0, 16);
     return `${instruction}_${imageHash}`;
   }
 

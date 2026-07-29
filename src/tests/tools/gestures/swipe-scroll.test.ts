@@ -1,4 +1,4 @@
-import { describe, test, expect, jest } from '@jest/globals';
+import {describe, test, expect, jest} from '@jest/globals';
 
 jest.unstable_mockModule('../../../persistence', () => ({
   isSessionPersistenceEnabled: jest.fn(() => false),
@@ -10,7 +10,7 @@ jest.unstable_mockModule('../../../persistence', () => ({
 jest.unstable_mockModule('../../../session-store', () => ({
   getDriver: jest.fn(),
   getPlatformName: jest.fn(),
-  PLATFORM: { ios: 'iOS', android: 'Android' },
+  PLATFORM: {ios: 'iOS', android: 'Android'},
   setSession: jest.fn(),
 }));
 
@@ -25,12 +25,11 @@ jest.unstable_mockModule('../../../tools/ai/config', () => ({
   isAIEnabled: jest.fn(() => false),
 }));
 
-const { parseAiElement } =
-  await import('../../../tools/gestures/handlers/ai-element.js');
-const { clampDirectionCoordsToWindow, rectVisibleWithinWindow } =
+const {parseAiElement} = await import('../../../tools/gestures/handlers/ai-element.js');
+const {clampDirectionCoordsToWindow, rectVisibleWithinWindow} =
   await import('../../../tools/gestures/handlers/swipe-scroll.js');
 
-const PHONE_WINDOW = { x: 0, y: 0, width: 400, height: 800 };
+const PHONE_WINDOW = {x: 0, y: 0, width: 400, height: 800};
 
 describe('rectVisibleWithinWindow', () => {
   test('clips ai-element fallback rect that extends past the left edge', () => {
@@ -50,18 +49,15 @@ describe('rectVisibleWithinWindow', () => {
   });
 
   test('returns a 1x1 rect at clamped centre when fully outside the window', () => {
-    const offScreen = { x: 500, y: 900, width: 100, height: 100 };
+    const offScreen = {x: 500, y: 900, width: 100, height: 100};
     const visible = rectVisibleWithinWindow(offScreen, PHONE_WINDOW);
-    expect(visible).toEqual({ x: 399, y: 799, width: 1, height: 1 });
+    expect(visible).toEqual({x: 399, y: 799, width: 1, height: 1});
   });
 });
 
 describe('clampDirectionCoordsToWindow', () => {
   test('clamps swipe endpoints into inclusive window pixel bounds', () => {
-    const clamped = clampDirectionCoordsToWindow(
-      { startX: -20, startY: 900, endX: 500, endY: -10 },
-      PHONE_WINDOW
-    );
+    const clamped = clampDirectionCoordsToWindow({startX: -20, startY: 900, endX: 500, endY: -10}, PHONE_WINDOW);
     expect(clamped).toEqual({
       startX: 0,
       startY: 799,
@@ -71,7 +67,7 @@ describe('clampDirectionCoordsToWindow', () => {
   });
 
   test('preserves in-bounds directional coords', () => {
-    const coords = { startX: 200, startY: 600, endX: 200, endY: 200 };
+    const coords = {startX: 200, startY: 600, endX: 200, endY: 200};
     expect(clampDirectionCoordsToWindow(coords, PHONE_WINDOW)).toEqual(coords);
   });
 });

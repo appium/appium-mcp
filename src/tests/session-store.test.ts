@@ -1,4 +1,4 @@
-import { describe, test, expect, jest, afterEach } from '@jest/globals';
+import {describe, test, expect, jest, afterEach} from '@jest/globals';
 
 // Mock heavy native driver packages so the module can be imported without
 // native dependencies installed in the test environment.
@@ -44,13 +44,12 @@ const {
   PLATFORM,
 } = await import('../session-store.js');
 
-const { AndroidUiautomator2Driver } =
-  await import('appium-uiautomator2-driver');
-const { XCUITestDriver } = await import('appium-xcuitest-driver');
+const {AndroidUiautomator2Driver} = await import('appium-uiautomator2-driver');
+const {XCUITestDriver} = await import('appium-xcuitest-driver');
 
 // Shared mock driver factory with a controllable deleteSession.
 function makeMockDriver(deleteSessionImpl?: () => Promise<void>) {
-  return { deleteSession: deleteSessionImpl ?? (async () => {}) } as any;
+  return {deleteSession: deleteSessionImpl ?? (async () => {})} as any;
 }
 
 afterEach(async () => {
@@ -190,9 +189,7 @@ describe('setSession', () => {
       automationName: 'UiAutomator2',
       deviceName: 'Pixel 9 Pro XL',
     });
-    const session = listSessions().find(
-      (s) => s.sessionId === 'session-meta-fallback'
-    );
+    const session = listSessions().find((s) => s.sessionId === 'session-meta-fallback');
     expect(session?.platform).toBe('Android');
     expect(session?.automationName).toBe('UiAutomator2');
     expect(session?.deviceName).toBe('Pixel 9 Pro XL');
@@ -224,14 +221,14 @@ describe('listSessions', () => {
     const sessions = listSessions();
     expect(sessions).toHaveLength(2);
 
-    const a = sessions.find((s) => s.sessionId === 'session-a')!;
-    const b = sessions.find((s) => s.sessionId === 'session-b')!;
-    expect(a.isActive).toBe(false);
-    expect(b.isActive).toBe(true);
+    const a = sessions.find((s) => s.sessionId === 'session-a');
+    const b = sessions.find((s) => s.sessionId === 'session-b');
+    expect(a?.isActive).toBe(false);
+    expect(b?.isActive).toBe(true);
   });
 
   test('returns currentContext and capabilities for each session', async () => {
-    const caps = { platformName: 'Android' };
+    const caps = {platformName: 'Android'};
     await setSession(makeMockDriver(), 'session-ctx', caps);
     const session = listSessions()[0];
     expect(session.currentContext).toBe('NATIVE_APP');
@@ -308,7 +305,7 @@ describe('isDeletingSessionInProgress', () => {
       resolveDelete = resolve;
     });
 
-    const slowDriver = { deleteSession: () => pending } as any;
+    const slowDriver = {deleteSession: () => pending} as any;
     await setSession(slowDriver, 'slow-session');
 
     const deleteTask = safeDeleteSession('slow-session');
@@ -345,7 +342,7 @@ describe('hasActiveSession', () => {
       resolveDelete = resolve;
     });
 
-    const slowDriver = { deleteSession: () => pending } as any;
+    const slowDriver = {deleteSession: () => pending} as any;
     await setSession(slowDriver, 'active-session');
 
     const deleteTask = safeDeleteSession('active-session');
@@ -415,7 +412,7 @@ describe('safeDeleteSession', () => {
       resolveDelete = resolve;
     });
 
-    const slowDriver = { deleteSession: () => pending } as any;
+    const slowDriver = {deleteSession: () => pending} as any;
     await setSession(slowDriver, 'double-delete-session');
 
     const firstDelete = safeDeleteSession('double-delete-session');
@@ -440,9 +437,7 @@ describe('safeDeleteSession', () => {
     } as any;
 
     await setSession(errorDriver, 'error-session');
-    await expect(safeDeleteSession('error-session')).rejects.toThrow(
-      'driver error'
-    );
+    await expect(safeDeleteSession('error-session')).rejects.toThrow('driver error');
   });
 });
 
@@ -495,7 +490,7 @@ describe('safeDeleteAllSessions', () => {
       } as any,
       'owned-session',
       {},
-      'owned'
+      'owned',
     );
     await setSession(makeMockDriver(), 'attached-session', {}, 'attached');
 
@@ -520,7 +515,7 @@ describe('detachSession / getSessionOwnership', () => {
     await setSession(makeMockDriver(), 'owned-session', {}, 'owned');
 
     expect(() => detachSession('owned-session')).toThrow(
-      'Session owned-session is owned by MCP Appium. Use action=delete to remove it.'
+      'Session owned-session is owned by MCP Appium. Use action=delete to remove it.',
     );
     expect(getDriver('owned-session')).not.toBeNull();
   });
@@ -556,17 +551,17 @@ describe('getPlatformName', () => {
   });
 
   test('returns platform.android for a Client with isAndroid=true', () => {
-    const client = { isAndroid: true, isIOS: false } as any;
+    const client = {isAndroid: true, isIOS: false} as any;
     expect(getPlatformName(client)).toBe(PLATFORM.android);
   });
 
   test('returns platform.ios for a Client with isIOS=true', () => {
-    const client = { isAndroid: false, isIOS: true } as any;
+    const client = {isAndroid: false, isIOS: true} as any;
     expect(getPlatformName(client)).toBe(PLATFORM.ios);
   });
 
   test('throws for an unrecognised driver type', () => {
-    const unknown = { isAndroid: false, isIOS: false } as any;
+    const unknown = {isAndroid: false, isIOS: false} as any;
     expect(() => getPlatformName(unknown)).toThrow('Unknown driver type');
   });
 

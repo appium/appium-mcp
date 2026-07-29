@@ -1,6 +1,6 @@
-import { fileURLToPath } from 'node:url';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
 import * as os from 'node:os';
+import {dirname, isAbsolute, join, resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

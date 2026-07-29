@@ -1,15 +1,12 @@
-import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
-import type { XCUITestDriver } from 'appium-xcuitest-driver';
-import type { Client } from 'webdriver';
+import type {AndroidUiautomator2Driver} from 'appium-uiautomator2-driver';
+import type {XCUITestDriver} from 'appium-xcuitest-driver';
+import type {Client} from 'webdriver';
+
 import log from './logger.js';
-import {
-  removePersistedSession,
-  writePersistedSession,
-} from './persistence.js';
+import {removePersistedSession, writePersistedSession} from './persistence.js';
 
 // Type aliases for driver variants used throughout the project.
-export type DriverInstance =
-  Client | AndroidUiautomator2Driver | XCUITestDriver;
+export type DriverInstance = Client | AndroidUiautomator2Driver | XCUITestDriver;
 export type NullableDriverInstance = DriverInstance | null;
 export type SessionCapabilities = Record<string, any>;
 export type SessionOwnership = 'owned' | 'attached';
@@ -55,10 +52,7 @@ export const PLATFORM = {
  */
 export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
   if (driver) {
-    return (
-      driver.constructor?.name !== 'AndroidUiautomator2Driver' &&
-      driver.constructor?.name !== 'XCUITestDriver'
-    );
+    return driver.constructor?.name !== 'AndroidUiautomator2Driver' && driver.constructor?.name !== 'XCUITestDriver';
   }
   return false;
 }
@@ -76,7 +70,7 @@ export function isRemoteDriverSession(driver: NullableDriverInstance): boolean {
  * @returns `true` if `driver` is an `AndroidUiautomator2Driver`.
  */
 export function isAndroidUiautomator2DriverSession(
-  driver: NullableDriverInstance
+  driver: NullableDriverInstance,
 ): driver is AndroidUiautomator2Driver {
   return driver?.constructor?.name === 'AndroidUiautomator2Driver';
 }
@@ -92,9 +86,7 @@ export function isAndroidUiautomator2DriverSession(
  *   `AndroidUiautomator2Driver`, `XCUITestDriver`, or `null`).
  * @returns `true` if `driver` is an `XCUITestDriver`.
  */
-export function isXCUITestDriverSession(
-  driver: NullableDriverInstance
-): driver is XCUITestDriver {
+export function isXCUITestDriverSession(driver: NullableDriverInstance): driver is XCUITestDriver {
   return driver?.constructor?.name === 'XCUITestDriver';
 }
 
@@ -103,7 +95,7 @@ export async function setSession(
   id: string | null,
   capabilities: SessionCapabilities = {},
   ownership: SessionOwnership = 'owned',
-  remoteServerUrl?: string
+  remoteServerUrl?: string,
 ): Promise<void> {
   await setSessionEntry(d, id, capabilities, ownership, remoteServerUrl);
 }
@@ -152,9 +144,7 @@ export function listSessions(): Array<{
  * @param sessionId - Optional session id to inspect. Defaults to the active session.
  * @returns The session ownership mode, or `null` when the session is missing.
  */
-export function getSessionOwnership(
-  sessionId?: string
-): SessionOwnership | null {
+export function getSessionOwnership(sessionId?: string): SessionOwnership | null {
   const id = sessionId ?? activeSessionId;
   if (!id) {
     return null;
@@ -170,10 +160,7 @@ export function setActiveSession(sessionId: string): boolean {
   return true;
 }
 
-export function setCurrentContext(
-  context: string,
-  sessionId?: string
-): boolean {
+export function setCurrentContext(context: string, sessionId?: string): boolean {
   const id = sessionId ?? activeSessionId;
   if (!id) {
     return false;
@@ -240,9 +227,7 @@ export function detachSession(sessionId?: string): void {
   }
 
   if (session.ownership !== 'attached') {
-    throw new Error(
-      `Session ${id} is owned by MCP Appium. Use action=delete to remove it.`
-    );
+    throw new Error(`Session ${id} is owned by MCP Appium. Use action=delete to remove it.`);
   }
 
   sessions.delete(id);
@@ -324,7 +309,7 @@ async function setSessionEntry(
   id: string | null,
   capabilities: SessionCapabilities,
   ownership: SessionOwnership,
-  remoteServerUrl?: string
+  remoteServerUrl?: string,
 ): Promise<void> {
   if (!id) {
     activeSessionId = null;
@@ -375,9 +360,7 @@ function selectNextActiveSessionId(deletedSessionId: string): string | null {
     return activeSessionId;
   }
 
-  const nextSession = Array.from(sessions.keys()).find(
-    (id) => id !== deletedSessionId
-  );
+  const nextSession = Array.from(sessions.keys()).find((id) => id !== deletedSessionId);
   return nextSession ?? null;
 }
 

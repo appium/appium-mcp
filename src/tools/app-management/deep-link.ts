@@ -1,4 +1,8 @@
-import type { ContentResult } from 'fastmcp';
+import type {AndroidUiautomator2Driver} from 'appium-uiautomator2-driver';
+import type {XCUITestDriver} from 'appium-xcuitest-driver';
+import type {ContentResult} from 'fastmcp';
+
+import {execute} from '../../command.js';
 import {
   getPlatformName,
   isRemoteDriverSession,
@@ -6,33 +10,25 @@ import {
   isXCUITestDriverSession,
   PLATFORM,
 } from '../../session-store.js';
-import { execute } from '../../command.js';
-import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
-import type { XCUITestDriver } from 'appium-xcuitest-driver';
-import {
-  resolveDriver,
-  textResult,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 export async function deepLink(
   url: string,
   appId?: string,
   waitForLaunch?: boolean,
-  sessionId?: string
+  sessionId?: string,
 ): Promise<ContentResult> {
   const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
-  const { driver } = resolved;
+  const {driver} = resolved;
 
   try {
     if (isRemoteDriverSession(driver)) {
       const platform = getPlatformName(driver);
       if (platform === PLATFORM.android) {
-        const params: Record<string, unknown> = { url };
+        const params: Record<string, unknown> = {url};
         if (appId != null) {
           params.package = appId;
         }
@@ -41,34 +37,24 @@ export async function deepLink(
         }
         await execute(driver, 'mobile: deepLink', params);
       } else if (platform === PLATFORM.ios) {
-        const params: Record<string, unknown> = { url };
+        const params: Record<string, unknown> = {url};
         if (appId != null) {
           params.bundleId = appId;
         }
         await execute(driver, 'mobile: deepLink', params);
       } else {
-        return errorResult(
-          `Unsupported platform: ${platform}. Only Android and iOS are supported.`
-        );
+        return errorResult(`Unsupported platform: ${platform}. Only Android and iOS are supported.`);
       }
     } else if (isAndroidUiautomator2DriverSession(driver)) {
-      await (driver as AndroidUiautomator2Driver).mobileDeepLink(
-        url,
-        appId ?? undefined,
-        waitForLaunch ?? true
-      );
+      await (driver as AndroidUiautomator2Driver).mobileDeepLink(url, appId ?? undefined, waitForLaunch ?? true);
     } else if (isXCUITestDriverSession(driver)) {
       await (driver as XCUITestDriver).mobileDeepLink(url, appId ?? undefined);
     } else {
       return errorResult('Unsupported driver for deep link');
     }
 
-    return textResult(
-      `Successfully opened deep link "${url}"${appId ? ` with app ${appId}` : ''}`
-    );
+    return textResult(`Successfully opened deep link "${url}"${appId ? ` with app ${appId}` : ''}`);
   } catch (err: unknown) {
-    return errorResult(
-      `Failed to open deep link "${url}". err: ${toolErrorMessage(err)}`
-    );
+    return errorResult(`Failed to open deep link "${url}". err: ${toolErrorMessage(err)}`);
   }
 }

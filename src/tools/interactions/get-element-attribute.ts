@@ -1,14 +1,10 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { elementUUIDScheme } from '../../schema.js';
-import { getElementAttribute } from '../../command.js';
-import {
-  resolveDriver,
-  textResultWithPrimaryElementId,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
-import { aiElementWebDriverRejectionIfNeeded } from '../gestures/handlers/ai-element.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {getElementAttribute} from '../../command.js';
+import {elementUUIDScheme} from '../../schema.js';
+import {aiElementWebDriverRejectionIfNeeded} from '../gestures/handlers/ai-element.js';
+import {resolveDriver, textResultWithPrimaryElementId, errorResult, toolErrorMessage} from '../tool-response.js';
 
 export default function getElementAttributeTool(server: FastMCP): void {
   const schema = z.object({
@@ -16,12 +12,9 @@ export default function getElementAttributeTool(server: FastMCP): void {
     attribute: z
       .string()
       .describe(
-        'The attribute name to retrieve. Common attributes: "enabled", "selected", "displayed", "checked", "focused", "clickable", "scrollable", "focusable", "name", "value", "label", "text", "content-desc", "resource-id", "class", "package".'
+        'The attribute name to retrieve. Common attributes: "enabled", "selected", "displayed", "checked", "focused", "clickable", "scrollable", "focusable", "name", "value", "label", "text", "content-desc", "resource-id", "class", "package".',
       ),
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -35,13 +28,13 @@ export default function getElementAttributeTool(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof schema>,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       const aiRejection = aiElementWebDriverRejectionIfNeeded(args.elementUUID);
       if (aiRejection) {
@@ -49,11 +42,7 @@ export default function getElementAttributeTool(server: FastMCP): void {
       }
 
       try {
-        const value = await getElementAttribute(
-          driver,
-          args.elementUUID,
-          args.attribute
-        );
+        const value = await getElementAttribute(driver, args.elementUUID, args.attribute);
         const detail =
           value !== null
             ? `Attribute "${args.attribute}" of element ${args.elementUUID}: ${value}`
@@ -61,7 +50,7 @@ export default function getElementAttributeTool(server: FastMCP): void {
         return textResultWithPrimaryElementId(args.elementUUID, detail);
       } catch (err: unknown) {
         return errorResult(
-          `Failed to get attribute "${args.attribute}" from element ${args.elementUUID}. err: ${toolErrorMessage(err)}`
+          `Failed to get attribute "${args.attribute}" from element ${args.elementUUID}. err: ${toolErrorMessage(err)}`,
         );
       }
     },

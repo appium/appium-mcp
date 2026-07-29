@@ -1,5 +1,5 @@
-import { getDriver, getSessionId, listSessions } from '../../session-store.js';
-import { textResult } from '../tool-response.js';
+import {getDriver, getSessionId, listSessions} from '../../session-store.js';
+import {textResult} from '../tool-response.js';
 
 export async function listSessionsAction(): Promise<any> {
   const sessions = listSessions();
@@ -18,6 +18,6 @@ export async function listSessionsAction(): Promise<any> {
     .join('\n');
 
   return textResult(
-    `Active session: ${activeSessionId || 'Unknown'}\nSelect with: action=select { "sessionId": "..." }\n\nSessions:\n${sessionSummary}`
+    `Active session: ${activeSessionId || 'Unknown'}\nSelect with: action=select { "sessionId": "..." }\n\nSessions:\n${sessionSummary}`,
   );
 }

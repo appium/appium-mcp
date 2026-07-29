@@ -1,29 +1,24 @@
-import { afterEach, describe, expect, test } from '@jest/globals';
-import { createHash } from 'node:crypto';
-import { constants } from 'node:fs';
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {constants} from 'node:fs';
+import {access, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {
-  readAllPersistedSessions,
-  type PersistedSession,
-} from '../persistence.js';
 
-const originalPersistencePath =
-  process.env.APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH;
+import {afterEach, describe, expect, test} from '@jest/globals';
+
+import {readAllPersistedSessions, type PersistedSession} from '../persistence.js';
+
+const originalPersistencePath = process.env.APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH;
 const tempDirs: string[] = [];
 
 afterEach(async () => {
   if (originalPersistencePath === undefined) {
     delete process.env.APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH;
   } else {
-    process.env.APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH =
-      originalPersistencePath;
+    process.env.APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH = originalPersistencePath;
   }
 
-  await Promise.all(
-    tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))
-  );
+  await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, {recursive: true, force: true})));
 });
 
 describe('readAllPersistedSessions', () => {
@@ -73,28 +68,23 @@ describe('readAllPersistedSessions', () => {
     const dir = await createTempPersistenceDir();
     const sessionId = 'session-789';
 
-    await writeSessionFile(
-      dir,
-      `${sessionId}.json`,
-      persistedSession(sessionId, 'http://legacy.example')
-    );
-    await writeSessionFile(
-      dir,
-      'duplicate-session.json',
-      persistedSession(sessionId, 'http://duplicate.example')
-    );
+    await writeSessionFile(dir, `${sessionId}.json`, persistedSession(sessionId, 'http://legacy.example'));
+    await writeSessionFile(dir, 'duplicate-session.json', persistedSession(sessionId, 'http://duplicate.example'));
 
     const sessions = await readAllPersistedSessions();
 
     expect(sessions).toHaveLength(1);
     expect(sessions[0]?.sessionId).toBe(sessionId);
-    expect(['http://legacy.example', 'http://duplicate.example']).toContain(
-      sessions[0]?.remoteServerUrl
-    );
+    expect(['http://legacy.example', 'http://duplicate.example']).toContain(sessions[0]?.remoteServerUrl);
 
     await expectFileMissing(path.join(dir, `${sessionId}.json`));
     await expectFileMissing(path.join(dir, 'duplicate-session.json'));
-    await expectCanonicalSession(dir, sessionId, sessions[0]!.remoteServerUrl);
+    const remoteServerUrl = sessions[0]?.remoteServerUrl;
+    expect(remoteServerUrl).toBeDefined();
+    if (remoteServerUrl === undefined) {
+      throw new Error('Expected the migrated session to include a remote server URL');
+    }
+    await expectCanonicalSession(dir, sessionId, remoteServerUrl);
   });
 
   test('still migrates and returns a legacy file when no canonical file exists', async () => {
@@ -124,22 +114,15 @@ async function createTempPersistenceDir(): Promise<string> {
   return dir;
 }
 
-async function writeSessionFile(
-  dir: string,
-  name: string,
-  session: PersistedSession
-): Promise<void> {
+async function writeSessionFile(dir: string, name: string, session: PersistedSession): Promise<void> {
   await writeFile(path.join(dir, name), JSON.stringify(session, null, 2));
 }
 
-function persistedSession(
-  sessionId: string,
-  remoteServerUrl: string
-): PersistedSession {
+function persistedSession(sessionId: string, remoteServerUrl: string): PersistedSession {
   return {
     sessionId,
     remoteServerUrl,
-    capabilities: { platformName: 'Android' },
+    capabilities: {platformName: 'Android'},
     platform: 'Android',
     automationName: 'UiAutomator2',
     deviceName: 'Pixel',
@@ -159,13 +142,9 @@ async function expectFileMissing(filePath: string): Promise<void> {
   await expect(access(filePath, constants.F_OK)).rejects.toThrow();
 }
 
-async function expectCanonicalSession(
-  dir: string,
-  sessionId: string,
-  remoteServerUrl: string
-): Promise<void> {
+async function expectCanonicalSession(dir: string, sessionId: string, remoteServerUrl: string): Promise<void> {
   const filePath = path.join(dir, hashedSessionFilename(sessionId));
   await expectFileExists(filePath);
   const raw = await readFile(filePath, 'utf8');
-  expect(JSON.parse(raw)).toMatchObject({ sessionId, remoteServerUrl });
+  expect(JSON.parse(raw)).toMatchObject({sessionId, remoteServerUrl});
 }

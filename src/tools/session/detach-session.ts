@@ -1,5 +1,5 @@
-import { detachSession, getSessionOwnership } from '../../session-store.js';
-import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
+import {detachSession, getSessionOwnership} from '../../session-store.js';
+import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
 
 /**
  * Detach an attached Appium session from MCP Appium without deleting the
@@ -11,15 +11,13 @@ import { errorResult, textResult, toolErrorMessage } from '../tool-response.js';
 export async function detachSessionAction(sessionId?: string): Promise<any> {
   const ownership = getSessionOwnership(sessionId);
   if (!ownership) {
-    return errorResult(
-      sessionId ? `Session ${sessionId} not found.` : 'No active session found.'
-    );
+    return errorResult(sessionId ? `Session ${sessionId} not found.` : 'No active session found.');
   }
   if (ownership !== 'attached') {
     return errorResult(
       sessionId
         ? `Session ${sessionId} is owned by MCP Appium. Use action=delete to remove it.`
-        : 'Active session is owned by MCP Appium. Use action=delete to remove it.'
+        : 'Active session is owned by MCP Appium. Use action=delete to remove it.',
     );
   }
 
@@ -30,8 +28,6 @@ export async function detachSessionAction(sessionId?: string): Promise<any> {
   }
 
   return textResult(
-    sessionId
-      ? `Session ${sessionId} detached successfully.`
-      : 'Active session detached successfully.'
+    sessionId ? `Session ${sessionId} detached successfully.` : 'Active session detached successfully.',
   );
 }

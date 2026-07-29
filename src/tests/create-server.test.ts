@@ -1,10 +1,7 @@
-import { afterEach, describe, expect, jest, test } from '@jest/globals';
-import type {
-  AppiumMcpPlugin,
-  ToolCallContext,
-  ToolCallResult,
-} from '../plugin.js';
-import { z } from 'zod';
+import {afterEach, describe, expect, jest, test} from '@jest/globals';
+import {z} from 'zod';
+
+import type {AppiumMcpPlugin, ToolCallContext, ToolCallResult} from '../plugin.js';
 
 type ToolDef = {
   name: string;
@@ -42,19 +39,14 @@ class MockFastMCP {
   addResourceTemplatesCallCount = 0;
   addResourcesCallCount = 0;
   addToolsCallCount = 0;
-  private readonly handlers = new Map<
-    string,
-    Array<(event: unknown) => unknown>
-  >();
+  private readonly handlers = new Map<string, Array<(event: unknown) => unknown>>();
 
   constructor(readonly options: unknown) {
     registeredServers.push(this);
   }
 
   addTool(toolDef: ToolDef): void {
-    const existingIndex = this.tools.findIndex(
-      (tool) => tool.name === toolDef.name
-    );
+    const existingIndex = this.tools.findIndex((tool) => tool.name === toolDef.name);
     if (existingIndex !== -1) {
       this.tools.splice(existingIndex, 1);
     }
@@ -114,7 +106,7 @@ await jest.unstable_mockModule('../tools/index', () => ({
       description: 'Built-in test tool',
       parameters: {},
       execute: async () => ({
-        content: [{ type: 'text', text: 'builtin result' }],
+        content: [{type: 'text', text: 'builtin result'}],
       }),
     });
     server.addTool({
@@ -122,7 +114,7 @@ await jest.unstable_mockModule('../tools/index', () => ({
       description: 'Blocked test tool',
       parameters: {},
       execute: async () => ({
-        content: [{ type: 'text', text: 'blocked result' }],
+        content: [{type: 'text', text: 'blocked result'}],
       }),
     });
   },
@@ -164,8 +156,8 @@ await jest.unstable_mockModule('../logger', () => ({
   },
 }));
 
-const { createAppiumMcpServer } = await import('../create-server.js');
-const { default: log } = await import('../logger.js');
+const {createAppiumMcpServer} = await import('../create-server.js');
+const {default: log} = await import('../logger.js');
 
 afterEach(() => {
   registeredServers.length = 0;
@@ -179,8 +171,8 @@ afterEach(() => {
 });
 
 describe('createAppiumMcpServer plugin lifecycle', () => {
-  test('disables FastMCP roots negotiation', () => {
-    createAppiumMcpServer();
+  test('disables FastMCP roots negotiation', async () => {
+    await createAppiumMcpServer();
 
     expect(registeredServers[0]?.options).toMatchObject({
       roots: {
@@ -189,8 +181,8 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     });
   });
 
-  test('passes the appium logger to FastMCP', () => {
-    createAppiumMcpServer();
+  test('passes the appium logger to FastMCP', async () => {
+    await createAppiumMcpServer();
 
     const options = registeredServers[0]?.options as {
       logger: Record<string, (...args: unknown[]) => void>;
@@ -226,7 +218,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     expect(registerCalled).toBe(true);
     expect(initialized).toBe(false);
 
-    await server.emitTest('connect', { session: 'client-1' });
+    await server.emitTest('connect', {session: 'client-1'});
 
     expect(initialized).toBe(true);
   });
@@ -239,14 +231,11 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       async beforeCall(ctx: ToolCallContext): Promise<void> {
         calls.push(`before:${ctx.toolName}`);
       },
-      async afterCall(
-        ctx: ToolCallContext,
-        result: ToolCallResult
-      ): Promise<ToolCallResult> {
+      async afterCall(ctx: ToolCallContext, result: ToolCallResult): Promise<ToolCallResult> {
         calls.push(`after:${ctx.toolName}`);
         return {
           ...result,
-          content: [{ type: 'text', text: 'modified builtin result' }],
+          content: [{type: 'text', text: 'modified builtin result'}],
         };
       },
     };
@@ -272,11 +261,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     })) as unknown as MockFastMCP;
 
     expect(server.tools.map((tool) => tool.name)).toEqual(['builtin_tool']);
-    expect(
-      server.resources.map((resource) =>
-        'uri' in resource ? resource.uri : resource.uriTemplate
-      )
-    ).toEqual(['generate://code-with-locators']);
+    expect(server.resources.map((resource) => ('uri' in resource ? resource.uri : resource.uriTemplate))).toEqual([
+      'generate://code-with-locators',
+    ]);
   });
 
   test('applies policy to plugin tools before registration', async () => {
@@ -289,7 +276,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
           description: 'Allowed plugin tool',
           parameters: testToolParameters,
           execute: async () => ({
-            content: [{ type: 'text', text: 'allowed' }],
+            content: [{type: 'text', text: 'allowed'}],
           }),
         });
         registry.addTool({
@@ -297,7 +284,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
           description: 'Blocked plugin tool',
           parameters: testToolParameters,
           execute: async () => ({
-            content: [{ type: 'text', text: 'blocked' }],
+            content: [{type: 'text', text: 'blocked'}],
           }),
         });
       },
@@ -310,10 +297,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       },
     })) as unknown as MockFastMCP;
 
-    expect(server.tools.map((tool) => tool.name)).toEqual([
-      'builtin_tool',
-      'plugin_allowed',
-    ]);
+    expect(server.tools.map((tool) => tool.name)).toEqual(['builtin_tool', 'plugin_allowed']);
   });
 
   test('allows plugin tools to override built-in tools by name', async () => {
@@ -326,7 +310,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
           description: 'Plugin override for built-in test tool',
           parameters: testToolParameters,
           execute: async () => ({
-            content: [{ type: 'text', text: 'plugin override result' }],
+            content: [{type: 'text', text: 'plugin override result'}],
           }),
         });
       },
@@ -336,17 +320,10 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       plugins: [plugin],
     })) as unknown as MockFastMCP;
 
-    expect(server.tools.map((tool) => tool.name)).toEqual([
-      'blocked_tool',
-      'builtin_tool',
-    ]);
+    expect(server.tools.map((tool) => tool.name)).toEqual(['blocked_tool', 'builtin_tool']);
 
-    const overriddenTool = server.tools.find(
-      (tool) => tool.name === 'builtin_tool'
-    );
-    expect(overriddenTool?.description).toBe(
-      'Plugin override for built-in test tool'
-    );
+    const overriddenTool = server.tools.find((tool) => tool.name === 'builtin_tool');
+    expect(overriddenTool?.description).toBe('Plugin override for built-in test tool');
 
     const result = (await overriddenTool?.execute({}, {})) as ToolCallResult;
     expect(result.content[0]).toEqual({
@@ -368,19 +345,19 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
         name: 'batch_allowed_first',
         description: 'Allowed batch tool',
         parameters: {},
-        execute: async () => ({ content: [] }),
+        execute: async () => ({content: []}),
       },
       {
         name: 'batch_blocked',
         description: 'Blocked batch tool',
         parameters: {},
-        execute: async () => ({ content: [] }),
+        execute: async () => ({content: []}),
       },
       {
         name: 'batch_allowed_second',
         description: 'Allowed batch tool',
         parameters: {},
-        execute: async () => ({ content: [] }),
+        execute: async () => ({content: []}),
       },
     ]);
 
@@ -388,12 +365,12 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       {
         uri: 'batch://allowed-resource',
         name: 'Batch Allowed Resource',
-        load: async () => ({ text: 'allowed resource' }),
+        load: async () => ({text: 'allowed resource'}),
       },
       {
         uri: 'batch://blocked-resource',
         name: 'Batch Blocked Resource',
-        load: async () => ({ text: 'blocked resource' }),
+        load: async () => ({text: 'blocked resource'}),
       },
     ]);
 
@@ -401,12 +378,12 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       {
         uriTemplate: 'batch://allowed-template/{id}',
         name: 'Batch Allowed Template',
-        load: async () => ({ text: 'allowed template' }),
+        load: async () => ({text: 'allowed template'}),
       },
       {
         uriTemplate: 'batch://blocked-template/{id}',
         name: 'Batch Blocked Template',
-        load: async () => ({ text: 'blocked template' }),
+        load: async () => ({text: 'blocked template'}),
       },
     ]);
 
@@ -438,10 +415,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       async beforeCall(ctx: ToolCallContext): Promise<void> {
         calls.push(`before:${ctx.toolName}`);
       },
-      async afterCall(
-        ctx: ToolCallContext,
-        result: ToolCallResult
-      ): Promise<ToolCallResult> {
+      async afterCall(ctx: ToolCallContext, result: ToolCallResult): Promise<ToolCallResult> {
         calls.push(`after:${ctx.toolName}`);
         return result;
       },
@@ -460,7 +434,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
         description: 'Allowed batch tool',
         parameters: {},
         execute: async () => ({
-          content: [{ type: 'text', text: 'batch result' }],
+          content: [{type: 'text', text: 'batch result'}],
         }),
       },
       {
@@ -468,25 +442,18 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
         description: 'Blocked batch tool',
         parameters: {},
         execute: async () => ({
-          content: [{ type: 'text', text: 'blocked result' }],
+          content: [{type: 'text', text: 'blocked result'}],
         }),
       },
     ]);
 
-    expect(server.tools.map((tool) => tool.name)).toEqual([
-      'builtin_tool',
-      'batch_allowed',
-    ]);
+    expect(server.tools.map((tool) => tool.name)).toEqual(['builtin_tool', 'batch_allowed']);
 
-    const batchTool = server.tools.find(
-      (tool) => tool.name === 'batch_allowed'
-    );
+    const batchTool = server.tools.find((tool) => tool.name === 'batch_allowed');
     await batchTool?.execute({}, {});
 
     expect(calls).toEqual(['before:batch_allowed', 'after:batch_allowed']);
-    expect(log.warn).toHaveBeenCalledWith(
-      'Policy denied tool registration: batch_blocked (not_in_allowlist)'
-    );
+    expect(log.warn).toHaveBeenCalledWith('Policy denied tool registration: batch_blocked (not_in_allowlist)');
   });
 
   test('skips fully denied batch registration calls', async () => {
@@ -502,27 +469,27 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
         name: 'batch_blocked_first',
         description: 'Blocked batch tool',
         parameters: {},
-        execute: async () => ({ content: [] }),
+        execute: async () => ({content: []}),
       },
       {
         name: 'batch_blocked_second',
         description: 'Blocked batch tool',
         parameters: {},
-        execute: async () => ({ content: [] }),
+        execute: async () => ({content: []}),
       },
     ]);
     server.addResources([
       {
         uri: 'batch://blocked-resource',
         name: 'Batch Blocked Resource',
-        load: async () => ({ text: 'blocked resource' }),
+        load: async () => ({text: 'blocked resource'}),
       },
     ]);
     server.addResourceTemplates([
       {
         uriTemplate: 'batch://blocked-template/{id}',
         name: 'Batch Blocked Template',
-        load: async () => ({ text: 'blocked template' }),
+        load: async () => ({text: 'blocked template'}),
       },
     ]);
 
@@ -530,15 +497,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     expect(server.addResourcesCallCount).toBe(0);
     expect(server.addResourceTemplatesCallCount).toBe(0);
     expect(server.tools.map((tool) => tool.name)).toEqual(['builtin_tool']);
-    expect(server.resources.map((resource) => resource.name)).toEqual([
-      'Generate Code With Locators',
-    ]);
-    expect(log.warn).toHaveBeenCalledWith(
-      'Policy denied tool registration: batch_blocked_first (not_in_allowlist)'
-    );
-    expect(log.warn).toHaveBeenCalledWith(
-      'Policy denied tool registration: batch_blocked_second (not_in_allowlist)'
-    );
+    expect(server.resources.map((resource) => resource.name)).toEqual(['Generate Code With Locators']);
+    expect(log.warn).toHaveBeenCalledWith('Policy denied tool registration: batch_blocked_first (not_in_allowlist)');
+    expect(log.warn).toHaveBeenCalledWith('Policy denied tool registration: batch_blocked_second (not_in_allowlist)');
   });
 
   test('matches resource templates by name only', async () => {
@@ -552,12 +513,12 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     server.addResourceTemplate({
       uriTemplate: 'batch://not-the-policy-target/{id}',
       name: 'Allowed Template',
-      load: async () => ({ text: 'allowed template' }),
+      load: async () => ({text: 'allowed template'}),
     });
 
     server.addResourceTemplate({
       uriTemplate: 'batch://allowed-template/{id}',
-      load: async () => ({ text: 'unnamed template' }),
+      load: async () => ({text: 'unnamed template'}),
     });
 
     expect(server.resources).toEqual([
@@ -567,7 +528,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       }),
     ]);
     expect(log.warn).toHaveBeenCalledWith(
-      'Policy denied resource template registration: <unnamed>; uriTemplate=batch://allowed-template/{id} (not_in_allowlist)'
+      'Policy denied resource template registration: <unnamed>; uriTemplate=batch://allowed-template/{id} (not_in_allowlist)',
     );
   });
 
@@ -577,7 +538,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
         policy: {
           allowTools: ['builtin_tool'] as unknown as RegExp[],
         },
-      })
+      }),
     ).rejects.toThrow('policy.allowTools must contain only RegExp values');
   });
 
@@ -599,14 +560,14 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       plugins: [plugin],
     })) as unknown as MockFastMCP;
 
-    await server.emitTest('connect', { session: 'client-1' });
-    await server.emitTest('connect', { session: 'client-2' });
-    await server.emitTest('disconnect', { session: 'client-1' });
+    await server.emitTest('connect', {session: 'client-1'});
+    await server.emitTest('connect', {session: 'client-2'});
+    await server.emitTest('disconnect', {session: 'client-1'});
 
     expect(initializeCount).toBe(1);
     expect(destroyCount).toBe(0);
 
-    await server.emitTest('disconnect', { session: 'client-2' });
+    await server.emitTest('disconnect', {session: 'client-2'});
 
     expect(destroyCount).toBe(1);
   });
@@ -634,8 +595,8 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       plugins: [plugin],
     })) as unknown as MockFastMCP;
 
-    const connectA = server.emitTest('connect', { session: 'client-1' });
-    const connectB = server.emitTest('connect', { session: 'client-2' });
+    const connectA = server.emitTest('connect', {session: 'client-1'});
+    const connectB = server.emitTest('connect', {session: 'client-2'});
 
     await initializeStarted;
     expect(initializeCount).toBe(1);
@@ -667,22 +628,17 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       plugins: [plugin],
     })) as unknown as MockFastMCP;
 
-    await server.emitTest('connect', { session: 'client-1' });
-    const disconnect = server.emitTest('disconnect', { session: 'client-1' });
+    await server.emitTest('connect', {session: 'client-1'});
+    const disconnect = server.emitTest('disconnect', {session: 'client-1'});
     await Promise.resolve();
-    const reconnect = server.emitTest('connect', { session: 'client-2' });
+    const reconnect = server.emitTest('connect', {session: 'client-2'});
 
     expect(calls).toEqual(['initialize', 'destroy-start']);
 
     resolveDestroy?.();
     await Promise.all([disconnect, reconnect]);
 
-    expect(calls).toEqual([
-      'initialize',
-      'destroy-start',
-      'destroy-end',
-      'initialize',
-    ]);
+    expect(calls).toEqual(['initialize', 'destroy-start', 'destroy-end', 'initialize']);
   });
 
   test('destroys plugins after final disconnect during pending initialization', async () => {
@@ -707,9 +663,9 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       plugins: [plugin],
     })) as unknown as MockFastMCP;
 
-    const connect = server.emitTest('connect', { session: 'client-1' });
+    const connect = server.emitTest('connect', {session: 'client-1'});
     await Promise.resolve();
-    const disconnect = server.emitTest('disconnect', { session: 'client-1' });
+    const disconnect = server.emitTest('disconnect', {session: 'client-1'});
 
     expect(initializeCount).toBe(1);
     expect(destroyCount).toBe(0);
@@ -722,7 +678,7 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
 
   test('destroys plugins on final disconnect when session cleanup policy is skip', async () => {
     process.env.APPIUM_MCP_ON_CLIENT_DISCONNECT = 'skip';
-    sessions = [{ sessionId: 'session-1', isActive: true, ownership: 'owned' }];
+    sessions = [{sessionId: 'session-1', isActive: true, ownership: 'owned'}];
     let destroyCount = 0;
     const plugin: AppiumMcpPlugin = {
       name: 'skip-policy-plugin',
@@ -737,8 +693,8 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
       plugins: [plugin],
     })) as unknown as MockFastMCP;
 
-    await server.emitTest('connect', { session: 'client-1' });
-    await server.emitTest('disconnect', { session: 'client-1' });
+    await server.emitTest('connect', {session: 'client-1'});
+    await server.emitTest('disconnect', {session: 'client-1'});
 
     expect(safeDeleteAllSessions).not.toHaveBeenCalled();
     expect(destroyCount).toBe(1);

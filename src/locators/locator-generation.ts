@@ -1,30 +1,16 @@
 import * as XPath from 'xpath';
 const xpathSelect = XPath.select;
 
+import type {Document as XMLDocument, Node as XMLNode, Element as XMLElement} from '@xmldom/xmldom';
+
 import log from '../logger.js';
-import { isEmpty, omitNilValues } from '../utils/collection.js';
-import {
-  childNodesOf,
-  domToXML,
-  findDOMNodeByPath,
-  xmlToDOM,
-} from './source-parsing.js';
-import type { JSONElement, ElementAttributes } from './source-parsing.js';
-import type {
-  Document as XMLDocument,
-  Node as XMLNode,
-  Element as XMLElement,
-} from '@xmldom/xmldom';
+import {isEmpty, omitNilValues} from '../utils/collection.js';
+import {childNodesOf, domToXML, findDOMNodeByPath, xmlToDOM} from './source-parsing.js';
+import type {JSONElement, ElementAttributes} from './source-parsing.js';
 
 // Attributes on nodes that are likely to be unique to the node so we should consider first when
 // suggesting xpath locators. These are considered IN ORDER.
-const UNIQUE_XPATH_ATTRIBUTES = [
-  'name',
-  'content-desc',
-  'id',
-  'resource-id',
-  'accessibility-id',
-];
+const UNIQUE_XPATH_ATTRIBUTES = ['name', 'content-desc', 'id', 'resource-id', 'accessibility-id'];
 
 // Attributes that we should recommend as a fallback but ideally only in conjunction with other
 // attributes
@@ -56,19 +42,12 @@ const SIMPLE_STRATEGY_MAPPINGS: [string, string][] = [
 /**
  * Check whether the provided attribute & value are unique in the source
  */
-export function areAttrAndValueUnique(
-  attrName: string,
-  attrValue: string,
-  sourceDoc: XMLDocument
-): boolean {
+export function areAttrAndValueUnique(attrName: string, attrValue: string, sourceDoc: XMLDocument): boolean {
   // If no sourceDoc provided, assume it's unique
   if (!sourceDoc || isEmpty(sourceDoc)) {
     return true;
   }
-  const result = xpathSelect(
-    `//*[@${attrName}="${attrValue.replace(/"/g, '')}"]`,
-    sourceDoc as any
-  );
+  const result = xpathSelect(`//*[@${attrName}="${attrValue.replace(/"/g, '')}"]`, sourceDoc as any);
   return Array.isArray(result) ? result.length < 2 : false;
 }
 
@@ -78,7 +57,7 @@ export function areAttrAndValueUnique(
 export function getSimpleSuggestedLocators(
   attributes: ElementAttributes,
   sourceDoc: XMLDocument,
-  isNative: boolean = true
+  isNative: boolean = true,
 ): Record<string, string> {
   const res: Record<string, string> = {};
   for (const [strategyAlias, strategy] of SIMPLE_STRATEGY_MAPPINGS) {
@@ -100,7 +79,7 @@ export function getComplexSuggestedLocators(
   path: string,
   sourceDoc: XMLDocument,
   isNative: boolean,
-  automationName: string
+  automationName: string,
 ): Record<string, string> {
   const complexLocators: Record<string, string | null> = {};
   const domNode = findDOMNodeByPath(path, sourceDoc);
@@ -109,21 +88,12 @@ export function getComplexSuggestedLocators(
       case 'xcuitest':
       case 'mac2': {
         const optimalClassChain = getOptimalClassChain(sourceDoc, domNode);
-        complexLocators['-ios class chain'] = optimalClassChain
-          ? '**' + optimalClassChain
-          : null;
-        complexLocators['-ios predicate string'] = getOptimalPredicateString(
-          sourceDoc,
-          domNode
-        );
+        complexLocators['-ios class chain'] = optimalClassChain ? '**' + optimalClassChain : null;
+        complexLocators['-ios predicate string'] = getOptimalPredicateString(sourceDoc, domNode);
         break;
       }
       case 'uiautomator2': {
-        complexLocators['-android uiautomator'] = getOptimalUiAutomatorSelector(
-          sourceDoc,
-          domNode,
-          path
-        );
+        complexLocators['-android uiautomator'] = getOptimalUiAutomatorSelector(sourceDoc, domNode, path);
         break;
       }
     }
@@ -141,49 +111,24 @@ export function getSuggestedLocators(
   selectedElement: JSONElement,
   sourceXML: string,
   isNative: boolean,
-  automationName: string
+  automationName: string,
 ): [string, string][] {
   const sourceDoc = xmlToDOM(sourceXML);
-  const simpleLocators = getSimpleSuggestedLocators(
-    selectedElement.attributes,
-    sourceDoc,
-    isNative
-  );
-  const complexLocators = getComplexSuggestedLocators(
-    selectedElement.path,
-    sourceDoc,
-    isNative,
-    automationName
-  );
+  const simpleLocators = getSimpleSuggestedLocators(selectedElement.attributes, sourceDoc, isNative);
+  const complexLocators = getComplexSuggestedLocators(selectedElement.path, sourceDoc, isNative, automationName);
 
   // Combine all locators
-  const allLocators = { ...simpleLocators, ...complexLocators };
+  const allLocators = {...simpleLocators, ...complexLocators};
 
   // Define priority order based on platform preference
   let priorityOrder: string[];
 
-  if (
-    isNative &&
-    (automationName === 'xcuitest' || automationName === 'mac2')
-  ) {
+  if (isNative && (automationName === 'xcuitest' || automationName === 'mac2')) {
     // iOS priority: Accessibility Id > Predicate > Class Chain > XPath > Class Name
-    priorityOrder = [
-      'id',
-      'accessibility id',
-      '-ios predicate string',
-      '-ios class chain',
-      'xpath',
-      'class name',
-    ];
+    priorityOrder = ['id', 'accessibility id', '-ios predicate string', '-ios class chain', 'xpath', 'class name'];
   } else if (isNative && automationName === 'uiautomator2') {
     // Android priority: Accessibility Id > UiAutomator > XPath > Class Name
-    priorityOrder = [
-      'id',
-      'accessibility id',
-      'xpath',
-      '-android uiautomator',
-      'class name',
-    ];
+    priorityOrder = ['id', 'accessibility id', 'xpath', '-android uiautomator', 'class name'];
   } else {
     priorityOrder = ['id', 'class name', 'xpath'];
   }
@@ -214,30 +159,23 @@ export function getSuggestedLocators(
       typeof locator[0] === 'string' &&
       typeof locator[1] === 'string' &&
       locator[0] !== undefined &&
-      locator[1] !== undefined
+      locator[1] !== undefined,
   );
 }
 
 /**
  * Get an optimal XPath for a Node
  */
-export function getOptimalXPath(
-  doc: XMLDocument,
-  domNode: XMLNode
-): string | null {
+export function getOptimalXPath(doc: XMLDocument, domNode: XMLNode): string | null {
   try {
     // BASE CASE #1: If this isn't an element, we're above the root, return empty string
     if (!domNode.nodeName || domNode.nodeType !== 1) {
       return '';
     }
 
-    const attrsForPairs = [
-      ...UNIQUE_XPATH_ATTRIBUTES,
-      ...MAYBE_UNIQUE_XPATH_ATTRIBUTES,
-    ];
-    const attrPairsPermutations: [string, string][] = attrsForPairs.flatMap(
-      (v1, i) =>
-        attrsForPairs.slice(i + 1).map((v2) => [v1, v2] as [string, string])
+    const attrsForPairs = [...UNIQUE_XPATH_ATTRIBUTES, ...MAYBE_UNIQUE_XPATH_ATTRIBUTES];
+    const attrPairsPermutations: [string, string][] = attrsForPairs.flatMap((v1, i) =>
+      attrsForPairs.slice(i + 1).map((v2) => [v1, v2] as [string, string]),
     );
 
     const cases = [
@@ -266,9 +204,9 @@ export function getOptimalXPath(
     // Go through each of our cases and look for selectors for each case in order
     for (const attrs of cases) {
       const [xpath, isFullyUnique] = getUniqueXPath(doc, domNode, attrs);
-      if (isFullyUnique) {
+      if (isFullyUnique && xpath) {
         // if we ever encounter an actually unique selector, return it straightaway
-        return xpath!;
+        return xpath;
       } else if (!semiUniqueXpath && xpath) {
         // if we have a semin unique selector, and haven't already captured a semi unique selector,
         // hold onto it for later. If we end up without any unique selectors from any of the cases,
@@ -293,10 +231,7 @@ export function getOptimalXPath(
       // Get the siblings
       const childNodes = Array.prototype.slice
         .call(domNode.parentNode.childNodes, 0)
-        .filter(
-          (childNode: XMLNode) =>
-            childNode.nodeType === 1 && childNode.nodeName === domNode.nodeName
-        );
+        .filter((childNode: XMLNode) => childNode.nodeType === 1 && childNode.nodeName === domNode.nodeName);
 
       // If there's more than one sibling, append the index
       if (childNodes.length > 1) {
@@ -306,7 +241,7 @@ export function getOptimalXPath(
     }
 
     // Make a recursive call to this nodes parents and prepend it to this xpath
-    return getOptimalXPath(doc, domNode.parentNode!) + xpath;
+    return (domNode.parentNode ? getOptimalXPath(doc, domNode.parentNode) : '') + xpath;
   } catch (error) {
     // If there's an unexpected exception, abort
     logLocatorError('XPath', error);
@@ -317,18 +252,11 @@ export function getOptimalXPath(
 /**
  * Get an optimal class chain for a Node based on the getOptimalXPath method
  */
-export function getOptimalClassChain(
-  doc: XMLDocument,
-  domNode: XMLNode
-): string | null {
+export function getOptimalClassChain(doc: XMLDocument, domNode: XMLNode): string | null {
   try {
     // BASE CASE #1: If this isn't an element, we're above the root, return empty string
     // Also return empty for 'XCUIElementTypeApplication', which cannot be found via class chain
-    if (
-      !domNode.nodeName ||
-      domNode.nodeType !== 1 ||
-      domNode.nodeName === 'XCUIElementTypeApplication'
-    ) {
+    if (!domNode.nodeName || domNode.nodeType !== 1 || domNode.nodeName === 'XCUIElementTypeApplication') {
       return '';
     }
 
@@ -341,16 +269,12 @@ export function getOptimalClassChain(
         continue;
       }
       const xpath = `//${domNode.nodeName || '*'}[@${attrName}="${attrValue}"]`;
-      classChain = `/${
-        domNode.nodeName || '*'
-      }[\`${attrName} == "${attrValue}"\`]`;
+      classChain = `/${domNode.nodeName || '*'}[\`${attrName} == "${attrValue}"\`]`;
 
       // If the XPath does not parse, move to the next unique attribute
       try {
         const result = xpathSelect(xpath, doc as any);
-        othersWithAttr = Array.isArray(result)
-          ? (result as unknown as XMLNode[])
-          : [];
+        othersWithAttr = Array.isArray(result) ? (result as unknown as XMLNode[]) : [];
       } catch {
         continue;
       }
@@ -372,10 +296,7 @@ export function getOptimalClassChain(
       // Get the siblings
       const childNodes = Array.prototype.slice
         .call(domNode.parentNode.childNodes, 0)
-        .filter(
-          (childNode: XMLNode) =>
-            childNode.nodeType === 1 && childNode.nodeName === domNode.nodeName
-        );
+        .filter((childNode: XMLNode) => childNode.nodeType === 1 && childNode.nodeName === domNode.nodeName);
 
       // If there's more than one sibling, append the index
       if (childNodes.length > 1) {
@@ -385,7 +306,7 @@ export function getOptimalClassChain(
     }
 
     // Make a recursive call to this nodes parents and prepend it to this xpath
-    return getOptimalClassChain(doc, domNode.parentNode!) + classChain;
+    return (domNode.parentNode ? getOptimalClassChain(doc, domNode.parentNode) : '') + classChain;
   } catch (error) {
     // If there's an unexpected exception, abort
     logLocatorError('class chain', error);
@@ -397,10 +318,7 @@ export function getOptimalClassChain(
  * Get an optimal predicate string for a Node based on the getOptimalXPath method
  * Only works for a single element - no parent/child scope
  */
-export function getOptimalPredicateString(
-  doc: XMLDocument,
-  domNode: XMLNode
-): string | null {
+export function getOptimalPredicateString(doc: XMLDocument, domNode: XMLNode): string | null {
   try {
     // BASE CASE #1: If this isn't an element, or we're above the root, return empty string
     if (!domNode.nodeName || domNode.nodeType !== 1) {
@@ -425,9 +343,7 @@ export function getOptimalPredicateString(
       // If the XPath does not parse, move to the next attribute
       try {
         const result = xpathSelect(xpath, doc as any);
-        othersWithAttr = Array.isArray(result)
-          ? (result as unknown as XMLNode[])
-          : [];
+        othersWithAttr = Array.isArray(result) ? (result as unknown as XMLNode[]) : [];
       } catch {
         continue;
       }
@@ -449,11 +365,7 @@ export function getOptimalPredicateString(
  * Get an optimal UiAutomator selector for a Node
  * Only works for elements inside the last direct child of the hierarchy (xpath: /hierarchy/*[last()] )
  */
-export function getOptimalUiAutomatorSelector(
-  doc: XMLDocument,
-  domNode: XMLNode,
-  path: string
-): string | null {
+export function getOptimalUiAutomatorSelector(doc: XMLDocument, domNode: XMLNode, path: string): string | null {
   try {
     // BASE CASE #1: If this isn't an element, or we're above the root, return empty string
     if (!domNode.nodeName || domNode.nodeType !== 1) {
@@ -464,9 +376,7 @@ export function getOptimalUiAutomatorSelector(
     // hierarchy is the child of doc (which is <xml/>), so need to get the children of its child
     // BASE CASE #2: If there is no hierarchy or its children, return null
     const docChildren = childNodesOf(doc);
-    const hierarchyChildren = isEmpty(docChildren)
-      ? []
-      : childNodesOf(docChildren[0]);
+    const hierarchyChildren = isEmpty(docChildren) ? [] : childNodesOf(docChildren[0]);
     if (isEmpty(hierarchyChildren)) {
       return null;
     }
@@ -484,8 +394,7 @@ export function getOptimalUiAutomatorSelector(
     // need to recreate it as a Document (Node -> XML -> Document),
     // then modify the path by changing the first index,
     // and finally recreate the domNode, since it still references the original parent
-    const lastHierarchyChild =
-      hierarchyChildren[parseInt(lastHierarchyChildIndex, 10)];
+    const lastHierarchyChild = hierarchyChildren[parseInt(lastHierarchyChildIndex, 10)];
     const newXml = domToXML(lastHierarchyChild);
     // wrap the new XML in a dummy tag which will have the node type Document
     const newDoc = xmlToDOM(`<dummy>${newXml}</dummy>`);
@@ -511,9 +420,7 @@ export function getOptimalUiAutomatorSelector(
       // If the XPath does not parse, move to the next unique attribute
       try {
         const result = xpathSelect(xpath, newDoc as any);
-        othersWithAttr = Array.isArray(result)
-          ? (result as unknown as XMLNode[])
-          : [];
+        othersWithAttr = Array.isArray(result) ? (result as unknown as XMLNode[]) : [];
       } catch {
         continue;
       }
@@ -522,14 +429,9 @@ export function getOptimalUiAutomatorSelector(
       // but only if it returns the least number of elements
       if (othersWithAttr.length === 1) {
         return uiSelector;
-      } else if (
-        !othersWithAttrMinCount ||
-        othersWithAttr.length < othersWithAttrMinCount
-      ) {
+      } else if (!othersWithAttrMinCount || othersWithAttr.length < othersWithAttrMinCount) {
         othersWithAttrMinCount = othersWithAttr.length;
-        mostUniqueSelector = `${uiSelector}.instance(${othersWithAttr.indexOf(
-          newDomNode
-        )})`;
+        mostUniqueSelector = `${uiSelector}.instance(${othersWithAttr.indexOf(newDomNode)})`;
       }
     }
 
@@ -549,19 +451,13 @@ export function getOptimalUiAutomatorSelector(
  * Return information about whether an xpath query results in a unique element, and the non-unique
  * index of the element in the document if not unique
  */
-function determineXpathUniqueness(
-  xpath: string,
-  doc: XMLDocument,
-  domNode: XMLNode
-): [boolean, number?] {
+function determineXpathUniqueness(xpath: string, doc: XMLDocument, domNode: XMLNode): [boolean, number?] {
   let othersWithAttr: XMLNode[];
 
   // If the XPath does not parse, move to the next unique attribute
   try {
     const result = XPath.select(xpath, doc as any);
-    othersWithAttr = Array.isArray(result)
-      ? (result as unknown as XMLNode[])
-      : [];
+    othersWithAttr = Array.isArray(result) ? (result as unknown as XMLNode[]) : [];
   } catch {
     return [false];
   }
@@ -580,7 +476,7 @@ function determineXpathUniqueness(
 function getUniqueXPath(
   doc: XMLDocument,
   domNode: XMLNode,
-  attrs: string[] | [string, string][]
+  attrs: string[] | [string, string][],
 ): [string | undefined, boolean | undefined] {
   let uniqueXpath: string | undefined, semiUniqueXpath: string | undefined;
   const tagForXpath = domNode.nodeName || '*';
@@ -615,19 +511,13 @@ function getUniqueXPath(
       }
       xpath = `//${tagForXpath}[@${attr1Name}="${attr1Value}" and @${attr2Name}="${attr2Value}"]`;
     } else {
-      const attrValue = (domNode as XMLElement).getAttribute?.(
-        attrName as string
-      );
+      const attrValue = (domNode as XMLElement).getAttribute?.(attrName as string);
       if (!attrValue) {
         continue;
       }
       xpath = `//${tagForXpath}[@${attrName}="${attrValue}"]`;
     }
-    const [isUnique, indexIfNotUnique] = determineXpathUniqueness(
-      xpath,
-      doc,
-      domNode
-    );
+    const [isUnique, indexIfNotUnique] = determineXpathUniqueness(xpath, doc, domNode);
     if (isUnique) {
       uniqueXpath = xpath;
       break;
@@ -650,7 +540,5 @@ function getUniqueXPath(
 }
 
 function logLocatorError(strategy: string, error: any): void {
-  log.error(
-    `The most optimal ${strategy} could not be determined because an error was thrown: '${error}'`
-  );
+  log.error(`The most optimal ${strategy} could not be determined because an error was thrown: '${error}'`);
 }

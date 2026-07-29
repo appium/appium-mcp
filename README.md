@@ -12,6 +12,7 @@ MCP Appium is an intelligent MCP (Model Context Protocol) server designed to emp
 - [Prerequisites](#-prerequisites)
 - [Installation](#️-installation)
 - [Configuration](#️-configuration)
+- [Remote server security and trust model](#remote-server-security-and-trust-model)
 - [Available Tools](#-available-tools)
 - [Plugin API](#-plugin-api)
 - [Client Support](#-client-support)
@@ -149,9 +150,10 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `CAPABILITIES_CONFIG`                     | Optional                               | Absolute path to a `capabilities.json` file with per-platform capability presets                                                                                                                                                                                                                                                                   |
 | `SCREENSHOTS_DIR`                         | Optional                               | Directory where screenshots and screen recordings are saved. Defaults to the current working directory                                                                                                                                                                                                                                             |
 | `NO_UI`                                   | Optional                               | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode)                                                                                                                                                                                                                                 |
+| `APPIUM_MCP_APPS_ENABLED`                 | Optional                               | MCP Apps static UI mode. Enabled by default. Set to `false` or `0` to force the embedded UI compatibility fallback. See [MCP Apps Mode](#mcp-apps-mode)                                                                                                                                                                                            |
 | `APPIUM_MCP_ON_CLIENT_DISCONNECT`         | Optional                               | Session cleanup when the MCP client disconnects: `delete_all` (default) deletes **MCP-owned** Appium sessions (`safeDeleteAllSessions`); `skip` keeps those sessions across disconnects (e.g. HTTP/stream clients that reconnect). Attached/remote sessions are not removed by this path. See [MCP disconnect behavior](#mcp-disconnect-behavior). |
 | `APPIUM_MCP_WDA_APP_PATH`                 | Optional                               | Absolute path to a pre-extracted `WebDriverAgentRunner-Runner.app` bundle. When set, `prepare_ios_simulator` skips all GitHub downloads and uses this bundle directly — useful in environments where external downloads are blocked                                                                                                                |
-| `REMOTE_SERVER_URL_ALLOW_REGEX`           | Optional                               | Regex pattern that remote Appium server URLs must match. Defaults to `^https?://`                                                                                                                                                                                                                                                                  |
+| REMOTE_SERVER_URL_ALLOW_REGEX | Optional | Regular expression applied to the complete remoteServerUrl value before MCP Appium connects to a remote Appium/WebDriver server. When unset, any HTTP(S) destination is accepted. Set this in shared infrastructure or CI environments that require an explicit destination policy. See Remote server security and trust model. |
 | `AI_VISION_ENABLED`                       | Optional                               | Set to `true` to register the `appium_ai` tool (vision-based element finding). When unset or `false`, the AI tool is **not registered** and the LLM has no way to invoke vision-based finding. Requires `AI_VISION_API_BASE_URL` and `AI_VISION_API_KEY` to also be set, otherwise the server fails to start.                                      |
 | `AI_VISION_API_BASE_URL`                  | Required when `AI_VISION_ENABLED=true` | Base URL of the OpenAI-compatible vision model API                                                                                                                                                                                                                                                                                                 |
 | `AI_VISION_API_KEY`                       | Required when `AI_VISION_ENABLED=true` | API key for the vision model provider                                                                                                                                                                                                                                                                                                              |
@@ -188,6 +190,8 @@ OTEL_TRACES_SAMPLER=parentbased_always_on
 (Please check the [official document](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) as well)
 
 When enabled, appium-mcp creates spans for MCP tool calls, prompt loads, resource reads, and resource template reads. Error status is recorded for thrown operation errors and MCP tool results marked with `isError`. Span attributes intentionally avoid raw screenshots, XML page source, prompts, credentials, and other high-cardinality or sensitive payloads.
+
+Tool spans include payload-free result-size attributes: `mcp.tool.result.content_count`, `content_types`, `text_chars`, `resource_count`, `resource_text_chars`, `image_count`, `audio_count`, `base64_chars`, and `base64_bytes_estimate` (all prefixed with `mcp.tool.result.`). `content_types` contains only known MCP types or `other`; payload values, resource URIs, MIME types, and unknown type strings are never recorded. Sizes are counted directly from known result fields without serializing or copying the complete result.
 
 For local trace inspection, use the Jaeger setup in `tools/telemetry`:
 
@@ -326,6 +330,30 @@ More models benchmarked can be found [here](src/tests/benchmark_model/TEST_REPOR
 
 ### Performance Optimization
 
+#### MCP Apps Mode
+
+`appium_get_page_source` uses a static MCP App inspector by default when the client advertises MCP Apps support.
+The XML remains in the normal text result for the LLM, while the inspector reads that same result instead of
+receiving a duplicated XML copy.
+
+For clients with unreliable MCP Apps rendering, set `APPIUM_MCP_APPS_ENABLED` to `false` or `0`:
+
+```json
+{
+  "appium-mcp": {
+    "env": {
+      "APPIUM_MCP_APPS_ENABLED": "false"
+    }
+  }
+}
+```
+
+This keeps interactive UI enabled but forces the previous embedded page-source inspector. The compatibility mode
+duplicates the XML inside the inspector HTML and therefore uses more result tokens and bandwidth. With a synthetic
+95,000-character page source, the static mode reduced the result from approximately 267 KB to 95 KB (about 64%).
+
+`NO_UI=true` or `NO_UI=1` takes precedence over this setting and disables both static and embedded UI.
+
 #### NO_UI Mode
 
 Set the `NO_UI` environment variable to `true` or `1` to disable UI components and improve performance:
@@ -418,6 +446,36 @@ By default (`APPIUM_MCP_ON_CLIENT_DISCONNECT` unset or `delete_all`), when the *
 HTTP and streamable MCP clients may **disconnect briefly** (reconnect, reload, proxy). If that tears down drivers you still need, set `APPIUM_MCP_ON_CLIENT_DISCONNECT` to `skip` in your MCP server `env` (same pattern as `NO_UI` above). With `skip`, sessions **survive** disconnect until you call `appium_session_management` with `action=delete`, or you stop the Appium server / process.
 
 **Tradeoff:** `skip` can leave **orphaned sessions** on your Appium server if nothing cleans up — use it when disconnect is not the same as “automation finished.”
+
+### Remote server security and trust model
+
+MCP Appium is designed to run as a local, single-user MCP server or as part of a trusted CI job. It is not intended to be exposed as a shared service to untrusted MCP clients.
+
+The `remoteServerUrl` argument is intentionally configurable because MCP Appium acts as an Appium/WebDriver client and may need to connect to local, remote, private-network, or CI-hosted Appium servers.
+
+Only allow trusted users and trusted workflow configuration to control `remoteServerUrl`. In particular:
+
+* Do not expose the MCP tool surface directly to untrusted users.
+* In CI, do not construct `remoteServerUrl` from untrusted pull request content, repository data, prompts, or other externally controlled input.
+* Keep remote server URLs in trusted MCP or CI configuration where possible.
+* Use `REMOTE_SERVER_URL_ALLOW_REGEX` to restrict the permitted Appium server URLs when the execution environment requires an explicit destination policy.
+
+When `REMOTE_SERVER_URL_ALLOW_REGEX` is not set, MCP Appium accepts any syntactically valid HTTP or HTTPS destination. The variable is a regular-expression check against the complete `remoteServerUrl` value.
+
+For example, to permit only a specific Appium server:
+
+```bash
+REMOTE_SERVER_URL_ALLOW_REGEX='^https://appium\.example\.com:4723(?:/wd/hub)?/?$'
+```
+
+To permit Appium servers under a controlled internal domain:
+
+```bash
+REMOTE_SERVER_URL_ALLOW_REGEX='^https://[a-z0-9-]+\.appium\.example\.internal(?::[0-9]+)?(?:/.*)?$'
+```
+
+Treat this setting as an additional deployment safeguard. Network-level controls, CI isolation, and trusted MCP client configuration should remain the primary security boundaries.
+
 
 ## 🔌 Plugin API
 

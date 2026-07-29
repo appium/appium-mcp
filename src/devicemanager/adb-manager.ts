@@ -1,4 +1,5 @@
-import { ADB } from 'appium-adb';
+import {ADB} from 'appium-adb';
+
 import log from '../logger.js';
 /**
  * Singleton ADB Manager to prevent multiple ADB instances
@@ -27,14 +28,10 @@ export class ADBManager {
    * @param options ADB configuration options
    * @returns Promise<ADB> The initialized ADB instance
    */
-  public async initialize(
-    options: { adbExecTimeout?: number; udid?: string } = {}
-  ): Promise<ADB> {
+  public async initialize(options: {adbExecTimeout?: number; udid?: string} = {}): Promise<ADB> {
     // If already initialized, return existing instance
     if (this.isInitialized && this.adbInstance) {
-      log.debug(
-        'ADB instance already initialized, returning existing instance'
-      );
+      log.debug('ADB instance already initialized, returning existing instance');
       return this.adbInstance;
     }
 
@@ -100,7 +97,7 @@ export class ADBManager {
    */
   public async getADBForDevice(udid?: string): Promise<ADB> {
     if (!this.isADBInitialized()) {
-      await this.initialize({ udid });
+      await this.initialize({udid});
     }
 
     if (!this.adbInstance) {
@@ -115,17 +112,13 @@ export class ADBManager {
    * @param options ADB configuration options
    * @returns Promise<ADB> The created ADB instance
    */
-  private async _createADBInstance(
-    options: { adbExecTimeout?: number; udid?: string } = {}
-  ): Promise<ADB> {
+  private async _createADBInstance(options: {adbExecTimeout?: number; udid?: string} = {}): Promise<ADB> {
     const defaultOptions = {
       adbExecTimeout: 60000,
       ...options,
     };
 
-    log.info(
-      `Creating ADB instance with options: ${JSON.stringify(defaultOptions)}`
-    );
+    log.info(`Creating ADB instance with options: ${JSON.stringify(defaultOptions)}`);
 
     try {
       const adb = await ADB.createADB(defaultOptions);
@@ -133,7 +126,7 @@ export class ADBManager {
       return adb;
     } catch (error) {
       log.error(`Failed to create ADB instance: ${error}`);
-      throw new Error(`ADB initialization failed: ${error}`, { cause: error });
+      throw new Error(`ADB initialization failed: ${error}`, {cause: error});
     }
   }
 }
@@ -149,9 +142,7 @@ export const adbManager = ADBManager.getInstance();
  * @param options ADB configuration options
  * @returns Promise<ADB> The ADB instance
  */
-export async function getADBInstance(
-  options: { adbExecTimeout?: number; udid?: string } = {}
-): Promise<ADB> {
+export async function getADBInstance(options: {adbExecTimeout?: number; udid?: string} = {}): Promise<ADB> {
   return await adbManager.getADBForDevice(options.udid);
 }
 

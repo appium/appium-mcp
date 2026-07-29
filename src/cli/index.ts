@@ -1,8 +1,6 @@
 import log from '../logger.js';
 
-export async function runCli(
-  args: string[] = process.argv.slice(2)
-): Promise<void> {
+export async function runCli(args: string[] = process.argv.slice(2)): Promise<void> {
   const command = args[0];
   if (command === '--help' || command === '-h' || command === 'help') {
     printHelp();
@@ -22,13 +20,12 @@ Options:
 
 async function startServer(args: string[]): Promise<void> {
   const useHttpStream = args.includes('--httpStream');
-  const port =
-    args.find((arg) => arg.startsWith('--port='))?.split('=')[1] || '8080';
+  const port = args.find((arg) => arg.startsWith('--port='))?.split('=')[1] || '8080';
 
   log.info('Starting MCP Appium MCP Server...');
 
   try {
-    const { default: server } = await import('../server.js');
+    const {default: server} = await import('../server.js');
 
     if (useHttpStream) {
       await server.start({
@@ -39,9 +36,7 @@ async function startServer(args: string[]): Promise<void> {
         },
       });
 
-      log.info(
-        `Server started with httpStream transport on http://localhost:${port}/sse`
-      );
+      log.info(`Server started with httpStream transport on http://localhost:${port}/sse`);
       log.info('Waiting for client connections...');
     } else {
       await server.start({

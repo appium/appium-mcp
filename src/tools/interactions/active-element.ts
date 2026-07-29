@@ -1,6 +1,7 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { getActiveElement as _getActiveElement } from '../../command.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {getActiveElement as _getActiveElement} from '../../command.js';
 import {
   resolveDriver,
   textResultWithPrimaryElementId,
@@ -11,10 +12,7 @@ import {
 
 export default function getActiveElement(server: FastMCP): void {
   const schema = z.object({
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -31,26 +29,19 @@ export default function getActiveElement(server: FastMCP): void {
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       try {
         const element = await _getActiveElement(driver);
         const elementId = readWebElementId(element);
 
         if (!elementId) {
-          return errorResult(
-            'Active element was returned without a valid element ID'
-          );
+          return errorResult('Active element was returned without a valid element ID');
         }
 
-        return textResultWithPrimaryElementId(
-          elementId,
-          'Successfully found an active element.'
-        );
+        return textResultWithPrimaryElementId(elementId, 'Successfully found an active element.');
       } catch (err: unknown) {
-        return errorResult(
-          `Failed to find an active element. err: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed to find an active element. err: ${toolErrorMessage(err)}`);
       }
     },
   });

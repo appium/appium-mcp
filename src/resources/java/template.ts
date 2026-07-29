@@ -26,10 +26,8 @@ export default function javaTemplatesResource(server: any) {
     async load() {
       // Return all content directly without templates object
       return {
-        message:
-          'Java templates for mobile automation, use this and generate code for the current page',
-        instruction:
-          'Use these templates to generate code for the current page',
+        message: 'Java templates for mobile automation, use this and generate code for the current page',
+        instruction: 'Use these templates to generate code for the current page',
         text: `
 package templates;
 

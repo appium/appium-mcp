@@ -5,11 +5,11 @@
  */
 
 import log from '../logger.js';
-import { isTelemetryEnabled } from './attributes.js';
+import {isTelemetryEnabled} from './attributes.js';
 
 let sdkStarted = false;
 let shutdownRegistered = false;
-let sdk: { start(): void; shutdown(): Promise<void> } | undefined;
+let sdk: {start(): void; shutdown(): Promise<void>} | undefined;
 
 /**
  * Initializes the OpenTelemetry SDK if telemetry is enabled and not already started.
@@ -22,7 +22,7 @@ export async function initializeOpenTelemetry(): Promise<void> {
     return;
   }
 
-  const [{ NodeSDK }, { OTLPTraceExporter }] = await Promise.all([
+  const [{NodeSDK}, {OTLPTraceExporter}] = await Promise.all([
     import('@opentelemetry/sdk-node'),
     import('@opentelemetry/exporter-trace-otlp-http'),
   ]);

@@ -1,5 +1,6 @@
-import { Simctl } from 'node-simctl';
-import { utilities } from 'appium-ios-device';
+import {utilities} from 'appium-ios-device';
+import {Simctl} from 'node-simctl';
+
 import log from '../logger.js';
 
 export interface IOSDevice {
@@ -128,9 +129,7 @@ export class IOSManager {
    * @param deviceType 'simulator' or 'real'
    * @returns Array of iOS devices
    */
-  public async getDevicesByType(
-    deviceType: 'simulator' | 'real'
-  ): Promise<IOSDevice[]> {
+  public async getDevicesByType(deviceType: 'simulator' | 'real'): Promise<IOSDevice[]> {
     if (deviceType === 'simulator') {
       return await this.getAvailableSimulators();
     } else {

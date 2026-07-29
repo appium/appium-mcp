@@ -1,13 +1,13 @@
-import { beforeEach, describe, test, expect, jest } from '@jest/globals';
+import {beforeEach, describe, test, expect, jest} from '@jest/globals';
 
 // ── module mocks ──────────────────────────────────────────────────────────────
 
-const mockAttachToSession = jest.fn<
-  (options: Record<string, unknown>) => Promise<any>
->(async (_options: Record<string, unknown>) => ({
-  sessionId: 'attached-session-id',
-  capabilities: { platformName: 'Android' },
-}));
+const mockAttachToSession = jest.fn<(options: Record<string, unknown>) => Promise<any>>(
+  async (_options: Record<string, unknown>) => ({
+    sessionId: 'attached-session-id',
+    capabilities: {platformName: 'Android'},
+  }),
+);
 
 let mockSelectedDevicePlatform: 'android' | 'ios' | null = 'ios';
 let mockSelectedDevice: string | null = 'device-udid';
@@ -26,7 +26,7 @@ jest.unstable_mockModule('../../../tools/session/select-device', () => ({
             return mockSelectedDevicePlatform === 'ios' ? 'simulator' : null;
           },
           get info() {
-            return { name: 'iPhone 12', platform: '16.0' };
+            return {name: 'iPhone 12', platform: '16.0'};
           },
         }
       : null,
@@ -36,13 +36,13 @@ jest.unstable_mockModule('../../../tools/session/select-device', () => ({
 jest.unstable_mockModule('../../../devicemanager/ios-manager', () => ({
   IOSManager: {
     getInstance: () => ({
-      getDevicesByType: async (_t: any) => [{ udid: 'u1' }],
+      getDevicesByType: async (_t: any) => [{udid: 'u1'}],
     }),
   },
 }));
 
 jest.unstable_mockModule('../../../logger', () => ({
-  default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
+  default: {debug: () => {}, info: () => {}, warn: () => {}, error: () => {}},
 }));
 
 jest.unstable_mockModule('appium-uiautomator2-driver', () => ({
@@ -53,7 +53,7 @@ jest.unstable_mockModule('appium-xcuitest-driver', () => ({
 }));
 jest.unstable_mockModule('webdriver', () => ({
   default: {
-    newSession: async () => ({ sessionId: 'remote-session-id' }),
+    newSession: async () => ({sessionId: 'remote-session-id'}),
     attachToSession: mockAttachToSession,
   },
 }));
@@ -76,7 +76,7 @@ jest.unstable_mockModule('../../../session-store', () => ({
   setActiveSession: jest.fn(),
   safeDeleteSession: jest.fn(),
   getPlatformName: jest.fn(),
-  PLATFORM: { ios: 'iOS', android: 'Android' },
+  PLATFORM: {ios: 'iOS', android: 'Android'},
 }));
 
 jest.unstable_mockModule('../../../ui/mcp-ui-utils', () => ({
@@ -99,24 +99,12 @@ const {
 } = await import('../../../session-store.js');
 
 const mockGetDriver = getDriver as jest.MockedFunction<typeof getDriver>;
-const mockGetSessionOwnership = getSessionOwnership as jest.MockedFunction<
-  typeof getSessionOwnership
->;
-const mockGetSessionId = getSessionId as jest.MockedFunction<
-  typeof getSessionId
->;
-const mockListSessions = listSessions as jest.MockedFunction<
-  typeof listSessions
->;
-const mockDetachSession = detachSession as jest.MockedFunction<
-  typeof detachSession
->;
-const mockSetActiveSession = setActiveSession as jest.MockedFunction<
-  typeof setActiveSession
->;
-const mockSafeDeleteSession = safeDeleteSession as jest.MockedFunction<
-  typeof safeDeleteSession
->;
+const mockGetSessionOwnership = getSessionOwnership as jest.MockedFunction<typeof getSessionOwnership>;
+const mockGetSessionId = getSessionId as jest.MockedFunction<typeof getSessionId>;
+const mockListSessions = listSessions as jest.MockedFunction<typeof listSessions>;
+const mockDetachSession = detachSession as jest.MockedFunction<typeof detachSession>;
+const mockSetActiveSession = setActiveSession as jest.MockedFunction<typeof setActiveSession>;
+const mockSafeDeleteSession = safeDeleteSession as jest.MockedFunction<typeof safeDeleteSession>;
 const mockSetSession = setSession as jest.MockedFunction<typeof setSession>;
 
 const {
@@ -128,12 +116,11 @@ const {
   validateLocalCreatePlatformMatch,
 } = await import('../../../tools/session/create-session.js');
 
-const { releaseReservedPorts, reservedPortCount } =
-  await import('../../../utils/ports.js');
+const {releaseReservedPorts, reservedPortCount} = await import('../../../utils/ports.js');
 
 // ── tool helper ───────────────────────────────────────────────────────────────
 
-const mockServer = { addTool: jest.fn() } as any;
+const mockServer = {addTool: jest.fn()} as any;
 
 // Default fetch mock: both capability endpoints return nothing (404-like).
 // Individual tests override this for the specific responses they need.
@@ -146,7 +133,7 @@ beforeEach(() => {
   mockGetSessionOwnership.mockReturnValue(null);
   mockAttachToSession.mockResolvedValue({
     sessionId: 'attached-session-id',
-    capabilities: { platformName: 'Android' },
+    capabilities: {platformName: 'Android'},
   });
   mockFetch = jest.fn<typeof fetch>().mockResolvedValue({
     ok: false,
@@ -155,12 +142,9 @@ beforeEach(() => {
 });
 
 async function getToolExecute() {
-  const { default: session } =
-    await import('../../../tools/session/session.js');
+  const {default: session} = await import('../../../tools/session/session.js');
   session(mockServer);
-  return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(
-    -1
-  )?.[0];
+  return (mockServer.addTool as jest.MockedFunction<any>).mock.calls.at(-1)?.[0];
 }
 
 // ── appium_session_management tool tests ─────────────────────────────────────────────────
@@ -171,7 +155,7 @@ describe('appium_session_management tool', () => {
       const tool = await getToolExecute();
       mockListSessions.mockReturnValue([]);
 
-      const result = await tool.execute({ action: 'list' }, undefined);
+      const result = await tool.execute({action: 'list'}, undefined);
       expect(result.content[0].text).toBe('No active sessions found.');
     });
 
@@ -190,10 +174,10 @@ describe('appium_session_management tool', () => {
       ] as any);
       mockGetSessionId.mockReturnValue('abc123');
       mockGetDriver.mockReturnValue({
-        constructor: { name: 'AndroidDriver' },
+        constructor: {name: 'AndroidDriver'},
       } as any);
 
-      const result = await tool.execute({ action: 'list' }, undefined);
+      const result = await tool.execute({action: 'list'}, undefined);
       expect(result.content[0].text).toContain('abc123');
       expect(result.content[0].text).toContain('active');
       expect(result.content[0].text).toContain('ownership=owned');
@@ -203,20 +187,15 @@ describe('appium_session_management tool', () => {
   describe('action: select', () => {
     test('returns error when sessionId is missing', async () => {
       const tool = await getToolExecute();
-      const result = await tool.execute({ action: 'select' }, undefined);
-      expect(result.content[0].text).toBe(
-        'sessionId is required for select action'
-      );
+      const result = await tool.execute({action: 'select'}, undefined);
+      expect(result.content[0].text).toBe('sessionId is required for select action');
     });
 
     test('returns error when session is not found', async () => {
       const tool = await getToolExecute();
       mockSetActiveSession.mockReturnValue(false);
 
-      const result = await tool.execute(
-        { action: 'select', sessionId: 'bad-id' },
-        undefined
-      );
+      const result = await tool.execute({action: 'select', sessionId: 'bad-id'}, undefined);
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('bad-id');
       expect(result.content[0].text).toContain('not found');
@@ -226,10 +205,7 @@ describe('appium_session_management tool', () => {
       const tool = await getToolExecute();
       mockSetActiveSession.mockReturnValue(true);
 
-      const result = await tool.execute(
-        { action: 'select', sessionId: 'abc123' },
-        undefined
-      );
+      const result = await tool.execute({action: 'select', sessionId: 'abc123'}, undefined);
       expect(result.content[0].text).toContain('abc123');
       expect(result.content[0].text).toContain('now active');
     });
@@ -241,7 +217,7 @@ describe('appium_session_management tool', () => {
       mockGetSessionOwnership.mockReturnValue('owned');
       mockSafeDeleteSession.mockResolvedValue(true as any);
 
-      const result = await tool.execute({ action: 'delete' }, undefined);
+      const result = await tool.execute({action: 'delete'}, undefined);
       expect(result.content[0].text).toContain('deleted successfully');
     });
 
@@ -249,10 +225,7 @@ describe('appium_session_management tool', () => {
       const tool = await getToolExecute();
       mockSafeDeleteSession.mockResolvedValue(true as any);
 
-      const result = await tool.execute(
-        { action: 'delete', sessionId: 'borrowed' },
-        undefined
-      );
+      const result = await tool.execute({action: 'delete', sessionId: 'borrowed'}, undefined);
 
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('deleted successfully');
@@ -264,10 +237,7 @@ describe('appium_session_management tool', () => {
       mockGetSessionOwnership.mockReturnValue('owned');
       mockSafeDeleteSession.mockResolvedValue(false as any);
 
-      const result = await tool.execute(
-        { action: 'delete', sessionId: 'ghost' },
-        undefined
-      );
+      const result = await tool.execute({action: 'delete', sessionId: 'ghost'}, undefined);
       expect(result.content[0].text).toContain('ghost');
       expect(result.content[0].text).toContain('not found');
     });
@@ -277,36 +247,24 @@ describe('appium_session_management tool', () => {
     test('returns error when remoteServerUrl is missing', async () => {
       const tool = await getToolExecute();
 
-      const result = await tool.execute(
-        { action: 'attach', sessionId: 'borrowed' },
-        undefined
-      );
+      const result = await tool.execute({action: 'attach', sessionId: 'borrowed'}, undefined);
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'remoteServerUrl is required for attach action'
-      );
+      expect(result.content[0].text).toBe('remoteServerUrl is required for attach action');
     });
 
     test('returns error when sessionId is missing', async () => {
       const tool = await getToolExecute();
 
-      const result = await tool.execute(
-        { action: 'attach', remoteServerUrl: 'http://localhost:4723' },
-        undefined
-      );
+      const result = await tool.execute({action: 'attach', remoteServerUrl: 'http://localhost:4723'}, undefined);
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'sessionId is required for attach action'
-      );
+      expect(result.content[0].text).toBe('sessionId is required for attach action');
     });
 
     test('fetches capabilities from server before creating client and prefers W3C extension endpoint', async () => {
       const tool = await getToolExecute();
-      mockListSessions.mockReturnValue([
-        { sessionId: 'borrowed', isActive: true, ownership: 'attached' },
-      ] as any);
+      mockListSessions.mockReturnValue([{sessionId: 'borrowed', isActive: true, ownership: 'attached'}] as any);
       mockFetch.mockImplementation(async (input) => {
         const url = input.toString();
         if (url.includes('appium/session_capabilities')) {
@@ -337,9 +295,9 @@ describe('appium_session_management tool', () => {
           action: 'attach',
           remoteServerUrl: 'http://localhost:4723',
           sessionId: 'borrowed',
-          capabilities: { 'appium:app': 'demo.apk' },
+          capabilities: {'appium:app': 'demo.apk'},
         },
-        undefined
+        undefined,
       );
 
       expect(result.isError).toBeFalsy();
@@ -347,8 +305,8 @@ describe('appium_session_management tool', () => {
       // Client created with merged caps — W3C extension wins over deprecated and caller
       expect(mockAttachToSession).toHaveBeenCalledWith(
         expect.objectContaining({
-          capabilities: expect.objectContaining({ platformName: 'Android' }),
-        })
+          capabilities: expect.objectContaining({platformName: 'Android'}),
+        }),
       );
       expect(mockSetSession).toHaveBeenCalledWith(
         expect.anything(),
@@ -360,7 +318,7 @@ describe('appium_session_management tool', () => {
           'appium:app': 'demo.apk',
         },
         'attached',
-        expect.any(String)
+        expect.any(String),
       );
     });
 
@@ -369,12 +327,12 @@ describe('appium_session_management tool', () => {
       mockFetch.mockImplementation(async (input) => {
         const url = input.toString();
         if (url.includes('appium/session_capabilities')) {
-          return { ok: false } as Response;
+          return {ok: false} as Response;
         }
         return {
           ok: true,
           json: async () => ({
-            value: { platformName: 'Android', automationName: 'UiAutomator2' },
+            value: {platformName: 'Android', automationName: 'UiAutomator2'},
           }),
         } as Response;
       });
@@ -389,7 +347,7 @@ describe('appium_session_management tool', () => {
             'appium:app': 'demo.apk',
           },
         },
-        undefined
+        undefined,
       );
 
       expect(result.isError).toBeFalsy();
@@ -403,7 +361,7 @@ describe('appium_session_management tool', () => {
           'appium:app': 'demo.apk',
         },
         'attached',
-        expect.any(String)
+        expect.any(String),
       );
     });
 
@@ -416,9 +374,9 @@ describe('appium_session_management tool', () => {
           action: 'attach',
           remoteServerUrl: 'http://localhost:4723',
           sessionId: 'borrowed',
-          capabilities: { platformName: 'Android' },
+          capabilities: {platformName: 'Android'},
         },
-        undefined
+        undefined,
       );
 
       expect(result.isError).toBe(true);
@@ -432,7 +390,7 @@ describe('appium_session_management tool', () => {
       mockGetSessionOwnership.mockReturnValue('attached');
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ value: { platformName: 'Android' } }),
+        json: async () => ({value: {platformName: 'Android'}}),
       } as Response);
 
       const result = await tool.execute(
@@ -441,7 +399,7 @@ describe('appium_session_management tool', () => {
           remoteServerUrl: 'http://localhost:4723',
           sessionId: 'borrowed',
         },
-        undefined
+        undefined,
       );
 
       expect(result.isError).toBeFalsy();
@@ -459,7 +417,7 @@ describe('appium_session_management tool', () => {
           remoteServerUrl: 'http://localhost:4723',
           sessionId: 'owned-session',
         },
-        undefined
+        undefined,
       );
 
       expect(result.isError).toBe(true);
@@ -474,10 +432,7 @@ describe('appium_session_management tool', () => {
       const tool = await getToolExecute();
       mockGetSessionOwnership.mockReturnValue('owned');
 
-      const result = await tool.execute(
-        { action: 'detach', sessionId: 'owned-session' },
-        undefined
-      );
+      const result = await tool.execute({action: 'detach', sessionId: 'owned-session'}, undefined);
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('action=delete');
@@ -488,10 +443,7 @@ describe('appium_session_management tool', () => {
       const tool = await getToolExecute();
       mockGetSessionOwnership.mockReturnValue('attached');
 
-      const result = await tool.execute(
-        { action: 'detach', sessionId: 'borrowed' },
-        undefined
-      );
+      const result = await tool.execute({action: 'detach', sessionId: 'borrowed'}, undefined);
 
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('detached successfully');
@@ -502,10 +454,8 @@ describe('appium_session_management tool', () => {
   describe('action: create', () => {
     test('returns error when platform is missing', async () => {
       const tool = await getToolExecute();
-      const result = await tool.execute({ action: 'create' }, undefined);
-      expect(result.content[0].text).toBe(
-        'platform is required for create action'
-      );
+      const result = await tool.execute({action: 'create'}, undefined);
+      expect(result.content[0].text).toBe('platform is required for create action');
     });
 
     test('returns error when capabilities JSON is invalid', async () => {
@@ -517,7 +467,7 @@ describe('appium_session_management tool', () => {
           platform: 'android',
           capabilities: '{not valid json}',
         },
-        undefined
+        undefined,
       );
 
       expect(result.isError).toBe(true);
@@ -531,7 +481,7 @@ describe('appium_session_management tool', () => {
       const tool = await getToolExecute();
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ value: { platformName: 'Android' } }),
+        json: async () => ({value: {platformName: 'Android'}}),
       } as Response);
 
       const result = await tool.execute(
@@ -541,7 +491,7 @@ describe('appium_session_management tool', () => {
           sessionId: 'borrowed',
           capabilities: '{"platformName":"Android","appium:app":"demo.apk"}',
         },
-        undefined
+        undefined,
       );
 
       expect(result.isError).toBeFalsy();
@@ -553,7 +503,7 @@ describe('appium_session_management tool', () => {
           'appium:app': 'demo.apk',
         }),
         'attached',
-        expect.any(String)
+        expect.any(String),
       );
     });
 
@@ -567,7 +517,7 @@ describe('appium_session_management tool', () => {
           sessionId: 'borrowed',
           capabilities: '{"platformName":',
         },
-        undefined
+        undefined,
       );
 
       expect(result.isError).toBe(true);
@@ -584,11 +534,7 @@ describe('buildAndroidCapabilities', () => {
   test('includes udid for local server and removes empty values', () => {
     mockSelectedDevicePlatform = 'android';
 
-    const caps = buildAndroidCapabilities(
-      { 'appium:app': '/path/app.apk' },
-      { 'appium:deviceName': '' },
-      false
-    );
+    const caps = buildAndroidCapabilities({'appium:app': '/path/app.apk'}, {'appium:deviceName': ''}, false);
     expect(caps.platformName).toBe('Android');
     expect(caps['appium:app']).toBe('/path/app.apk');
     expect(caps['appium:udid']).toBe('device-udid');
@@ -601,11 +547,7 @@ describe('buildAndroidCapabilities', () => {
   test('does not override explicit appium:udid from capabilities', () => {
     mockSelectedDevicePlatform = 'android';
 
-    const caps = buildAndroidCapabilities(
-      {},
-      { 'appium:udid': 'explicit-udid' },
-      false
-    );
+    const caps = buildAndroidCapabilities({}, {'appium:udid': 'explicit-udid'}, false);
 
     expect(caps['appium:udid']).toBe('explicit-udid');
   });
@@ -613,11 +555,7 @@ describe('buildAndroidCapabilities', () => {
   test('does not override appium:udid from config capabilities', () => {
     mockSelectedDevicePlatform = 'android';
 
-    const caps = buildAndroidCapabilities(
-      { 'appium:udid': 'config-udid' },
-      undefined,
-      false
-    );
+    const caps = buildAndroidCapabilities({'appium:udid': 'config-udid'}, undefined, false);
 
     expect(caps['appium:udid']).toBe('config-udid');
   });
@@ -642,11 +580,7 @@ describe('buildIOSCapabilities', () => {
   test('uses selected device info for local simulator', async () => {
     mockSelectedDevicePlatform = 'ios';
 
-    const caps = await buildIOSCapabilities(
-      { 'custom:cap': 'value' },
-      { 'appium:bundleId': 'com.example.app' },
-      false
-    );
+    const caps = await buildIOSCapabilities({'custom:cap': 'value'}, {'appium:bundleId': 'com.example.app'}, false);
     expect(caps.platformName).toBe('iOS');
     expect(caps['appium:deviceName']).toBe('iPhone 12');
     expect(caps['appium:platformVersion']).toBe('16.0');
@@ -659,11 +593,7 @@ describe('buildIOSCapabilities', () => {
   test('does not override explicit appium:udid from capabilities', async () => {
     mockSelectedDevicePlatform = 'ios';
 
-    const caps = await buildIOSCapabilities(
-      {},
-      { 'appium:udid': 'explicit-udid' },
-      false
-    );
+    const caps = await buildIOSCapabilities({}, {'appium:udid': 'explicit-udid'}, false);
 
     expect(caps['appium:udid']).toBe('explicit-udid');
   });
@@ -695,46 +625,33 @@ describe('assignEmbeddedDriverPorts', () => {
   };
 
   test('auto-allocates Android systemPort and mjpegServerPort when unset', async () => {
-    const { capabilities, allocatedPorts } = await assignEmbeddedDriverPorts(
-      'android',
-      { ...ANDROID_CAPS }
-    );
+    const {capabilities, allocatedPorts} = await assignEmbeddedDriverPorts('android', {...ANDROID_CAPS});
 
     expect(typeof capabilities['appium:systemPort']).toBe('number');
     expect(typeof capabilities['appium:mjpegServerPort']).toBe('number');
-    expect(capabilities['appium:systemPort']).not.toBe(
-      capabilities['appium:mjpegServerPort']
-    );
+    expect(capabilities['appium:systemPort']).not.toBe(capabilities['appium:mjpegServerPort']);
     // Both reserved ports are reported so the caller can release them.
-    expect(allocatedPorts).toEqual([
-      capabilities['appium:systemPort'],
-      capabilities['appium:mjpegServerPort'],
-    ]);
+    expect(allocatedPorts).toEqual([capabilities['appium:systemPort'], capabilities['appium:mjpegServerPort']]);
     releaseReservedPorts(allocatedPorts);
   });
 
   test('auto-allocates iOS wdaLocalPort and mjpegServerPort when unset', async () => {
-    const { capabilities, allocatedPorts } = await assignEmbeddedDriverPorts(
-      'ios',
-      {
-        platformName: 'iOS',
-        'appium:automationName': 'XCUITest',
-      }
-    );
+    const {capabilities, allocatedPorts} = await assignEmbeddedDriverPorts('ios', {
+      platformName: 'iOS',
+      'appium:automationName': 'XCUITest',
+    });
 
     expect(typeof capabilities['appium:wdaLocalPort']).toBe('number');
     expect(typeof capabilities['appium:mjpegServerPort']).toBe('number');
-    expect(capabilities['appium:wdaLocalPort']).not.toBe(
-      capabilities['appium:mjpegServerPort']
-    );
+    expect(capabilities['appium:wdaLocalPort']).not.toBe(capabilities['appium:mjpegServerPort']);
     releaseReservedPorts(allocatedPorts);
   });
 
   test('preserves caller-provided ports and only reserves the missing one', async () => {
-    const { capabilities, allocatedPorts } = await assignEmbeddedDriverPorts(
-      'android',
-      { ...ANDROID_CAPS, 'appium:systemPort': 8200 }
-    );
+    const {capabilities, allocatedPorts} = await assignEmbeddedDriverPorts('android', {
+      ...ANDROID_CAPS,
+      'appium:systemPort': 8200,
+    });
 
     expect(capabilities['appium:systemPort']).toBe(8200);
     expect(typeof capabilities['appium:mjpegServerPort']).toBe('number');
@@ -745,22 +662,18 @@ describe('assignEmbeddedDriverPorts', () => {
 
   test('gives distinct ports to concurrent embedded sessions', async () => {
     const [a, b] = await Promise.all([
-      assignEmbeddedDriverPorts('android', { ...ANDROID_CAPS }),
-      assignEmbeddedDriverPorts('android', { ...ANDROID_CAPS }),
+      assignEmbeddedDriverPorts('android', {...ANDROID_CAPS}),
+      assignEmbeddedDriverPorts('android', {...ANDROID_CAPS}),
     ]);
 
-    expect(a.capabilities['appium:systemPort']).not.toBe(
-      b.capabilities['appium:systemPort']
-    );
-    expect(a.capabilities['appium:mjpegServerPort']).not.toBe(
-      b.capabilities['appium:mjpegServerPort']
-    );
+    expect(a.capabilities['appium:systemPort']).not.toBe(b.capabilities['appium:systemPort']);
+    expect(a.capabilities['appium:mjpegServerPort']).not.toBe(b.capabilities['appium:mjpegServerPort']);
     releaseReservedPorts([...a.allocatedPorts, ...b.allocatedPorts]);
   });
 
   test('releasing the reservation lets the port be handed out again', async () => {
     const before = reservedPortCount();
-    const { allocatedPorts } = await assignEmbeddedDriverPorts('android', {
+    const {allocatedPorts} = await assignEmbeddedDriverPorts('android', {
       ...ANDROID_CAPS,
     });
     expect(reservedPortCount()).toBe(before + allocatedPorts.length);
@@ -771,22 +684,17 @@ describe('assignEmbeddedDriverPorts', () => {
 
   test('skips iOS allocation when webDriverAgentUrl points at an external WDA', async () => {
     const before = reservedPortCount();
-    const { capabilities, allocatedPorts } = await assignEmbeddedDriverPorts(
-      'ios',
-      {
-        platformName: 'iOS',
-        'appium:automationName': 'XCUITest',
-        'appium:webDriverAgentUrl': 'http://127.0.0.1:8123',
-      }
-    );
+    const {capabilities, allocatedPorts} = await assignEmbeddedDriverPorts('ios', {
+      platformName: 'iOS',
+      'appium:automationName': 'XCUITest',
+      'appium:webDriverAgentUrl': 'http://127.0.0.1:8123',
+    });
 
     // No ports reserved, the external WDA at the URL owns its ports.
     expect(allocatedPorts).toEqual([]);
     expect(capabilities['appium:wdaLocalPort']).toBeUndefined();
     expect(capabilities['appium:mjpegServerPort']).toBeUndefined();
-    expect(capabilities['appium:webDriverAgentUrl']).toBe(
-      'http://127.0.0.1:8123'
-    );
+    expect(capabilities['appium:webDriverAgentUrl']).toBe('http://127.0.0.1:8123');
     expect(reservedPortCount()).toBe(before);
   });
 });
@@ -810,9 +718,8 @@ describe('validateLocalCreatePlatformMatch', () => {
 
     const result = validateLocalCreatePlatformMatch('android');
 
-    expect(result).toBeDefined();
-    expect(result!.isError).toBe(true);
-    const message = (result!.content[0] as { text: string }).text;
+    expect(result?.isError).toBe(true);
+    const message = (result?.content[0] as {text: string} | undefined)?.text;
     expect(message).toContain('platform=android');
     expect(message).toContain('platform=ios');
   });
@@ -822,9 +729,8 @@ describe('validateLocalCreatePlatformMatch', () => {
 
     const result = validateLocalCreatePlatformMatch('ios');
 
-    expect(result).toBeDefined();
-    expect(result!.isError).toBe(true);
-    const message = (result!.content[0] as { text: string }).text;
+    expect(result?.isError).toBe(true);
+    const message = (result?.content[0] as {text: string} | undefined)?.text;
     expect(message).toContain('platform=ios');
     expect(message).toContain('platform=android');
   });
@@ -832,9 +738,7 @@ describe('validateLocalCreatePlatformMatch', () => {
   test('allows remote create without matching select_device platform', () => {
     mockSelectedDevicePlatform = 'ios';
 
-    expect(
-      validateLocalCreatePlatformMatch('android', 'http://localhost:4723')
-    ).toBeUndefined();
+    expect(validateLocalCreatePlatformMatch('android', 'http://localhost:4723')).toBeUndefined();
   });
 
   test('allows matching local platform', () => {
@@ -851,34 +755,21 @@ describe('validateLocalCreatePlatformMatch', () => {
 });
 
 describe('validateRemoteServerUrl', () => {
-  test.each(['http://localhost:4723', 'https://example.com'])(
-    'accepts valid URL: %s',
-    (url) => expect(() => validateRemoteServerUrl(url)).not.toThrow()
+  test.each(['http://localhost:4723', 'https://example.com'])('accepts valid URL: %s', (url) =>
+    expect(() => validateRemoteServerUrl(url)).not.toThrow(),
   );
 
-  test.each(['invalid-url', 'ftp://example.com'])(
-    'rejects invalid URL: %s',
-    (url) =>
-      expect(() => validateRemoteServerUrl(url)).toThrow(
-        `Invalid remoteServerUrl: ${url}.`
-      )
+  test.each(['invalid-url', 'ftp://example.com'])('rejects invalid URL: %s', (url) =>
+    expect(() => validateRemoteServerUrl(url)).toThrow(`Invalid remoteServerUrl: ${url}.`),
   );
 
   test('accepts URL matching custom regex', () => {
-    expect(() =>
-      validateRemoteServerUrl(
-        'ftp://localhost:4723',
-        '^.+//localhost:4723(/.*)?$'
-      )
-    ).not.toThrow();
+    expect(() => validateRemoteServerUrl('ftp://localhost:4723', '^.+//localhost:4723(/.*)?$')).not.toThrow();
   });
 
   test('rejects URL not matching custom regex', () => {
-    expect(() =>
-      validateRemoteServerUrl(
-        'http://localhost:5000',
-        '^https?://localhost:4723(/.*)?$'
-      )
-    ).toThrow('Invalid remoteServerUrl: http://localhost:5000.');
+    expect(() => validateRemoteServerUrl('http://localhost:5000', '^https?://localhost:4723(/.*)?$')).toThrow(
+      'Invalid remoteServerUrl: http://localhost:5000.',
+    );
   });
 });

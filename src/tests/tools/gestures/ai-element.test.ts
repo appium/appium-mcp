@@ -1,5 +1,6 @@
-import { describe, test, expect, jest, beforeEach } from '@jest/globals';
-import type { DriverInstance } from '../../../session-store.js';
+import {describe, test, expect, jest, beforeEach} from '@jest/globals';
+
+import type {DriverInstance} from '../../../session-store.js';
 
 jest.unstable_mockModule('../../../persistence', () => ({
   isSessionPersistenceEnabled: jest.fn(() => false),
@@ -13,7 +14,7 @@ jest.unstable_mockModule('../../../session-store', () => ({
   setSession: jest.fn(),
   getDriver: jest.fn(),
   getPlatformName: jest.fn(),
-  PLATFORM: { ios: 'iOS', android: 'Android' },
+  PLATFORM: {ios: 'iOS', android: 'Android'},
 }));
 
 jest.unstable_mockModule('../../../command', () => ({
@@ -46,18 +47,14 @@ describe('isAiElementUUID', () => {
 
 describe('aiElementWebDriverRejectionIfNeeded', () => {
   test('returns isError for ai-element UUIDs', () => {
-    const result = aiElementWebDriverRejectionIfNeeded(
-      'ai-element:100,200:50,150,150,250'
-    );
+    const result = aiElementWebDriverRejectionIfNeeded('ai-element:100,200:50,150,150,250');
     expect(result?.isError).toBe(true);
     const block = result?.content[0];
     expect(block && 'text' in block && block.text).toBe(AI_WEBDRIVER_REJECTION);
   });
 
   test('returns undefined for real element ids and missing values', () => {
-    expect(
-      aiElementWebDriverRejectionIfNeeded('aaaaaaaa-bbbb-cccc-dddd')
-    ).toBeUndefined();
+    expect(aiElementWebDriverRejectionIfNeeded('aaaaaaaa-bbbb-cccc-dddd')).toBeUndefined();
     expect(aiElementWebDriverRejectionIfNeeded(undefined)).toBeUndefined();
   });
 });
@@ -66,35 +63,35 @@ describe('parseAiElement', () => {
   test('parses centre + bbox into a rect that spans the bbox', () => {
     const result = parseAiElement('ai-element:200,300:100,200,300,400');
     expect(result).toEqual({
-      center: { x: 200, y: 300 },
-      rect: { x: 100, y: 200, width: 200, height: 200 },
+      center: {x: 200, y: 300},
+      rect: {x: 100, y: 200, width: 200, height: 200},
     });
   });
 
   test('falls back to a centred minimum rect when bbox is missing', () => {
     const result = parseAiElement('ai-element:42,84');
     expect(result).toEqual({
-      center: { x: 42, y: 84 },
-      rect: { x: -8, y: 34, width: 100, height: 100 },
+      center: {x: 42, y: 84},
+      rect: {x: -8, y: 34, width: 100, height: 100},
     });
   });
 
   test('falls back to a centred minimum rect when bbox is malformed', () => {
     const result = parseAiElement('ai-element:10,20:not,a,real,bbox');
     expect(result).toEqual({
-      center: { x: 10, y: 20 },
-      rect: { x: -40, y: -30, width: 100, height: 100 },
+      center: {x: 10, y: 20},
+      rect: {x: -40, y: -30, width: 100, height: 100},
     });
   });
 
   test('falls back to centred minimum rect when bbox is degenerate (x1<=x0 or y1<=y0)', () => {
     expect(parseAiElement('ai-element:5,5:10,10,10,20')).toEqual({
-      center: { x: 5, y: 5 },
-      rect: { x: -45, y: -45, width: 100, height: 100 },
+      center: {x: 5, y: 5},
+      rect: {x: -45, y: -45, width: 100, height: 100},
     });
     expect(parseAiElement('ai-element:5,5:10,10,20,10')).toEqual({
-      center: { x: 5, y: 5 },
-      rect: { x: -45, y: -45, width: 100, height: 100 },
+      center: {x: 5, y: 5},
+      rect: {x: -45, y: -45, width: 100, height: 100},
     });
   });
 
@@ -122,12 +119,10 @@ describe('resolveTargetRect', () => {
 
   test('delegates traditional UUIDs to getElementRect', async () => {
     const cmd = await import('../../../command.js');
-    const rect = { x: 3, y: 4, width: 30, height: 40 };
+    const rect = {x: 3, y: 4, width: 30, height: 40};
     jest.mocked(cmd.getElementRect).mockResolvedValueOnce(rect);
 
-    await expect(resolveTargetRect(fakeDriver, 'aaaaaaaa-bbbb')).resolves.toBe(
-      rect
-    );
+    await expect(resolveTargetRect(fakeDriver, 'aaaaaaaa-bbbb')).resolves.toBe(rect);
     const getElMock = jest.mocked(cmd.getElementRect);
     expect(getElMock.mock.calls).toHaveLength(1);
     expect(getElMock.mock.calls[0]?.[1]).toBe('aaaaaaaa-bbbb');
@@ -135,13 +130,9 @@ describe('resolveTargetRect', () => {
 
   test('returns { error } when getElementRect rejects', async () => {
     const cmd = await import('../../../command.js');
-    jest
-      .mocked(cmd.getElementRect)
-      .mockRejectedValueOnce(new Error('stale element reference'));
+    jest.mocked(cmd.getElementRect).mockRejectedValueOnce(new Error('stale element reference'));
 
-    await expect(
-      resolveTargetRect(fakeDriver, 'aaaaaaaa-bbbb')
-    ).resolves.toEqual({
+    await expect(resolveTargetRect(fakeDriver, 'aaaaaaaa-bbbb')).resolves.toEqual({
       error: 'stale element reference',
     });
   });

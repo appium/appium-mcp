@@ -1,12 +1,12 @@
 // Standalone Node.js script to generate locators for all elements from sourceXML
 // Using existing functions from src/locators directory
 
-import { getSuggestedLocators } from './locator-generation.js';
-import { xmlToJSON } from './source-parsing.js';
-import type { JSONElement } from './source-parsing.js';
-import { shouldIncludeElement } from './element-filter.js';
-import type { FilterOptions } from './element-filter.js';
 import log from '../logger.js';
+import {shouldIncludeElement} from './element-filter.js';
+import type {FilterOptions} from './element-filter.js';
+import {getSuggestedLocators} from './locator-generation.js';
+import {xmlToJSON} from './source-parsing.js';
+import type {JSONElement} from './source-parsing.js';
 
 export interface ElementWithLocators {
   tagName: string;
@@ -32,20 +32,13 @@ export function generateAllElementLocators(
   sourceXML: string,
   isNative: boolean = true,
   automationName: string,
-  filters: FilterOptions = {}
+  filters: FilterOptions = {},
 ): ElementWithLocators[] {
   const sourceJSON = xmlToJSON(sourceXML);
   const results: ElementWithLocators[] = [];
 
   if (sourceJSON) {
-    traverseAndProcessElements(
-      sourceJSON,
-      sourceXML,
-      isNative,
-      automationName,
-      filters,
-      results
-    );
+    traverseAndProcessElements(sourceJSON, sourceXML, isNative, automationName, filters, results);
   }
 
   return results;
@@ -54,17 +47,14 @@ export function generateAllElementLocators(
 /**
  * Transforms a JSONElement with locators into ElementWithLocators format
  */
-function transformElementWithLocators(
-  element: JSONElement,
-  locators: [string, string][]
-): ElementWithLocators {
+function transformElementWithLocators(element: JSONElement, locators: [string, string][]): ElementWithLocators {
   // Filter out any undefined or invalid entries before converting to object
   const validLocators = locators.filter(
     (locator): locator is [string, string] =>
       Array.isArray(locator) &&
       locator.length === 2 &&
       typeof locator[0] === 'string' &&
-      typeof locator[1] === 'string'
+      typeof locator[1] === 'string',
   );
 
   return {
@@ -88,25 +78,17 @@ function processElement(
   isNative: boolean,
   automationName: string,
   filters: FilterOptions,
-  results: ElementWithLocators[]
+  results: ElementWithLocators[],
 ): void {
   if (!shouldIncludeElement(element, filters, isNative, automationName)) {
     return;
   }
 
   try {
-    const strategyMap = getSuggestedLocators(
-      element,
-      sourceXML,
-      isNative,
-      automationName
-    );
+    const strategyMap = getSuggestedLocators(element, sourceXML, isNative, automationName);
     results.push(transformElementWithLocators(element, strategyMap));
   } catch (error) {
-    log.error(
-      `Error generating locators for element at path ${element.path}:`,
-      error
-    );
+    log.error(`Error generating locators for element at path ${element.path}:`, error);
   }
 }
 
@@ -119,33 +101,19 @@ function traverseAndProcessElements(
   isNative: boolean,
   automationName: string,
   filters: FilterOptions,
-  results: ElementWithLocators[]
+  results: ElementWithLocators[],
 ): void {
   if (!element) {
     return;
   }
 
   // Process current element
-  processElement(
-    element,
-    sourceXML,
-    isNative,
-    automationName,
-    filters,
-    results
-  );
+  processElement(element, sourceXML, isNative, automationName, filters, results);
 
   // Recursively process children (even if parent was filtered out)
   if (element.children && element.children.length > 0) {
     element.children.forEach((child) =>
-      traverseAndProcessElements(
-        child,
-        sourceXML,
-        isNative,
-        automationName,
-        filters,
-        results
-      )
+      traverseAndProcessElements(child, sourceXML, isNative, automationName, filters, results),
     );
   }
 }

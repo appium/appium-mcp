@@ -1,5 +1,6 @@
-import { describe, expect, jest, test } from '@jest/globals';
-import type { AppiumMcpPlugin } from '../plugin.js';
+import {describe, expect, jest, test} from '@jest/globals';
+
+import type {AppiumMcpPlugin} from '../plugin.js';
 
 await jest.unstable_mockModule('appium-uiautomator2-driver', () => ({
   AndroidUiautomator2Driver: class MockAndroidUiautomator2Driver {},
@@ -10,14 +11,13 @@ await jest.unstable_mockModule('appium-xcuitest-driver', () => ({
 }));
 
 await jest.unstable_mockModule('../tools/index', () => ({
-  default: (server: { addTool: (toolDef: { name: string }) => void }) => {
-    server.addTool({ name: 'builtin_tool' });
-    server.addTool({ name: 'another_builtin_tool' });
+  default: (server: {addTool: (toolDef: {name: string}) => void}) => {
+    server.addTool({name: 'builtin_tool'});
+    server.addTool({name: 'another_builtin_tool'});
   },
 }));
 
-const { formatVerificationReport, verifyAppiumMcpNames } =
-  await import('../plugin.js');
+const {formatVerificationReport, verifyAppiumMcpNames} = await import('../plugin.js');
 
 describe('verifyAppiumMcpNames', () => {
   test('passes when plugin and tool names are unique', () => {
@@ -30,13 +30,13 @@ describe('verifyAppiumMcpNames', () => {
           description: 'plugin tool',
           parameters: {} as never,
           execute: async () => ({
-            content: [{ type: 'text', text: 'ok' }],
+            content: [{type: 'text', text: 'ok'}],
           }),
         });
       },
     };
 
-    const report = verifyAppiumMcpNames({ plugins: [plugin] });
+    const report = verifyAppiumMcpNames({plugins: [plugin]});
 
     expect(report.ok).toBe(true);
     expect(report.duplicates).toEqual([]);
@@ -47,11 +47,11 @@ describe('verifyAppiumMcpNames', () => {
 
   test('reports duplicate plugin names', () => {
     const plugins: AppiumMcpPlugin[] = [
-      { name: 'duplicate-plugin', version: '1.0.0' },
-      { name: 'duplicate-plugin', version: '2.0.0' },
+      {name: 'duplicate-plugin', version: '1.0.0'},
+      {name: 'duplicate-plugin', version: '2.0.0'},
     ];
 
-    const report = verifyAppiumMcpNames({ plugins });
+    const report = verifyAppiumMcpNames({plugins});
 
     expect(report.ok).toBe(false);
     expect(report.duplicates).toEqual([
@@ -83,13 +83,13 @@ describe('verifyAppiumMcpNames', () => {
           description: 'conflicting tool',
           parameters: {} as never,
           execute: async () => ({
-            content: [{ type: 'text', text: 'ok' }],
+            content: [{type: 'text', text: 'ok'}],
           }),
         });
       },
     };
 
-    const report = verifyAppiumMcpNames({ plugins: [plugin] });
+    const report = verifyAppiumMcpNames({plugins: [plugin]});
 
     expect(report.ok).toBe(false);
     expect(report.duplicates).toEqual([
@@ -97,8 +97,8 @@ describe('verifyAppiumMcpNames', () => {
         kind: 'tool',
         name: 'builtin_tool',
         entries: [
-          { name: 'builtin_tool', source: 'appium-mcp core' },
-          { name: 'builtin_tool', source: 'plugin:conflicting-plugin' },
+          {name: 'builtin_tool', source: 'appium-mcp core'},
+          {name: 'builtin_tool', source: 'plugin:conflicting-plugin'},
         ],
       },
     ]);
@@ -123,14 +123,14 @@ describe('verifyAppiumMcpNames', () => {
             description: 'working tool',
             parameters: {} as never,
             execute: async () => ({
-              content: [{ type: 'text', text: 'ok' }],
+              content: [{type: 'text', text: 'ok'}],
             }),
           });
         },
       },
     ];
 
-    const report = verifyAppiumMcpNames({ plugins });
+    const report = verifyAppiumMcpNames({plugins});
 
     expect(report.ok).toBe(false);
     expect(report.toolCount).toBe(3);
@@ -149,8 +149,7 @@ describe('formatVerificationReport', () => {
     const report = verifyAppiumMcpNames();
 
     expect(formatVerificationReport(report)).toBe(
-      'Checked 0 plugin name(s) and 2 tool name(s).\n' +
-        'No duplicate plugin or tool names found.'
+      'Checked 0 plugin name(s) and 2 tool name(s).\n' + 'No duplicate plugin or tool names found.',
     );
   });
 
@@ -161,12 +160,12 @@ describe('formatVerificationReport', () => {
         pluginCount: 1,
         toolCount: 2,
         duplicates: [],
-        errors: [{ source: 'appium-mcp core', message: 'AI config missing' }],
-      })
+        errors: [{source: 'appium-mcp core', message: 'AI config missing'}],
+      }),
     ).toBe(
       'Checked 1 plugin name(s) and 2 tool name(s).\n' +
         'Registration/load errors found:\n' +
-        '  appium-mcp core: AI config missing'
+        '  appium-mcp core: AI config missing',
     );
   });
 });

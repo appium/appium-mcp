@@ -559,9 +559,12 @@ The tools below are useful structural references — how a tool is wired up, sch
 ```bash
 npm run check   # eslint + prettier
 npm run build   # tsc
+npm run audit:tools  # measure the built tools/list payload and enforce its size budget
 ```
 
-Both must be green before opening a PR.
+All three must be green before opening a PR. The tool-footprint audit runs
+against the built stdio server with optional AI and documentation tools
+disabled, matching the default tool set used for the CI budget.
 
 ### 2. Unit test the response contract (recommended for non-trivial tools)
 

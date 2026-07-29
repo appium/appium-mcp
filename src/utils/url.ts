@@ -1,4 +1,4 @@
-import WebDriver, { type Client } from 'webdriver';
+import WebDriver, {type Client} from 'webdriver';
 
 export interface RemoteAttachOptions {
   remoteServerUrl: string;
@@ -23,9 +23,7 @@ export function getPortFromUrl(url: URL): number {
  * cache-miss rehydrate path in `resolveDriver`) share a single
  * implementation.
  */
-export async function attachToRemoteSession(
-  options: RemoteAttachOptions
-): Promise<Client> {
+export async function attachToRemoteSession(options: RemoteAttachOptions): Promise<Client> {
   const url = new URL(options.remoteServerUrl);
   const protocol = url.protocol.replace(':', '');
   const port = getPortFromUrl(url);
@@ -38,6 +36,6 @@ export async function attachToRemoteSession(
     port,
     path: url.pathname,
     capabilities: options.capabilities,
-    ...(user && key ? { user, key } : {}),
+    ...(user && key ? {user, key} : {}),
   });
 }

@@ -1,6 +1,6 @@
-import { describe, expect, test } from '@jest/globals';
+import {describe, expect, test} from '@jest/globals';
 
-import { isSensitiveKey } from '../utils/sensitive.js';
+import {isSensitiveKey} from '../utils/sensitive.js';
 
 describe('sensitive key matching', () => {
   test('matches common secret key variants', () => {

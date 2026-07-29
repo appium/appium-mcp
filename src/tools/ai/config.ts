@@ -12,10 +12,7 @@
  */
 
 const ENABLED_FLAG = 'AI_VISION_ENABLED';
-const REQUIRED_WHEN_ENABLED = [
-  'AI_VISION_API_BASE_URL',
-  'AI_VISION_API_KEY',
-] as const;
+const REQUIRED_WHEN_ENABLED = ['AI_VISION_API_BASE_URL', 'AI_VISION_API_KEY'] as const;
 
 export function isAIEnabled(): boolean {
   return process.env[ENABLED_FLAG]?.toLowerCase() === 'true';
@@ -29,7 +26,7 @@ export function assertAIConfig(): void {
   if (missing.length > 0) {
     throw new Error(
       `${ENABLED_FLAG}=true but required env vars are missing: ${missing.join(', ')}. ` +
-        `Set them or unset ${ENABLED_FLAG} to disable the AI tool.`
+        `Set them or unset ${ENABLED_FLAG} to disable the AI tool.`,
     );
   }
 }

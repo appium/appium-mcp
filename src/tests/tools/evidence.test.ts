@@ -1,21 +1,14 @@
-import {
-  describe,
-  test,
-  expect,
-  jest,
-  beforeEach,
-  afterEach,
-} from '@jest/globals';
-import type { ContentResult } from 'fastmcp';
-import type { ActionEvidenceRecord } from '../../tools/evidence.js';
+import {describe, test, expect, jest, beforeEach, afterEach} from '@jest/globals';
+import type {ContentResult} from 'fastmcp';
+
+import type {ActionEvidenceRecord} from '../../tools/evidence.js';
 
 // Mock the session store to avoid pulling in the native drivers it imports.
 jest.unstable_mockModule('../../session-store', () => ({
   getSessionInfo: jest.fn(() => null),
 }));
 
-const { classifyError, isEvidenceEnabled, withEvidence } =
-  await import('../../tools/evidence.js');
+const {classifyError, isEvidenceEnabled, withEvidence} = await import('../../tools/evidence.js');
 
 const ENV_KEY = 'APPIUM_MCP_EVIDENCE';
 
@@ -24,19 +17,16 @@ function enableEvidence(value = '1'): void {
 }
 
 const textResult = (text: string): ContentResult => ({
-  content: [{ type: 'text', text }],
+  content: [{type: 'text', text}],
 });
 const errorResult = (text: string): ContentResult => ({
-  content: [{ type: 'text', text }],
+  content: [{type: 'text', text}],
   isError: true,
 });
 
 function readRecord(result: ContentResult): ActionEvidenceRecord {
   const block = result.content.find((c) => c.type === 'resource');
-  const text =
-    block?.type === 'resource' && 'text' in block.resource
-      ? block.resource.text
-      : undefined;
+  const text = block?.type === 'resource' && 'text' in block.resource ? block.resource.text : undefined;
   if (typeof text !== 'string') {
     throw new Error('no evidence resource block found');
   }
@@ -117,8 +107,8 @@ describe('withEvidence', () => {
       name: 'appium_find_element',
       stage: 'locate',
       startedAt: Date.now(),
-      locator: { strategy: 'accessibility id', selector: 'login' },
-      element: { webdriverId: 'abc' },
+      locator: {strategy: 'accessibility id', selector: 'login'},
+      element: {webdriverId: 'abc'},
     });
 
     expect(out.content[0]).toEqual({
@@ -129,9 +119,7 @@ describe('withEvidence', () => {
     expect(block.type).toBe('resource');
     if (block.type === 'resource') {
       expect(block.resource.uri).toMatch(/^evidence:\/\//);
-      expect(block.resource.mimeType).toBe(
-        'application/vnd.appium.evidence+json'
-      );
+      expect(block.resource.mimeType).toBe('application/vnd.appium.evidence+json');
     }
   });
 
@@ -143,9 +131,9 @@ describe('withEvidence', () => {
         name: 'appium_find_element',
         stage: 'locate',
         startedAt,
-        locator: { strategy: 'id', selector: 'btn' },
-        element: { webdriverId: 'el-1' },
-      })
+        locator: {strategy: 'id', selector: 'btn'},
+        element: {webdriverId: 'el-1'},
+      }),
     );
 
     expect(record.schemaVersion).toBe(1);
@@ -154,8 +142,8 @@ describe('withEvidence', () => {
     expect(record.status).toBe('success');
     expect(record.action.name).toBe('appium_find_element');
     expect(record.action.stage).toBe('locate');
-    expect(record.action.locator).toEqual({ strategy: 'id', selector: 'btn' });
-    expect(record.action.element).toEqual({ webdriverId: 'el-1' });
+    expect(record.action.locator).toEqual({strategy: 'id', selector: 'btn'});
+    expect(record.action.element).toEqual({webdriverId: 'el-1'});
     expect(record.error).toBeUndefined();
     expect(record.timing.durationMs).toBeGreaterThanOrEqual(0);
     expect(record.timing.startedAt).toBe(new Date(startedAt).toISOString());
@@ -169,7 +157,7 @@ describe('withEvidence', () => {
         stage: 'locate',
         startedAt: Date.now(),
         error: new Error('stale element reference'),
-      })
+      }),
     );
 
     expect(record.status).toBe('error');
@@ -184,7 +172,7 @@ describe('withEvidence', () => {
         name: 'appium_gesture',
         stage: 'interact',
         startedAt: Date.now(),
-      })
+      }),
     );
 
     expect(record.status).toBe('error');

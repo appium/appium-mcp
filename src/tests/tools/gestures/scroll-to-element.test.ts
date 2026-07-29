@@ -1,4 +1,4 @@
-import { describe, test, expect, jest } from '@jest/globals';
+import {describe, test, expect, jest} from '@jest/globals';
 
 jest.unstable_mockModule('../../../persistence', () => ({
   readAllPersistedSessions: jest.fn(async () => []),
@@ -12,35 +12,30 @@ jest.unstable_mockModule('../../../session-store', () => ({
   isAndroidUiautomator2DriverSession: jest.fn(() => false),
   isRemoteDriverSession: jest.fn(() => true),
   isXCUITestDriverSession: jest.fn(() => false),
-  PLATFORM: { ios: 'iOS', android: 'Android' },
+  PLATFORM: {ios: 'iOS', android: 'Android'},
   getCurrentContext: jest.fn(),
   getSessionInfo: jest.fn(),
 }));
 
 jest.unstable_mockModule('../../../logger', () => ({
-  default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
+  default: {debug: () => {}, info: () => {}, warn: () => {}, error: () => {}},
 }));
 
 const mockPerformVerticalScroll = jest.fn(async () => undefined);
 
-jest.unstable_mockModule(
-  '../../../tools/gestures/handlers/swipe-scroll.js',
-  () => ({
-    performVerticalScroll: mockPerformVerticalScroll,
-  })
-);
+jest.unstable_mockModule('../../../tools/gestures/handlers/swipe-scroll.js', () => ({
+  performVerticalScroll: mockPerformVerticalScroll,
+}));
 
-const { handleScrollToElement } =
-  await import('../../../tools/gestures/handlers/scroll-to-element.js');
+const {handleScrollToElement} = await import('../../../tools/gestures/handlers/scroll-to-element.js');
 
-function resultText(result: { content: Array<{ type: string }> }): string {
-  return (result.content[0] as unknown as { text: string }).text;
+function resultText(result: {content: Array<{type: string}>}): string {
+  return (result.content[0] as unknown as {text: string}).text;
 }
 
 const NO_SUCH_ELEMENT = {
   error: 'no such element',
-  message:
-    'An element could not be located on the page using the given search parameters',
+  message: 'An element could not be located on the page using the given search parameters',
 };
 
 describe('handleScrollToElement', () => {

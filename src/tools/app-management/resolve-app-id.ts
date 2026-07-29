@@ -1,16 +1,11 @@
-import {
-  getSessionId,
-  getDriver,
-  getPlatformName,
-  PLATFORM,
-  isXCUITestDriverSession,
-} from '../../session-store.js';
-import type { XCUITestDriver } from 'appium-xcuitest-driver';
-import { listAppsFromDevice } from './list-apps.js';
-import { noActiveDriverSessionMessage } from '../tool-response.js';
+import type {XCUITestDriver} from 'appium-xcuitest-driver';
+
+import {getSessionId, getDriver, getPlatformName, PLATFORM, isXCUITestDriverSession} from '../../session-store.js';
+import {noActiveDriverSessionMessage} from '../tool-response.js';
+import {listAppsFromDevice} from './list-apps.js';
 
 interface CacheEntry {
-  apps: { packageName: string; appName: string }[];
+  apps: {packageName: string; appName: string}[];
   timestamp: number;
 }
 
@@ -32,11 +27,7 @@ export function invalidateAppListCache(sessionId?: string): void {
  *
  * Throws if no match is found.
  */
-export async function resolveId(
-  id: string | undefined,
-  name: string | undefined,
-  sessionId?: string
-): Promise<string> {
+export async function resolveId(id: string | undefined, name: string | undefined, sessionId?: string): Promise<string> {
   if (id !== undefined) {
     if (!id.trim()) {
       throw new Error('App id must not be empty or whitespace.');
@@ -49,17 +40,14 @@ export async function resolveId(
   throw new Error('Either id or name must be provided');
 }
 
-export async function resolveAppId(
-  name: string,
-  sessionId?: string
-): Promise<string> {
+export async function resolveAppId(name: string, sessionId?: string): Promise<string> {
   const query = name.toLowerCase().trim();
   if (!query) {
     throw new Error('App name must not be empty or whitespace.');
   }
   const apps = await getInstalledApps(sessionId);
 
-  type ScoredApp = { packageName: string; score: number };
+  type ScoredApp = {packageName: string; score: number};
   const scored: ScoredApp[] = [];
 
   for (const app of apps) {
@@ -68,21 +56,21 @@ export async function resolveAppId(
     const pkgLastSegment = pkg.split('.').at(-1) ?? pkg;
 
     if (displayName === query) {
-      scored.push({ packageName: app.packageName, score: 100 });
+      scored.push({packageName: app.packageName, score: 100});
     } else if (displayName.startsWith(query)) {
-      scored.push({ packageName: app.packageName, score: 80 });
+      scored.push({packageName: app.packageName, score: 80});
     } else if (displayName.includes(query)) {
-      scored.push({ packageName: app.packageName, score: 60 });
+      scored.push({packageName: app.packageName, score: 60});
     } else if (pkgLastSegment.includes(query)) {
-      scored.push({ packageName: app.packageName, score: 40 });
+      scored.push({packageName: app.packageName, score: 40});
     } else if (pkg.includes(query)) {
-      scored.push({ packageName: app.packageName, score: 20 });
+      scored.push({packageName: app.packageName, score: 20});
     }
   }
 
   if (scored.length === 0) {
     throw new Error(
-      `No installed app matched the name "${name}". Use appium_app_lifecycle with action=list to see available apps.`
+      `No installed app matched the name "${name}". Use appium_app_lifecycle with action=list to see available apps.`,
     );
   }
 
@@ -94,9 +82,7 @@ function getCacheKey(sessionId?: string): string {
   return sessionId ?? getSessionId() ?? '__default__';
 }
 
-async function getInstalledApps(
-  sessionId?: string
-): Promise<{ packageName: string; appName: string }[]> {
+async function getInstalledApps(sessionId?: string): Promise<{packageName: string; appName: string}[]> {
   const key = getCacheKey(sessionId);
   const cached = appListCache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -110,10 +96,8 @@ async function getInstalledApps(
 
   const platform = getPlatformName(driver);
 
-  let apps: { packageName: string; appName: string }[];
-  const isSimulator = isXCUITestDriverSession(driver)
-    ? (driver as XCUITestDriver).isSimulator()
-    : false;
+  let apps: {packageName: string; appName: string}[];
+  const isSimulator = isXCUITestDriverSession(driver) ? (driver as XCUITestDriver).isSimulator() : false;
 
   if (platform === PLATFORM.ios && !isSimulator) {
     // Real iOS device: User and System app lists are separate — fetch both in parallel.
@@ -139,6 +123,6 @@ async function getInstalledApps(
     apps = await listAppsFromDevice(driver, 'User');
   }
 
-  appListCache.set(key, { apps, timestamp: Date.now() });
+  appListCache.set(key, {apps, timestamp: Date.now()});
   return apps;
 }

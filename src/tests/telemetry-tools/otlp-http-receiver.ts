@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { promisify } from 'node:util';
+import {promisify} from 'node:util';
 
 export type OtlpRequest = {
   body: unknown;
@@ -33,7 +33,7 @@ export async function startOtlpHttpReceiver(): Promise<OtlpHttpReceiver> {
         url: request.url,
       });
 
-      response.writeHead(200, { 'content-type': 'application/json' });
+      response.writeHead(200, {'content-type': 'application/json'});
       response.end('{}');
     });
   });

@@ -1,28 +1,15 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import type { DriverInstance } from '../../session-store.js';
-import {
-  errorResult,
-  resolveDriver,
-  textResult,
-  toolErrorMessage,
-} from '../tool-response.js';
-import {
-  GESTURE_ACTIONS,
-  gestureSchema,
-  type GestureAction,
-  type GestureArgs,
-} from './schema.js';
-import { handleTap, handleDoubleTap, handleLongPress } from './handlers/tap.js';
-import { handleScroll, handleSwipe } from './handlers/swipe-scroll.js';
-import { handlePinchZoom } from './handlers/pinch.js';
-import { handleScrollToElement } from './handlers/scroll-to-element.js';
-import { back } from '../../command.js';
-import {
-  withEvidence,
-  evidenceContext,
-  type EvidenceStage,
-} from '../evidence.js';
-import { isAiElementUUID } from './handlers/ai-element.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+
+import {back} from '../../command.js';
+import type {DriverInstance} from '../../session-store.js';
+import {withEvidence, evidenceContext, type EvidenceStage} from '../evidence.js';
+import {errorResult, resolveDriver, textResult, toolErrorMessage} from '../tool-response.js';
+import {isAiElementUUID} from './handlers/ai-element.js';
+import {handlePinchZoom} from './handlers/pinch.js';
+import {handleScrollToElement} from './handlers/scroll-to-element.js';
+import {handleScroll, handleSwipe} from './handlers/swipe-scroll.js';
+import {handleTap, handleDoubleTap, handleLongPress} from './handlers/tap.js';
+import {GESTURE_ACTIONS, gestureSchema, type GestureAction, type GestureArgs} from './schema.js';
 
 export default function gesture(server: FastMCP): void {
   server.addTool({
@@ -37,15 +24,12 @@ export default function gesture(server: FastMCP): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (
-      args: GestureArgs,
-      _context: Record<string, unknown> | undefined
-    ): Promise<ContentResult> => {
+    execute: async (args: GestureArgs, _context: Record<string, unknown> | undefined): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       const startedAt = Date.now();
       const context = await evidenceContext(args.sessionId);
@@ -55,30 +39,21 @@ export default function gesture(server: FastMCP): void {
         stage: gestureStage(args.action),
         startedAt,
         context,
-        ...(args.strategy && args.selector
-          ? { locator: { strategy: args.strategy, selector: args.selector } }
-          : {}),
-        ...(args.elementUUID && !isAiElementUUID(args.elementUUID)
-          ? { element: { webdriverId: args.elementUUID } }
-          : {}),
+        ...(args.strategy && args.selector ? {locator: {strategy: args.strategy, selector: args.selector}} : {}),
+        ...(args.elementUUID && !isAiElementUUID(args.elementUUID) ? {element: {webdriverId: args.elementUUID}} : {}),
       });
     },
   });
 }
 
-async function dispatchGesture(
-  driver: DriverInstance,
-  args: GestureArgs
-): Promise<ContentResult> {
+async function dispatchGesture(driver: DriverInstance, args: GestureArgs): Promise<ContentResult> {
   switch (args.action) {
     case 'back':
       try {
         await back(driver);
         return textResult('Successfully performed back action.');
       } catch (err: unknown) {
-        return errorResult(
-          `Failed to perform back action. ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed to perform back action. ${toolErrorMessage(err)}`);
       }
     case 'tap':
       return handleTap(driver, args);

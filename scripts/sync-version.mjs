@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync } from 'fs';
+import {readFileSync, writeFileSync} from 'node:fs';
 
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
 const serverJson = JSON.parse(readFileSync('server.json', 'utf8'));

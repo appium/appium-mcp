@@ -1,13 +1,7 @@
-import {
-  describe,
-  test,
-  expect,
-  beforeEach,
-  afterEach,
-  jest,
-} from '@jest/globals';
-import { join, isAbsolute } from 'node:path';
 import * as os from 'node:os';
+import {join, isAbsolute} from 'node:path';
+
+import {describe, test, expect, beforeEach, afterEach, jest} from '@jest/globals';
 
 /**
  * Interface for screenshot dependencies (mirrors screenshot.ts).
@@ -17,7 +11,7 @@ interface ScreenshotDeps {
     getScreenshot: (elementId?: string) => Promise<string>;
   } | null;
   writeFile: (path: string, data: Buffer) => Promise<void>;
-  mkdir: (path: string, options: { recursive: boolean }) => Promise<void>;
+  mkdir: (path: string, options: {recursive: boolean}) => Promise<void>;
   resolveScreenshotDir: () => string;
   dateNow: () => number;
 }
@@ -49,7 +43,7 @@ async function executeScreenshot(
   opts: {
     deps?: ScreenshotDeps;
     elementId?: string;
-  } = {}
+  } = {},
 ): Promise<any> {
   const defaultDeps: ScreenshotDeps = {
     getDriver: () => null as any,
@@ -59,7 +53,7 @@ async function executeScreenshot(
     dateNow: () => 0,
   };
 
-  const { deps = defaultDeps, elementId } = opts;
+  const {deps = defaultDeps, elementId} = opts;
 
   const driver = deps.getDriver();
   if (!driver) {
@@ -73,7 +67,7 @@ async function executeScreenshot(
     const filename = `screenshot_${timestamp}.png`;
     const screenshotDir = deps.resolveScreenshotDir();
 
-    await deps.mkdir(screenshotDir, { recursive: true });
+    await deps.mkdir(screenshotDir, {recursive: true});
     const filepath = join(screenshotDir, filename);
     await deps.writeFile(filepath, screenshotBuffer);
 
@@ -165,14 +159,10 @@ describe('executeScreenshot', () => {
   const mockBase64 = 'dGVzdA=='; // 'test' in base64
   const mockTimestamp = 1234567890;
 
-  function createMockDeps(
-    overrides: Partial<ScreenshotDeps> = {}
-  ): ScreenshotDeps {
+  function createMockDeps(overrides: Partial<ScreenshotDeps> = {}): ScreenshotDeps {
     return {
       getDriver: jest.fn(() => ({
-        getScreenshot: jest.fn((_elementId?: string) =>
-          Promise.resolve(mockBase64)
-        ),
+        getScreenshot: jest.fn((_elementId?: string) => Promise.resolve(mockBase64)),
       })) as any,
       writeFile: jest.fn(() => Promise.resolve()) as any,
       mkdir: jest.fn(() => Promise.resolve()) as any,
@@ -187,15 +177,13 @@ describe('executeScreenshot', () => {
       getDriver: jest.fn(() => null) as any,
     });
 
-    await expect(executeScreenshot({ deps })).rejects.toThrow(
-      'No driver found'
-    );
+    await expect(executeScreenshot({deps})).rejects.toThrow('No driver found');
   });
 
   test('should return success content with filename', async () => {
     const deps = createMockDeps();
 
-    const result = await executeScreenshot({ deps });
+    const result = await executeScreenshot({deps});
 
     expect(result).toEqual({
       content: [
@@ -213,19 +201,16 @@ describe('executeScreenshot', () => {
       resolveScreenshotDir: jest.fn(() => customDir) as any,
     });
 
-    await executeScreenshot({ deps });
+    await executeScreenshot({deps});
 
-    expect(deps.mkdir).toHaveBeenCalledWith(customDir, { recursive: true });
-    expect(deps.writeFile).toHaveBeenCalledWith(
-      join(customDir, `screenshot_${mockTimestamp}.png`),
-      expect.any(Buffer)
-    );
+    expect(deps.mkdir).toHaveBeenCalledWith(customDir, {recursive: true});
+    expect(deps.writeFile).toHaveBeenCalledWith(join(customDir, `screenshot_${mockTimestamp}.png`), expect.any(Buffer));
   });
 
   test('should create directory with recursive option', async () => {
     const deps = createMockDeps();
 
-    await executeScreenshot({ deps });
+    await executeScreenshot({deps});
 
     expect(deps.mkdir).toHaveBeenCalledWith('/mock/screenshots', {
       recursive: true,
@@ -235,11 +220,11 @@ describe('executeScreenshot', () => {
   test('should write screenshot buffer to correct filepath', async () => {
     const deps = createMockDeps();
 
-    await executeScreenshot({ deps });
+    await executeScreenshot({deps});
 
     expect(deps.writeFile).toHaveBeenCalledWith(
       `/mock/screenshots/screenshot_${mockTimestamp}.png`,
-      Buffer.from(mockBase64, 'base64')
+      Buffer.from(mockBase64, 'base64'),
     );
   });
 
@@ -251,7 +236,7 @@ describe('executeScreenshot', () => {
       })) as any,
     });
 
-    const result = await executeScreenshot({ deps });
+    const result = await executeScreenshot({deps});
 
     expect(result).toEqual({
       content: [
@@ -269,7 +254,7 @@ describe('executeScreenshot', () => {
       mkdir: jest.fn(() => Promise.reject(new Error(errorMessage))) as any,
     });
 
-    const result = await executeScreenshot({ deps });
+    const result = await executeScreenshot({deps});
 
     expect(result).toEqual({
       content: [
@@ -287,7 +272,7 @@ describe('executeScreenshot', () => {
       writeFile: jest.fn(() => Promise.reject(new Error(errorMessage))) as any,
     });
 
-    const result = await executeScreenshot({ deps });
+    const result = await executeScreenshot({deps});
 
     expect(result).toEqual({
       content: [
@@ -301,8 +286,8 @@ describe('executeScreenshot', () => {
 
   test('should pass elementId to getScreenshot when provided', async () => {
     const elementId = 'element-uuid-123';
-    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>(
-      (_elementId?: string) => Promise.resolve(mockBase64)
+    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>((_elementId?: string) =>
+      Promise.resolve(mockBase64),
     );
     const deps = createMockDeps({
       getDriver: jest.fn(() => ({
@@ -310,14 +295,14 @@ describe('executeScreenshot', () => {
       })) as any,
     });
 
-    await executeScreenshot({ deps, elementId });
+    await executeScreenshot({deps, elementId});
 
     expect(mockScreenshot).toHaveBeenCalledWith(elementId);
   });
 
   test('should pass undefined elementId to getScreenshot when not provided', async () => {
-    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>(
-      (_elementId?: string) => Promise.resolve(mockBase64)
+    const mockScreenshot = jest.fn<(elementId?: string) => Promise<string>>((_elementId?: string) =>
+      Promise.resolve(mockBase64),
     );
     const deps = createMockDeps({
       getDriver: jest.fn(() => ({
@@ -325,7 +310,7 @@ describe('executeScreenshot', () => {
       })) as any,
     });
 
-    await executeScreenshot({ deps });
+    await executeScreenshot({deps});
 
     expect(mockScreenshot).toHaveBeenCalledWith(undefined);
   });

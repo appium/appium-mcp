@@ -6,21 +6,11 @@
  * tool call interception.
  */
 
-import type {
-  ContentResult,
-  FastMCP,
-  FastMCPSessionAuth,
-  Tool,
-  ToolParameters,
-} from 'fastmcp';
-import {
-  getDriver,
-  getSessionId,
-  getSessionInfo,
-  listSessions,
-} from './session-store.js';
-import type { DriverInstance, SessionInfo } from './session-store.js';
+import type {ContentResult, FastMCP, FastMCPSessionAuth, Tool, ToolParameters} from 'fastmcp';
+
 import log from './logger.js';
+import {getDriver, getSessionId, getSessionInfo, listSessions} from './session-store.js';
+import type {DriverInstance, SessionInfo} from './session-store.js';
 import registerTools from './tools/index.js';
 
 const CORE_SOURCE = 'appium-mcp core';
@@ -89,10 +79,7 @@ export interface AppiumMcpPlugin {
    * Tool-only hook. Prompts, resources, and resource templates are registered
    * through FastMCP but are not wrapped by plugin call hooks.
    */
-  afterCall?(
-    ctx: ToolCallContext,
-    result: ToolCallResult
-  ): Promise<ToolCallResult | void>;
+  afterCall?(ctx: ToolCallContext, result: ToolCallResult): Promise<ToolCallResult | void>;
   destroy?(): Promise<void>;
 }
 
@@ -298,15 +285,11 @@ export class PluginManager {
   register(plugins: AppiumMcpPlugin[]): void {
     for (const plugin of plugins) {
       if (this.pluginMap.has(plugin.name)) {
-        log.warn(
-          `[PluginManager] Duplicate plugin name "${plugin.name}" – skipping.`
-        );
+        log.warn(`[PluginManager] Duplicate plugin name "${plugin.name}" – skipping.`);
         continue;
       }
       this.pluginMap.set(plugin.name, plugin);
-      log.info(
-        `[PluginManager] Registered plugin "${plugin.name}" v${plugin.version}`
-      );
+      log.info(`[PluginManager] Registered plugin "${plugin.name}" v${plugin.version}`);
     }
     this.installAddToolInterceptor();
   }
@@ -315,9 +298,7 @@ export class PluginManager {
     const registry = new McpRegistry(this.server);
     for (const plugin of this.pluginMap.values()) {
       if (this.capabilityPluginNames.has(plugin.name)) {
-        log.warn(
-          `[PluginManager] Duplicate plugin name "${plugin.name}" – skipping.`
-        );
+        log.warn(`[PluginManager] Duplicate plugin name "${plugin.name}" – skipping.`);
         continue;
       }
       this.capabilityPluginNames.add(plugin.name);
@@ -354,17 +335,10 @@ export class PluginManager {
     }
     this.addToolInterceptorInstalled = true;
 
-    const originalAddTool = this.server.addTool.bind(
-      this.server
-    ) as FastMCP['addTool'];
+    const originalAddTool = this.server.addTool.bind(this.server) as FastMCP['addTool'];
 
-    this.server.addTool = (<Params extends ToolParameters>(
-      toolDef: Tool<FastMCPSessionAuth, Params>
-    ): void => {
-      const wrappedExecute: Tool<
-        FastMCPSessionAuth,
-        Params
-      >['execute'] = async (args, mcpCtx) => {
+    this.server.addTool = (<Params extends ToolParameters>(toolDef: Tool<FastMCPSessionAuth, Params>): void => {
+      const wrappedExecute: Tool<FastMCPSessionAuth, Params>['execute'] = async (args, mcpCtx) => {
         const sessionCtx: PluginSessionContext = {
           getSessionId: () => getSessionId(),
           getSessionInfo: (sessionId?: string) => getSessionInfo(sessionId),
@@ -391,10 +365,7 @@ export class PluginManager {
           }
         }
 
-        const rawResult = (await toolDef.execute(
-          args,
-          mcpCtx
-        )) as ContentResult;
+        const rawResult = (await toolDef.execute(args, mcpCtx)) as ContentResult;
         let hookResult: ToolCallResult = {
           isError: rawResult.isError ?? false,
           content: rawResult.content as ToolCallResult['content'],
@@ -416,7 +387,7 @@ export class PluginManager {
         } as ContentResult;
       };
 
-      return originalAddTool({ ...toolDef, execute: wrappedExecute });
+      return originalAddTool({...toolDef, execute: wrappedExecute});
     }) as FastMCP['addTool'];
 
     // Keep batch tool registration on the same hook-wrapped path as addTool.
@@ -434,9 +405,7 @@ export class PluginManager {
  * @param options - Options for verification, including the list of plugins and any pre-existing errors.
  * @returns A report detailing any duplicates or errors found during verification.
  */
-export function verifyAppiumMcpNames(
-  options: VerifyAppiumMcpNamesOptions = {}
-): VerificationReport {
+export function verifyAppiumMcpNames(options: VerifyAppiumMcpNamesOptions = {}): VerificationReport {
   const plugins = options.plugins ?? [];
   const errors = [...(options.errors ?? [])];
   const duplicates: VerificationDuplicate[] = [];
@@ -505,9 +474,7 @@ export function verifyAppiumMcpNames(
 }
 
 export function formatVerificationReport(report: VerificationReport): string {
-  const lines = [
-    `Checked ${report.pluginCount} plugin name(s) and ${report.toolCount} tool name(s).`,
-  ];
+  const lines = [`Checked ${report.pluginCount} plugin name(s) and ${report.toolCount} tool name(s).`];
 
   if (report.ok) {
     lines.push('No duplicate plugin or tool names found.');
@@ -517,9 +484,7 @@ export function formatVerificationReport(report: VerificationReport): string {
   if (report.duplicates.length > 0) {
     lines.push('Duplicate names found:');
     for (const duplicate of report.duplicates) {
-      const sources = duplicate.entries
-        .map((entry) => `    - ${entry.source}`)
-        .join('\n');
+      const sources = duplicate.entries.map((entry) => `    - ${entry.source}`).join('\n');
       lines.push(`  ${duplicate.kind}: ${duplicate.name}\n${sources}`);
     }
   }
@@ -535,7 +500,7 @@ export function formatVerificationReport(report: VerificationReport): string {
 }
 
 function withSuppressedRegistrationLogs(fn: () => void): void {
-  const mutableLog = log as typeof log & { info: (...args: unknown[]) => void };
+  const mutableLog = log as typeof log & {info: (...args: unknown[]) => void};
   const originalInfo = mutableLog.info;
   mutableLog.info = () => {};
   try {
@@ -545,10 +510,7 @@ function withSuppressedRegistrationLogs(fn: () => void): void {
   }
 }
 
-function findDuplicates(
-  kind: VerificationDuplicateKind,
-  entries: VerificationEntry[]
-): VerificationDuplicate[] {
+function findDuplicates(kind: VerificationDuplicateKind, entries: VerificationEntry[]): VerificationDuplicate[] {
   const byName = new Map<string, VerificationEntry[]>();
   for (const entry of entries) {
     const existing = byName.get(entry.name) ?? [];

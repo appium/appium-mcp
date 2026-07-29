@@ -1,22 +1,17 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import { getPlatformName, PLATFORM } from '../../session-store.js';
-import { execute } from '../../command.js';
-import { BatteryState } from 'appium-xcuitest-driver/build/lib/commands/enum.js';
-import {
-  resolveDriver,
-  textResult,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {execute} from '../../command.js';
+import {getPlatformName, PLATFORM} from '../../session-store.js';
+import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 // iOS: maps UIDeviceBatteryState values to human-readable strings
-// @see https://github.com/appium/appium-xcuitest-driver/blob/5bdad71/lib/commands/enum.ts#L91
+// @see https://developer.apple.com/documentation/uikit/uidevice/batterystate
 const IOS_BATTERY_STATES: Record<number, string> = {
-  [BatteryState.UIDeviceBatteryStateUnknown]: 'unknown',
-  [BatteryState.UIDeviceBatteryStateUnplugged]: 'unplugged',
-  [BatteryState.UIDeviceBatteryStateCharging]: 'charging',
-  [BatteryState.UIDeviceBatteryStateFull]: 'full',
+  0: 'unknown',
+  1: 'unplugged',
+  2: 'charging',
+  3: 'full',
 };
 
 // Android: state matches BatteryManager constants
@@ -33,18 +28,15 @@ export default function deviceInfo(server: FastMCP): void {
     action: z
       .enum(['info', 'battery', 'time'])
       .describe(
-        'Action to perform: "info" returns device model/OS/locale/etc., "battery" returns battery level and charging state, "time" returns the current device time.'
+        'Action to perform: "info" returns device model/OS/locale/etc., "battery" returns battery level and charging state, "time" returns the current device time.',
       ),
     format: z
       .string()
       .optional()
       .describe(
-        'Only used when action is "time". moment.js format string for the returned time. Defaults to ISO 8601 (YYYY-MM-DDTHH:mm:ssZ).'
+        'Only used when action is "time". moment.js format string for the returned time. Defaults to ISO 8601 (YYYY-MM-DDTHH:mm:ssZ).',
       ),
-    sessionId: z
-      .string()
-      .optional()
-      .describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
   });
 
   server.addTool({
@@ -61,16 +53,14 @@ export default function deviceInfo(server: FastMCP): void {
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       if (args.action === 'info') {
         try {
           const result = await execute(driver, 'mobile: deviceInfo', {});
           return textResult(JSON.stringify(result, null, 2));
         } catch (err: unknown) {
-          return errorResult(
-            `Failed to get device info: ${toolErrorMessage(err)}`
-          );
+          return errorResult(`Failed to get device info: ${toolErrorMessage(err)}`);
         }
       }
 
@@ -81,9 +71,7 @@ export default function deviceInfo(server: FastMCP): void {
           const formatted = formatBatteryInfo(platform, raw);
           return textResult(JSON.stringify(formatted, null, 2));
         } catch (err: unknown) {
-          return errorResult(
-            `Failed to get battery info: ${toolErrorMessage(err)}`
-          );
+          return errorResult(`Failed to get battery info: ${toolErrorMessage(err)}`);
         }
       }
 
@@ -96,9 +84,7 @@ export default function deviceInfo(server: FastMCP): void {
           const time = await execute(driver, 'mobile: getDeviceTime', params);
           return textResult(String(time));
         } catch (err: unknown) {
-          return errorResult(
-            `Failed to get device time: ${toolErrorMessage(err)}`
-          );
+          return errorResult(`Failed to get device time: ${toolErrorMessage(err)}`);
         }
       }
 
@@ -107,13 +93,9 @@ export default function deviceInfo(server: FastMCP): void {
   });
 }
 
-function formatBatteryInfo(
-  platform: string,
-  raw: { level?: number; state?: number }
-): Record<string, string> {
+function formatBatteryInfo(platform: string, raw: {level?: number; state?: number}): Record<string, string> {
   const levelPercent = Math.round((raw.level ?? 0) * 100);
-  const states =
-    platform === PLATFORM.ios ? IOS_BATTERY_STATES : ANDROID_BATTERY_STATES;
+  const states = platform === PLATFORM.ios ? IOS_BATTERY_STATES : ANDROID_BATTERY_STATES;
   return {
     platform: platform === PLATFORM.ios ? 'iOS' : 'Android',
     level: `${levelPercent}%`,

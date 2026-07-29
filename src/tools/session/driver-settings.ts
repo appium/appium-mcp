@@ -1,22 +1,15 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
-import {
-  getSessionDriverSettings,
-  updateSessionDriverSettings,
-} from '../../command.js';
-import {
-  errorResult,
-  resolveDriver,
-  textResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {getSessionDriverSettings, updateSessionDriverSettings} from '../../command.js';
+import {errorResult, resolveDriver, textResult, toolErrorMessage} from '../tool-response.js';
 
 const schema = z.object({
   action: z
     .enum(['get', 'update'])
     .describe(
       'get: read current Appium driver session settings (timeouts, selector waits, flags). ' +
-        'update: merge a settings map into the session (requires settings).'
+        'update: merge a settings map into the session (requires settings).',
     ),
   settings: z
     .record(z.string(), z.any())
@@ -24,12 +17,9 @@ const schema = z.object({
     .describe(
       'Required when action is update. Driver-specific keys (e.g. Android UiAutomator2: ' +
         'waitForIdleTimeout, waitForSelectorTimeout, ignoreUnimportantViews; iOS XCUITest has its own set). ' +
-        'Use action=get first to inspect current values.'
+        'Use action=get first to inspect current values.',
     ),
-  sessionId: z
-    .string()
-    .optional()
-    .describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
 });
 
 type DriverSettingsArgs = z.infer<typeof schema>;
@@ -48,7 +38,7 @@ export default function driverSettings(server: FastMCP): void {
     },
     execute: async (
       args: DriverSettingsArgs,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       try {
         switch (args.action) {
@@ -62,9 +52,7 @@ export default function driverSettings(server: FastMCP): void {
           }
         }
       } catch (err: unknown) {
-        return errorResult(
-          `Failed to ${args.action} driver settings. Error: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed to ${args.action} driver settings. Error: ${toolErrorMessage(err)}`);
       }
     },
   });
@@ -75,21 +63,18 @@ async function handleGet(sessionId?: string): Promise<ContentResult> {
   if (!resolved.ok) {
     return resolved.result;
   }
-  const { driver } = resolved;
+  const {driver} = resolved;
 
   const settings = await getSessionDriverSettings(driver);
   return textResult(JSON.stringify(settings, null, 2));
 }
 
-async function handleUpdate(
-  sessionId: string | undefined,
-  settings: Record<string, unknown>
-): Promise<ContentResult> {
+async function handleUpdate(sessionId: string | undefined, settings: Record<string, unknown>): Promise<ContentResult> {
   const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
   }
-  const { driver } = resolved;
+  const {driver} = resolved;
 
   await updateSessionDriverSettings(driver, settings);
   return textResult('Successfully updated driver settings.');

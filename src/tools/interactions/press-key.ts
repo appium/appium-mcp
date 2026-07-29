@@ -1,5 +1,9 @@
-import type { ContentResult, FastMCP } from 'fastmcp';
-import { z } from 'zod';
+import type {AndroidUiautomator2Driver} from 'appium-uiautomator2-driver';
+import type {XCUITestDriver} from 'appium-xcuitest-driver';
+import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
+
+import {execute} from '../../command.js';
 import {
   getPlatformName,
   isAndroidUiautomator2DriverSession,
@@ -7,15 +11,7 @@ import {
   isRemoteDriverSession,
   PLATFORM,
 } from '../../session-store.js';
-import { execute } from '../../command.js';
-import type { AndroidUiautomator2Driver } from 'appium-uiautomator2-driver';
-import type { XCUITestDriver } from 'appium-xcuitest-driver';
-import {
-  resolveDriver,
-  textResult,
-  errorResult,
-  toolErrorMessage,
-} from '../tool-response.js';
+import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 const ANDROID_KEYCODE_MAP: Record<string, number> = {
   BACK: 4,
@@ -41,10 +37,7 @@ const IOS_BUTTONS_DESCRIPTION = Object.keys(IOS_BUTTON_MAP).join(', ');
 export default function pressKey(server: FastMCP): void {
   const pressKeySchema = z
     .object({
-      sessionId: z
-        .string()
-        .optional()
-        .describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
       key: z
         .enum([
           'BACK',
@@ -62,21 +55,14 @@ export default function pressKey(server: FastMCP): void {
         ])
         .optional()
         .describe(
-          `Logical key/button to press. On Android: ${ANDROID_KEYS_DESCRIPTION}. On iOS/tvOS: ${IOS_BUTTONS_DESCRIPTION}.`
+          `Logical key/button to press. On Android: ${ANDROID_KEYS_DESCRIPTION}. On iOS/tvOS: ${IOS_BUTTONS_DESCRIPTION}.`,
         ),
       keyCode: z
         .number()
         .int()
         .optional()
-        .describe(
-          'Android keycode to press. If provided, takes precedence over key for Android.'
-        ),
-      isLongPress: z
-        .boolean()
-        .optional()
-        .describe(
-          'Android only. Whether to perform a long press. Defaults to false.'
-        ),
+        .describe('Android keycode to press. If provided, takes precedence over key for Android.'),
+      isLongPress: z.boolean().optional().describe('Android only. Whether to perform a long press. Defaults to false.'),
     })
     .refine((value) => value.key !== undefined || value.keyCode !== undefined, {
       message: 'Either key or keyCode must be provided',
@@ -94,26 +80,23 @@ export default function pressKey(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof pressKeySchema>,
-      _context: Record<string, unknown> | undefined
+      _context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
-      const { driver } = resolved;
+      const {driver} = resolved;
 
       const platform = getPlatformName(driver);
-      const { key, keyCode, isLongPress } = args;
+      const {key, keyCode, isLongPress} = args;
 
       try {
         if (platform === PLATFORM.android) {
-          const resolvedKeyCode =
-            keyCode ?? (key && ANDROID_KEYCODE_MAP[key]) ?? undefined;
+          const resolvedKeyCode = keyCode ?? (key && ANDROID_KEYCODE_MAP[key]) ?? undefined;
 
           if (resolvedKeyCode == null) {
-            return errorResult(
-              `For Android, provide either keyCode or key in [${ANDROID_KEYS_DESCRIPTION}].`
-            );
+            return errorResult(`For Android, provide either keyCode or key in [${ANDROID_KEYS_DESCRIPTION}].`);
           }
 
           if (isAndroidUiautomator2DriverSession(driver)) {
@@ -121,7 +104,7 @@ export default function pressKey(server: FastMCP): void {
               resolvedKeyCode,
               undefined,
               undefined,
-              isLongPress ?? false
+              isLongPress ?? false,
             );
           } else if (isRemoteDriverSession(driver)) {
             await execute(driver, 'mobile: pressKey', {
@@ -136,15 +119,11 @@ export default function pressKey(server: FastMCP): void {
           const buttonName = IOS_BUTTON_MAP[logicalKey];
 
           if (!buttonName) {
-            return errorResult(
-              `For iOS/tvOS, key must be one of ${IOS_BUTTONS_DESCRIPTION}.`
-            );
+            return errorResult(`For iOS/tvOS, key must be one of ${IOS_BUTTONS_DESCRIPTION}.`);
           }
 
           if (isXCUITestDriverSession(driver)) {
-            await (driver as XCUITestDriver).mobilePressButton(
-              buttonName as any
-            );
+            await (driver as XCUITestDriver).mobilePressButton(buttonName as any);
           } else if (isRemoteDriverSession(driver)) {
             await execute(driver, 'mobile: pressButton', {
               name: buttonName,
@@ -153,20 +132,16 @@ export default function pressKey(server: FastMCP): void {
             return errorResult('Unsupported iOS/tvOS driver for press_key');
           }
         } else {
-          return errorResult(
-            `Unsupported platform: ${platform}. Only Android and iOS are supported.`
-          );
+          return errorResult(`Unsupported platform: ${platform}. Only Android and iOS are supported.`);
         }
 
         return textResult(
           platform === PLATFORM.android
             ? `Successfully pressed key${key ? ` "${key}"` : ''} on Android.`
-            : `Successfully pressed key${key ? ` "${key}"` : ''} on iOS/tvOS.`
+            : `Successfully pressed key${key ? ` "${key}"` : ''} on iOS/tvOS.`,
         );
       } catch (err: unknown) {
-        return errorResult(
-          `Failed to press key${key ? ` "${key}"` : ''}. err: ${toolErrorMessage(err)}`
-        );
+        return errorResult(`Failed to press key${key ? ` "${key}"` : ''}. err: ${toolErrorMessage(err)}`);
       }
     },
   });
