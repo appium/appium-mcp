@@ -2,7 +2,7 @@ import appiumConfig, {defineConfig, ignorePatterns} from '@appium/oxc-config/oxl
 
 export default defineConfig({
   extends: [appiumConfig],
-  ignorePatterns: [...ignorePatterns, 'node_modules/**', '**/dist/**'],
+  ignorePatterns: [...ignorePatterns],
   rules: {
     'no-console': 'off',
   },

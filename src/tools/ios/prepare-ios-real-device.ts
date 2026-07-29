@@ -156,8 +156,7 @@ async function downloadWdaApp(version: string, downloadDir: string): Promise<str
   const appPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.app');
   if (!(await fileExists(appPath))) {
     throw new Error(
-      `WebDriverAgentRunner-Runner.app not found after extracting ${url}. ` +
-        `The release asset format may have changed.`,
+      `WebDriverAgentRunner-Runner.app not found after extracting ${url}. The release asset format may have changed.`,
     );
   }
   return appPath;
@@ -268,9 +267,7 @@ async function runPipeline(inputs: PipelineInputs): Promise<PrepareRealDeviceRes
     if (!match) {
       result.validate_device = {
         status: 'failed',
-        detail:
-          `No connected real iOS device with UDID "${inputs.udid}". ` +
-          `Connect the device, trust the host, and try again.`,
+        detail: `No connected real iOS device with UDID "${inputs.udid}". Connect the device, trust the host, and try again.`,
       };
       return result;
     }

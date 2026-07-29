@@ -244,8 +244,7 @@ export async function createAppiumMcpServer(options: CreateAppiumMcpServerOption
 
     if (ownedSessions.length > 0 && policy === 'skip') {
       log.info(
-        `${ownedSessions.length} owned session(s) retained after MCP disconnect ` +
-          '(APPIUM_MCP_ON_CLIENT_DISCONNECT=skip).',
+        `${ownedSessions.length} owned session(s) retained after MCP disconnect (APPIUM_MCP_ON_CLIENT_DISCONNECT=skip).`,
       );
     } else if (ownedSessions.length > 0) {
       try {
