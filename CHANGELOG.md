@@ -1,3 +1,9 @@
+## [1.90.1](https://github.com/appium/appium-mcp/compare/v1.90.0...v1.90.1) (2026-07-29)
+
+### Miscellaneous Chores
+
+* tweak lint more ([90edd2d](https://github.com/appium/appium-mcp/commit/90edd2d065d55362b0dc8ce1ebada381d6003cae))
+
 ## [1.90.0](https://github.com/appium/appium-mcp/compare/v1.89.0...v1.90.0) (2026-07-28)
 
 ### Features
