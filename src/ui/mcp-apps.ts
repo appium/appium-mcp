@@ -27,7 +27,13 @@ export function supportsMcpAppsCapability(capabilities: unknown): boolean {
     return false;
   }
 
-  return uiCapability.mimeTypes.includes(MCP_APP_MIME_TYPE);
+  return uiCapability.mimeTypes.some((mimeType) => {
+    if (typeof mimeType !== 'string') {
+      return false;
+    }
+
+    return normalizeMimeType(mimeType) === MCP_APP_MIME_TYPE;
+  });
 }
 
 export function clientSupportsMcpApps(
@@ -46,4 +52,8 @@ export function clientSupportsMcpApps(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function normalizeMimeType(mimeType: string): string {
+  return mimeType.replace(/[\s"]/g, '').toLowerCase();
 }
