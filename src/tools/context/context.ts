@@ -2,7 +2,9 @@ import type {ContentResult, FastMCP} from 'fastmcp';
 import {z} from 'zod';
 
 import {getContexts, getCurrentContext, setContext} from '../../command.js';
+import {CONTROL_CENTER_URI} from '../../resources/control-center.js';
 import {setCurrentContext} from '../../session-store.js';
+import {clientSupportsMcpApps, isMcpAppsEnabled} from '../../ui/mcp-apps.js';
 import {createUIResource, createContextSwitcherUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
 import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
@@ -16,10 +18,11 @@ const contextSchema = z.object({
 });
 
 export default function context(server: FastMCP): void {
+  const mcpAppsEnabled = isMcpAppsEnabled();
   server.addTool({
     name: 'appium_context',
-    description:
-      'Manage Appium contexts with one tool. action=list returns all contexts and current context. action=switch changes to a target context.',
+    description: 'List available/current Appium contexts or switch to a target.',
+    _meta: mcpAppsEnabled ? {ui: {resourceUri: CONTROL_CENTER_URI}} : undefined,
     parameters: contextSchema,
     annotations: {
       readOnlyHint: false,
@@ -27,13 +30,14 @@ export default function context(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof contextSchema>,
-      _context: Record<string, unknown> | undefined,
+      context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const resolved = await resolveDriver(args.sessionId);
       if (!resolved.ok) {
         return resolved.result;
       }
       const {driver} = resolved;
+      const useMcpApps = mcpAppsEnabled && clientSupportsMcpApps(server, context);
 
       try {
         const [currentContext, availableContexts] = await Promise.all([
@@ -53,6 +57,20 @@ export default function context(server: FastMCP): void {
           const textResponse = textResult(
             `Available contexts: ${JSON.stringify(availableContexts, null, 2)}\nCurrent context: ${currentContext}`,
           );
+
+          if (useMcpApps) {
+            return {
+              ...textResponse,
+              structuredContent: {
+                appiumMcpView: {
+                  type: 'context-switcher',
+                  contexts: availableContexts,
+                  currentContext,
+                  sessionId: args.sessionId,
+                },
+              },
+            };
+          }
 
           return addUIResourceToResponse(textResponse, () =>
             createUIResource(

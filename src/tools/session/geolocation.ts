@@ -42,7 +42,7 @@ export default function geolocation(server: FastMCP): void {
   server.addTool({
     name: 'appium_geolocation',
     description:
-      'Get, set, or reset the device geolocation (GPS coordinates). Works on both iOS (simulators and real devices) and Android (emulators and real devices with mock location enabled). Use action=get to read current coordinates, action=set with latitude/longitude (and optional altitude for Android) to simulate a location, or action=reset to restore the system default. Note: On Android emulators, reset is not supported — use action=set to manually restore coordinates instead. On Android real devices, the mocked location may persist until the GPS cache refreshes.',
+      'Get, set, or reset device geolocation on iOS and Android. Android real devices require mock locations; emulator reset is unsupported, so use set.',
     parameters: schema,
     annotations: {
       readOnlyHint: false,

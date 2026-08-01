@@ -1,5 +1,6 @@
 import {afterEach, describe, expect, test} from '@jest/globals';
 
+import {createControlCenterAppUI} from '../ui/control-center-app.js';
 import {createLocatorGeneratorAppUI} from '../ui/locator-generator-app.js';
 import {
   clientSupportsMcpApps,
@@ -144,6 +145,31 @@ describe('locator generator MCP App', () => {
 
   test('contains valid JavaScript', () => {
     const html = createLocatorGeneratorAppUI();
+    const script = html.match(/<script>([\s\S]*)<\/script>/)?.[1];
+
+    expect(script).toBeDefined();
+    expect(() => Function(script ?? '')).not.toThrow();
+  });
+});
+
+describe('Appium Control Center MCP App', () => {
+  test('renders structured view data and calls the current aggregate tools', () => {
+    const html = createControlCenterAppUI();
+
+    expect(html).toContain('result.structuredContent.appiumMcpView');
+    expect(html).toContain("view.type === 'device-picker'");
+    expect(html).toContain("view.type === 'session-dashboard'");
+    expect(html).toContain("view.type === 'context-switcher'");
+    expect(html).toContain("view.type === 'app-list'");
+    expect(html).toContain("'appium_session_management'");
+    expect(html).toContain("'appium_app_lifecycle'");
+    expect(html).toContain("'select_device'");
+    expect(html).not.toContain('emulator-5554');
+    expect(html).not.toContain('com.example.app');
+  });
+
+  test('contains valid JavaScript', () => {
+    const html = createControlCenterAppUI();
     const script = html.match(/<script>([\s\S]*)<\/script>/)?.[1];
 
     expect(script).toBeDefined();

@@ -7,6 +7,8 @@ import {z} from 'zod';
 import {ADBManager} from '../../devicemanager/adb-manager.js';
 import {IOSManager} from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
+import {CONTROL_CENTER_URI} from '../../resources/control-center.js';
+import {clientSupportsMcpApps, isMcpAppsEnabled} from '../../ui/mcp-apps.js';
 import {createUIResource, createDevicePickerUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
 import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
 
@@ -70,6 +72,7 @@ export function clearSelectedDevice(): void {
 }
 
 export default function selectDevice(server: any): void {
+  const mcpAppsEnabled = isMcpAppsEnabled();
   server.addTool({
     name: 'select_device',
     description: `Discover and select a device for LOCAL Appium servers ONLY.
@@ -85,6 +88,7 @@ export default function selectDevice(server: any): void {
       - Device selection should be handled via capabilities on appium_session_management (action=create) (e.g., appium:deviceName, appium:udid)
       - The remote Appium server is already configured for specific device(s)
       `,
+    _meta: mcpAppsEnabled ? {ui: {resourceUri: CONTROL_CENTER_URI}} : undefined,
     parameters: z
       .object({
         platform: z
@@ -111,15 +115,16 @@ export default function selectDevice(server: any): void {
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: any, _context: any): Promise<ContentResult> => {
+    execute: async (args: any, context: any): Promise<ContentResult> => {
       try {
         const {platform, iosDeviceType, deviceUdid} = args;
+        const useMcpApps = mcpAppsEnabled && clientSupportsMcpApps(server, context);
 
         if (platform === 'android') {
-          return await handleAndroidDeviceSelection(deviceUdid);
+          return await handleAndroidDeviceSelection(deviceUdid, useMcpApps);
         }
         if (platform === 'ios') {
-          return await handleIOSDeviceSelection(iosDeviceType, deviceUdid);
+          return await handleIOSDeviceSelection(iosDeviceType, deviceUdid, useMcpApps);
         }
         return errorResult(`Invalid platform '${String(platform)}'. Use platform='android' or platform='ios'.`);
       } catch (error: unknown) {
@@ -188,12 +193,16 @@ function formatAndroidSelectionResponse(deviceUdid: string): ContentResult {
 /**
  * Format device list response for Android
  */
-function formatAndroidListResponse(devices: any[]): ContentResult {
+function formatAndroidListResponse(devices: any[], useMcpApps: boolean): ContentResult {
   const deviceList = devices.map((device, index) => `  ${index + 1}. ${device.udid}`).join('\n');
 
   const textResponse = textResult(
     `📱 Available Android devices/emulators (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`,
   );
+
+  if (useMcpApps) {
+    return devicePickerResult(textResponse, devices, 'android');
+  }
 
   // Add interactive UI picker
   return addUIResourceToResponse(textResponse, () =>
@@ -271,7 +280,11 @@ function formatIOSSelectionResponse(deviceName: string, deviceUdid: string): Con
 /**
  * Format device list response for iOS
  */
-function formatIOSListResponse(devices: any[], iosDeviceType: 'simulator' | 'real'): ContentResult {
+function formatIOSListResponse(
+  devices: any[],
+  iosDeviceType: 'simulator' | 'real',
+  useMcpApps: boolean,
+): ContentResult {
   const deviceList = devices
     .map(
       (device, index) => `  ${index + 1}. ${device.name} (${device.udid})${device.state ? ` - ${device.state}` : ''}`,
@@ -281,6 +294,10 @@ function formatIOSListResponse(devices: any[], iosDeviceType: 'simulator' | 'rea
   const textResponse = textResult(
     `📱 Available iOS ${iosDeviceType === 'simulator' ? 'simulators' : 'devices'} (${devices.length}):\n${deviceList}\n\n⚠️ IMPORTANT: Please ask the user which device they want to use.\n\nOnce the user selects a device, call this tool again with the deviceUdid parameter set to their chosen device UDID.`,
   );
+
+  if (useMcpApps) {
+    return devicePickerResult(textResponse, devices, 'ios', iosDeviceType);
+  }
 
   // Add interactive UI picker
   return addUIResourceToResponse(textResponse, () =>
@@ -294,7 +311,7 @@ function formatIOSListResponse(devices: any[], iosDeviceType: 'simulator' | 'rea
 /**
  * Handle Android device selection
  */
-async function handleAndroidDeviceSelection(deviceUdid?: string): Promise<ContentResult> {
+async function handleAndroidDeviceSelection(deviceUdid?: string, useMcpApps = false): Promise<ContentResult> {
   const listed = await getAndroidDevices();
   if (!listed.ok) {
     return listed.result;
@@ -318,7 +335,7 @@ async function handleAndroidDeviceSelection(deviceUdid?: string): Promise<Conten
     return formatAndroidSelectionResponse(devices[0].udid);
   }
 
-  return formatAndroidListResponse(devices);
+  return formatAndroidListResponse(devices, useMcpApps);
 }
 
 /**
@@ -327,6 +344,7 @@ async function handleAndroidDeviceSelection(deviceUdid?: string): Promise<Conten
 async function handleIOSDeviceSelection(
   iosDeviceType: 'simulator' | 'real' | undefined,
   deviceUdid?: string,
+  useMcpApps = false,
 ): Promise<ContentResult> {
   const iosManager = IOSManager.getInstance();
   if (!iosManager.isMac()) {
@@ -362,5 +380,29 @@ async function handleIOSDeviceSelection(
     return formatIOSSelectionResponse(selected.device.info.name, devices[0].udid);
   }
 
-  return formatIOSListResponse(devices, iosDeviceType);
+  return formatIOSListResponse(devices, iosDeviceType, useMcpApps);
+}
+
+function devicePickerResult(
+  textResponse: ContentResult,
+  devices: any[],
+  platform: 'android' | 'ios',
+  iosDeviceType?: 'simulator' | 'real',
+): ContentResult {
+  return {
+    ...textResponse,
+    structuredContent: {
+      appiumMcpView: {
+        type: 'device-picker',
+        platform,
+        iosDeviceType,
+        devices: devices.map((device) => ({
+          name: typeof device.name === 'string' ? device.name : undefined,
+          udid: String(device.udid),
+          state: typeof device.state === 'string' ? device.state : undefined,
+          type: typeof device.type === 'string' ? device.type : undefined,
+        })),
+      },
+    },
+  };
 }

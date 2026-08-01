@@ -1,6 +1,8 @@
 import type {ContentResult, FastMCP} from 'fastmcp';
 import {z} from 'zod';
 
+import {CONTROL_CENTER_URI} from '../../resources/control-center.js';
+import {clientSupportsMcpApps, isMcpAppsEnabled} from '../../ui/mcp-apps.js';
 import {errorResult, toolErrorMessage} from '../tool-response.js';
 import {activate} from './activate-app.js';
 import {background, DEFAULT_BACKGROUND_SECONDS} from './background-app.js';
@@ -58,9 +60,11 @@ const schema = z.object({
 });
 
 export default function app(server: FastMCP): void {
+  const mcpAppsEnabled = isMcpAppsEnabled();
   server.addTool({
     name: 'appium_app_lifecycle',
     description: 'Manage app lifecycle, installation, state, data, and deep links.',
+    _meta: mcpAppsEnabled ? {ui: {resourceUri: CONTROL_CENTER_URI}} : undefined,
     parameters: schema,
     annotations: {
       readOnlyHint: false,
@@ -68,12 +72,12 @@ export default function app(server: FastMCP): void {
     },
     execute: async (
       args: z.infer<typeof schema>,
-      _context: Record<string, unknown> | undefined,
+      context: Record<string, unknown> | undefined,
     ): Promise<ContentResult> => {
       const {action, sessionId} = args;
 
       if (action === 'list') {
-        return list(args.applicationType, sessionId);
+        return list(args.applicationType, sessionId, mcpAppsEnabled && clientSupportsMcpApps(server, context));
       }
       if (action === 'background') {
         return background(args.seconds ?? DEFAULT_BACKGROUND_SECONDS, sessionId);

@@ -11,6 +11,8 @@ const mockAttachToSession = jest.fn<(options: Record<string, unknown>) => Promis
 
 let mockSelectedDevicePlatform: 'android' | 'ios' | null = 'ios';
 let mockSelectedDevice: string | null = 'device-udid';
+const mockClientSupportsMcpApps = jest.fn(() => false);
+const mockIsMcpAppsEnabled = jest.fn(() => true);
 
 jest.unstable_mockModule('../../../tools/session/select-device', () => ({
   getSelectedLocalDevice: () =>
@@ -85,6 +87,12 @@ jest.unstable_mockModule('../../../ui/mcp-ui-utils', () => ({
   addUIResourceToResponse: jest.fn((_result: any, _ui: any) => _result),
 }));
 
+jest.unstable_mockModule('../../../ui/mcp-apps', () => ({
+  MCP_APP_MIME_TYPE: 'text/html;profile=mcp-app',
+  clientSupportsMcpApps: mockClientSupportsMcpApps,
+  isMcpAppsEnabled: mockIsMcpAppsEnabled,
+}));
+
 // ── imports ───────────────────────────────────────────────────────────────────
 
 const {
@@ -130,6 +138,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockSelectedDevicePlatform = 'ios';
   mockSelectedDevice = 'device-udid';
+  mockClientSupportsMcpApps.mockReturnValue(false);
+  mockIsMcpAppsEnabled.mockReturnValue(true);
   mockGetSessionOwnership.mockReturnValue(null);
   mockAttachToSession.mockResolvedValue({
     sessionId: 'attached-session-id',
@@ -452,6 +462,34 @@ describe('appium_session_management tool', () => {
   });
 
   describe('action: create', () => {
+    test('uses the static control center for MCP Apps clients', async () => {
+      mockClientSupportsMcpApps.mockReturnValue(true);
+      mockListSessions.mockReturnValue([]);
+      const tool = await getToolExecute();
+
+      const result = await tool.execute(
+        {
+          action: 'create',
+          platform: 'android',
+          remoteServerUrl: 'http://localhost:4723',
+        },
+        {sessionId: 'client'},
+      );
+
+      expect(tool._meta).toEqual({ui: {resourceUri: 'ui://appium-mcp/control-center'}});
+      expect(result.content).toHaveLength(1);
+      expect(result.structuredContent).toMatchObject({
+        appiumMcpView: {
+          type: 'session-dashboard',
+          session: {
+            sessionId: 'remote-session-id',
+            platform: 'Android',
+            automationName: 'UiAutomator2',
+          },
+        },
+      });
+    });
+
     test('returns error when platform is missing', async () => {
       const tool = await getToolExecute();
       const result = await tool.execute({action: 'create'}, undefined);

@@ -2,6 +2,8 @@ import {beforeEach, describe, test, expect, jest} from '@jest/globals';
 
 const mockDriver = {};
 const mockSetCurrentContext = jest.fn<(context: string, sessionId?: string) => boolean>(() => true);
+const mockClientSupportsMcpApps = jest.fn(() => false);
+const mockIsMcpAppsEnabled = jest.fn(() => true);
 
 jest.unstable_mockModule('../../../session-store', () => ({
   setCurrentContext: mockSetCurrentContext,
@@ -21,6 +23,12 @@ jest.unstable_mockModule('../../../tools/tool-response', () => ({
     isError: true,
   }),
   toolErrorMessage: (err: unknown) => (err instanceof Error ? err.message : String(err)),
+}));
+
+jest.unstable_mockModule('../../../ui/mcp-apps', () => ({
+  MCP_APP_MIME_TYPE: 'text/html;profile=mcp-app',
+  clientSupportsMcpApps: mockClientSupportsMcpApps,
+  isMcpAppsEnabled: mockIsMcpAppsEnabled,
 }));
 
 jest.unstable_mockModule('../../../ui/mcp-ui-utils', () => ({
@@ -44,7 +52,27 @@ describe('appium_context tool', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockClientSupportsMcpApps.mockReturnValue(false);
+    mockIsMcpAppsEnabled.mockReturnValue(true);
     mockGetCurrentContext.mockResolvedValue('NATIVE_APP');
+  });
+
+  test('uses the static control center for MCP Apps clients', async () => {
+    mockClientSupportsMcpApps.mockReturnValue(true);
+    const tool = await getToolExecute();
+
+    const result = await tool.execute({action: 'list', sessionId: 'session-b'}, {sessionId: 'client'});
+
+    expect(tool._meta).toEqual({ui: {resourceUri: 'ui://appium-mcp/control-center'}});
+    expect(result.content).toHaveLength(1);
+    expect(result.structuredContent).toEqual({
+      appiumMcpView: {
+        type: 'context-switcher',
+        contexts: ['NATIVE_APP', 'WEBVIEW_com.example'],
+        currentContext: 'NATIVE_APP',
+        sessionId: 'session-b',
+      },
+    });
   });
 
   test('setCurrentContext uses sessionId on list', async () => {

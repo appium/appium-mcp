@@ -310,6 +310,7 @@ export async function createSessionAction(args: {
   platform: (typeof DRIVER_MODE_PLATFORMS)[number];
   capabilities?: Record<string, any>;
   remoteServerUrl?: string;
+  useMcpApps?: boolean;
 }): Promise<ContentResult> {
   let finalCapabilities: Capabilities | undefined;
 
@@ -394,6 +395,25 @@ export async function createSessionAction(args: {
       `${platform.toUpperCase()} session created successfully with ID: ${sessionIdStr}\nPlatform: ${finalCapabilities.platformName}\nAutomation: ${finalCapabilities['appium:automationName']}\nDevice: ${finalCapabilities['appium:deviceName']}\nActive sessions: ${totalSessions}`,
     );
     const sessionCapabilities = finalCapabilities;
+
+    if (args.useMcpApps) {
+      return {
+        ...textResponse,
+        structuredContent: {
+          appiumMcpView: {
+            type: 'session-dashboard',
+            session: {
+              sessionId: sessionIdStr,
+              platform: sessionCapabilities.platformName,
+              automationName: sessionCapabilities['appium:automationName'],
+              deviceName: sessionCapabilities['appium:deviceName'],
+              platformVersion: sessionCapabilities['appium:platformVersion'],
+              udid: sessionCapabilities['appium:udid'],
+            },
+          },
+        },
+      };
+    }
 
     return addUIResourceToResponse(textResponse, () =>
       createUIResource(

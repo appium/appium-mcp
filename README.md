@@ -332,14 +332,17 @@ More models benchmarked can be found [here](src/tests/benchmark_model/TEST_REPOR
 
 #### MCP Apps Mode
 
-`appium_get_page_source`, `appium_screenshot`, and `generate_locators` use static MCP App viewers by default when
-the client advertises MCP Apps support.
+The page-source, screenshot, locator, device-selection, session, context, and installed-app views use static MCP Apps
+by default when the client advertises MCP Apps support.
 
 - Page source XML and generated locator JSON remain in their normal text results for the LLM. Their viewers read
   those existing results instead of receiving duplicated copies inside generated HTML.
 - Saved screenshot base64 is delivered to the viewer through `structuredContent`, which MCP Apps keeps out of model
   context. The LLM still receives the saved file path. Explicit `returnRawBase64=true` calls keep their existing raw
   image result.
+- `select_device`, `appium_session_management`, `appium_context`, and `appium_app_lifecycle` share one cacheable
+  control-center resource. Their existing text results are unchanged; small structured view data replaces generated
+  per-call HTML for MCP Apps-capable clients.
 
 For clients with unreliable MCP Apps rendering, set `APPIUM_MCP_APPS_ENABLED` to `false` or `0`:
 

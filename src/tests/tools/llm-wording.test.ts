@@ -172,4 +172,16 @@ describe('LLM-facing MCP tool wording', () => {
     expect(normalizeText(paramDescription(tool, 'permissions'))).toMatch(/Android update.*permission.*Required/i);
     expect(normalizeText(paramDescription(tool, 'access'))).toMatch(/iOS update.*yes.*no.*unset.*limited.*Required/i);
   });
+
+  test('appium_geolocation retains platform limits and set requirements', async () => {
+    const tool = await registerTool('../../tools/session/geolocation.js');
+    const description = normalizeText(tool.description);
+    const actionDescription = normalizeText(paramDescription(tool, 'action'));
+
+    expect(description).toMatch(/iOS.*Android/i);
+    expect(description).toMatch(/real devices.*mock locations/i);
+    expect(description).toMatch(/emulator reset.*unsupported.*use set/i);
+    expect(actionDescription).toMatch(/set.*requires latitude and longitude.*altitude.*Android/i);
+    expect(actionDescription).toMatch(/reset.*not supported on Android emulators.*action=set/i);
+  });
 });

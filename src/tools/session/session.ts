@@ -1,6 +1,8 @@
 import type {FastMCP} from 'fastmcp';
 import {z} from 'zod';
 
+import {CONTROL_CENTER_URI} from '../../resources/control-center.js';
+import {clientSupportsMcpApps, isMcpAppsEnabled} from '../../ui/mcp-apps.js';
 import {errorResult, toolErrorMessage} from '../tool-response.js';
 import {attachSessionAction} from './attach-session.js';
 import {createSessionAction, DRIVER_MODE_PLATFORMS} from './create-session.js';
@@ -71,17 +73,19 @@ const schema = z.object({
 });
 
 export default function session(server: FastMCP): void {
+  const mcpAppsEnabled = isMcpAppsEnabled();
   server.addTool({
     name: 'appium_session_management',
     description:
       'Manage Appium sessions. Use action=create to start a session, attach to connect to an existing one, detach to forget an attached session, delete to stop one, list to see all active sessions, or select to switch the active session.',
+    _meta: mcpAppsEnabled ? {ui: {resourceUri: CONTROL_CENTER_URI}} : undefined,
     parameters: schema,
     annotations: {
       destructiveHint: true,
       readOnlyHint: false,
       openWorldHint: false,
     },
-    execute: async (args: z.infer<typeof schema>): Promise<any> => {
+    execute: async (args: z.infer<typeof schema>, context: Record<string, unknown> | undefined): Promise<any> => {
       try {
         // Parse capabilities: some LLMs (e.g. Gemini) pass a JSON string instead of an object.
         let parsedCapabilities: Record<string, any> | undefined;
@@ -103,6 +107,7 @@ export default function session(server: FastMCP): void {
             platform: args.platform,
             capabilities: parsedCapabilities,
             remoteServerUrl: args.remoteServerUrl,
+            useMcpApps: mcpAppsEnabled && clientSupportsMcpApps(server, context),
           });
         }
 

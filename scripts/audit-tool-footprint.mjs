@@ -20,26 +20,25 @@ if (!existsSync(serverEntry)) {
   process.exit(1);
 }
 
-const transport = new StdioClientTransport({
-  command: process.execPath,
-  args: [serverEntry],
-  cwd: projectRoot,
-  env: {
-    AI_VISION_ENABLED: 'false',
-    APPIUM_MCP_DOCS_ENABLED: 'false',
-    APPIUM_MCP_OTEL_ENABLED: 'false',
-    NO_UI: 'true',
+const variants = [
+  {
+    name: 'Default UI',
+    env: {
+      APPIUM_MCP_APPS_ENABLED: 'true',
+      NO_UI: 'false',
+    },
   },
-  stderr: 'ignore',
-});
-const client = new Client({
-  name: 'appium-mcp-tool-footprint-audit',
-  version: '1.0.0',
-});
+  {
+    name: 'NO_UI',
+    env: {
+      NO_UI: 'true',
+    },
+  },
+];
 
-try {
-  await client.connect(transport);
-  const result = await client.listTools();
+let budgetExceeded = false;
+for (const variant of variants) {
+  const result = await listTools(variant.env);
   const payloadChars = JSON.stringify(result).length;
   const withoutDescriptionsChars = JSON.stringify(removeDescriptionFields(result)).length;
   const withoutParameterDescriptionsChars = JSON.stringify(removeParameterDescriptions(result)).length;
@@ -53,7 +52,7 @@ try {
     .sort((a, b) => b.chars - a.chars || a.name.localeCompare(b.name))
     .slice(0, LARGEST_TOOL_COUNT);
 
-  console.log('MCP tool discovery footprint');
+  console.log(`MCP tool discovery footprint (${variant.name})`);
   console.log(`Tools: ${formatNumber(result.tools.length)}`);
   console.log(`Payload: ${formatNumber(payloadChars)} chars (~${formatNumber(estimatedTokens)} tokens)`);
   console.log(`Description overhead: ${formatNumber(payloadChars - withoutDescriptionsChars)} chars`);
@@ -68,17 +67,47 @@ try {
 
   if (remainingChars < 0) {
     console.error(`Tool discovery payload exceeds the budget by ${formatNumber(-remainingChars)} chars.`);
-    process.exitCode = 1;
+    budgetExceeded = true;
   } else {
     console.log('Tool discovery payload is within budget.');
   }
-} catch (error) {
-  console.error(
-    `Failed to audit MCP tool discovery footprint: ${error instanceof Error ? error.message : String(error)}`,
-  );
+  console.log('');
+}
+
+if (budgetExceeded) {
   process.exitCode = 1;
-} finally {
-  await client.close().catch(() => undefined);
+}
+
+async function listTools(variantEnv) {
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [serverEntry],
+    cwd: projectRoot,
+    env: {
+      AI_VISION_ENABLED: 'false',
+      APPIUM_MCP_DOCS_ENABLED: 'false',
+      APPIUM_MCP_OTEL_ENABLED: 'false',
+      ...variantEnv,
+    },
+    stderr: 'ignore',
+  });
+  const client = new Client({
+    name: 'appium-mcp-tool-footprint-audit',
+    version: '1.0.0',
+  });
+
+  try {
+    await client.connect(transport);
+    return await client.listTools();
+  } catch (error) {
+    console.error(
+      `Failed to audit MCP tool discovery footprint: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    process.exitCode = 1;
+    return {tools: []};
+  } finally {
+    await client.close().catch(() => undefined);
+  }
 }
 
 function removeDescriptionFields(value) {

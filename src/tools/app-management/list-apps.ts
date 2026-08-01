@@ -71,7 +71,11 @@ export async function listAppsFromDevice(
   throw new Error(`listApps is not implemented for platform: ${platform}`);
 }
 
-export async function list(applicationType?: 'User' | 'System', sessionId?: string): Promise<ContentResult> {
+export async function list(
+  applicationType?: 'User' | 'System',
+  sessionId?: string,
+  useMcpApps = false,
+): Promise<ContentResult> {
   const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
     return resolved.result;
@@ -79,6 +83,20 @@ export async function list(applicationType?: 'User' | 'System', sessionId?: stri
   try {
     const apps = await listAppsFromDevice(resolved.driver, applicationType ?? 'User');
     const textResponse = textResult(`Installed apps: ${JSON.stringify(apps, null, 2)}`);
+
+    if (useMcpApps) {
+      return {
+        ...textResponse,
+        structuredContent: {
+          appiumMcpView: {
+            type: 'app-list',
+            apps,
+            sessionId,
+          },
+        },
+      };
+    }
+
     return addUIResourceToResponse(textResponse, () =>
       createUIResource(`ui://appium-mcp/app-list/${Date.now()}`, createAppListUI(apps)),
     );

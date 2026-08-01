@@ -564,7 +564,8 @@ npm run audit:tools  # measure the built tools/list payload and enforce its size
 
 All three must be green before opening a PR. The tool-footprint audit runs
 against the built stdio server with optional AI and documentation tools
-disabled, matching the default tool set used for the CI budget.
+disabled, checking both the default MCP Apps discovery payload and `NO_UI`
+discovery against the CI budget.
 
 ### 2. Unit test the response contract (recommended for non-trivial tools)
 
