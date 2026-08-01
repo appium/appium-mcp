@@ -40,14 +40,20 @@ export function clientSupportsMcpApps(
   server: Pick<FastMCP, 'sessions'>,
   context: {sessionId?: string} | undefined,
 ): boolean {
-  const session =
-    context?.sessionId !== undefined
-      ? server.sessions.find((candidate) => candidate.sessionId === context.sessionId)
-      : server.sessions.length === 1
-        ? server.sessions[0]
-        : undefined;
+  if (context?.sessionId !== undefined) {
+    const session = server.sessions.find((candidate) => candidate.sessionId === context.sessionId);
+    if (session) {
+      return supportsMcpAppsCapability(session.clientCapabilities);
+    }
+  }
 
-  return supportsMcpAppsCapability(session?.clientCapabilities);
+  // FastMCP only provides Context.sessionId for HTTP transports. It can also
+  // be absent or stale while a capable client session is still active. A
+  // failed lookup is therefore inconclusive: recover from positive capability
+  // evidence instead of contradicting the static UI metadata already exposed
+  // through tools/list. Absence of positive evidence still selects the legacy
+  // embedded-resource fallback.
+  return server.sessions.some((session) => supportsMcpAppsCapability(session.clientCapabilities));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

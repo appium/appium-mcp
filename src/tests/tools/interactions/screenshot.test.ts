@@ -8,10 +8,23 @@ const mockAttachToRemoteSession = jest.fn(async (_opts: any): Promise<any> => ({
 const mockGetScreenshot = jest.fn(async () => 'dGVzdA=='); // "test" base64
 const mockClientSupportsMcpApps = jest.fn(() => false);
 const mockIsMcpAppsEnabled = jest.fn(() => true);
+const mockIsUIEnabled = jest.fn(() => true);
 const mockCreateUIResource = jest.fn(() => ({}));
 const mockCreateScreenshotViewerUI = jest.fn((_base64: string, _filepath: string) => '');
 const mockAddUIResourceToResponse = jest.fn((response: any, factory: () => unknown) => ({
   content: [...response.content, factory()],
+}));
+const mockWriteFile = jest.fn(async () => {});
+const mockMkdirp = jest.fn(async () => {});
+
+jest.unstable_mockModule('@appium/support', () => ({
+  fs: {
+    mkdirp: mockMkdirp,
+    writeFile: mockWriteFile,
+  },
+  imageUtil: {
+    requireSharp: jest.fn(),
+  },
 }));
 
 jest.unstable_mockModule('../../../session-store.js', () => ({
@@ -43,6 +56,7 @@ jest.unstable_mockModule('../../../ui/mcp-apps.js', () => ({
   MCP_APP_MIME_TYPE: 'text/html;profile=mcp-app',
   clientSupportsMcpApps: mockClientSupportsMcpApps,
   isMcpAppsEnabled: mockIsMcpAppsEnabled,
+  isUIEnabled: mockIsUIEnabled,
 }));
 
 jest.unstable_mockModule('../../../ui/mcp-ui-utils.js', () => ({
@@ -75,6 +89,10 @@ describe('executeScreenshot resolveDriver', () => {
     mockClientSupportsMcpApps.mockReturnValue(false);
     mockIsMcpAppsEnabled.mockReset();
     mockIsMcpAppsEnabled.mockReturnValue(true);
+    mockIsUIEnabled.mockReset();
+    mockIsUIEnabled.mockReturnValue(true);
+    mockWriteFile.mockClear();
+    mockMkdirp.mockClear();
     mockCreateUIResource.mockClear();
     mockCreateScreenshotViewerUI.mockClear();
     mockAddUIResourceToResponse.mockClear();
@@ -94,6 +112,8 @@ describe('executeScreenshot resolveDriver', () => {
       mimeType: 'image/png',
     });
     expect(mockGetScreenshot).toHaveBeenCalledTimes(1);
+    expect(mockWriteFile).not.toHaveBeenCalled();
+    expect(mockMkdirp).not.toHaveBeenCalled();
   });
 
   test('keeps saved screenshot base64 out of model content for MCP Apps clients', async () => {
@@ -182,10 +202,20 @@ describe('executeScreenshot resolveDriver', () => {
 
 describe('appium_screenshot MCP Apps registration', () => {
   beforeEach(() => {
+    mockGetDriver.mockReset();
+    mockGetScreenshot.mockReset();
+    mockGetScreenshot.mockResolvedValue('dGVzdA==');
     mockClientSupportsMcpApps.mockReset();
     mockClientSupportsMcpApps.mockReturnValue(false);
     mockIsMcpAppsEnabled.mockReset();
     mockIsMcpAppsEnabled.mockReturnValue(true);
+    mockIsUIEnabled.mockReset();
+    mockIsUIEnabled.mockReturnValue(true);
+    mockWriteFile.mockClear();
+    mockMkdirp.mockClear();
+    mockCreateUIResource.mockClear();
+    mockCreateScreenshotViewerUI.mockClear();
+    mockAddUIResourceToResponse.mockClear();
   });
 
   test('advertises the static viewer when MCP Apps are enabled', () => {
@@ -196,10 +226,64 @@ describe('appium_screenshot MCP Apps registration', () => {
     });
   });
 
+  test('returns structured screenshot data through the advertised static viewer', async () => {
+    mockClientSupportsMcpApps.mockReturnValue(true);
+    mockGetDriver.mockReturnValue({} as any);
+    const tool = registerTool();
+
+    const result = await tool.execute({}, {sessionId: 'mcp-session'});
+
+    expect(tool._meta).toEqual({ui: {resourceUri: 'ui://appium-mcp/screenshot-viewer'}});
+    expect(result.content).toHaveLength(1);
+    expect(result.content[0]).toMatchObject({
+      type: 'text',
+      text: expect.stringMatching(/Screenshot saved successfully/),
+    });
+    expect(result.structuredContent?.screenshot).toMatchObject({
+      data: 'dGVzdA==',
+      mimeType: 'image/png',
+      filepath: expect.stringMatching(/screenshot_\d+\.png$/),
+    });
+    expect(mockAddUIResourceToResponse).not.toHaveBeenCalled();
+  });
+
+  test('keeps the embedded HTML resource for a legacy client', async () => {
+    mockGetDriver.mockReturnValue({} as any);
+    const tool = registerTool();
+
+    const result = await tool.execute({}, {sessionId: 'legacy-session'});
+
+    expect(result.structuredContent).toBeUndefined();
+    expect(mockCreateScreenshotViewerUI).toHaveBeenCalledWith(
+      'dGVzdA==',
+      expect.stringMatching(/screenshot_\d+\.png$/),
+    );
+    expect(mockAddUIResourceToResponse).toHaveBeenCalledTimes(1);
+  });
+
   test('omits static viewer metadata when MCP Apps are disabled', () => {
     mockIsMcpAppsEnabled.mockReturnValue(false);
 
     expect(registerTool()._meta).toBeUndefined();
+  });
+
+  test('returns no UI resource or metadata when UI is disabled', async () => {
+    mockIsUIEnabled.mockReturnValue(false);
+    mockIsMcpAppsEnabled.mockReturnValue(false);
+    mockGetDriver.mockReturnValue({} as any);
+    const tool = registerTool();
+
+    const result = await tool.execute({}, undefined);
+
+    expect(tool._meta).toBeUndefined();
+    expect(result.content).toHaveLength(1);
+    expect(result.content[0]).toMatchObject({
+      type: 'text',
+      text: expect.stringMatching(/Screenshot saved successfully/),
+    });
+    expect(result.structuredContent).toBeUndefined();
+    expect(mockAddUIResourceToResponse).not.toHaveBeenCalled();
+    expect(mockCreateScreenshotViewerUI).not.toHaveBeenCalled();
   });
 });
 

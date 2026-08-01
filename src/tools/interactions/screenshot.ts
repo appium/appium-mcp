@@ -7,7 +7,7 @@ import z from 'zod';
 import {getScreenshot} from '../../command.js';
 import {SCREENSHOT_VIEWER_URI} from '../../resources/screenshot-viewer.js';
 import {elementUUIDScheme} from '../../schema.js';
-import {clientSupportsMcpApps, isMcpAppsEnabled} from '../../ui/mcp-apps.js';
+import {clientSupportsMcpApps, isMcpAppsEnabled, isUIEnabled} from '../../ui/mcp-apps.js';
 import {createUIResource, createScreenshotViewerUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
 import {resolveScreenshotDir} from '../../utils/paths.js';
 import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
@@ -34,9 +34,18 @@ export async function executeScreenshot(opts: {
   maxWidth?: number;
   returnRawBase64?: boolean;
   sessionId?: string;
+  uiEnabled?: boolean;
   useMcpApps?: boolean;
 }): Promise<ContentResult> {
-  const {deps = defaultDeps, elementId, maxWidth, returnRawBase64, sessionId, useMcpApps = false} = opts;
+  const {
+    deps = defaultDeps,
+    elementId,
+    maxWidth,
+    returnRawBase64,
+    sessionId,
+    uiEnabled = true,
+    useMcpApps = false,
+  } = opts;
 
   const resolved = await resolveDriver(sessionId);
   if (!resolved.ok) {
@@ -108,6 +117,10 @@ export async function executeScreenshot(opts: {
       };
     }
 
+    if (!uiEnabled) {
+      return textResponse;
+    }
+
     // Add interactive screenshot viewer UI
     return addUIResourceToResponse(textResponse, () =>
       createUIResource(
@@ -144,6 +157,7 @@ const screenshotSchema = z.object({
 });
 
 export default function screenshot(server: FastMCP): void {
+  const uiEnabled = isUIEnabled();
   const mcpAppsEnabled = isMcpAppsEnabled();
   server.addTool({
     name: 'appium_screenshot',
@@ -163,6 +177,7 @@ export default function screenshot(server: FastMCP): void {
         maxWidth: args.maxWidth,
         returnRawBase64: args.returnRawBase64,
         sessionId: args.sessionId,
+        uiEnabled,
         useMcpApps: mcpAppsEnabled && clientSupportsMcpApps(server, context),
       }),
   });

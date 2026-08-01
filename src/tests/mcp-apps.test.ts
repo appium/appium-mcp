@@ -1,4 +1,4 @@
-import {afterEach, describe, expect, test} from '@jest/globals';
+import {afterEach, describe, expect, jest, test} from '@jest/globals';
 
 import {createControlCenterAppUI} from '../ui/control-center-app.js';
 import {createLocatorGeneratorAppUI} from '../ui/locator-generator-app.js';
@@ -75,7 +75,39 @@ describe('MCP Apps capability detection', () => {
     };
 
     expect(clientSupportsMcpApps(server as never, {sessionId: 'second'})).toBe(true);
-    expect(clientSupportsMcpApps(server as never, {sessionId: 'missing'})).toBe(false);
+  });
+
+  test.each([undefined, {sessionId: 'missing'}])(
+    'recovers positive capability evidence when execution context lookup is unreliable: %p',
+    (context) => {
+      const server = {
+        sessions: [
+          {sessionId: 'legacy', clientCapabilities: {}},
+          {sessionId: 'mcp-apps', clientCapabilities: supportedCapabilities},
+        ],
+      };
+
+      expect(clientSupportsMcpApps(server as never, context)).toBe(true);
+    },
+  );
+
+  test('does not override an exact legacy session match', () => {
+    const server = {
+      sessions: [
+        {sessionId: 'legacy', clientCapabilities: {}},
+        {sessionId: 'mcp-apps', clientCapabilities: supportedCapabilities},
+      ],
+    };
+
+    expect(clientSupportsMcpApps(server as never, {sessionId: 'legacy'})).toBe(false);
+  });
+
+  test('keeps the legacy path when no session has positive MCP Apps capability evidence', () => {
+    const server = {
+      sessions: [{sessionId: undefined, clientCapabilities: {}}],
+    };
+
+    expect(clientSupportsMcpApps(server as never, undefined)).toBe(false);
   });
 
   test('uses the only session for transports without a session ID', () => {
@@ -130,6 +162,65 @@ describe('screenshot viewer MCP App', () => {
 
     expect(script).toBeDefined();
     expect(() => Function(script ?? '')).not.toThrow();
+  });
+
+  test('consumes Codex tool-result notifications with CallToolResult in params', () => {
+    const html = createScreenshotViewerAppUI();
+    const script = html.match(/<script>([\s\S]*)<\/script>/)?.[1];
+    const listeners = new Map<string, (event: any) => void>();
+    const elements = new Map<string, any>();
+
+    for (const id of [
+      'screenshot',
+      'filepath',
+      'status',
+      'downloadButton',
+      'takeNewButton',
+      'zoomInButton',
+      'zoomOutButton',
+      'resetZoomButton',
+    ]) {
+      elements.set(id, {
+        addEventListener: jest.fn(),
+        style: {},
+        textContent: '',
+      });
+    }
+
+    const parent = {postMessage: jest.fn()};
+    const fakeWindow = {
+      parent,
+      addEventListener: (name: string, listener: (event: any) => void) => listeners.set(name, listener),
+    };
+    const fakeDocument = {
+      addEventListener: jest.fn(),
+      createElement: jest.fn(() => ({click: jest.fn()})),
+      getElementById: (id: string) => elements.get(id),
+    };
+
+    Function('window', 'document', script ?? '')(fakeWindow, fakeDocument);
+    listeners.get('message')?.({
+      source: parent,
+      data: {
+        jsonrpc: '2.0',
+        method: 'ui/notifications/tool-result',
+        params: {
+          content: [{type: 'text', text: 'Screenshot saved successfully to: /tmp/screenshot.png'}],
+          structuredContent: {
+            screenshot: {
+              data: 'dGVzdA==',
+              mimeType: 'image/png',
+              filepath: '/tmp/screenshot.png',
+            },
+          },
+        },
+      },
+    });
+
+    expect(elements.get('filepath').textContent).toBe('/tmp/screenshot.png');
+    expect(elements.get('screenshot').src).toBe('data:image/png;base64,dGVzdA==');
+    expect(elements.get('screenshot').style.display).toBe('block');
+    expect(elements.get('status').style.display).toBe('none');
   });
 });
 
