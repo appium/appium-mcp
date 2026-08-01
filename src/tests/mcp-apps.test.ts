@@ -102,12 +102,26 @@ describe('MCP Apps capability detection', () => {
     expect(clientSupportsMcpApps(server as never, {sessionId: 'legacy'})).toBe(false);
   });
 
-  test('keeps the legacy path when no session has positive MCP Apps capability evidence', () => {
+  test('keeps the legacy path for an HTTP session without MCP Apps capability evidence', () => {
     const server = {
-      sessions: [{sessionId: undefined, clientCapabilities: {}}],
+      sessions: [{sessionId: 'legacy-http', clientCapabilities: {}}],
     };
 
     expect(clientSupportsMcpApps(server as never, undefined)).toBe(false);
+  });
+
+  test('uses the advertised static UI for stdio clients that omit the MCP Apps extension', () => {
+    const server = {
+      sessions: [
+        {
+          sessionId: undefined,
+          clientCapabilities: null,
+          server: {getClientCapabilities: () => undefined},
+        },
+      ],
+    };
+
+    expect(clientSupportsMcpApps(server as never, undefined)).toBe(true);
   });
 
   test('uses the only session for transports without a session ID', () => {
@@ -116,6 +130,22 @@ describe('MCP Apps capability detection', () => {
     };
 
     expect(clientSupportsMcpApps(server as never, undefined)).toBe(true);
+  });
+
+  test('recovers capabilities from the MCP SDK after FastMCP misses the stdio initialize window', () => {
+    const getClientCapabilities = jest.fn(() => supportedCapabilities);
+    const server = {
+      sessions: [
+        {
+          sessionId: undefined,
+          clientCapabilities: null,
+          server: {getClientCapabilities},
+        },
+      ],
+    };
+
+    expect(clientSupportsMcpApps(server as never, undefined)).toBe(true);
+    expect(getClientCapabilities).toHaveBeenCalledTimes(1);
   });
 });
 

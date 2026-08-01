@@ -14,6 +14,8 @@ import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-
 
 export {resolveScreenshotDir};
 
+const MCP_APP_SCREENSHOT_PREVIEW_MAX_WIDTH = 500;
+
 export interface ScreenshotDeps {
   writeFile: (filePath: string, data: Buffer) => Promise<unknown>;
   mkdir: (dirPath: string, options?: {recursive?: boolean}) => Promise<unknown>;
@@ -59,16 +61,25 @@ export async function executeScreenshot(opts: {
     // Convert base64 to buffer
     const originalBuffer = Buffer.from(screenshotBase64, 'base64');
 
-    // Resize if maxWidth is provided and image is wider
+    // Resize an explicit screenshot output when maxWidth is provided. MCP App
+    // previews are also bounded automatically so a large PNG does not exceed
+    // the host-to-iframe notification payload limit. Automatic preview sizing
+    // does not reduce the resolution of the PNG saved to disk.
     let screenshotBuffer: Buffer = originalBuffer;
     let displayBase64 = screenshotBase64;
-    if (maxWidth !== undefined) {
+    const displayMaxWidth =
+      maxWidth ?? (useMcpApps && !returnRawBase64 ? MCP_APP_SCREENSHOT_PREVIEW_MAX_WIDTH : undefined);
+    if (displayMaxWidth !== undefined) {
       const sharp = imageUtil.requireSharp();
       const metadata = await sharp(originalBuffer).metadata();
-      if (metadata.width !== undefined && metadata.width > maxWidth) {
-        const resizedBuffer = await sharp(originalBuffer).resize({width: maxWidth}).png().toBuffer();
-        screenshotBuffer = Buffer.from(resizedBuffer);
-        displayBase64 = screenshotBuffer.toString('base64');
+      if (metadata.width !== undefined && metadata.width > displayMaxWidth) {
+        const resizedBuffer = Buffer.from(
+          await sharp(originalBuffer).resize({width: displayMaxWidth}).png().toBuffer(),
+        );
+        displayBase64 = resizedBuffer.toString('base64');
+        if (maxWidth !== undefined) {
+          screenshotBuffer = resizedBuffer;
+        }
       }
     }
 

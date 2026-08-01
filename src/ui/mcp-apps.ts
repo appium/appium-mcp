@@ -43,17 +43,35 @@ export function clientSupportsMcpApps(
   if (context?.sessionId !== undefined) {
     const session = server.sessions.find((candidate) => candidate.sessionId === context.sessionId);
     if (session) {
-      return supportsMcpAppsCapability(session.clientCapabilities);
+      return supportsMcpAppsCapability(resolveClientCapabilities(session));
     }
   }
 
   // FastMCP only provides Context.sessionId for HTTP transports. It can also
-  // be absent or stale while a capable client session is still active. A
-  // failed lookup is therefore inconclusive: recover from positive capability
-  // evidence instead of contradicting the static UI metadata already exposed
-  // through tools/list. Absence of positive evidence still selects the legacy
-  // embedded-resource fallback.
-  return server.sessions.some((session) => supportsMcpAppsCapability(session.clientCapabilities));
+  // be absent or stale while a capable client session is still active. Recover
+  // from positive capability evidence first.
+  if (server.sessions.some((session) => supportsMcpAppsCapability(resolveClientCapabilities(session)))) {
+    return true;
+  }
+
+  // Some stdio hosts, including Codex, render the static resource advertised
+  // through tools/list without including the MCP Apps extension in initialize.
+  // In that situation capability absence is not negative evidence. Keep the
+  // advertised tool metadata and the result representation consistent. Legacy
+  // stdio clients can force embedded resources with
+  // APPIUM_MCP_APPS_ENABLED=false.
+  return server.sessions.some((session) => session.sessionId === undefined);
+}
+
+/**
+ * FastMCP snapshots client capabilities shortly after connecting. With stdio
+ * clients the initialize request can arrive after that retry window, leaving
+ * `clientCapabilities` cached as null for the lifetime of the session. The
+ * underlying MCP SDK Server continues to expose the initialized capabilities,
+ * so use it as the authoritative fallback when FastMCP's cache is empty.
+ */
+function resolveClientCapabilities(session: FastMCP['sessions'][number]): unknown {
+  return session.clientCapabilities ?? session.server.getClientCapabilities();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

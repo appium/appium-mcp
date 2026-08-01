@@ -16,6 +16,11 @@ const mockAddUIResourceToResponse = jest.fn((response: any, factory: () => unkno
 }));
 const mockWriteFile = jest.fn(async () => {});
 const mockMkdirp = jest.fn(async () => {});
+const mockSharpMetadata = jest.fn(async (): Promise<{width?: number}> => ({width: 100}));
+const mockSharpToBuffer = jest.fn(async () => Buffer.from('preview'));
+const mockSharpPng = jest.fn(() => ({toBuffer: mockSharpToBuffer}));
+const mockSharpResize = jest.fn((_options: {width: number}) => ({png: mockSharpPng}));
+const mockSharp = jest.fn(() => ({metadata: mockSharpMetadata, resize: mockSharpResize}));
 
 jest.unstable_mockModule('@appium/support', () => ({
   fs: {
@@ -23,7 +28,7 @@ jest.unstable_mockModule('@appium/support', () => ({
     writeFile: mockWriteFile,
   },
   imageUtil: {
-    requireSharp: jest.fn(),
+    requireSharp: jest.fn(() => mockSharp),
   },
 }));
 
@@ -93,6 +98,12 @@ describe('executeScreenshot resolveDriver', () => {
     mockIsUIEnabled.mockReturnValue(true);
     mockWriteFile.mockClear();
     mockMkdirp.mockClear();
+    mockSharpMetadata.mockReset();
+    mockSharpMetadata.mockResolvedValue({width: 100});
+    mockSharpToBuffer.mockClear();
+    mockSharpPng.mockClear();
+    mockSharpResize.mockClear();
+    mockSharp.mockClear();
     mockCreateUIResource.mockClear();
     mockCreateScreenshotViewerUI.mockClear();
     mockAddUIResourceToResponse.mockClear();
@@ -140,6 +151,25 @@ describe('executeScreenshot resolveDriver', () => {
     });
     expect(mockAddUIResourceToResponse).not.toHaveBeenCalled();
     expect(mockCreateScreenshotViewerUI).not.toHaveBeenCalled();
+  });
+
+  test('bounds the MCP App preview without reducing the saved PNG resolution', async () => {
+    mockGetDriver.mockReturnValue({} as any);
+    mockSharpMetadata.mockResolvedValue({width: 1174});
+    const deps = screenshotDeps();
+
+    const result = await executeScreenshot({
+      deps,
+      useMcpApps: true,
+    });
+
+    expect(mockSharpResize).toHaveBeenCalledWith({width: 500});
+    expect(result.structuredContent?.screenshot).toMatchObject({
+      data: Buffer.from('preview').toString('base64'),
+      mimeType: 'image/png',
+      filepath: '/screenshots/screenshot_123.png',
+    });
+    expect(deps.writeFile).toHaveBeenCalledWith('/screenshots/screenshot_123.png', Buffer.from('test'));
   });
 
   test('keeps the embedded screenshot viewer fallback for other clients', async () => {
@@ -289,8 +319,8 @@ describe('appium_screenshot MCP Apps registration', () => {
 
 function screenshotDeps() {
   return {
-    writeFile: jest.fn(async () => {}),
-    mkdir: jest.fn(async () => {}),
+    writeFile: jest.fn(async (_filePath: string, _data: Buffer) => {}),
+    mkdir: jest.fn(async (_dirPath: string, _options?: {recursive?: boolean}) => {}),
     resolveScreenshotDir: () => '/screenshots',
     dateNow: () => 123,
   };
