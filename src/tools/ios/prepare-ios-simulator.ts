@@ -115,7 +115,7 @@ async function getLatestWDAVersionFromCache(): Promise<string | null> {
 }
 
 async function getSimulatorArchitecture(simulatorUdid: string): Promise<string> {
-  const {stdout} = await exec('xcrun', ['simctl', 'spawn', simulatorUdid, 'uname', '-m']);
+  const {stdout} = await exec('xcrun', ['simctl', 'getenv', simulatorUdid, 'SIMULATOR_ARCHS']);
   return stdout.trim();
 }
 
