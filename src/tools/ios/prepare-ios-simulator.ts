@@ -114,9 +114,10 @@ async function getLatestWDAVersionFromCache(): Promise<string | null> {
   return filteredVersions.length > 0 ? filteredVersions[0] : null;
 }
 
-async function getSimulatorArchitecture(simulatorUdid: string): Promise<string> {
+async function getSimulatorArchitecture(simulatorUdid: string): Promise<string[]> {
   const {stdout} = await exec('xcrun', ['simctl', 'getenv', simulatorUdid, 'SIMULATOR_ARCHS']);
-  return stdout.trim();
+  const archs = stdout.trim().split(/\s+/);
+  return archs;
 }
 
 async function installAppOnSimulator(appPath: string, simulatorUdid: string): Promise<void> {
@@ -233,7 +234,12 @@ async function resolveWdaAppPath(
     };
   }
 
-  const archStr = await getSimulatorArchitecture(simulatorUdid);
+  const archs = await getSimulatorArchitecture(simulatorUdid);
+  const archStr = archs.includes('arm64') ? 'arm64' : archs[0];
+  const isRosetta = await exec('sysctl', ['-in', 'sysctl.proc_translated']).then(({stdout}) => stdout.trim() === '1');
+  if (isRosetta) {
+    log.info(`Running under Rosetta. Simulator architecture: ${archs.join(', ')}. Using ${archStr} WDA build.`);
+  }
   const artifactPrefix = platform === 'tvos' ? 'WebDriverAgentRunner_tvOS' : 'WebDriverAgentRunner';
 
   // Check cache first (unless force refresh)
