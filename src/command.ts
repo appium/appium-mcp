@@ -532,6 +532,35 @@ export async function back(driver: DriverInstance): Promise<void> {
   return await (driver as Client).back();
 }
 
+interface SimctlExecResponse {
+  /** The output of standard out. */
+  stdout: string;
+  /** The output of standard error. */
+  stderr: string;
+  /** Return code. */
+  code: number;
+}
+
+export async function runSimctl(
+  driver: DriverInstance,
+  command: string,
+  args: string[] = [],
+  timeout?: number
+): Promise<SimctlExecResponse | undefined> {
+  if (getPlatformName(driver) !== PLATFORM.ios) {
+    return;
+  }
+
+  if (isXCUITestDriverSession(driver)) {
+    return await driver.mobileSimctl(
+      command,
+      args,
+      timeout
+    );
+  }
+  return await execute(driver, 'mobile: simctl', {command, args, timeout});
+}
+
 /**
  * Remote WebDriver clients treat a W3C "no such element" 404 as success and
  * resolve with the error value `{ error, message }` instead of throwing. Re-throw

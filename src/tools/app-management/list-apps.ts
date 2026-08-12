@@ -3,7 +3,7 @@ import type {XCUITestDriver} from 'appium-xcuitest-driver';
 import type {ContentResult} from 'fastmcp';
 import {exec} from 'teen_process';
 
-import {execute} from '../../command.js';
+import {execute, runSimctl} from '../../command.js';
 import type {DriverInstance} from '../../session-store.js';
 import {
   getPlatformName,
@@ -43,18 +43,12 @@ export async function listAppsFromDevice(
       if (!udid) {
         throw new Error('Could not determine simulator UDID from session capabilities');
       }
-      const {stdout} = await exec('xcrun', [
-        'simctl',
+      const {stdout} = await runSimctl(
+        driver,
         'listapps',
-        udid,
-        '|',
-        'plutil',
-        '-convert',
-        'json',
-        '-o',
-        '-',
-        '-',
-      ]);
+        ['--json'],
+        5000
+      ) || {stdout: ''};
       const result = JSON.parse(stdout);
       return normalizeListAppsResult(result || {});
     }
