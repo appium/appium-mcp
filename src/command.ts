@@ -545,18 +545,14 @@ export async function runSimctl(
   driver: DriverInstance,
   command: string,
   args: string[] = [],
-  timeout?: number
+  timeout?: number,
 ): Promise<SimctlExecResponse | undefined> {
   if (getPlatformName(driver) !== PLATFORM.ios) {
     return;
   }
 
   if (isXCUITestDriverSession(driver)) {
-    return await driver.mobileSimctl(
-      command,
-      args,
-      timeout
-    );
+    return await driver.mobileSimctl(command, args, timeout);
   }
   return await execute(driver, 'mobile: simctl', {command, args, timeout});
 }
