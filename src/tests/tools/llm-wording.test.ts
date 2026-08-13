@@ -22,6 +22,7 @@ jest.unstable_mockModule('../../command', () => ({
   execute: jest.fn(),
   findElement: jest.fn(),
   queryAppState: jest.fn(),
+  runSimctl: jest.fn(),
   startRecordingScreen: jest.fn(),
   stopRecordingScreen: jest.fn(),
 }));
