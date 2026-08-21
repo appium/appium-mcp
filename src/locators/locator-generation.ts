@@ -124,11 +124,11 @@ export function getSuggestedLocators(
   let priorityOrder: string[];
 
   if (isNative && (automationName === 'xcuitest' || automationName === 'mac2')) {
-    // iOS priority: Accessibility Id > Predicate > Class Chain > XPath > Class Name
-    priorityOrder = ['id', 'accessibility id', '-ios predicate string', '-ios class chain', 'xpath', 'class name'];
+    // iOS priority: Accessibility Id > Id > Predicate > Class Chain > XPath > Class Name
+    priorityOrder = ['accessibility id', 'id', '-ios predicate string', '-ios class chain', 'xpath', 'class name'];
   } else if (isNative && automationName === 'uiautomator2') {
-    // Android priority: Accessibility Id > UiAutomator > XPath > Class Name
-    priorityOrder = ['id', 'accessibility id', 'xpath', '-android uiautomator', 'class name'];
+    // Android priority: Accessibility Id > Id > XPath > UiAutomator > Class Name
+    priorityOrder = ['accessibility id', 'id', 'xpath', '-android uiautomator', 'class name'];
   } else {
     priorityOrder = ['id', 'class name', 'xpath'];
   }

@@ -7,7 +7,7 @@ import {getPlatformName, PLATFORM} from '../../session-store.js';
 import type {DriverInstance} from '../../session-store.js';
 import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
-const ANDROID_LOCATOR_STRATEGY_ORDER = ['id', 'accessibility id', 'xpath', '-android uiautomator', 'class name'];
+const ANDROID_LOCATOR_STRATEGY_ORDER = ['accessibility id', 'id', 'xpath', '-android uiautomator', 'class name'];
 
 export default function alert(server: FastMCP): void {
   const appiumAlertSchema = z.object({
