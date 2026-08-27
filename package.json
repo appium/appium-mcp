@@ -80,6 +80,7 @@
     "ios-mobileprovision-finder": "^1.2.1",
     "lru-cache": "^11.5.0",
     "node-simctl": "^9.1.0",
+    "teen_process":"^4.2.1",
     "webdriver": "^9.30.0",
     "xpath": "^0.0.34",
     "zod": "^4.3.6"
