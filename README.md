@@ -538,7 +538,13 @@ const server = await createAppiumMcpServer({
 await server.start({ transportType: 'stdio' });
 ```
 
-`start({ transportType: 'stdio' })` keeps Appium and WebDriver logs off stdout so JSON-RPC stays intact. httpStream is unchanged.
+### Stdio logging
+
+`start({ transportType: 'stdio' })` automatically configures Appium and WebDriver logging before the stdio transport starts, keeping stdout reserved for JSON-RPC. You normally do not need to configure logging separately.
+
+In stdio mode, `WDIO_LOG_LEVEL` values that would write verbose output to stdout (`trace`, `debug`, and `info`) are clamped to `warn`. Quieter `error` and `silent` values are preserved. This behavior only applies to stdio; `httpStream` logging is unchanged.
+
+For advanced integrations that need to configure logging explicitly, `configureStdioTransportLogging()` is exported from `appium-mcp/core`. Call it before starting stdio work; calling `server.start({ transportType: 'stdio' })` already invokes it automatically.
 
 Plugin lifecycle:
 
