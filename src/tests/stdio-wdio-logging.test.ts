@@ -26,7 +26,10 @@ describe('programmatic stdio WDIO logging', () => {
       throw new Error(`Compiled fixture missing at ${fixturePath}. Run npm run build first.`);
     }
 
-    const {WDIO_LOG_LEVEL: _wdioLogLevel, ...env} = process.env;
+    const env = {
+      ...process.env,
+      WDIO_LOG_LEVEL: 'info',
+    };
     const child = spawn(process.execPath, [fixturePath], {
       cwd: rootDir,
       env,

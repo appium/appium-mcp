@@ -46,8 +46,8 @@ describe('stdio transport logging', () => {
     });
   });
 
-  test('configureStdioTransportLogging quiets info logs and WDIO when unset', () => {
-    delete process.env.WDIO_LOG_LEVEL;
+  test('configureStdioTransportLogging clamps verbose WDIO logging', () => {
+    process.env.WDIO_LOG_LEVEL = 'info';
     log.unwrap().stream = process.stdout;
     const utilsLogger = wdioLogger('@wdio/utils');
     const webdriverLogger = wdioLogger('webdriver');
@@ -76,6 +76,9 @@ describe('stdio transport logging', () => {
       hostname: '127.0.0.1',
       port: 4723,
       logLevel: QUIET_WEBDRIVER_LOG_LEVEL,
+      logLevels: {
+        webdriver: QUIET_WEBDRIVER_LOG_LEVEL,
+      },
     });
   });
 });

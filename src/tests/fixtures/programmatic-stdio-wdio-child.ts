@@ -1,7 +1,7 @@
 import http from 'node:http';
 
 import {createAppiumMcpServer} from '../../core.js';
-import {attachToRemoteSession} from '../../utils/url.js';
+import {createSessionAction} from '../../tools/session/create-session.js';
 
 const mockServer = http.createServer((_req, res) => {
   res.writeHead(200, {'Content-Type': 'application/json; charset=utf-8'});
@@ -26,13 +26,15 @@ try {
   const server = await createAppiumMcpServer();
   void server.start({transportType: 'stdio'});
 
-  const client = await attachToRemoteSession({
+  const result = await createSessionAction({
+    platform: 'general',
     remoteServerUrl,
-    sessionId: 'test-session',
     capabilities: {platformName: 'Android'},
   });
+  if (result.isError) {
+    throw new Error('Remote session creation failed');
+  }
 
-  await client.deleteSession();
   process.stderr.write('child-done\n');
   process.exit(0);
 } catch (err) {
