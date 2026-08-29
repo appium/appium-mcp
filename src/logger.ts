@@ -2,8 +2,9 @@ import {logger} from '@appium/support';
 
 import {isStdioTransportLoggingConfigured, markStdioTransportLoggingConfigured} from './stdio-logging-state.js';
 import {quietExistingWdioLoggers} from './utils/wdio-logging.js';
+import type { AppiumLogger } from '@appium/types';
 
-const log = logger.getLogger('appium-mcp');
+const log: AppiumLogger = logger.getLogger('appium-mcp');
 
 /** npmlog must not write to stdout (stdio JSON-RPC). Skip if the host already set a custom stream. */
 export function ensureLoggerWritesToStderr(): void {
