@@ -1,8 +1,8 @@
 import {logger} from '@appium/support';
+import type {AppiumLogger} from '@appium/types';
 
 import {isStdioTransportLoggingConfigured, markStdioTransportLoggingConfigured} from './stdio-logging-state.js';
 import {quietExistingWdioLoggers} from './utils/wdio-logging.js';
-import type { AppiumLogger } from '@appium/types';
 
 const log: AppiumLogger = logger.getLogger('appium-mcp');
 
