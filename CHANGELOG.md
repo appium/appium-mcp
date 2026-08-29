@@ -1,3 +1,9 @@
+## [1.92.10](https://github.com/appium/appium-mcp/compare/v1.92.9...v1.92.10) (2026-08-29)
+
+### Miscellaneous Chores
+
+* bump support ([#498](https://github.com/appium/appium-mcp/issues/498)) ([badc62b](https://github.com/appium/appium-mcp/commit/badc62b2490d890150840e5b48b56ef422037ef0))
+
 ## [1.92.9](https://github.com/appium/appium-mcp/compare/v1.92.8...v1.92.9) (2026-08-28)
 
 ### Bug Fixes
