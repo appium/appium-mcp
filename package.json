@@ -68,7 +68,7 @@
     "version": "npm run sync-version"
   },
   "dependencies": {
-    "@appium/support": "^7.0.2",
+    "@appium/support": "^7.2.6",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@wdio/logger": "^9.29.1",
     "@xmldom/xmldom": "^0.9.8",
