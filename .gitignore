@@ -11,7 +11,6 @@ build
 src/tools/robot.ts
 src/scripts/eval-results/
 src/tools/documentation/uploads/embeddings-*.json
-package-lock.json
 .idea
 .vscode
 tsconfig.tsbuildinfo

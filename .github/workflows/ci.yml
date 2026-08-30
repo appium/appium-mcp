@@ -37,7 +37,7 @@ jobs:
           mode: firewall-free
 
       - name: Install dependencies
-        run: sfw npm install
+        run: sfw npm ci
 
       - name: List installed packages
         run: npm list --depth=0

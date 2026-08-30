@@ -2,6 +2,10 @@ import {constants, existsSync, promises as fsPromises} from 'node:fs';
 
 const noop = () => {};
 
+const npmlog = {
+  stream: process.stderr as NodeJS.WritableStream | null,
+};
+
 export const logger = {
   getLogger: (_name: string) => ({
     debug: noop,
@@ -9,6 +13,8 @@ export const logger = {
     warn: noop,
     error: noop,
     trace: noop,
+    level: 'info' as string,
+    unwrap: () => npmlog,
   }),
 };
 
@@ -24,7 +30,7 @@ export const fs = {
   exists: async (p: string) => existsSync(p),
   readdir: (p: string) => fsPromises.readdir(p),
   stat: (p: string) => fsPromises.stat(p),
-  readFile: (p: string, encoding?: BufferEncoding) => fsPromises.readFile(p, encoding),
+  readFile: (p: string, encoding?: BufferEncoding) => fsPromises.readFile(p, {encoding}),
   writeFile: (p: string, data: string | Buffer, encoding?: BufferEncoding) => fsPromises.writeFile(p, data, encoding),
   unlink: (p: string) => fsPromises.unlink(p),
   rename: (from: string, to: string) => fsPromises.rename(from, to),

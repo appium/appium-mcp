@@ -93,6 +93,8 @@ class MockFastMCP {
       await handler(event);
     }
   }
+
+  async start(_options?: unknown): Promise<void> {}
 }
 
 await jest.unstable_mockModule('fastmcp', () => ({
@@ -147,6 +149,8 @@ await jest.unstable_mockModule('../session-store', () => ({
   safeDeleteAllSessions,
 }));
 
+const configureStdioTransportLogging = jest.fn();
+
 await jest.unstable_mockModule('../logger', () => ({
   default: {
     debug: jest.fn(),
@@ -154,6 +158,7 @@ await jest.unstable_mockModule('../logger', () => ({
     warn: jest.fn(),
     error: jest.fn(),
   },
+  configureStdioTransportLogging,
 }));
 
 const {createAppiumMcpServer} = await import('../create-server.js');
@@ -167,6 +172,7 @@ afterEach(() => {
   jest.mocked(log.error).mockReset();
   jest.mocked(log.info).mockReset();
   jest.mocked(log.warn).mockReset();
+  configureStdioTransportLogging.mockReset();
   delete process.env.APPIUM_MCP_ON_CLIENT_DISCONNECT;
 });
 
@@ -193,6 +199,24 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
 
     expect(log.debug).toHaveBeenCalledWith('fastmcp debug');
     expect(log.info).toHaveBeenCalledWith('fastmcp log');
+  });
+
+  test('stdio start quiets logging; httpStream does not', async () => {
+    const server = await createAppiumMcpServer();
+
+    await server.start();
+    expect(configureStdioTransportLogging).toHaveBeenCalledTimes(1);
+
+    configureStdioTransportLogging.mockClear();
+    await server.start({transportType: 'stdio'});
+    expect(configureStdioTransportLogging).toHaveBeenCalledTimes(1);
+
+    configureStdioTransportLogging.mockClear();
+    await server.start({
+      transportType: 'httpStream',
+      httpStream: {port: 8080},
+    });
+    expect(configureStdioTransportLogging).not.toHaveBeenCalled();
   });
 
   test('registers plugin capabilities during construction but initializes lazily', async () => {

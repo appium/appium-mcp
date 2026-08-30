@@ -1,9 +1,13 @@
+import {mkdtemp, rm, writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+
 import type {AndroidUiautomator2Driver} from 'appium-uiautomator2-driver';
 import type {XCUITestDriver} from 'appium-xcuitest-driver';
 import type {ContentResult} from 'fastmcp';
 import {exec} from 'teen_process';
 
-import {execute} from '../../command.js';
+import {execute, runSimctl} from '../../command.js';
 import type {DriverInstance} from '../../session-store.js';
 import {
   getPlatformName,
@@ -43,19 +47,8 @@ export async function listAppsFromDevice(
       if (!udid) {
         throw new Error('Could not determine simulator UDID from session capabilities');
       }
-      const {stdout} = await exec('xcrun', [
-        'simctl',
-        'listapps',
-        udid,
-        '|',
-        'plutil',
-        '-convert',
-        'json',
-        '-o',
-        '-',
-        '-',
-      ]);
-      const result = JSON.parse(stdout);
+      const {stdout} = (await runSimctl(driver, 'listapps', [], 5000)) || {stdout: ''};
+      const result = JSON.parse(await convertPlistToJson(stdout));
       return normalizeListAppsResult(result || {});
     }
     const result = await (driver as XCUITestDriver).mobileListApps(applicationType);
@@ -69,6 +62,19 @@ export async function listAppsFromDevice(
   }
 
   throw new Error(`listApps is not implemented for platform: ${platform}`);
+}
+
+async function convertPlistToJson(plist: string, timeout = 5000): Promise<string> {
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), 'appium-mcp-listapps-'));
+  const plistPath = join(temporaryDirectory, 'listapps.plist');
+
+  try {
+    await writeFile(plistPath, plist, 'utf8');
+    const {stdout} = await exec('plutil', ['-convert', 'json', '-o', '-', '--', plistPath], {timeout});
+    return stdout;
+  } finally {
+    await rm(temporaryDirectory, {recursive: true, force: true});
+  }
 }
 
 export async function list(applicationType?: 'User' | 'System', sessionId?: string): Promise<ContentResult> {

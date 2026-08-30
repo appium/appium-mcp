@@ -12,6 +12,7 @@ import {setSession, listSessions} from '../../session-store.js';
 import {createUIResource, createSessionDashboardUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
 import {findFreePort, releaseReservedPorts} from '../../utils/ports.js';
 import {getPortFromUrl} from '../../utils/url.js';
+import {withQuietWebDriverLogging} from '../../utils/webdriver-client-options.js';
 import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
 import {clearSelectedDevice, getSelectedLocalDevice} from './select-device.js';
 
@@ -355,14 +356,16 @@ export async function createSessionAction(args: {
       log.info(
         `Sending capabilities to remote server: ${protocol}://${remoteUrl.hostname}:${port}${remoteUrl.pathname}`,
       );
-      const client = await WebDriver.newSession({
-        protocol,
-        hostname: remoteUrl.hostname,
-        port,
-        path: remoteUrl.pathname,
-        ...(user && key ? {user, key} : {}),
-        capabilities: finalCapabilities,
-      });
+      const client = await WebDriver.newSession(
+        withQuietWebDriverLogging({
+          protocol,
+          hostname: remoteUrl.hostname,
+          port,
+          path: remoteUrl.pathname,
+          ...(user && key ? {user, key} : {}),
+          capabilities: finalCapabilities,
+        }),
+      );
       sessionId = client.sessionId;
       await setSession(client, client.sessionId, finalCapabilities, 'owned', args.remoteServerUrl);
     } else {

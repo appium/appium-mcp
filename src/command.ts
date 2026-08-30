@@ -33,7 +33,9 @@ export async function execute(driver: DriverInstance, cmd: string, params: any):
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.execute(cmd, params);
   } else {
-    return await (driver as Client).executeScript(cmd, [params]);
+    const result = await (driver as Client).executeScript(cmd, [params]);
+    throwIfSwallowedRemoteError(result);
+    return result;
   }
 }
 
@@ -54,7 +56,7 @@ export async function queryAppState(driver: DriverInstance, appId: string): Prom
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.queryAppState(appId);
   }
-  return Number(await (driver as Client).executeScript('mobile: queryAppState', [{appId, bundleId: appId}]));
+  return Number(await execute(driver, 'mobile: queryAppState', {appId, bundleId: appId}));
 }
 
 /**
@@ -285,7 +287,9 @@ export async function getWindowRect(driver: DriverInstance): Promise<Rect> {
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.getWindowRect();
   }
-  return await driver.getWindowRect();
+  const result = await driver.getWindowRect();
+  throwIfSwallowedRemoteError(result);
+  return result;
 }
 
 /**
@@ -303,7 +307,8 @@ export async function performActions(
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.performActions(operation as ActionSequence[]);
   }
-  return await driver.performActions(operation);
+  const result = await driver.performActions(operation);
+  throwIfSwallowedRemoteError(result);
 }
 
 /**
@@ -318,7 +323,9 @@ export async function getPageSource(driver: DriverInstance): Promise<string> {
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.getPageSource();
   }
-  return await driver.getPageSource();
+  const result = await driver.getPageSource();
+  throwIfSwallowedRemoteError(result);
+  return result;
 }
 
 /**
@@ -344,7 +351,9 @@ export async function getScreenshot(driver: DriverInstance, elementId?: string):
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.getScreenshot();
   }
-  return await driver.takeScreenshot();
+  const result = await driver.takeScreenshot();
+  throwIfSwallowedRemoteError(result);
+  return result;
 }
 
 /**
@@ -477,7 +486,9 @@ export async function getWindowSize(driver: DriverInstance): Promise<{width: num
     const {width, height} = await driver.getWindowRect();
     return {width, height};
   }
-  const {width, height} = await (driver as Client).getWindowRect();
+  const result = await (driver as Client).getWindowRect();
+  throwIfSwallowedRemoteError(result);
+  const {width, height} = result;
   return {width, height};
 }
 
@@ -530,6 +541,31 @@ export async function back(driver: DriverInstance): Promise<void> {
     return await driver.back();
   }
   return await (driver as Client).back();
+}
+
+interface SimctlExecResponse {
+  /** The output of standard out. */
+  stdout: string;
+  /** The output of standard error. */
+  stderr: string;
+  /** Return code. */
+  code: number;
+}
+
+export async function runSimctl(
+  driver: DriverInstance,
+  command: string,
+  args: string[] = [],
+  timeout?: number,
+): Promise<SimctlExecResponse | undefined> {
+  if (getPlatformName(driver) !== PLATFORM.ios) {
+    return;
+  }
+
+  if (isXCUITestDriverSession(driver)) {
+    return await driver.mobileSimctl(command, args, timeout);
+  }
+  return await execute(driver, 'mobile: simctl', {command, args, timeout});
 }
 
 /**

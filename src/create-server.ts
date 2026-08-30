@@ -16,7 +16,7 @@
 import {FastMCP} from 'fastmcp';
 
 import pkg from '../package.json' with {type: 'json'};
-import log from './logger.js';
+import log, {configureStdioTransportLogging} from './logger.js';
 import {PluginManager} from './plugin.js';
 import type {AppiumMcpPlugin} from './plugin.js';
 import {installPolicy, type AppiumMcpPolicy} from './policy.js';
@@ -118,6 +118,7 @@ export async function createAppiumMcpServer(options: CreateAppiumMcpServerOption
       enabled: false,
     },
   });
+  wrapStartForStdioLogging(server);
 
   installPolicy(server, policy);
   try {
@@ -261,6 +262,16 @@ export async function createAppiumMcpServer(options: CreateAppiumMcpServerOption
   });
 
   return server;
+}
+
+function wrapStartForStdioLogging(server: FastMCP): void {
+  const originalStart = server.start.bind(server);
+  server.start = (async (startOptions) => {
+    if ((startOptions?.transportType ?? 'stdio') === 'stdio') {
+      configureStdioTransportLogging();
+    }
+    return originalStart(startOptions);
+  }) as FastMCP['start'];
 }
 
 function disconnectSessionPolicyFromEnv(): DisconnectSessionPolicy {

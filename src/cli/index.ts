@@ -1,12 +1,17 @@
-import log from '../logger.js';
+import log, {configureStdioTransportLogging} from '../logger.js';
 
 export async function runCli(args: string[] = process.argv.slice(2)): Promise<void> {
   const command = args[0];
   if (command === '--help' || command === '-h' || command === 'help') {
     printHelp();
-  } else {
-    await startServer(args);
+    return;
   }
+
+  if (!args.includes('--httpStream')) {
+    configureStdioTransportLogging();
+  }
+
+  await startServer(args);
 }
 
 function printHelp(): void {

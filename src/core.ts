@@ -7,6 +7,7 @@
  */
 export {createAppiumMcpServer} from './create-server.js';
 export type {CreateAppiumMcpServerOptions} from './create-server.js';
+export {configureStdioTransportLogging} from './logger.js';
 export {evaluatePolicyTarget} from './policy.js';
 export type {AppiumMcpPolicy, PolicyDecision, PolicyDecisionReason, PolicyTargetKind} from './policy.js';
 export {AppiumMcpCore, formatVerificationReport, McpRegistry, PluginManager, verifyAppiumMcpNames} from './plugin.js';

@@ -11,6 +11,7 @@ jest.unstable_mockModule('../session-store', () => ({
 }));
 
 const {
+  execute,
   findElement,
   setValue,
   getElementText,
@@ -19,7 +20,18 @@ const {
   elementClick,
   getElementRect,
   getScreenshot,
+  getPageSource,
+  getWindowRect,
+  getWindowSize,
+  performActions,
+  queryAppState,
 } = await import('../command.js');
+
+// What the remote client resolves with when it swallows a WebDriver error.
+const REMOTE_COMMAND_ERROR = {
+  error: 'unknown command',
+  message: 'Unsupported execute method "mobile: isAppInstalled"',
+};
 
 // What the remote client resolves with when it swallows a "no such element" 404.
 const NO_SUCH_ELEMENT_VALUE = {
@@ -135,5 +147,92 @@ describe('element commands: re-throw swallowed remote "no such element"', () => 
     await expect(
       getElementText({getElementText: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never, 'bad'),
     ).rejects.toMatchObject({name: 'no such element'});
+  });
+});
+
+describe('execute: normalizes swallowed remote WebDriver errors', () => {
+  test('re-throws when executeScript returns an error value', async () => {
+    const driver = {
+      executeScript: jest.fn(async () => REMOTE_COMMAND_ERROR),
+    };
+
+    await expect(execute(driver as never, 'mobile: isAppInstalled', {appId: 'com.example.app'})).rejects.toThrow(
+      /Unsupported execute method/i,
+    );
+  });
+
+  test('returns successful executeScript results unchanged', async () => {
+    const driver = {
+      executeScript: jest.fn(async () => false),
+    };
+
+    await expect(execute(driver as never, 'mobile: isAppInstalled', {appId: 'com.example.app'})).resolves.toBe(false);
+
+    driver.executeScript.mockResolvedValueOnce(true);
+    await expect(execute(driver as never, 'mobile: isAppInstalled', {appId: 'com.example.app'})).resolves.toBe(true);
+  });
+
+  test('preserves the W3C error code as the error name (for classifyError)', async () => {
+    const driver = {
+      executeScript: jest.fn(async () => REMOTE_COMMAND_ERROR),
+    };
+
+    await expect(execute(driver as never, 'mobile: isAppInstalled', {appId: 'com.example.app'})).rejects.toMatchObject({
+      name: 'unknown command',
+    });
+  });
+});
+
+describe('queryAppState: uses execute() on remote clients', () => {
+  test('re-throws swallowed remote errors instead of returning NaN', async () => {
+    const driver = {
+      executeScript: jest.fn(async () => ({
+        error: 'unknown command',
+        message: 'mobile: queryAppState is not supported',
+      })),
+    };
+
+    await expect(queryAppState(driver as never, 'com.example.app')).rejects.toThrow(/not supported/i);
+  });
+});
+
+describe('remote command wrappers: re-throw swallowed WebDriver errors', () => {
+  test('performActions re-throws swallowed error values', async () => {
+    await expect(
+      performActions({performActions: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never, []),
+    ).rejects.toThrow(/could not be located/i);
+  });
+
+  test('full-screen getScreenshot re-throws swallowed error values', async () => {
+    await expect(getScreenshot({takeScreenshot: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never)).rejects.toThrow(
+      /could not be located/i,
+    );
+    await expect(getScreenshot({takeScreenshot: jest.fn(async () => 'base64png')} as never)).resolves.toBe('base64png');
+  });
+
+  test('getPageSource re-throws swallowed error values', async () => {
+    await expect(getPageSource({getPageSource: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never)).rejects.toThrow(
+      /could not be located/i,
+    );
+    await expect(getPageSource({getPageSource: jest.fn(async () => '<xml/>')} as never)).resolves.toBe('<xml/>');
+  });
+
+  test('getWindowRect re-throws swallowed error values', async () => {
+    await expect(getWindowRect({getWindowRect: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never)).rejects.toThrow(
+      /could not be located/i,
+    );
+    const rect = {x: 0, y: 0, width: 320, height: 640};
+    await expect(getWindowRect({getWindowRect: jest.fn(async () => rect)} as never)).resolves.toBe(rect);
+  });
+
+  // Without the guard the error value destructures to undefined width/height,
+  // which surfaces as NaN in the gesture maths instead of a real failure.
+  test('getWindowSize re-throws swallowed error values', async () => {
+    await expect(getWindowSize({getWindowRect: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never)).rejects.toThrow(
+      /could not be located/i,
+    );
+    await expect(
+      getWindowSize({getWindowRect: jest.fn(async () => ({x: 0, y: 0, width: 320, height: 640}))} as never),
+    ).resolves.toEqual({width: 320, height: 640});
   });
 });

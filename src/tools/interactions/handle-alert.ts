@@ -5,9 +5,9 @@ import {elementClick, execute, findElement, getPageSource} from '../../command.j
 import {generateAllElementLocators} from '../../locators/generate-all-locators.js';
 import {getPlatformName, PLATFORM} from '../../session-store.js';
 import type {DriverInstance} from '../../session-store.js';
-import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
+import {readWebElementId, resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
-const ANDROID_LOCATOR_STRATEGY_ORDER = ['id', 'accessibility id', 'xpath', '-android uiautomator', 'class name'];
+const ANDROID_LOCATOR_STRATEGY_ORDER = ['accessibility id', 'id', 'xpath', '-android uiautomator', 'class name'];
 
 export default function alert(server: FastMCP): void {
   const appiumAlertSchema = z.object({
@@ -99,8 +99,11 @@ async function handleAndroidAlert(driver: DriverInstance, action: string, button
     if (!button) {
       throw new Error('Could not find element with any generated locator; it may have disappeared');
     }
-    const buttonUUID = button.ELEMENT || button;
-    await elementClick(driver, buttonUUID);
+    const buttonId = readWebElementId(button);
+    if (!buttonId) {
+      throw new Error('Element was returned without a valid element ID');
+    }
+    await elementClick(driver, buttonId);
   } else {
     if (action === 'accept') {
       await execute(driver, 'mobile: acceptAlert', {});

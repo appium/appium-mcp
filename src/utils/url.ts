@@ -1,5 +1,7 @@
 import WebDriver, {type Client} from 'webdriver';
 
+import {withQuietWebDriverLogging} from './webdriver-client-options.js';
+
 export interface RemoteAttachOptions {
   remoteServerUrl: string;
   sessionId: string;
@@ -29,13 +31,15 @@ export async function attachToRemoteSession(options: RemoteAttachOptions): Promi
   const port = getPortFromUrl(url);
   const user = url.username ? decodeURIComponent(url.username) : undefined;
   const key = url.password ? decodeURIComponent(url.password) : undefined;
-  return WebDriver.attachToSession({
-    sessionId: options.sessionId,
-    protocol,
-    hostname: url.hostname,
-    port,
-    path: url.pathname,
-    capabilities: options.capabilities,
-    ...(user && key ? {user, key} : {}),
-  });
+  return WebDriver.attachToSession(
+    withQuietWebDriverLogging({
+      sessionId: options.sessionId,
+      protocol,
+      hostname: url.hostname,
+      port,
+      path: url.pathname,
+      capabilities: options.capabilities,
+      ...(user && key ? {user, key} : {}),
+    }),
+  );
 }

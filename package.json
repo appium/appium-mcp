@@ -1,6 +1,6 @@
 {
   "name": "appium-mcp",
-  "version": "1.90.1",
+  "version": "1.92.11",
   "description": "Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation",
   "bugs": {
     "url": "https://github.com/appium/appium-mcp/issues"
@@ -68,8 +68,9 @@
     "version": "npm run sync-version"
   },
   "dependencies": {
-    "@appium/support": "^7.0.2",
+    "@appium/support": "^7.2.6",
     "@modelcontextprotocol/sdk": "^1.22.0",
+    "@wdio/logger": "^9.29.1",
     "@xmldom/xmldom": "^0.9.8",
     "appium-adb": "^16.0.0",
     "appium-ios-device": "^3.1.0",
@@ -80,6 +81,7 @@
     "ios-mobileprovision-finder": "^1.2.1",
     "lru-cache": "^11.5.0",
     "node-simctl": "^9.1.0",
+    "teen_process": "^4.2.1",
     "webdriver": "^9.30.0",
     "xpath": "^0.0.34",
     "zod": "^4.3.6"
@@ -88,6 +90,7 @@
     "@appium/oxc-config": "^1.1.0",
     "@appium/semantic-release-config": "^1.1.0",
     "@appium/tsconfig": "^1.2.0",
+    "@appium/types": "^1.2.0",
     "@jest/globals": "^30.2.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.0.0",

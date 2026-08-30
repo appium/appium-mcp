@@ -81,7 +81,7 @@ describe('appium_alert Android custom button', () => {
     expect(mockElementClick).not.toHaveBeenCalled();
   });
 
-  test('clicks the resolved element when findElement succeeds', async () => {
+  test('clicks the resolved W3C element id when findElement succeeds', async () => {
     mockFindElement.mockResolvedValue({
       'element-6066-11e4-a52e-4f735466cecf': 'el-1',
     });
@@ -90,6 +90,16 @@ describe('appium_alert Android custom button', () => {
     const result = await tool.execute({action: 'accept', buttonLabel: 'OK'}, undefined);
 
     expect(result.isError).toBeFalsy();
-    expect(mockElementClick).toHaveBeenCalledTimes(1);
+    expect(mockElementClick).toHaveBeenCalledWith(expect.anything(), 'el-1');
+  });
+
+  test('clicks the legacy ELEMENT id when findElement returns it', async () => {
+    mockFindElement.mockResolvedValue({ELEMENT: 'legacy-el-1'});
+
+    const tool = await loadTool();
+    const result = await tool.execute({action: 'accept', buttonLabel: 'OK'}, undefined);
+
+    expect(result.isError).toBeFalsy();
+    expect(mockElementClick).toHaveBeenCalledWith(expect.anything(), 'legacy-el-1');
   });
 });

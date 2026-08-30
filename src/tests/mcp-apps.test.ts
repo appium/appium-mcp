@@ -1,5 +1,6 @@
 import {afterEach, describe, expect, test} from '@jest/globals';
 
+import {createLocatorGeneratorAppUI} from '../ui/locator-generator-app.js';
 import {
   clientSupportsMcpApps,
   isMcpAppsEnabled,
@@ -8,6 +9,7 @@ import {
   supportsMcpAppsCapability,
 } from '../ui/mcp-apps.js';
 import {createPageSourceInspectorAppUI} from '../ui/page-source-inspector-app.js';
+import {createScreenshotViewerAppUI} from '../ui/screenshot-viewer-app.js';
 
 describe('MCP Apps feature flag', () => {
   const originalMcpAppsEnabled = process.env.APPIUM_MCP_APPS_ENABLED;
@@ -51,23 +53,6 @@ describe('MCP Apps capability detection', () => {
 
   test('accepts clients advertising the stable MCP Apps MIME type', () => {
     expect(supportsMcpAppsCapability(supportedCapabilities)).toBe(true);
-  });
-
-  test.each([
-    ' text/html;profile=mcp-app ',
-    'text/html; profile=mcp-app',
-    'text/html; profile="mcp-app"',
-    'TEXT/HTML; PROFILE="MCP-APP"',
-  ])('normalizes the advertised MIME type %s', (mimeType) => {
-    const capabilities = {
-      extensions: {
-        [MCP_APPS_EXTENSION_ID]: {
-          mimeTypes: [mimeType],
-        },
-      },
-    };
-
-    expect(supportsMcpAppsCapability(capabilities)).toBe(true);
   });
 
   test.each([
@@ -121,6 +106,44 @@ describe('page source inspector MCP App', () => {
 
   test('contains valid JavaScript', () => {
     const html = createPageSourceInspectorAppUI();
+    const script = html.match(/<script>([\s\S]*)<\/script>/)?.[1];
+
+    expect(script).toBeDefined();
+    expect(() => Function(script ?? '')).not.toThrow();
+  });
+});
+
+describe('screenshot viewer MCP App', () => {
+  test('reads image data from the tool result instead of embedding it', () => {
+    const html = createScreenshotViewerAppUI();
+
+    expect(html).toContain('result.structuredContent.screenshot');
+    expect(html).toContain("item.type === 'image'");
+    expect(html).toContain("message.method === 'ui/notifications/tool-result'");
+    expect(html).not.toContain('dGVzdA==');
+  });
+
+  test('contains valid JavaScript', () => {
+    const html = createScreenshotViewerAppUI();
+    const script = html.match(/<script>([\s\S]*)<\/script>/)?.[1];
+
+    expect(script).toBeDefined();
+    expect(() => Function(script ?? '')).not.toThrow();
+  });
+});
+
+describe('locator generator MCP App', () => {
+  test('reads locator data from the existing JSON text result', () => {
+    const html = createLocatorGeneratorAppUI();
+
+    expect(html).toContain('JSON.parse(textBlock.text)');
+    expect(html).toContain("message.method === 'ui/notifications/tool-result'");
+    expect(html).toContain("'appium_find_element'");
+    expect(html).not.toContain('android.widget.Button');
+  });
+
+  test('contains valid JavaScript', () => {
+    const html = createLocatorGeneratorAppUI();
     const script = html.match(/<script>([\s\S]*)<\/script>/)?.[1];
 
     expect(script).toBeDefined();

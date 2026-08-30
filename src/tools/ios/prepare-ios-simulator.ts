@@ -1,4 +1,3 @@
-import os from 'node:os';
 import path from 'node:path';
 
 import {fs, net, plist, zip} from '@appium/support';
@@ -115,6 +114,12 @@ async function getLatestWDAVersionFromCache(): Promise<string | null> {
   return filteredVersions.length > 0 ? filteredVersions[0] : null;
 }
 
+async function getSimulatorArchitecture(simulatorUdid: string): Promise<string[]> {
+  const {stdout} = await exec('xcrun', ['simctl', 'getenv', simulatorUdid, 'SIMULATOR_ARCHS']);
+  const archs = stdout.trim().split(/\s+/);
+  return archs;
+}
+
 async function installAppOnSimulator(appPath: string, simulatorUdid: string): Promise<void> {
   await exec('xcrun', ['simctl', 'install', simulatorUdid, appPath]);
 }
@@ -202,6 +207,7 @@ async function getWDAState(simulatorUdid: string): Promise<WDAState> {
 // ── Main pipeline ──
 
 async function resolveWdaAppPath(
+  simulatorUdid: string,
   forceRefreshWda: boolean,
   platform: 'ios' | 'tvos' = 'ios',
 ): Promise<{
@@ -228,8 +234,12 @@ async function resolveWdaAppPath(
     };
   }
 
-  const arch = os.arch();
-  const archStr = arch === 'arm64' ? 'arm64' : 'x86_64';
+  const archs = await getSimulatorArchitecture(simulatorUdid);
+  const archStr = archs.includes('arm64') ? 'arm64' : archs[0];
+  const isRosetta = await exec('sysctl', ['-in', 'sysctl.proc_translated']).then(({stdout}) => stdout.trim() === '1');
+  if (isRosetta) {
+    log.info(`Running under Rosetta. Simulator architecture: ${archs.join(', ')}. Using ${archStr} WDA build.`);
+  }
   const artifactPrefix = platform === 'tvos' ? 'WebDriverAgentRunner_tvOS' : 'WebDriverAgentRunner';
 
   // Check cache first (unless force refresh)
@@ -405,7 +415,7 @@ async function prepareSimulator(
   // ── Step 2: Download WDA ──
   let wdaAppPath: string;
   try {
-    const resolved = await resolveWdaAppPath(forceRefreshWda, platform);
+    const resolved = await resolveWdaAppPath(udid, forceRefreshWda, platform);
     wdaAppPath = resolved.wdaAppPath;
     result.wdaAppPath = wdaAppPath;
 

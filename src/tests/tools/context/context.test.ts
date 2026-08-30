@@ -29,9 +29,10 @@ jest.unstable_mockModule('../../../ui/mcp-ui-utils', () => ({
   addUIResourceToResponse: jest.fn((_result: unknown) => _result),
 }));
 
-const {getCurrentContext} = await import('../../../command.js');
+const {getCurrentContext, getContexts} = await import('../../../command.js');
 
 const mockGetCurrentContext = getCurrentContext as jest.MockedFunction<typeof getCurrentContext>;
+const mockGetContexts = getContexts as jest.MockedFunction<typeof getContexts>;
 
 describe('appium_context tool', () => {
   const mockServer = {addTool: jest.fn()} as any;
@@ -45,6 +46,7 @@ describe('appium_context tool', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetCurrentContext.mockResolvedValue('NATIVE_APP');
+    mockGetContexts.mockResolvedValue(['NATIVE_APP', 'WEBVIEW_com.example']);
   });
 
   test('setCurrentContext uses sessionId on list', async () => {
@@ -69,5 +71,16 @@ describe('appium_context tool', () => {
     );
 
     expect(mockSetCurrentContext).toHaveBeenLastCalledWith('WEBVIEW_com.example', 'session-b');
+  });
+
+  test('surfaces driver errors instead of reporting no contexts', async () => {
+    const tool = await getToolExecute();
+    mockGetContexts.mockRejectedValue(new Error('session is not started'));
+
+    const result = await tool.execute({action: 'list', sessionId: 'session-b'}, undefined);
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('session is not started');
+    expect(result.content[0].text).not.toContain('No contexts available');
   });
 });
