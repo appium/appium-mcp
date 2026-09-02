@@ -1,6 +1,6 @@
-import { appendFile } from "node:fs/promises";
+import {appendFile} from 'node:fs/promises';
 
-import semanticRelease from "semantic-release";
+import semanticRelease from 'semantic-release';
 
 const result = await semanticRelease();
 
