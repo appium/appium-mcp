@@ -26,17 +26,21 @@ jobs:
         name: Install dependencies
       - run: npm run build
         name: Build
-      - run: npx semantic-release
+      - run: node scripts/semantic-release.mjs
+        id: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         name: Release
 
       - name: Install mcp-publisher
+        if: steps.semantic-release.outputs.released == 'true'
         run: |
           curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
 
       - name: Authenticate to MCP Registry
+        if: steps.semantic-release.outputs.released == 'true'
         run: ./mcp-publisher login github-oidc
 
       - name: Publish server to MCP Registry
+        if: steps.semantic-release.outputs.released == 'true'
         run: ./mcp-publisher publish
