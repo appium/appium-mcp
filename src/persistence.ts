@@ -1,4 +1,5 @@
-import {createHash} from 'node:crypto';
+import {createHash, randomBytes} from 'node:crypto';
+import {chmod, lstat, writeFile} from 'node:fs/promises';
 import path from 'node:path';
 
 import {fs} from '@appium/support';
@@ -6,6 +7,8 @@ import {fs} from '@appium/support';
 import log from './logger.js';
 import type {SessionCapabilities, SessionOwnership} from './session-store.js';
 import {resolveAppiumMcpSessionsDir} from './utils/paths.js';
+
+const PRIVATE_FILE_MODE = 0o600;
 
 /**
  * On-disk representation of a remote Appium session.
@@ -76,13 +79,19 @@ export async function readAllPersistedSessions(): Promise<PersistedSession[]> {
   for (const name of jsonFiles) {
     const filePath = path.join(dir, name);
     try {
+      const fileStats = await lstat(filePath);
+      if (!fileStats.isFile()) {
+        log.warn(`Skipping persisted session file ${name}: not a regular file`);
+        continue;
+      }
+      await chmod(filePath, PRIVATE_FILE_MODE);
       const raw = await fs.readFile(filePath, 'utf8');
       const entry = JSON.parse(raw) as PersistedSession;
       const canonicalPath = sessionFilePath(entry.sessionId, dir);
       const canonicalName = path.basename(canonicalPath);
       if (name !== canonicalName) {
         try {
-          await fs.writeFile(canonicalPath, raw, {flag: 'wx'});
+          await writeFile(canonicalPath, raw, {encoding: 'utf8', flag: 'wx', mode: PRIVATE_FILE_MODE});
         } catch (err) {
           if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
             await removeDuplicateSessionFile(filePath, name, entry.sessionId);
@@ -117,12 +126,17 @@ export async function writePersistedSession(entry: PersistedSession): Promise<vo
     return;
   }
   const target = sessionFilePath(entry.sessionId, dir);
-  const tmp = `${target}.${process.pid}.tmp`;
+  const tmp = `${target}.${process.pid}.${randomBytes(8).toString('hex')}.tmp`;
   try {
     await fs.mkdir(dir, {recursive: true});
     await migrateLegacySessionFile(entry.sessionId, dir);
-    await fs.writeFile(tmp, JSON.stringify(entry, null, 2), 'utf8');
+    await writeFile(tmp, JSON.stringify(entry, null, 2), {
+      encoding: 'utf8',
+      flag: 'wx',
+      mode: PRIVATE_FILE_MODE,
+    });
     await fs.rename(tmp, target);
+    await chmod(target, PRIVATE_FILE_MODE);
   } catch (err) {
     log.warn(`Failed to persist session ${entry.sessionId}: ${(err as Error).message}`);
     // Best-effort cleanup of the tmp file. Ignore if it does not exist.

@@ -322,6 +322,33 @@ describe('appium_session_management tool', () => {
       );
     });
 
+    test('encodes the session id as one URL path segment when fetching capabilities', async () => {
+      const tool = await getToolExecute();
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({value: {platformName: 'Android'}}),
+      } as Response);
+
+      await tool.execute(
+        {
+          action: 'attach',
+          remoteServerUrl: 'http://localhost:4723/wd/hub',
+          sessionId: 'borrowed/../../status?probe=true',
+        },
+        undefined,
+      );
+
+      const requestUrls = mockFetch.mock.calls.map(([input]) => input.toString());
+      expect(requestUrls).toHaveLength(2);
+      expect(requestUrls).toEqual(
+        expect.arrayContaining([
+          'http://localhost:4723/wd/hub/session/borrowed%2F..%2F..%2Fstatus%3Fprobe%3Dtrue/appium/session_capabilities',
+          'http://localhost:4723/wd/hub/session/borrowed%2F..%2F..%2Fstatus%3Fprobe%3Dtrue',
+        ]),
+      );
+      expect(mockFetch.mock.calls.every(([, init]) => init?.redirect === 'error')).toBe(true);
+    });
+
     test('falls back to deprecated session endpoint when W3C extension is unavailable', async () => {
       const tool = await getToolExecute();
       mockFetch.mockImplementation(async (input) => {
@@ -383,6 +410,23 @@ describe('appium_session_management tool', () => {
       expect(result.content[0].text).toContain('Failed to fetch capabilities');
       expect(result.content[0].text).toContain('borrowed');
       expect(mockAttachToSession).not.toHaveBeenCalled();
+    });
+
+    test('redacts remote URL credentials when capability discovery fails', async () => {
+      const tool = await getToolExecute();
+
+      const result = await tool.execute(
+        {
+          action: 'attach',
+          remoteServerUrl: 'https://alice:secret@example.test/wd/hub',
+          sessionId: 'borrowed',
+        },
+        undefined,
+      );
+
+      expect(result.content[0].text).toContain('https://[REDACTED]@example.test/wd/hub');
+      expect(result.content[0].text).not.toContain('alice');
+      expect(result.content[0].text).not.toContain('secret');
     });
 
     test('detaches an existing attached session before re-attaching the same id', async () => {
@@ -763,8 +807,21 @@ describe('validateRemoteServerUrl', () => {
     expect(() => validateRemoteServerUrl(url)).toThrow(`Invalid remoteServerUrl: ${url}.`),
   );
 
-  test('accepts URL matching custom regex', () => {
-    expect(() => validateRemoteServerUrl('ftp://localhost:4723', '^.+//localhost:4723(/.*)?$')).not.toThrow();
+  test('custom regex cannot allow a non-HTTP protocol', () => {
+    expect(() => validateRemoteServerUrl('ftp://localhost:4723', '^.+//localhost:4723(/.*)?$')).toThrow(
+      'Invalid remoteServerUrl: ftp://localhost:4723.',
+    );
+  });
+
+  test.each(['https://example.com/?target=other', 'https://example.com/#fragment'])(
+    'rejects a URL with a query or fragment: %s',
+    (url) => expect(() => validateRemoteServerUrl(url)).toThrow(`Invalid remoteServerUrl: ${url}.`),
+  );
+
+  test('redacts URL credentials in validation errors', () => {
+    expect(() => validateRemoteServerUrl('ftp://alice:secret@example.com')).toThrow(
+      'Invalid remoteServerUrl: ftp://[REDACTED]@example.com.',
+    );
   });
 
   test('rejects URL not matching custom regex', () => {

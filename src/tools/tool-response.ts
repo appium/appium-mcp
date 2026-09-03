@@ -4,6 +4,7 @@ import {type Client} from 'webdriver';
 import log from '../logger.js';
 import {readAllPersistedSessions, removePersistedSession} from '../persistence.js';
 import {getDriver, setSession, type DriverInstance, type SessionCapabilities} from '../session-store.js';
+import {redactUrlCredentials} from '../utils/sensitive.js';
 import {attachToRemoteSession} from '../utils/url.js';
 
 const W3C_ELEMENT_ID = 'element-6066-11e4-a52e-4f735466cecf';
@@ -14,7 +15,7 @@ export type DriverOrError = {ok: true; driver: DriverInstance} | {ok: false; res
  * Normalizes unknown errors into a message string for tool responses.
  */
 export function toolErrorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+  return redactUrlCredentials(err instanceof Error ? err.message : String(err));
 }
 
 /**
@@ -123,7 +124,7 @@ async function rehydrateAttachedSession(sessionId: string): Promise<{sessionId: 
         await (client as Client).getTimeouts();
       } catch (verifyErr) {
         log.warn(
-          `Persisted session ${entry.sessionId} failed liveness check (${(verifyErr as Error).message}); pruning.`,
+          `Persisted session ${entry.sessionId} failed liveness check (${toolErrorMessage(verifyErr)}); pruning.`,
         );
         await removePersistedSession(entry.sessionId);
         continue;
@@ -142,7 +143,7 @@ async function rehydrateAttachedSession(sessionId: string): Promise<{sessionId: 
       log.info(`Rehydrated attached session ${entry.sessionId} from persisted store.`);
       return {sessionId: entry.sessionId};
     } catch (err) {
-      log.warn(`Persisted session ${entry.sessionId} no longer attachable (${(err as Error).message}); pruning.`);
+      log.warn(`Persisted session ${entry.sessionId} no longer attachable (${toolErrorMessage(err)}); pruning.`);
       await removePersistedSession(entry.sessionId);
     }
   }

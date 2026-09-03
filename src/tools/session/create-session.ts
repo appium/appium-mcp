@@ -11,6 +11,7 @@ import log from '../../logger.js';
 import {setSession, listSessions} from '../../session-store.js';
 import {createUIResource, createSessionDashboardUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
 import {findFreePort, releaseReservedPorts} from '../../utils/ports.js';
+import {redactForLogging, redactUrlCredentials} from '../../utils/sensitive.js';
 import {getPortFromUrl} from '../../utils/url.js';
 import {withQuietWebDriverLogging} from '../../utils/webdriver-client-options.js';
 import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
@@ -279,9 +280,21 @@ export function validateLocalCreatePlatformMatch(
  * @throws {Error} If the URL is invalid.
  */
 export function validateRemoteServerUrl(remoteServerUrl: string, regexRule?: string): void {
-  const regexPattern = regexRule ? new RegExp(regexRule) : /^https?:\/\/.+$/;
-  if (!regexPattern.test(remoteServerUrl)) {
-    throw new Error(`Invalid remoteServerUrl: ${remoteServerUrl}.`);
+  const invalidUrl = (): Error => new Error(`Invalid remoteServerUrl: ${redactUrlCredentials(remoteServerUrl)}.`);
+
+  let parsed: URL;
+  try {
+    parsed = new URL(remoteServerUrl);
+  } catch {
+    throw invalidUrl();
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname || parsed.search || parsed.hash) {
+    throw invalidUrl();
+  }
+
+  if (regexRule && !new RegExp(regexRule).test(remoteServerUrl)) {
+    throw invalidUrl();
   }
 }
 
@@ -336,7 +349,7 @@ export async function createSessionAction(args: {
 
     log.info(
       `Creating new ${platform.toUpperCase()} session with capabilities:`,
-      JSON.stringify(finalCapabilities, null, 2),
+      JSON.stringify(redactForLogging(finalCapabilities), null, 2),
     );
     let sessionId;
     if (remoteServerUrl) {
@@ -344,7 +357,7 @@ export async function createSessionAction(args: {
         validateRemoteServerUrl(remoteServerUrl, process.env.REMOTE_SERVER_URL_ALLOW_REGEX);
       } catch (err: unknown) {
         return errorResult(
-          `Invalid remoteServerUrl "${remoteServerUrl}". ${toolErrorMessage(err)} Pass a valid http(s) URL, or omit remoteServerUrl to use the local embedded driver.`,
+          `Invalid remoteServerUrl "${redactUrlCredentials(remoteServerUrl)}". ${toolErrorMessage(err)} Pass a valid http(s) URL without a query or fragment, or omit remoteServerUrl to use the local embedded driver.`,
         );
       }
 
@@ -412,7 +425,7 @@ export async function createSessionAction(args: {
       ),
     );
   } catch (error: unknown) {
-    log.error('Error creating session:', error);
+    log.error('Error creating session:', toolErrorMessage(error));
     return errorResult(
       buildCreateSessionFailureMessage(error, {
         platform: args.platform,
@@ -435,7 +448,7 @@ function buildCreateSessionFailureMessage(
   const base = `Failed to create session. ${detail}`;
 
   if (ctx.remoteServerUrl) {
-    return `${base} remoteServerUrl="${ctx.remoteServerUrl}".`;
+    return `${base} remoteServerUrl="${redactUrlCredentials(ctx.remoteServerUrl)}".`;
   }
 
   if (/select_device/i.test(detail)) {
