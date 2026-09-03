@@ -1,3 +1,9 @@
+## [1.92.13](https://github.com/appium/appium-mcp/compare/v1.92.12...v1.92.13) (2026-09-03)
+
+### Bug Fixes
+
+* **command:** re-throw swallowed remote errors for orientation and back ([#519](https://github.com/appium/appium-mcp/issues/519)) ([65936d8](https://github.com/appium/appium-mcp/commit/65936d8e8f77cf9dc4a560dfcef1e3316517a4df))
+
 ## [1.92.12](https://github.com/appium/appium-mcp/compare/v1.92.11...v1.92.12) (2026-09-01)
 
 ### Bug Fixes
