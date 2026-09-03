@@ -25,6 +25,9 @@ const {
   getWindowSize,
   performActions,
   queryAppState,
+  getOrientation,
+  setOrientation,
+  back,
 } = await import('../command.js');
 
 // What the remote client resolves with when it swallows a WebDriver error.
@@ -234,5 +237,28 @@ describe('remote command wrappers: re-throw swallowed WebDriver errors', () => {
     await expect(
       getWindowSize({getWindowRect: jest.fn(async () => ({x: 0, y: 0, width: 320, height: 640}))} as never),
     ).resolves.toEqual({width: 320, height: 640});
+  });
+
+  test('getOrientation re-throws swallowed error values', async () => {
+    await expect(getOrientation({getOrientation: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never)).rejects.toThrow(
+      /could not be located/i,
+    );
+    await expect(getOrientation({getOrientation: jest.fn(async () => 'PORTRAIT')} as never)).resolves.toBe('PORTRAIT');
+  });
+
+  test('setOrientation re-throws swallowed error values', async () => {
+    await expect(
+      setOrientation({setOrientation: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never, 'LANDSCAPE'),
+    ).rejects.toThrow(/could not be located/i);
+    await expect(
+      setOrientation({setOrientation: jest.fn(async () => undefined)} as never, 'LANDSCAPE'),
+    ).resolves.toBeUndefined();
+  });
+
+  test('back re-throws swallowed error values', async () => {
+    await expect(back({back: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never)).rejects.toThrow(
+      /could not be located/i,
+    );
+    await expect(back({back: jest.fn(async () => undefined)} as never)).resolves.toBeUndefined();
   });
 });

@@ -420,7 +420,9 @@ export async function getOrientation(driver: DriverInstance): Promise<'LANDSCAPE
   } else if (isXCUITestDriverSession(driver)) {
     return (await driver.proxyCommand('/orientation', 'GET')) as 'LANDSCAPE' | 'PORTRAIT';
   }
-  return (await driver.getOrientation()) as 'LANDSCAPE' | 'PORTRAIT';
+  const result = await driver.getOrientation();
+  throwIfSwallowedRemoteError(result);
+  return result as 'LANDSCAPE' | 'PORTRAIT';
 }
 
 /**
@@ -435,7 +437,8 @@ export async function setOrientation(driver: DriverInstance, orientation: 'LANDS
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.proxyCommand('/orientation', 'POST', {orientation});
   }
-  return await driver.setOrientation(orientation);
+  const result = await driver.setOrientation(orientation);
+  throwIfSwallowedRemoteError(result);
 }
 
 /**
@@ -540,7 +543,8 @@ export async function back(driver: DriverInstance): Promise<void> {
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.back();
   }
-  return await (driver as Client).back();
+  const result = await (driver as Client).back();
+  throwIfSwallowedRemoteError(result);
 }
 
 interface SimctlExecResponse {
