@@ -5,7 +5,7 @@ import log from '../logger.js';
 import {readAllPersistedSessions, removePersistedSession} from '../persistence.js';
 import {getDriver, setSession, type DriverInstance, type SessionCapabilities} from '../session-store.js';
 import {redactUrlCredentials} from '../utils/sensitive.js';
-import {attachToRemoteSession} from '../utils/url.js';
+import {attachToRemoteSession, validateRemoteServerUrl} from '../utils/url.js';
 
 const W3C_ELEMENT_ID = 'element-6066-11e4-a52e-4f735466cecf';
 
@@ -112,6 +112,15 @@ async function rehydrateAttachedSession(sessionId: string): Promise<{sessionId: 
   }
   const candidates = persisted.filter((p) => p.sessionId === sessionId);
   for (const entry of candidates) {
+    try {
+      validateRemoteServerUrl(entry.remoteServerUrl, process.env.REMOTE_SERVER_URL_ALLOW_REGEX);
+    } catch (err) {
+      log.warn(
+        `Persisted session ${entry.sessionId} has a disallowed remoteServerUrl (${toolErrorMessage(err)}); skipping.`,
+      );
+      continue;
+    }
+
     try {
       const client = await attachToRemoteSession({
         remoteServerUrl: entry.remoteServerUrl,

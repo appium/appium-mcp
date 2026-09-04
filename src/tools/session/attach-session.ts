@@ -10,9 +10,8 @@ import {
   type SessionOwnership,
 } from '../../session-store.js';
 import {redactUrlCredentials} from '../../utils/sensitive.js';
-import {attachToRemoteSession, getPortFromUrl} from '../../utils/url.js';
+import {attachToRemoteSession, getPortFromUrl, validateRemoteServerUrl} from '../../utils/url.js';
 import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
-import {validateRemoteServerUrl} from './create-session.js';
 
 /**
  * Normalize capability payloads returned by Appium/WebdriverIO into a flat

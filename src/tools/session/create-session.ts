@@ -12,7 +12,7 @@ import {setSession, listSessions} from '../../session-store.js';
 import {createUIResource, createSessionDashboardUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
 import {findFreePort, releaseReservedPorts} from '../../utils/ports.js';
 import {redactForLogging, redactUrlCredentials} from '../../utils/sensitive.js';
-import {getPortFromUrl} from '../../utils/url.js';
+import {getPortFromUrl, validateRemoteServerUrl} from '../../utils/url.js';
 import {withQuietWebDriverLogging} from '../../utils/webdriver-client-options.js';
 import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
 import {clearSelectedDevice, getSelectedLocalDevice} from './select-device.js';
@@ -272,33 +272,6 @@ export function validateLocalCreatePlatformMatch(
 }
 
 /**
- * Validate the provided remote server URL.
- *
- * @param remoteServerUrl - The URL of the remote Appium server to validate.
- * @param regexRule - Optional regular expression string to further validate the URL format.
- * If the regexRule is provided, the URL must match the regex pattern to be considered valid.
- * @throws {Error} If the URL is invalid.
- */
-export function validateRemoteServerUrl(remoteServerUrl: string, regexRule?: string): void {
-  const invalidUrl = (): Error => new Error(`Invalid remoteServerUrl: ${redactUrlCredentials(remoteServerUrl)}.`);
-
-  let parsed: URL;
-  try {
-    parsed = new URL(remoteServerUrl);
-  } catch {
-    throw invalidUrl();
-  }
-
-  if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname || parsed.search || parsed.hash) {
-    throw invalidUrl();
-  }
-
-  if (regexRule && !new RegExp(regexRule).test(remoteServerUrl)) {
-    throw invalidUrl();
-  }
-}
-
-/**
  * Create a new mobile session with Android or iOS device.
  *
  * Backs the `appium_session_management` tool when called with `action=create`.
@@ -517,4 +490,4 @@ async function createDriverSession(driver: any, capabilities: Capabilities): Pro
 }
 
 // Re-export for backward compatibility with consumers that imported from this module.
-export {getPortFromUrl};
+export {getPortFromUrl, validateRemoteServerUrl};

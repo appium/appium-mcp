@@ -5,6 +5,7 @@ const mockSetSession = jest.fn(async () => {});
 const mockReadAllPersistedSessions = jest.fn(async (): Promise<any[]> => []);
 const mockRemovePersistedSession = jest.fn(async () => {});
 const mockAttachToRemoteSession = jest.fn(async (_opts: any): Promise<any> => ({}));
+const mockValidateRemoteServerUrl = jest.fn((_url: string, _regex?: string) => {});
 const mockGetScreenshot = jest.fn(async () => 'dGVzdA=='); // "test" base64
 const mockClientSupportsMcpApps = jest.fn(() => false);
 const mockIsMcpAppsEnabled = jest.fn(() => true);
@@ -29,6 +30,7 @@ jest.unstable_mockModule('../../../persistence.js', () => ({
 
 jest.unstable_mockModule('../../../utils/url.js', () => ({
   attachToRemoteSession: mockAttachToRemoteSession,
+  validateRemoteServerUrl: mockValidateRemoteServerUrl,
 }));
 
 jest.unstable_mockModule('../../../command.js', () => ({
@@ -69,6 +71,7 @@ describe('executeScreenshot resolveDriver', () => {
     mockReadAllPersistedSessions.mockResolvedValue([]);
     mockRemovePersistedSession.mockReset();
     mockAttachToRemoteSession.mockReset();
+    mockValidateRemoteServerUrl.mockReset();
     mockGetScreenshot.mockReset();
     mockGetScreenshot.mockResolvedValue('dGVzdA==');
     mockClientSupportsMcpApps.mockReset();
@@ -177,6 +180,45 @@ describe('executeScreenshot resolveDriver', () => {
     });
     expect(mockSetSession).toHaveBeenCalled();
     expect(mockGetScreenshot).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not rehydrate a persisted session disallowed by the current URL policy', async () => {
+    const previousRule = process.env.REMOTE_SERVER_URL_ALLOW_REGEX;
+    process.env.REMOTE_SERVER_URL_ALLOW_REGEX = '^https://allowed\\.example(?:/.*)?$';
+    mockGetDriver.mockReturnValue(null);
+    mockReadAllPersistedSessions.mockResolvedValue([
+      {
+        sessionId: 'persisted-disallowed',
+        remoteServerUrl: 'http://metadata.internal/latest',
+        ownership: 'attached',
+        capabilities: {platformName: 'Android'},
+      },
+    ] as any);
+    mockValidateRemoteServerUrl.mockImplementation(() => {
+      throw new Error('Invalid remoteServerUrl: http://metadata.internal/latest.');
+    });
+
+    try {
+      const result = await executeScreenshot({
+        returnRawBase64: true,
+        sessionId: 'persisted-disallowed',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(mockValidateRemoteServerUrl).toHaveBeenCalledWith(
+        'http://metadata.internal/latest',
+        '^https://allowed\\.example(?:/.*)?$',
+      );
+      expect(mockAttachToRemoteSession).not.toHaveBeenCalled();
+      expect(mockSetSession).not.toHaveBeenCalled();
+      expect(mockRemovePersistedSession).not.toHaveBeenCalled();
+    } finally {
+      if (previousRule === undefined) {
+        delete process.env.REMOTE_SERVER_URL_ALLOW_REGEX;
+      } else {
+        process.env.REMOTE_SERVER_URL_ALLOW_REGEX = previousRule;
+      }
+    }
   });
 });
 

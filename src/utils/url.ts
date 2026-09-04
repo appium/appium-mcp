@@ -1,5 +1,6 @@
 import WebDriver, {type Client} from 'webdriver';
 
+import {redactUrlCredentials} from './sensitive.js';
 import {withQuietWebDriverLogging} from './webdriver-client-options.js';
 
 export interface RemoteAttachOptions {
@@ -15,6 +16,31 @@ export interface RemoteAttachOptions {
  */
 export function getPortFromUrl(url: URL): number {
   return Number(url.port) || (url.protocol === 'https:' ? 443 : 80);
+}
+
+/**
+ * Validate a remote Appium server URL and an optional deployment allowlist.
+ *
+ * The allowlist can only narrow the built-in HTTP(S)-only policy. Queries and
+ * fragments are rejected because WebDriver requests use the URL as a base path.
+ */
+export function validateRemoteServerUrl(remoteServerUrl: string, regexRule?: string): void {
+  const invalidUrl = (): Error => new Error(`Invalid remoteServerUrl: ${redactUrlCredentials(remoteServerUrl)}.`);
+
+  let parsed: URL;
+  try {
+    parsed = new URL(remoteServerUrl);
+  } catch {
+    throw invalidUrl();
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname || parsed.search || parsed.hash) {
+    throw invalidUrl();
+  }
+
+  if (regexRule && !new RegExp(regexRule).test(remoteServerUrl)) {
+    throw invalidUrl();
+  }
 }
 
 /**
