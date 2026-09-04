@@ -9,9 +9,9 @@ import {
   type SessionCapabilities,
   type SessionOwnership,
 } from '../../session-store.js';
-import {attachToRemoteSession, getPortFromUrl} from '../../utils/url.js';
+import {redactUrlCredentials} from '../../utils/sensitive.js';
+import {attachToRemoteSession, getPortFromUrl, validateRemoteServerUrl} from '../../utils/url.js';
 import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
-import {validateRemoteServerUrl} from './create-session.js';
 
 /**
  * Normalize capability payloads returned by Appium/WebdriverIO into a flat
@@ -84,7 +84,7 @@ export async function attachSessionAction(args: {
 
     if (sessionCapabilities === undefined && deprecatedSessionCapabilities === undefined) {
       return errorResult(
-        `Failed to fetch capabilities for session ${args.sessionId} from ${args.remoteServerUrl}. ` +
+        `Failed to fetch capabilities for session ${args.sessionId} from ${redactUrlCredentials(args.remoteServerUrl)}. ` +
           `The server may be unreachable or the session may no longer exist.`,
       );
     }
@@ -160,7 +160,7 @@ async function fetchCapabilitiesFromServer(
     const url = new URL(remoteServerUrl);
     const port = getPortFromUrl(url);
     const basePath = url.pathname.replace(/\/$/, '');
-    const path = `${basePath}/session/${sessionId}${endpoint ? '/' + endpoint : ''}`;
+    const path = `${basePath}/session/${encodeURIComponent(sessionId)}${endpoint ? '/' + endpoint : ''}`;
     const requestUrl = `${url.protocol}//${url.hostname}:${port}${path}`;
 
     const headers: Record<string, string> = {
@@ -175,6 +175,7 @@ async function fetchCapabilitiesFromServer(
 
     const response = await fetch(requestUrl, {
       headers,
+      redirect: 'error',
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) {

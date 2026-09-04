@@ -116,6 +116,14 @@
     "@opentelemetry/sdk-node": "^0.221.0",
     "applesign": "^5.0.0"
   },
+  "overrides": {
+    "@puppeteer/browsers": "^3.2.1",
+    "applesign": {
+      "mocha": "^12.0.0",
+      "uuid": "^11.1.1"
+    },
+    "deepmerge-ts": "^8.0.2"
+  },
   "lint-staged": {
     "src/**/*.ts": [
       "eslint src --fix",

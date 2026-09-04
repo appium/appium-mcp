@@ -1,12 +1,12 @@
 import {createHash} from 'node:crypto';
 import {constants} from 'node:fs';
-import {access, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
+import {access, chmod, mkdtemp, readFile, rm, stat, writeFile} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
 import {afterEach, describe, expect, test} from '@jest/globals';
 
-import {readAllPersistedSessions, type PersistedSession} from '../persistence.js';
+import {readAllPersistedSessions, type PersistedSession, writePersistedSession} from '../persistence.js';
 
 const originalPersistencePath = process.env.APPIUM_MCP_PERSIST_REMOTE_SESSIONS_PATH;
 const tempDirs: string[] = [];
@@ -104,6 +104,29 @@ describe('readAllPersistedSessions', () => {
 
     await expectFileMissing(path.join(dir, `${sessionId}.json`));
     await expectCanonicalSession(dir, sessionId, 'http://legacy.example');
+  });
+
+  test('restricts newly written session files to the current user', async () => {
+    const dir = await createTempPersistenceDir();
+    const session = persistedSession('private-session', 'https://alice:secret@example.test');
+
+    await writePersistedSession(session);
+
+    const fileStats = await stat(path.join(dir, hashedSessionFilename(session.sessionId)));
+    expect(fileStats.mode & 0o777).toBe(0o600);
+  });
+
+  test('repairs permissive permissions on existing session files', async () => {
+    const dir = await createTempPersistenceDir();
+    const session = persistedSession('existing-session', 'https://alice:secret@example.test');
+    const filePath = path.join(dir, hashedSessionFilename(session.sessionId));
+    await writeSessionFile(dir, hashedSessionFilename(session.sessionId), session);
+    await chmod(filePath, 0o644);
+
+    await readAllPersistedSessions();
+
+    const fileStats = await stat(filePath);
+    expect(fileStats.mode & 0o777).toBe(0o600);
   });
 });
 

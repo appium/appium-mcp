@@ -11,7 +11,8 @@ import log from '../../logger.js';
 import {setSession, listSessions} from '../../session-store.js';
 import {createUIResource, createSessionDashboardUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
 import {findFreePort, releaseReservedPorts} from '../../utils/ports.js';
-import {getPortFromUrl} from '../../utils/url.js';
+import {redactForLogging, redactUrlCredentials} from '../../utils/sensitive.js';
+import {getPortFromUrl, validateRemoteServerUrl} from '../../utils/url.js';
 import {withQuietWebDriverLogging} from '../../utils/webdriver-client-options.js';
 import {errorResult, textResult, toolErrorMessage} from '../tool-response.js';
 import {clearSelectedDevice, getSelectedLocalDevice} from './select-device.js';
@@ -271,21 +272,6 @@ export function validateLocalCreatePlatformMatch(
 }
 
 /**
- * Validate the provided remote server URL.
- *
- * @param remoteServerUrl - The URL of the remote Appium server to validate.
- * @param regexRule - Optional regular expression string to further validate the URL format.
- * If the regexRule is provided, the URL must match the regex pattern to be considered valid.
- * @throws {Error} If the URL is invalid.
- */
-export function validateRemoteServerUrl(remoteServerUrl: string, regexRule?: string): void {
-  const regexPattern = regexRule ? new RegExp(regexRule) : /^https?:\/\/.+$/;
-  if (!regexPattern.test(remoteServerUrl)) {
-    throw new Error(`Invalid remoteServerUrl: ${remoteServerUrl}.`);
-  }
-}
-
-/**
  * Create a new mobile session with Android or iOS device.
  *
  * Backs the `appium_session_management` tool when called with `action=create`.
@@ -336,7 +322,7 @@ export async function createSessionAction(args: {
 
     log.info(
       `Creating new ${platform.toUpperCase()} session with capabilities:`,
-      JSON.stringify(finalCapabilities, null, 2),
+      JSON.stringify(redactForLogging(finalCapabilities), null, 2),
     );
     let sessionId;
     if (remoteServerUrl) {
@@ -344,7 +330,7 @@ export async function createSessionAction(args: {
         validateRemoteServerUrl(remoteServerUrl, process.env.REMOTE_SERVER_URL_ALLOW_REGEX);
       } catch (err: unknown) {
         return errorResult(
-          `Invalid remoteServerUrl "${remoteServerUrl}". ${toolErrorMessage(err)} Pass a valid http(s) URL, or omit remoteServerUrl to use the local embedded driver.`,
+          `Invalid remoteServerUrl "${redactUrlCredentials(remoteServerUrl)}". ${toolErrorMessage(err)} Pass a valid http(s) URL without a query or fragment, or omit remoteServerUrl to use the local embedded driver.`,
         );
       }
 
@@ -412,7 +398,7 @@ export async function createSessionAction(args: {
       ),
     );
   } catch (error: unknown) {
-    log.error('Error creating session:', error);
+    log.error('Error creating session:', toolErrorMessage(error));
     return errorResult(
       buildCreateSessionFailureMessage(error, {
         platform: args.platform,
@@ -435,7 +421,7 @@ function buildCreateSessionFailureMessage(
   const base = `Failed to create session. ${detail}`;
 
   if (ctx.remoteServerUrl) {
-    return `${base} remoteServerUrl="${ctx.remoteServerUrl}".`;
+    return `${base} remoteServerUrl="${redactUrlCredentials(ctx.remoteServerUrl)}".`;
   }
 
   if (/select_device/i.test(detail)) {
@@ -504,4 +490,4 @@ async function createDriverSession(driver: any, capabilities: Capabilities): Pro
 }
 
 // Re-export for backward compatibility with consumers that imported from this module.
-export {getPortFromUrl};
+export {getPortFromUrl, validateRemoteServerUrl};

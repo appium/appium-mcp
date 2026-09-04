@@ -465,7 +465,11 @@ Only allow trusted users and trusted workflow configuration to control `remoteSe
 * Keep remote server URLs in trusted MCP or CI configuration where possible.
 * Use `REMOTE_SERVER_URL_ALLOW_REGEX` to restrict the permitted Appium server URLs when the execution environment requires an explicit destination policy.
 
-When `REMOTE_SERVER_URL_ALLOW_REGEX` is not set, MCP Appium accepts any syntactically valid HTTP or HTTPS destination. The variable is a regular-expression check against the complete `remoteServerUrl` value.
+When `REMOTE_SERVER_URL_ALLOW_REGEX` is not set, MCP Appium accepts any syntactically valid HTTP or HTTPS destination. Remote server URLs must not contain a query string or fragment. The variable is a regular-expression check against the complete `remoteServerUrl` value and can only narrow the HTTP(S) destinations accepted by the built-in validation.
+
+Capability discovery for attached sessions does not follow HTTP redirects. This keeps a permitted endpoint from redirecting the initial metadata request to a destination outside the configured URL policy.
+
+If a remote URL contains credentials, MCP Appium redacts its userinfo from logs and error responses. Opt-in persisted-session files may still contain credentials and sensitive capabilities because they are needed for reattachment; those files are created with owner-only (`0600`) permissions, and permissions on existing regular session files are repaired when read. Use a dedicated persistence directory owned by the MCP process.
 
 For example, to permit only a specific Appium server:
 
@@ -622,7 +626,7 @@ The remote server URL in `appium_session_management` (action=create or action=at
 When `remoteServerUrl` is omitted, `action=create` starts an embedded local UiAutomator2 or XCUITest driver for `platform=android` or `platform=ios`. `platform=general` requires `remoteServerUrl`. When `remoteServerUrl` is present, `action=create` calls WebDriver `newSession` on the remote server, and `action=attach` connects MCP Appium to an existing remote session without owning its lifecycle.
 If `REMOTE_SERVER_URL_ALLOW_REGEX` is set, the URL must match the provided regex pattern for security reasons.
 This allows you to restrict which remote servers can be used with your MCP Appium instance, preventing unauthorized connections.
-The default regex pattern allows any URL that starts with `http://` or `https://`.
+Without an allow regex, any syntactically valid HTTP(S) URL without a query string or fragment is accepted.
 
 ### Context Management
 

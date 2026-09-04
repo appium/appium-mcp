@@ -15,7 +15,7 @@
 import type {ContentResult, FastMCP} from 'fastmcp';
 
 import log from '../logger.js';
-import {isSensitiveKey} from '../utils/sensitive.js';
+import {redactForLogging, redactUrlCredentials} from '../utils/sensitive.js';
 import ai from './ai/ai.js';
 import {isAIEnabled, assertAIConfig} from './ai/config.js';
 import app from './app-management/app.js';
@@ -61,35 +61,11 @@ export default function registerTools(server: FastMCP): void {
     if (typeof originalExecute !== 'function') {
       return originalAddTool(toolDef);
     }
-    const redactArgs = (obj: unknown): unknown => {
-      if (obj === undefined || obj === null) {
-        return obj;
-      }
-      try {
-        return JSON.parse(
-          JSON.stringify(obj, (key, value) => {
-            if (key && isSensitiveKey(key)) {
-              return '[REDACTED]';
-            }
-            // Avoid logging extremely large buffers/strings
-            if (value && typeof value === 'string' && value.length > 2000) {
-              return `[string:${value.length}]`;
-            }
-            if (value && typeof Buffer !== 'undefined' && Buffer.isBuffer(value)) {
-              return `[buffer:${(value as Buffer).length}]`;
-            }
-            return value;
-          }),
-        );
-      } catch {
-        return '[Unserializable args]';
-      }
-    };
     return originalAddTool({
       ...toolDef,
       execute: async (args, context) => {
         const start = Date.now();
-        log.info(`[TOOL START] ${toolName}`, redactArgs(args));
+        log.info(`[TOOL START] ${toolName}`, redactForLogging(args));
         try {
           const result = await originalExecute(args, context);
           const durationMs = Date.now() - start;
@@ -113,7 +89,7 @@ export default function registerTools(server: FastMCP): void {
             }),
           );
           const msg = err instanceof Error ? err.stack || err.message : String(err);
-          log.error(`[TOOL ERROR] ${toolName} (${durationMs}ms): ${msg}`);
+          log.error(`[TOOL ERROR] ${toolName} (${durationMs}ms): ${redactUrlCredentials(msg)}`);
           throw err;
         }
       },
