@@ -1,3 +1,9 @@
+## [1.92.14](https://github.com/appium/appium-mcp/compare/v1.92.13...v1.92.14) (2026-09-04)
+
+### Bug Fixes
+
+* update security related fixes ([#520](https://github.com/appium/appium-mcp/issues/520)) ([f372404](https://github.com/appium/appium-mcp/commit/f372404df20ab5cd99dd0f1eb56b6937f8fb69c8))
+
 ## [1.92.13](https://github.com/appium/appium-mcp/compare/v1.92.12...v1.92.13) (2026-09-03)
 
 ### Bug Fixes
