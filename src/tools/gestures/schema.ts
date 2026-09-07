@@ -52,7 +52,7 @@ export const gestureSchema = z.object({
     .optional()
     .describe(
       AI_UUID_HINT +
-        'Target for tap/double_tap/long_press/pinch_zoom. With direction, bounds scroll/swipe to this element.',
+        'Target for tap/double_tap/long_press/pinch_zoom; overrides x/y. With direction, bounds scroll/swipe to this element.',
     ),
 
   x: z
@@ -60,10 +60,8 @@ export const gestureSchema = z.object({
     .int()
     .min(0)
     .optional()
-    .describe(
-      'X pixel coordinate (requires y): tap location, scroll/swipe start, or pinch center. Tap/pinch prefer elementUUID.',
-    ),
-  y: z.number().int().min(0).optional().describe('Y pixel coordinate paired with x. Tap/pinch prefer elementUUID.'),
+    .describe('X pixel coordinate (requires y): tap location, scroll/swipe start, or pinch center.'),
+  y: z.number().int().min(0).optional().describe('Y pixel coordinate paired with x.'),
   endX: z.number().int().min(0).optional().describe('Scroll/swipe endpoint X; requires x, y, endY.'),
   endY: z.number().int().min(0).optional().describe('Scroll/swipe endpoint Y; requires x, y, endX.'),
 
@@ -85,7 +83,11 @@ export const gestureSchema = z.object({
     .min(0)
     .max(10000)
     .optional()
-    .describe('Milliseconds: long_press default 2000 (500-10000); scroll default 800; swipe overrides speed timing.'),
+    .describe(
+      'Milliseconds: long_press default 2000 (500-10000); scroll default 800. ' +
+        'For W3C swipe, overrides movement time; speed still sets the initial hold. ' +
+        'Ignored by iOS native mobile: swipe (direction, no elementUUID, speed != fast).',
+    ),
 
   scale: z
     .number()
