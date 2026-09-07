@@ -1,3 +1,9 @@
+## [1.93.0](https://github.com/appium/appium-mcp/compare/v1.92.14...v1.93.0) (2026-09-07)
+
+### Features
+
+* optimize the entire token usage ([#524](https://github.com/appium/appium-mcp/issues/524)) ([839fa1b](https://github.com/appium/appium-mcp/commit/839fa1bcd638479d2be613b840f6906f14e52cbc))
+
 ## [1.92.14](https://github.com/appium/appium-mcp/compare/v1.92.13...v1.92.14) (2026-09-04)
 
 ### Bug Fixes
