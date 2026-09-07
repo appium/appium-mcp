@@ -42,9 +42,13 @@ export const gestureSchema = z.object({
   action: z
     .enum(GESTURE_ACTIONS)
     .describe(
-      'tap/double_tap/long_press: target elementUUID or x+y. pinch_zoom: requires scale. ' +
-        'scroll/swipe: use direction or x+y+endX+endY. ' +
-        'scroll_to_element: requires strategy+selector; stops on a match, unchanged page source, or maxScrollAttempts. ' +
+      'tap: tap an element or coordinate. double_tap: double-tap (e.g. zoom an image). ' +
+        'long_press: press and hold (e.g. open a context menu). These accept elementUUID or x+y. ' +
+        'pinch_zoom: requires scale to zoom in/out. ' +
+        'scroll: browse lists/feeds. swipe: dismiss or navigate; speed=fast for pull-to-refresh. ' +
+        'Both require direction or x+y+endX+endY. ' +
+        'scroll_to_element: requires strategy+selector; direction up/down defaults to down. ' +
+        'Stops on a match, unchanged page source, or maxScrollAttempts. ' +
         'back: system back navigation.',
     ),
 
@@ -101,7 +105,9 @@ export const gestureSchema = z.object({
     .enum(LOCATOR_STRATEGIES)
     .optional()
     .describe(
-      'Required for scroll_to_element. Follow appium_find_element priorities: accessibility id > id > platform-native > xpath (last resort); css selector is webview-only.',
+      'Required for scroll_to_element. Prefer accessibility id > id > platform-native ' +
+        '(iOS: -ios predicate string / -ios class chain; Android: -android uiautomator) > xpath (last resort: slow/brittle). ' +
+        'Same priorities as appium_find_element; css selector is webview-only.',
     ),
   selector: z.string().optional().describe(`Locator selector value. Required for: scroll_to_element.`),
 

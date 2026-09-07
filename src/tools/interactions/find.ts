@@ -26,8 +26,9 @@ export const findElementSchema = z.object({
     ])
     .describe(
       'iOS prefer accessibility id > -ios predicate string > -ios class chain; ' +
-        'Android prefer accessibility id > id > -android uiautomator; xpath last on both. ' +
+        'Android prefer accessibility id > id > -android uiautomator; xpath last on both (slow on iOS, brittle to layout changes). ' +
         'accessibility id is cross-platform, fastest and stable; id is Android resource-id or an iOS accessibility-id alias. ' +
+        '-ios predicate string queries attributes; -ios class chain queries hierarchy; -android uiautomator uses UiSelector. ' +
         'name is legacy; class name may match multiple elements; css selector is webview-only.',
     ),
   selector: z
@@ -40,9 +41,10 @@ export default function findElement(server: FastMCP): void {
   server.addTool({
     name: 'appium_find_element',
     description:
-      'Find an element by strategy and selector; returns its ID for interactions. ' +
+      'Find an element by strategy and selector; the primary tool for locating a specific target. Returns its ID for interactions. ' +
       'Prefer accessibility id > id > platform-native > xpath (last resort: slow/brittle). ' +
-      'For offscreen targets use appium_gesture action=scroll_to_element; for vision use appium_ai action=find_element if enabled.',
+      'For offscreen targets use appium_gesture action=scroll_to_element with the same strategy and selector; ' +
+      'for vision use appium_ai action=find_element if enabled.',
     parameters: findElementSchema,
     annotations: {
       readOnlyHint: true,
