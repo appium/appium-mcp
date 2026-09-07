@@ -9,7 +9,7 @@ const schema = z.object({
     .enum(['get', 'set'])
     .describe('get: read device clipboard as plain text. set: write plain text to the clipboard.'),
   content: z.string().optional().describe('Required when action is set. Plain text to put on the clipboard.'),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 type ClipboardArgs = z.infer<typeof schema>;

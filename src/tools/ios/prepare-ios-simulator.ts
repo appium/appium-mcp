@@ -469,7 +469,9 @@ export default function prepareIosSimulator(server: FastMCP): void {
   server.addTool({
     name: 'prepare_ios_simulator',
     description:
-      'Prepare an iOS/tvOS simulator for Appium testing in a single call. Automatically boots the simulator, downloads prebuilt WDA (if not cached), and installs/launches WDA on a free per-simulator port (so multiple simulators can run in parallel without colliding on the default 8100). Pass the returned capabilitiesHint (appium:webDriverAgentUrl) to appium_session_management (action=create) so the session reuses this running WDA instead of trying to start its own. Use skipWda=true to only boot without WDA. Set APPIUM_MCP_WDA_APP_PATH to an absolute path to a pre-extracted WebDriverAgentRunner-Runner.app to skip download entirely (useful in environments where external downloads are blocked).',
+      'Boot an iOS/tvOS simulator, download/cache WDA, and launch it on a free per-simulator port. ' +
+      'Pass capabilitiesHint (appium:webDriverAgentUrl) to appium_session_management action=create to reuse WDA. ' +
+      'skipWda=true only boots. APPIUM_MCP_WDA_APP_PATH can point to an extracted WebDriverAgentRunner-Runner.app (absolute path) to skip download.',
     parameters: prepareIosSimulatorSchema,
     annotations: {
       readOnlyHint: false,

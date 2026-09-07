@@ -10,7 +10,7 @@ import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-
 export default function getPageSource(server: FastMCP): void {
   const mcpAppsEnabled = isMcpAppsEnabled();
   const pageSourceSchema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
   });
   server.addTool({
     name: 'appium_get_page_source',

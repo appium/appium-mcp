@@ -37,7 +37,7 @@ const IOS_BUTTONS_DESCRIPTION = Object.keys(IOS_BUTTON_MAP).join(', ');
 export default function pressKey(server: FastMCP): void {
   const pressKeySchema = z
     .object({
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
       key: z
         .enum([
           'BACK',

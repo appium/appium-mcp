@@ -421,13 +421,10 @@ export default function prepareIosRealDevice(server: FastMCP): void {
   server.addTool({
     name: 'appium_prepare_ios_real_device',
     description:
-      'Prepare an iOS real device for Appium testing in a single call. Two-mode flow: ' +
-      '(1) Call without provisioningProfileUuid to receive the list of available .mobileprovision profiles — ' +
-      'present them to the user (highlight any with recommendedForWda=true) and ask them to pick one. ' +
-      '(2) Call again with the chosen UUID to download the matching WebDriverAgent release, package it as an IPA, ' +
-      'and resign it with the chosen profile (wildcard "*" profiles are supported — a concrete WDA bundle ID is substituted at sign time). ' +
-      'WDA download and unsigned IPA are cached per WDA version; the signed IPA is rebuilt every call. ' +
-      'Pass the returned capabilitiesHint to appium_session_management (action=create) so Appium installs and launches the signed prebuilt WDA instead of rebuilding. ' +
+      'Prepare signed WDA for a real iOS device. Omit provisioningProfileUuid to list profiles; ' +
+      'ask the user to choose, highlighting recommendedForWda. Pass the chosen UUID to download, package, and sign WDA; ' +
+      'wildcard profiles use a concrete WDA bundle ID. Downloads/unsigned IPA are cached per version; signing always reruns. ' +
+      'Pass capabilitiesHint to appium_session_management action=create to install/launch the signed WDA. ' +
       'Requires macOS, Xcode 16+, and a paired developer-mode device.',
     parameters: prepareRealDeviceSchema,
     annotations: {

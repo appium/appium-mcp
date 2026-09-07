@@ -14,7 +14,7 @@ export default function alert(server: FastMCP): void {
     action: z
       .enum(['accept', 'dismiss', 'get_text'])
       .describe('Action to perform on alert: accept, dismiss, or get_text'),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
     buttonLabel: z.string().optional().describe('Optional label of the button to click for accept/dismiss.'),
   });
 

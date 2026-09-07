@@ -88,7 +88,7 @@ const screenRecordingSchema = z.object({
   videoSize: z.string().optional().describe('Android only. Frame size in WIDTHxHEIGHT format (e.g. 1280x720).'),
   bitRate: z.number().int().optional().describe('Android only. Video bit rate in bits per second.'),
   bugReport: z.boolean().optional().describe('Android only. Display timestamp overlay. Requires API level 27+.'),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 export default function screenRecording(server: FastMCP): void {

@@ -33,7 +33,7 @@ const schema = z.object({
     .optional()
     .refine((v) => v === undefined || !isNaN(v), 'altitude must be a valid number')
     .describe('Altitude value in meters. Android only, defaults to 0. Ignored on iOS. Used with: set.'),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 type GeolocationArgs = z.infer<typeof schema>;

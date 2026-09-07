@@ -12,7 +12,7 @@ import {
 
 export default function getActiveElement(server: FastMCP): void {
   const schema = z.object({
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
   });
 
   server.addTool({

@@ -54,7 +54,7 @@ const schema = z.object({
     .describe(`Background duration; default ${DEFAULT_BACKGROUND_SECONDS}. Use -1 to remain in background.`),
   url: z.string().optional().describe('URL for deep_link (e.g. https://example.com or myapp://path).'),
   waitForLaunch: z.boolean().optional().describe('Android deep_link: wait for the activity to return; default true.'),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 export default function app(server: FastMCP): void {

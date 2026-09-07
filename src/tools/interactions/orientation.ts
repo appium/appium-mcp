@@ -7,7 +7,7 @@ import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-
 const orientationSchema = z.object({
   action: z.enum(['get', 'set']).describe('Use get to read current orientation, set to change orientation.'),
   orientation: z.enum(['LANDSCAPE', 'PORTRAIT']).optional().describe('Required when action is set.'),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 export default function orientation(server: FastMCP): void {

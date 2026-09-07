@@ -19,7 +19,7 @@ const schema = z.object({
         'waitForIdleTimeout, waitForSelectorTimeout, ignoreUnimportantViews; iOS XCUITest has its own set). ' +
         'Use action=get first to inspect current values.',
     ),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 type DriverSettingsArgs = z.infer<typeof schema>;

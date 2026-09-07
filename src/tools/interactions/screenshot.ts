@@ -121,26 +121,16 @@ export async function executeScreenshot(opts: {
 }
 
 const screenshotSchema = z.object({
-  elementUUID: elementUUIDScheme
-    .optional()
-    .describe('Optional element UUID. If provided, captures only this element. If omitted, captures full screen.'),
-  maxWidth: z
-    .number()
-    .optional()
-    .describe(
-      'Optional maximum width in pixels to resize the screenshot. The aspect ratio is preserved. Useful for reducing token usage when sending screenshots to LLMs.',
-    ),
+  elementUUID: elementUUIDScheme.optional().describe('Capture this element; omit for the full screen.'),
+  maxWidth: z.number().optional().describe('Resize to at most this width in pixels, preserving aspect ratio.'),
   returnRawBase64: z
     .boolean()
     .default(false)
     .describe(
-      'When true, returns the raw base64-encoded PNG image instead of saving it to disk. ' +
-        'This should only be enabled when a human explicitly invokes the tool manually, ' +
-        'typically to view the screenshot on a different machine (e.g. when the server runs ' +
-        'on a remote machine and the saved file is not accessible). ' +
-        'An LLM must always keep this false and rely on the saved file path.',
+      'Return inline PNG instead of saving, for explicit manual use when the server file is inaccessible. ' +
+        'LLMs must keep false and use the saved path.',
     ),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 export default function screenshot(server: FastMCP): void {

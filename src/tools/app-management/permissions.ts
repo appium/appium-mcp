@@ -27,7 +27,7 @@ export default function mobilePermissions(server: FastMCP): void {
       .describe(
         'App name resolved to an ID. Android defaults to the app under test; alternative to id for iOS get/update.',
       ),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
     permissionFilter: z
       .enum(['denied', 'granted', 'requested'])
       .optional()

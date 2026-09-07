@@ -25,7 +25,7 @@ export default function setValue(server: FastMCP): void {
             'the driver-specific setValue. No elementUUID needed — key events are sent ' +
             'to whatever element currently has focus. Works on both Android and iOS.',
         ),
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
     })
     .refine((v) => v.w3cActions === true || v.elementUUID !== undefined, {
       message: 'elementUUID is required when w3cActions is not true',

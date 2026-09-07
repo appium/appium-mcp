@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
 
+// Leave room for operational guidance; shorter descriptions must not obscure tool usage.
 const MAX_DISCOVERY_CHARS = 45_000;
 const ESTIMATED_CHARS_PER_TOKEN = 4;
 const LARGEST_TOOL_COUNT = 10;
@@ -20,65 +21,87 @@ if (!existsSync(serverEntry)) {
   process.exit(1);
 }
 
-const transport = new StdioClientTransport({
-  command: process.execPath,
-  args: [serverEntry],
-  cwd: projectRoot,
-  env: {
-    AI_VISION_ENABLED: 'false',
-    APPIUM_MCP_DOCS_ENABLED: 'false',
-    APPIUM_MCP_OTEL_ENABLED: 'false',
-    NO_UI: 'true',
+// Only discovery is requested, so the vision configuration never calls an API.
+const configurations = [
+  {name: 'headless', env: {NO_UI: 'true'}},
+  {name: 'UI enabled', env: {NO_UI: 'false'}},
+  {
+    name: 'UI and vision enabled',
+    env: {
+      NO_UI: 'false',
+      AI_VISION_ENABLED: 'true',
+      AI_VISION_API_BASE_URL: 'https://example.invalid',
+      AI_VISION_API_KEY: 'discovery-audit-placeholder',
+    },
   },
-  stderr: 'ignore',
-});
-const client = new Client({
-  name: 'appium-mcp-tool-footprint-audit',
-  version: '1.0.0',
-});
+];
 
-try {
-  await client.connect(transport);
-  const result = await client.listTools();
-  const payloadChars = JSON.stringify(result).length;
-  const withoutDescriptionsChars = JSON.stringify(removeDescriptionFields(result)).length;
-  const withoutParameterDescriptionsChars = JSON.stringify(removeParameterDescriptions(result)).length;
-  const estimatedTokens = Math.ceil(payloadChars / ESTIMATED_CHARS_PER_TOKEN);
-  const remainingChars = MAX_DISCOVERY_CHARS - payloadChars;
-  const largestTools = result.tools
-    .map((tool) => ({
-      name: tool.name,
-      chars: JSON.stringify(tool).length,
-    }))
-    .sort((a, b) => b.chars - a.chars || a.name.localeCompare(b.name))
-    .slice(0, LARGEST_TOOL_COUNT);
+for (const configuration of configurations) {
+  await auditConfiguration(configuration);
+}
 
-  console.log('MCP tool discovery footprint');
-  console.log(`Tools: ${formatNumber(result.tools.length)}`);
-  console.log(`Payload: ${formatNumber(payloadChars)} chars (~${formatNumber(estimatedTokens)} tokens)`);
-  console.log(`Description overhead: ${formatNumber(payloadChars - withoutDescriptionsChars)} chars`);
-  console.log(
-    `Parameter-description overhead: ${formatNumber(payloadChars - withoutParameterDescriptionsChars)} chars`,
-  );
-  console.log(`Budget: ${formatNumber(MAX_DISCOVERY_CHARS)} chars (${formatSignedNumber(remainingChars)} remaining)`);
-  console.log('Largest tools:');
-  for (const tool of largestTools) {
-    console.log(`  ${tool.name}: ${formatNumber(tool.chars)} chars`);
-  }
+async function auditConfiguration(configuration) {
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [serverEntry],
+    cwd: projectRoot,
+    env: {
+      AI_VISION_ENABLED: 'false',
+      APPIUM_MCP_DOCS_ENABLED: 'false',
+      APPIUM_MCP_OTEL_ENABLED: 'false',
+      ...configuration.env,
+    },
+    stderr: 'ignore',
+  });
+  const client = new Client({
+    name: 'appium-mcp-tool-footprint-audit',
+    version: '1.0.0',
+  });
 
-  if (remainingChars < 0) {
-    console.error(`Tool discovery payload exceeds the budget by ${formatNumber(-remainingChars)} chars.`);
+  try {
+    await client.connect(transport);
+    const result = await client.listTools();
+    const payloadChars = JSON.stringify(result).length;
+    const withoutDescriptionsChars = JSON.stringify(removeDescriptionFields(result)).length;
+    const withoutParameterDescriptionsChars = JSON.stringify(removeParameterDescriptions(result)).length;
+    const estimatedTokens = Math.ceil(payloadChars / ESTIMATED_CHARS_PER_TOKEN);
+    const remainingChars = MAX_DISCOVERY_CHARS - payloadChars;
+    const largestTools = result.tools
+      .map((tool) => ({
+        name: tool.name,
+        chars: JSON.stringify(tool).length,
+      }))
+      .sort((a, b) => b.chars - a.chars || a.name.localeCompare(b.name))
+      .slice(0, LARGEST_TOOL_COUNT);
+
+    console.log(`MCP tool discovery footprint (${configuration.name})`);
+    console.log(`Tools: ${formatNumber(result.tools.length)}`);
+    console.log(`Payload: ${formatNumber(payloadChars)} chars (~${formatNumber(estimatedTokens)} tokens)`);
+    console.log(`Server instructions (separate): ${formatNumber(client.getInstructions()?.length ?? 0)} chars`);
+    console.log(`Description overhead: ${formatNumber(payloadChars - withoutDescriptionsChars)} chars`);
+    console.log(
+      `Parameter-description overhead: ${formatNumber(payloadChars - withoutParameterDescriptionsChars)} chars`,
+    );
+    console.log(`Budget: ${formatNumber(MAX_DISCOVERY_CHARS)} chars (${formatSignedNumber(remainingChars)} remaining)`);
+    console.log('Largest tools:');
+    for (const tool of largestTools) {
+      console.log(`  ${tool.name}: ${formatNumber(tool.chars)} chars`);
+    }
+
+    if (remainingChars < 0) {
+      console.error(`Tool discovery payload exceeds the budget by ${formatNumber(-remainingChars)} chars.`);
+      process.exitCode = 1;
+    } else {
+      console.log('Tool discovery payload is within budget.');
+    }
+  } catch (error) {
+    console.error(
+      `Failed to audit MCP tool discovery footprint: ${error instanceof Error ? error.message : String(error)}`,
+    );
     process.exitCode = 1;
-  } else {
-    console.log('Tool discovery payload is within budget.');
+  } finally {
+    await client.close().catch(() => undefined);
   }
-} catch (error) {
-  console.error(
-    `Failed to audit MCP tool discovery footprint: ${error instanceof Error ? error.message : String(error)}`,
-  );
-  process.exitCode = 1;
-} finally {
-  await client.close().catch(() => undefined);
 }
 
 function removeDescriptionFields(value) {

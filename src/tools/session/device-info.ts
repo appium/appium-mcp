@@ -36,7 +36,7 @@ export default function deviceInfo(server: FastMCP): void {
       .describe(
         'Only used when action is "time". moment.js format string for the returned time. Defaults to ISO 8601 (YYYY-MM-DDTHH:mm:ssZ).',
       ),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
   });
 
   server.addTool({

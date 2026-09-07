@@ -14,7 +14,7 @@ export default function getElementAttributeTool(server: FastMCP): void {
       .describe(
         'The attribute name to retrieve. Common attributes: "enabled", "selected", "displayed", "checked", "focused", "clickable", "scrollable", "focusable", "name", "value", "label", "text", "content-desc", "resource-id", "class", "package".',
       ),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
   });
 
   server.addTool({

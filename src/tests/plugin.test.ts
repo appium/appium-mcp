@@ -266,6 +266,8 @@ describe('PluginManager beforeCall hook', () => {
         return {
           isError: false,
           content: [{type: 'text', text: 'intercepted'}],
+          structuredContent: {status: 'intercepted'},
+          _meta: {source: 'before-hook'},
         };
       },
     };
@@ -289,6 +291,8 @@ describe('PluginManager beforeCall hook', () => {
 
     expect(originalExecuteCalled).toBe(false);
     expect(result.content[0].text).toBe('intercepted');
+    expect(result.structuredContent).toEqual({status: 'intercepted'});
+    expect(result._meta).toEqual({source: 'before-hook'});
   });
 });
 
@@ -296,6 +300,59 @@ describe('PluginManager beforeCall hook', () => {
 // PluginManager – afterCall result modification
 // ---------------------------------------------------------------------------
 describe('PluginManager afterCall hook', () => {
+  test.each(['none', 'observe', 'edit'] as const)('preserves UI data with a %s hook', async (mode) => {
+    const server = makeMockServer();
+    const manager = new PluginManager(server);
+    const original: ToolCallResult = {
+      isError: false,
+      content: [{type: 'text', text: 'Screenshot saved'}],
+      structuredContent: {screenshot: {data: 'image-data', mimeType: 'image/png'}},
+      _meta: {artifactId: 'screenshot-1'},
+    };
+    const plugin: AppiumMcpPlugin = {name: 'ui-plugin', version: '1.0.0'};
+    if (mode !== 'none') {
+      plugin.afterCall = async (_ctx, result) => {
+        expect(result.structuredContent).toBe(original.structuredContent);
+        expect(result._meta).toBe(original._meta);
+        if (mode === 'edit') {
+          return {...result, content: [{type: 'text', text: 'Updated message'}]};
+        }
+      };
+    }
+    manager.register([plugin]);
+    server.addTool({name: 'screenshot', execute: async () => original});
+
+    const result = await server._tools[0].execute({}, {});
+
+    expect(result).toEqual({
+      ...original,
+      content: mode === 'edit' ? [{type: 'text', text: 'Updated message'}] : original.content,
+    });
+  });
+
+  test('retains complete replacement semantics when a hook removes UI data', async () => {
+    const server = makeMockServer();
+    const manager = new PluginManager(server);
+    const replacement: ToolCallResult = {isError: true, content: [{type: 'text', text: 'blocked'}]};
+    manager.register([
+      {
+        name: 'replace-result',
+        version: '1.0.0',
+        afterCall: async () => replacement,
+      },
+    ]);
+    server.addTool({
+      name: 'screenshot',
+      execute: async () => ({
+        content: [{type: 'text', text: 'Screenshot saved'}],
+        structuredContent: {screenshot: {data: 'image-data'}},
+        _meta: {artifactId: 'screenshot-1'},
+      }),
+    });
+
+    expect(await server._tools[0].execute({}, {})).toEqual(replacement);
+  });
+
   test('allows after-hook to modify the result', async () => {
     const server = makeMockServer();
     const manager = new PluginManager(server);

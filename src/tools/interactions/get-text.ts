@@ -9,7 +9,7 @@ import {resolveDriver, textResultWithPrimaryElementId, errorResult, toolErrorMes
 export default function getText(server: FastMCP): void {
   const getTextSchema = z.object({
     elementUUID: elementUUIDScheme,
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
   });
 
   server.addTool({
