@@ -8,7 +8,7 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
 
 // Leave room for operational guidance; shorter descriptions must not obscure tool usage.
-const MAX_DISCOVERY_CHARS = 42_000;
+const MAX_DISCOVERY_CHARS = 45_000;
 const ESTIMATED_CHARS_PER_TOKEN = 4;
 const LARGEST_TOOL_COUNT = 10;
 

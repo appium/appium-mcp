@@ -92,7 +92,7 @@ describe('LLM-facing MCP tool wording', () => {
     expect(description).toMatch(/appium_gesture.*scroll_to_element/i);
     expect(description).toMatch(/appium_ai.*find_element/i);
 
-    expect(strategyDescription).toMatch(/cross-platform.*fastest.*stable/i);
+    expect(strategyDescription).toMatch(/cross-platform.*fast.*stable/i);
     expect(strategyDescription).toMatch(/iOS prefer/i);
     expect(strategyDescription).toMatch(/Android prefer/i);
     expect(strategyDescription).toMatch(/xpath last/i);
