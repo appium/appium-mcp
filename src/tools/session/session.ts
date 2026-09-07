@@ -11,50 +11,37 @@ import {selectSessionAction} from './select-session.js';
 
 const SESSION_ACTIONS = ['create', 'attach', 'detach', 'delete', 'list', 'select'] as const;
 
-const CREATE_SESSION_DESCRIPTION = `Create a new Appium session with Android, iOS or any device/driver Appium supports.
-      DEFAULT MODE (no remoteServerUrl) — USE THIS UNLESS THE USER EXPLICITLY PROVIDES A SERVER URL:
-      - Drivers run embedded inside this MCP server; no separate Appium process is needed
-      - Use select_device tool FIRST to discover devices and let the user choose platform and device
-      - Then call action=create with the selected platform (do NOT pass remoteServerUrl)
-      - For iOS simulators, call prepare_ios_simulator before action=create
-      - DO NOT assume or default to any platform
-      - NEVER invent a localhost URL (e.g. http://localhost:4723) — omitting remoteServerUrl IS the local/embedded mode
-      REMOTE SERVER MODE (only when user explicitly provides a URL like http://localhost:4723):
-      - SKIP select_device tool entirely
-      - Infer the platform from the user's request (e.g., 'ios', 'android', or 'general')
-      - If platform is 'general', treat the provided capabilities as a pass-through W3C/Appium capability set (useful for non-Android/iOS drivers like Windows, macOS, or custom drivers)
-      - Infer device type from context when possible (e.g., 'simulator', 'real device')
-      - Call session with action=create directly with platform, remoteServerUrl, and any other capabilities from the user's request
-      - Example: User says 'start session with http://localhost:4723 for ios with iphone 17' → infer platform='ios' and call session(action=create) with remoteServerUrl and platform parameters`;
+const CREATE_SESSION_DESCRIPTION =
+  'DEFAULT MODE: embedded drivers; no separate Appium process is needed. ' +
+  'Use select_device tool FIRST; ask for platform/device if unknown. ' +
+  'For iOS simulators run prepare_ios_simulator, then create with the selected platform; do NOT pass remoteServerUrl. ' +
+  'NEVER invent a localhost URL. ' +
+  'REMOTE SERVER MODE: only when user explicitly provides a URL; skip select_device, infer platform/device from context, ' +
+  'and pass remoteServerUrl and capabilities directly. ';
 
 const schema = z.object({
   action: z
     .enum(SESSION_ACTIONS)
     .describe(
-      'Action to perform. ' +
-        `create: ${CREATE_SESSION_DESCRIPTION}` +
-        'attach: Attach MCP Appium to an existing remote Appium session without taking ownership of its lifecycle. Requires remoteServerUrl and sessionId. Always pass capabilities with at least platformName (e.g. \'{"platformName":"iOS"}\' or \'{"platformName":"Android"}\') so the client is configured with the correct protocol commands.' +
-        'detach: Remove an attached Appium session from MCP Appium without deleting the real remote session. Defaults to the active session.' +
-        'delete: Delete a mobile session and clean up resources. If sessionId is omitted, deletes the active session.' +
-        'list: List all active Appium sessions managed by this MCP server, including active flag, ownership, and current context.' +
-        'select: Set an existing Appium session as the active session for subsequent tool calls (requires sessionId).',
+      `create: ${CREATE_SESSION_DESCRIPTION}` +
+        'attach: connect without taking ownership; requires remoteServerUrl, sessionId, and capabilities.platformName. ' +
+        'detach: forget an attached session without deleting the real remote session. ' +
+        'delete: stop a session and clean up. detach/delete default to the active session. ' +
+        'list: show sessions, active flag, ownership, context. select: activate sessionId for subsequent calls.',
     ),
   platform: z
     .enum(DRIVER_MODE_PLATFORMS)
     .optional()
     .describe(
-      'Required for create. ' +
-        'For local servers, must match the platform selected via select_device. ' +
-        'Use "general" for non-Android/iOS drivers (Windows, macOS, custom). ' +
-        'For remote servers, infer from context.',
+      'Required for create. Local: match select_device. Remote: infer from context; general supports non-Android/iOS drivers.',
     ),
   capabilities: z
     .string()
     .optional()
     .describe(
-      'Optional W3C capabilities for create. Provide as a JSON string (e.g. \'{"appium:app":"/path/to/app","appium:platformVersion":"17.0"}\'). ' +
-        'For create: applied on top of defaults for ios/android, or used as-is for general. Common: appium:app, appium:deviceName, appium:platformVersion, appium:bundleId. When passing from a capabilitiesHint result, serialize the full object to JSON — do NOT drop boolean or numeric values. ' +
-        'For attach: always include platformName ("iOS" or "Android") so the WebDriver client loads the correct Appium protocol commands (e.g. \'{"platformName":"iOS"}\').',
+      'W3C capabilities as a JSON string. Create: optional overrides for ios/android; pass-through for general. ' +
+        'Serialize the full capabilitiesHint, preserving booleans/numbers. ' +
+        'Attach: include platformName for correct protocol commands, e.g. \'{"platformName":"iOS"}\'.',
     ),
   remoteServerUrl: z
     .string()
@@ -65,9 +52,7 @@ const schema = z.object({
   sessionId: z
     .string()
     .optional()
-    .describe(
-      'For attach: existing session to connect to. For delete: session to remove (defaults to active). For detach: attached session to remove from MCP (defaults to active). For select: session to activate. Required for attach and select.',
-    ),
+    .describe('Required for attach and select. For delete/detach, defaults to the active session.'),
 });
 
 export default function session(server: FastMCP): void {

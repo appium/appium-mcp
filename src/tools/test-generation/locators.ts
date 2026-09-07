@@ -27,7 +27,7 @@ export default function generateLocators(server: FastMCP): void {
     description: `Generate locators for all interactable elements on the current page. [PRIORITY 3: Use this for debugging/inspection or when you need comprehensive element info with locator suggestions]`,
     _meta: mcpAppsEnabled ? {ui: {resourceUri: LOCATOR_GENERATOR_URI}} : undefined,
     parameters: z.object({
-      sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+      sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
     }),
     annotations: {
       readOnlyHint: true,

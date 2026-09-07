@@ -18,7 +18,7 @@ const schema = z.object({
       'hide only: optional key names to dismiss the keyboard (e.g. "done"). ' +
         'Forwarded to mobile: hideKeyboard when non-empty. Ignored for is_shown.',
     ),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 type KeyboardArgs = z.infer<typeof schema>;

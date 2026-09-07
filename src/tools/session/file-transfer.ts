@@ -35,7 +35,7 @@ export default function fileTransfer(server: FastMCP): void {
     action: z.enum(['push', 'pull']).describe('push uploads a file to device; pull downloads from device.'),
     remotePath: z.string().min(1).describe(remotePathDescription),
     payloadBase64: z.string().optional().describe('Required when action=push. Ignored when action=pull.'),
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
   });
 
   server.addTool({

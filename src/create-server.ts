@@ -34,7 +34,7 @@ const SERVER_INSTRUCTIONS = [
   '- Call only tools this server actually registers (appium_find_element, appium_gesture, appium_session_management, etc.); do not invent tool names or aliases.',
   '- Prefer stable locators: accessibility id and id before long xpath; use xpath only when nothing else works.',
   '- Use appium_gesture for taps and drags; when something is off-screen, use action=scroll_to_element instead of spamming appium_find_element alone.',
-  '- For local Appium install, doctor, or smoke tests, run appium_skills before guessing commands.',
+  '- For local install, doctor, or smoke tests, use appium_skills if registered.',
 ].join('\n');
 
 const FAST_MCP_LOGGER = {

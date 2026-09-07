@@ -206,6 +206,83 @@ describe('AIVisionFinder', () => {
     });
   });
 
+  describe('findElement concurrent requests', () => {
+    test('shares identical in-flight requests and retains the completed cache', async () => {
+      let finish!: (response: Response) => void;
+      let started!: () => void;
+      const fetchStarted = new Promise<void>((resolve) => {
+        started = resolve;
+      });
+      const pendingResponse = new Promise<Response>((resolve) => {
+        finish = resolve;
+      });
+      fetchSpy.mockImplementation(async () => {
+        started();
+        return pendingResponse;
+      });
+      const {AIVisionFinder} = await import('../ai-finder/vision-finder.js');
+      const finder = new AIVisionFinder();
+      const requests = Array.from({length: 3}, () =>
+        finder.findElement(BENCHMARK_IMAGE_BASE64, 'Search button', IMAGE_WIDTH, IMAGE_HEIGHT),
+      );
+
+      await fetchStarted;
+      const callsBeforeCompletion = fetchSpy.mock.calls.length;
+      finish(buildFetchResponse(jsonBBoxResponse('Search', [100, 100, 300, 200])) as Response);
+      const results = await Promise.all(requests);
+
+      expect(callsBeforeCompletion).toBe(1);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(results[0].target).toBe('Search');
+      expect(results[1]).toEqual(results[0]);
+      expect(results[2]).toEqual(results[0]);
+      expect(await finder.findElement(BENCHMARK_IMAGE_BASE64, 'Search button', IMAGE_WIDTH, IMAGE_HEIGHT)).toEqual(
+        results[0],
+      );
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    test.each(['instruction', 'image', 'dimensions'] as const)(
+      'does not share requests with different %s',
+      async (field) => {
+        fetchSpy.mockResolvedValue(buildFetchResponse(jsonBBoxResponse('Search', [100, 100, 300, 200])) as Response);
+        const {AIVisionFinder} = await import('../ai-finder/vision-finder.js');
+        const finder = new AIVisionFinder();
+
+        await Promise.all([
+          finder.findElement(BENCHMARK_IMAGE_BASE64, 'Search button', IMAGE_WIDTH, IMAGE_HEIGHT),
+          finder.findElement(
+            field === 'image' ? Buffer.from('different screenshot').toString('base64') : BENCHMARK_IMAGE_BASE64,
+            field === 'instruction' ? 'Back button' : 'Search button',
+            field === 'dimensions' ? IMAGE_WIDTH / 2 : IMAGE_WIDTH,
+            IMAGE_HEIGHT,
+          ),
+        ]);
+
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+      },
+    );
+
+    test('cleans up failed shared requests so the next call retries', async () => {
+      fetchSpy.mockRejectedValueOnce(new Error('Temporary API failure'));
+      const {AIVisionFinder} = await import('../ai-finder/vision-finder.js');
+      const finder = new AIVisionFinder();
+      const results = await Promise.allSettled([
+        finder.findElement(BENCHMARK_IMAGE_BASE64, 'Search button', IMAGE_WIDTH, IMAGE_HEIGHT),
+        finder.findElement(BENCHMARK_IMAGE_BASE64, 'Search button', IMAGE_WIDTH, IMAGE_HEIGHT),
+      ]);
+
+      expect(results.map((r) => r.status)).toEqual(['rejected', 'rejected']);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      fetchSpy.mockResolvedValueOnce(buildFetchResponse(jsonBBoxResponse('Search', [100, 100, 300, 200])) as Response);
+
+      const retried = await finder.findElement(BENCHMARK_IMAGE_BASE64, 'Search button', IMAGE_WIDTH, IMAGE_HEIGHT);
+
+      expect(retried.target).toBe('Search');
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
   // ── findElement – array bbox format ─────────────────────────────────────────
 
   describe('findElement – array bbox format (normalized coordinates)', () => {

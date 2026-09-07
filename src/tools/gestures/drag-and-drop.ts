@@ -64,7 +64,7 @@ const dragAndDropSchema = z.object({
     .max(2000)
     .optional()
     .describe('Duration of the long press before dragging in milliseconds. Default 600.'),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 type DragArgs = z.infer<typeof dragAndDropSchema>;

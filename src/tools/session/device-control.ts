@@ -23,7 +23,7 @@ const deviceControlSchema = z.object({
         'shake: perform shake gesture (iOS only). ' +
         'open_notifications: open notifications panel (Android only).',
     ),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
   seconds: z
     .number()
     .int()

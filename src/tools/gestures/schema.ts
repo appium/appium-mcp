@@ -42,26 +42,17 @@ export const gestureSchema = z.object({
   action: z
     .enum(GESTURE_ACTIONS)
     .describe(
-      `Gesture to perform. ` +
-        `tap: tap an element or a coordinate. ` +
-        `double_tap: trigger a double-tap action (e.g. zoom in on an image, favorite a post). ` +
-        `long_press: press and hold to open a context menu or initiate drag. ` +
-        `scroll: browse a list, feed, or page to reveal content. ` +
-        `swipe: dismiss a card, switch screens or tabs, navigate a carousel, or pull-to-refresh (use speed=fast). ` +
-        `pinch_zoom: zoom in (scale > 1) or out (scale < 1) on maps, images, or any zoomable view. ` +
-        `scroll_to_element: scroll until a specific element is on screen (strategy + selector + direction up|down). ` +
-        `Stops when the element is found, page source is unchanged after a scroll (end of scrollable content), or maxScrollAttempts is reached. ` +
-        `Optional scrollDistance (0.05–1) or scrollDistancePreset (small|medium|large). ` +
-        `back: triggers the system back navigation (e.g., Android back button or iOS navigation controller pop).`,
+      'tap/double_tap/long_press: target elementUUID or x+y. pinch_zoom: requires scale. ' +
+        'scroll/swipe: use direction or x+y+endX+endY. ' +
+        'scroll_to_element: requires strategy+selector; stops on a match, unchanged page source, or maxScrollAttempts. ' +
+        'back: system back navigation.',
     ),
 
   elementUUID: elementUUIDScheme
     .optional()
     .describe(
-      `UUID of the element to act on. ` +
-        AI_UUID_HINT +
-        `Used by: tap, double_tap, long_press, pinch_zoom. ` +
-        `For scroll/swipe, when provided with direction, the gesture is calculated relative to this element instead of the whole screen.`,
+      AI_UUID_HINT +
+        'Target for tap/double_tap/long_press/pinch_zoom. With direction, bounds scroll/swipe to this element.',
     ),
 
   x: z
@@ -70,49 +61,23 @@ export const gestureSchema = z.object({
     .min(0)
     .optional()
     .describe(
-      `X coordinate. ` +
-        `For tap/double_tap/long_press: tap location (alternative to elementUUID). ` +
-        `For scroll/swipe: starting X for custom-coordinate mode (requires y, endX, endY). ` +
-        `For pinch_zoom: center X of the pinch. Requires y. Ignored if elementUUID is set.`,
+      'X pixel coordinate (requires y): tap location, scroll/swipe start, or pinch center. Tap/pinch prefer elementUUID.',
     ),
-  y: z
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .describe(
-      `Y coordinate. ` +
-        `For tap/double_tap/long_press: tap location. ` +
-        `For scroll/swipe: starting Y for custom-coordinate mode. ` +
-        `For pinch_zoom: center Y of the pinch. Requires x. Ignored if elementUUID is set.`,
-    ),
-  endX: z
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .describe(`Ending X coordinate. Used by: scroll, swipe (custom-coordinate mode).`),
-  endY: z
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .describe(`Ending Y coordinate. Used by: scroll, swipe (custom-coordinate mode).`),
+  y: z.number().int().min(0).optional().describe('Y pixel coordinate paired with x. Tap/pinch prefer elementUUID.'),
+  endX: z.number().int().min(0).optional().describe('Scroll/swipe endpoint X; requires x, y, endY.'),
+  endY: z.number().int().min(0).optional().describe('Scroll/swipe endpoint Y; requires x, y, endX.'),
 
   direction: z
     .enum(['up', 'down', 'left', 'right'])
     .optional()
     .describe(
-      `Direction for scroll or swipe. Coordinates are auto-calculated from screen or element bounds. ` +
-        `Either direction OR custom coordinates (x, y, endX, endY) must be provided for these actions.`,
+      'Scroll/swipe direction from screen or element bounds; alternative to custom coordinates. scroll_to_element: up/down (default down).',
     ),
 
   speed: z
     .enum(SWIPE_SPEEDS)
     .optional()
-    .describe(
-      `Swipe speed. slow = deliberate drag; normal = default navigation speed; fast = flick with no hold, use for pull-to-refresh and other velocity-sensitive UIs. Used by: swipe.`,
-    ),
+    .describe('Swipe only: slow=drag, normal=default, fast=flick without hold (pull-to-refresh).'),
 
   duration: z
     .number()
@@ -120,33 +85,21 @@ export const gestureSchema = z.object({
     .min(0)
     .max(10000)
     .optional()
-    .describe(
-      `Duration in milliseconds. long_press default 2000 (range 500-10000). scroll default 800. ` +
-        `For swipe, prefer the speed parameter; duration overrides it if both are provided.`,
-    ),
+    .describe('Milliseconds: long_press default 2000 (500-10000); scroll default 800; swipe overrides speed timing.'),
 
   scale: z
     .number()
     .min(0.01)
     .max(10)
     .optional()
-    .describe(
-      `Pinch scale factor. < 1 = zoom out (pinch close), > 1 = zoom in (pinch open). Example: 0.5 = zoom out 50%, 2.0 = zoom in 2x. Required for: pinch_zoom.`,
-    ),
-  velocity: z
-    .number()
-    .min(0.1)
-    .max(20)
-    .optional()
-    .describe(`Pinch velocity in scale factor per second. Default 2.2. Used by: pinch_zoom.`),
+    .describe('Required for pinch_zoom: <1 zooms out, >1 zooms in (e.g. 2 doubles size).'),
+  velocity: z.number().min(0.1).max(20).optional().describe('pinch_zoom scale factor per second; default 2.2.'),
 
   strategy: z
     .enum(LOCATOR_STRATEGIES)
     .optional()
     .describe(
-      `Locator strategy. Required for: scroll_to_element. ` +
-        `Priority: accessibility id > id > platform-native (-ios predicate string / -ios class chain on iOS, -android uiautomator on Android) > xpath (LAST RESORT — slow on iOS XCUITest, brittle) > name > class name > css selector (webview only). ` +
-        `Same ranking as appium_find_element.`,
+      'Required for scroll_to_element. Follow appium_find_element priorities: accessibility id > id > platform-native > xpath (last resort); css selector is webview-only.',
     ),
   selector: z.string().optional().describe(`Locator selector value. Required for: scroll_to_element.`),
 
@@ -157,7 +110,7 @@ export const gestureSchema = z.object({
     .max(80)
     .optional()
     .default(10)
-    .describe(`scroll_to_element only: maximum scroll attempts after the element is not yet visible (default 10).`),
+    .describe('scroll_to_element: maximum scroll attempts; default 10.'),
 
   scrollDistance: z
     .number()
@@ -165,19 +118,15 @@ export const gestureSchema = z.object({
     .max(1)
     .optional()
     .describe(
-      `scroll_to_element only: vertical swipe length as a fraction 0.05–1 (same scale as legacy scroll). ` +
-        `Ignored when scrollDistancePreset is set. Default 0.45 if neither preset nor scrollDistance is set.`,
+      'scroll_to_element: swipe distance fraction (0.05–1), default 0.45. scrollDistancePreset overrides this.',
     ),
 
   scrollDistancePreset: z
     .enum(SCROLL_DISTANCE_PRESETS)
     .optional()
-    .describe(
-      `scroll_to_element only: convenience preset — small ≈ light nudge (0.25), medium ≈ 0.45, large = full default swipe (1). ` +
-        `When set, overrides scrollDistance.`,
-    ),
+    .describe('scroll_to_element: small=0.25, medium=0.45, large=1; overrides scrollDistance.'),
 
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 export type GestureArgs = z.infer<typeof gestureSchema>;

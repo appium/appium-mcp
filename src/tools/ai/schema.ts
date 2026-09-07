@@ -22,7 +22,7 @@ export const aiSchema = z
           `Examples: "yellow search button at bottom", "username input field at top", "settings icon in top-right corner".`,
       ),
 
-    sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
   })
   .superRefine((data, ctx) => {
     if (data.action === 'find_element') {

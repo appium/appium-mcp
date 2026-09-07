@@ -25,40 +25,24 @@ export const findElementSchema = z.object({
       'css selector',
     ])
     .describe(
-      `Locator strategy. Try in priority order: ` +
-        `(1) accessibility id [cross-platform, fastest, most stable], ` +
-        `(2) id [Android resource-id; iOS aliases accessibility id], ` +
-        `(3) -ios predicate string [iOS native, fast], ` +
-        `(4) -ios class chain [iOS native, hierarchy queries], ` +
-        `(5) -android uiautomator [Android native, expressive UiSelector], ` +
-        `(6) xpath [LAST RESORT — slow on iOS XCUITest, brittle to layout changes], ` +
-        `(7) name [legacy; often aliased on iOS], ` +
-        `(8) class name [too generic, usually multi-match], ` +
-        `(9) css selector [webview/hybrid contexts only]. ` +
-        `Platform tips: iOS prefer (1)→(3)→(4); Android prefer (1)→(2)→(5); xpath last on both. ` +
-        `For natural-language / vision-based find, use the appium_ai tool (action=find_element), not this one.`,
+      'iOS prefer accessibility id > -ios predicate string > -ios class chain; ' +
+        'Android prefer accessibility id > id > -android uiautomator; xpath last on both. ' +
+        'accessibility id is cross-platform, fastest and stable; id is Android resource-id or an iOS accessibility-id alias. ' +
+        'name is legacy; class name may match multiple elements; css selector is webview-only.',
     ),
   selector: z
     .string()
-    .describe(
-      `Selector string for the chosen strategy. ` +
-        `Do not pass natural-language descriptions of the target here; use appium_ai (action=find_element) for that.`,
-    ),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+    .describe('Selector for the strategy. Do not pass natural-language descriptions; use appium_ai if enabled.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 export default function findElement(server: FastMCP): void {
   server.addTool({
     name: 'appium_find_element',
-    description: `Find a specific element by strategy and selector which will return a uuid that can be used for interactions.
-
-[PRIORITY 2: Use this to search for a target element.]
-
-**Strategy priority**: accessibility id > id > platform-native (\`-ios predicate string\` / \`-ios class chain\` on iOS, \`-android uiautomator\` on Android) > xpath (last resort — slow & brittle). See the \`strategy\` parameter for the full ranking.
-
-**Scrolling until an element appears**: use \`appium_gesture\` with \`action=scroll_to_element\` (same strategy + selector), not this tool.
-
-**Vision / natural-language find**: use \`appium_ai\` with \`action=find_element\`, not this tool.`,
+    description:
+      'Find an element by strategy and selector; returns its ID for interactions. ' +
+      'Prefer accessibility id > id > platform-native > xpath (last resort: slow/brittle). ' +
+      'For offscreen targets use appium_gesture action=scroll_to_element; for vision use appium_ai action=find_element if enabled.',
     parameters: findElementSchema,
     annotations: {
       readOnlyHint: true,

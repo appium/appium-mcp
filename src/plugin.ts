@@ -52,6 +52,8 @@ export interface ToolCallContext {
 export interface ToolCallResult {
   isError: boolean;
   content: ContentResult['content'];
+  structuredContent?: ContentResult['structuredContent'];
+  _meta?: ContentResult['_meta'];
 }
 
 /**
@@ -78,6 +80,8 @@ export interface AppiumMcpPlugin {
   /**
    * Tool-only hook. Prompts, resources, and resource templates are registered
    * through FastMCP but are not wrapped by plugin call hooks.
+   * Return void to preserve the result, or a complete replacement. Spread
+   * result when editing content to retain structuredContent and _meta.
    */
   afterCall?(ctx: ToolCallContext, result: ToolCallResult): Promise<ToolCallResult | void>;
   destroy?(): Promise<void>;
@@ -358,17 +362,14 @@ export class PluginManager {
           }
           const override = await plugin.beforeCall(toolCtx);
           if (override != null) {
-            return {
-              content: override.content,
-              isError: override.isError,
-            } as ContentResult;
+            return override as ContentResult;
           }
         }
 
         const rawResult = (await toolDef.execute(args, mcpCtx)) as ContentResult;
         let hookResult: ToolCallResult = {
+          ...rawResult,
           isError: rawResult.isError ?? false,
-          content: rawResult.content as ToolCallResult['content'],
         };
 
         for (const plugin of this.pluginMap.values()) {
@@ -381,10 +382,7 @@ export class PluginManager {
           }
         }
 
-        return {
-          content: hookResult.content,
-          isError: hookResult.isError,
-        } as ContentResult;
+        return hookResult as ContentResult;
       };
 
       return originalAddTool({...toolDef, execute: wrappedExecute});

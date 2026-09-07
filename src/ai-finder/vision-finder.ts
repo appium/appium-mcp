@@ -22,6 +22,7 @@ import type {AIVisionConfig, BBox, BBoxCoordinates, AIFindResult} from './types.
 export class AIVisionFinder {
   private config: AIVisionConfig;
   private readonly cache: LRUCache<string, AIFindResult>;
+  private readonly pendingFinds = new Map<string, Promise<AIFindResult>>();
   private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
   constructor() {
@@ -66,18 +67,42 @@ export class AIVisionFinder {
     imageWidth: number,
     imageHeight: number,
   ): Promise<AIFindResult> {
+    log.info(`AI Vision: Finding element with instruction: "${instruction}"`);
+    log.debug(`AI Vision: Image dimensions: ${imageWidth}x${imageHeight}`);
+
+    const cacheKey = this.generateCacheKey(instruction, screenshotBase64);
+    const cachedResult = this.getFromCache(cacheKey);
+    if (cachedResult) {
+      log.info('AI Vision: Using cached result');
+      return cachedResult;
+    }
+
+    // Identical concurrent lookups share the API request and annotation work.
+    // Include dimensions because they determine the returned coordinates.
+    const pendingKey = `${cacheKey}:${imageWidth}x${imageHeight}`;
+    const pending = this.pendingFinds.get(pendingKey);
+    if (pending) {
+      return pending;
+    }
+
+    const request = this.findUncachedElement(screenshotBase64, instruction, imageWidth, imageHeight, cacheKey);
+    this.pendingFinds.set(pendingKey, request);
     try {
-      log.info(`AI Vision: Finding element with instruction: "${instruction}"`);
-      log.debug(`AI Vision: Image dimensions: ${imageWidth}x${imageHeight}`);
+      return await request;
+    } finally {
+      // Failures must not remain cached: a later call can retry normally.
+      this.pendingFinds.delete(pendingKey);
+    }
+  }
 
-      // Check cache first
-      const cacheKey = this.generateCacheKey(instruction, screenshotBase64);
-      const cachedResult = this.getFromCache(cacheKey);
-      if (cachedResult) {
-        log.info('AI Vision: Using cached result');
-        return cachedResult;
-      }
-
+  private async findUncachedElement(
+    screenshotBase64: string,
+    instruction: string,
+    imageWidth: number,
+    imageHeight: number,
+    cacheKey: string,
+  ): Promise<AIFindResult> {
+    try {
       // Step 1: Compress image using @appium/support
       const {base64: compressedBase64, mimeType: compressedMimeType} = await this.compressImage(
         screenshotBase64,

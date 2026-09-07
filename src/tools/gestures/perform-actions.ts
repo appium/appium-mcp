@@ -49,7 +49,7 @@ const performActionsSchema = z.object({
         `Multiple pointer sources enable multi-touch gestures (e.g. two-finger rotate, three-finger swipe). ` +
         `All sources execute in parallel, synchronized tick-by-tick.`,
     ),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 export default function performActionsTool(server: FastMCP): void {

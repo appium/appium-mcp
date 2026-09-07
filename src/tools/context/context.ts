@@ -12,7 +12,7 @@ const contextSchema = z.object({
     .string()
     .optional()
     .describe('Required when action is switch. Common values: NATIVE_APP or WEBVIEW_<id>/WEBVIEW_<package>.'),
-  sessionId: z.string().optional().describe('Session ID to target. If omitted, uses the active session.'),
+  sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
 
 export default function context(server: FastMCP): void {
