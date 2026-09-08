@@ -1,4 +1,5 @@
 import log, {configureStdioTransportLogging} from '../logger.js';
+import {loadCliPlugins} from './plugins.js';
 
 export async function runCli(args: string[] = process.argv.slice(2)): Promise<void> {
   const command = args[0];
@@ -20,6 +21,7 @@ function printHelp(): void {
 Options:
   --httpStream  Start with httpStream transport
   --port=<port> Port for httpStream transport (default: 8080)
+  --plugin=<module> Load a plugin from a local path or installed package (repeatable)
   --help        Show this help message`);
 }
 
@@ -30,7 +32,9 @@ async function startServer(args: string[]): Promise<void> {
   log.info('Starting MCP Appium MCP Server...');
 
   try {
-    const {default: server} = await import('../server.js');
+    const plugins = await loadCliPlugins(args);
+    const {default: createDefaultServer} = await import('../server.js');
+    const server = await createDefaultServer(plugins);
 
     if (useHttpStream) {
       await server.start({
