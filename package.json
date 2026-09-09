@@ -78,7 +78,6 @@
     "appium-webdriveragent": "^16.0.0",
     "appium-xcuitest-driver": "^12.1.0",
     "fastmcp": "^4.0.0",
-    "import-meta-resolve": "^4.2.0",
     "ios-mobileprovision-finder": "^1.2.1",
     "lru-cache": "^11.5.0",
     "node-simctl": "^9.1.0",

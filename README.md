@@ -515,7 +515,9 @@ export default class CheckoutPlugin {
 
 Use an exported object (for example, `export default new CheckoutPlugin(options)`) when a plugin needs constructor options. TypeScript plugins must be compiled to JavaScript before loading.
 
-Relative paths and installed package names resolve from the working directory where `appium-mcp` is launched. Package resolution respects ESM `exports`. Absolute paths and `file:` URLs are also accepted; absolute paths are recommended in MCP client configurations because the client's working directory can vary. The CLI does not install packages: install package plugins in that working directory first.
+Relative paths and installed package names resolve from the working directory where `appium-mcp` is launched. Package names use Node's CommonJS resolution (`createRequire(...).resolve()`), including `require` or `default` export conditions and legacy `main` entries. Packages exposing only an `import` export must be loaded through an explicit file path (for example, `--plugin ./node_modules/my-plugin/plugin.mjs`) or a `file:` URL. Loading still uses dynamic `import()`, so ESM plugin files, including those with top-level `await`, remain supported.
+
+Absolute paths and `file:` URLs are also accepted; absolute paths are recommended in MCP client configurations because the client's working directory can vary. The CLI does not install packages: install package plugins in that working directory first.
 
 Plugins execute in the server process, so load only trusted files and packages and keep plugin logs on stderr when using stdio. A missing module or invalid plugin export stops startup with an error instead of silently omitting the plugin. The optional documentation plugin, when enabled, is registered before CLI plugins. The existing duplicate-name and lifecycle rules below apply.
 
