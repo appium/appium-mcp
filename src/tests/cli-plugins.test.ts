@@ -24,9 +24,30 @@ beforeAll(async () => {
   await mkdir(packageDir, {recursive: true});
   await writeFile(
     join(packageDir, 'package.json'),
-    JSON.stringify({name: '@test/cli-plugin', type: 'module', exports: {import: './plugin.mjs'}}),
+    JSON.stringify({
+      name: '@test/cli-plugin',
+      type: 'module',
+      exports: {import: './import.mjs', require: './plugin.mjs'},
+    }),
   );
-  await writeFile(join(packageDir, 'plugin.mjs'), "export default {name: 'package-plugin', version: '1.0.0'};");
+  await writeFile(
+    join(packageDir, 'plugin.mjs'),
+    "await Promise.resolve(); export default {name: 'package-plugin', version: '1.0.0'};",
+  );
+  await writeFile(join(packageDir, 'import.mjs'), "export default {name: 'import-plugin', version: '1.0.0'};");
+
+  const importOnlyDir = join(directory, 'node_modules', 'import-only-plugin');
+  await mkdir(importOnlyDir, {recursive: true});
+  await writeFile(
+    join(importOnlyDir, 'package.json'),
+    JSON.stringify({name: 'import-only-plugin', type: 'module', exports: {import: './plugin.mjs'}}),
+  );
+  await writeFile(join(importOnlyDir, 'plugin.mjs'), "export default {name: 'import-only-plugin', version: '1.0.0'};");
+
+  const commonJsDir = join(directory, 'node_modules', 'commonjs-plugin');
+  await mkdir(commonJsDir, {recursive: true});
+  await writeFile(join(commonJsDir, 'package.json'), JSON.stringify({name: 'commonjs-plugin', main: './plugin.cjs'}));
+  await writeFile(join(commonJsDir, 'plugin.cjs'), "module.exports = {name: 'commonjs-package', version: '1.0.0'};");
 });
 
 afterAll(async () => {
@@ -44,10 +65,36 @@ describe('CLI plugin loading', () => {
     expect(plugins.every((plugin) => typeof plugin.register === 'function')).toBe(true);
   });
 
-  test('resolves import-only package exports from the working directory', async () => {
+  test('resolves the require export from the working directory and dynamically imports ESM', async () => {
     const plugins = await loadCliPlugins(['--plugin', '@test/cli-plugin'], directory);
     expect(plugins[0].name).toBe('package-plugin');
   });
+
+  test('resolves CommonJS package main entries from the working directory', async () => {
+    const plugins = await loadCliPlugins(['--plugin', 'commonjs-plugin'], directory);
+    expect(plugins[0].name).toBe('commonjs-package');
+  });
+
+  test('rejects import-only packages by name', async () => {
+    await expect(loadCliPlugins(['--plugin', 'import-only-plugin'], directory)).rejects.toThrow(
+      'Failed to load plugin "import-only-plugin"',
+    );
+  });
+
+  test.each(['relative path', 'file URL', 'uppercase file URL'])(
+    'loads an import-only package through an explicit %s',
+    async (kind) => {
+      const fileURL = pathToFileURL(join(directory, 'node_modules', 'import-only-plugin', 'plugin.mjs')).href;
+      const specifier =
+        kind === 'relative path'
+          ? './node_modules/import-only-plugin/plugin.mjs'
+          : kind === 'uppercase file URL'
+            ? fileURL.replace('file:', 'FILE:')
+            : fileURL;
+      const plugins = await loadCliPlugins(['--plugin', specifier], directory);
+      expect(plugins[0].name).toBe('import-only-plugin');
+    },
+  );
 
   test('accepts absolute paths, file URLs, and CommonJS plugin objects', async () => {
     const plugins = await loadCliPlugins(
@@ -85,9 +132,12 @@ describe('CLI plugin loading', () => {
     await expect(loadCliPlugins(['--plugin', `./${name}.mjs`], directory)).rejects.toThrow(message);
   });
 
-  test('rejects remote or inline module URLs', async () => {
-    await expect(loadCliPlugins(['--plugin', 'data:text/javascript,export default {}'], directory)).rejects.toThrow(
-      'Only local files and installed packages are supported',
-    );
-  });
+  test.each(['data:text/javascript,export default {}', 'https://example.com/plugin.mjs', 'node:fs', 'fs'])(
+    'rejects non-file modules: %s',
+    async (specifier) => {
+      await expect(loadCliPlugins(['--plugin', specifier], directory)).rejects.toThrow(
+        'Only local files and installed packages are supported',
+      );
+    },
+  );
 });
