@@ -1,7 +1,6 @@
+import {createRequire} from 'node:module';
 import {isAbsolute, resolve as resolvePath} from 'node:path';
 import {pathToFileURL} from 'node:url';
-
-import {resolve} from 'import-meta-resolve';
 
 import type {AppiumMcpPlugin} from '../core.js';
 
@@ -21,14 +20,16 @@ export async function loadCliPlugins(args: string[], cwd = process.cwd()): Promi
   }
 
   const plugins: AppiumMcpPlugin[] = [];
-  const parentURL = pathToFileURL(resolvePath(cwd, 'package.json')).href;
+  const requireFromCwd = createRequire(resolvePath(cwd, 'package.json'));
   for (const specifier of specifiers) {
     try {
       const moduleSpecifier =
         isAbsolute(specifier) || specifier.startsWith('.')
-          ? pathToFileURL(resolvePath(cwd, specifier)).href
-          : specifier;
-      const moduleURL = resolve(moduleSpecifier, parentURL);
+          ? resolvePath(cwd, specifier)
+          : URL.canParse(specifier)
+            ? new URL(specifier).href
+            : requireFromCwd.resolve(specifier);
+      const moduleURL = isAbsolute(moduleSpecifier) ? pathToFileURL(moduleSpecifier).href : moduleSpecifier;
       if (!moduleURL.startsWith('file:')) {
         throw new Error('Only local files and installed packages are supported.');
       }
