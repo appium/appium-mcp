@@ -1,14 +1,15 @@
 import log, {configureStdioTransportLogging} from '../logger.js';
+import {CLI_OPTIONS, CLI_VALUE_PREFIXES} from './options.js';
 import {loadCliPlugins} from './plugins.js';
 
 export async function runCli(args: string[] = process.argv.slice(2)): Promise<void> {
   const command = args[0];
-  if (command === '--help' || command === '-h' || command === 'help') {
+  if (command === CLI_OPTIONS.help || command === CLI_OPTIONS.shortHelp || command === 'help') {
     printHelp();
     return;
   }
 
-  if (!args.includes('--httpStream')) {
+  if (!args.includes(CLI_OPTIONS.httpStream)) {
     configureStdioTransportLogging();
   }
 
@@ -19,15 +20,15 @@ function printHelp(): void {
   log.info(`Usage: appium-mcp [command] [options]
 
 Options:
-  --httpStream  Start with httpStream transport
-  --port=<port> Port for httpStream transport (default: 8080)
-  --plugin=<module> Load a plugin from a local path or installed package (repeatable)
-  --help        Show this help message`);
+  ${CLI_OPTIONS.httpStream}  Start with httpStream transport
+  ${CLI_VALUE_PREFIXES.port}<port> Port for httpStream transport (default: 8080)
+  ${CLI_VALUE_PREFIXES.plugin}<module> Load a plugin from a local path or installed package (repeatable)
+  ${CLI_OPTIONS.help}        Show this help message`);
 }
 
 async function startServer(args: string[]): Promise<void> {
-  const useHttpStream = args.includes('--httpStream');
-  const port = args.find((arg) => arg.startsWith('--port='))?.split('=')[1] || '8080';
+  const useHttpStream = args.includes(CLI_OPTIONS.httpStream);
+  const port = args.find((arg) => arg.startsWith(CLI_VALUE_PREFIXES.port))?.split('=')[1] || '8080';
 
   log.info('Starting MCP Appium MCP Server...');
 
