@@ -488,6 +488,41 @@ Treat this setting as an additional deployment safeguard. Network-level controls
 
 ## 🔌 Plugin API
 
+### Load plugins from the command line
+
+Pass `--plugin` to start the standard server with a plugin, without writing a server bootstrap module. Repeat the option to load multiple plugins in order; both `--plugin <module>` and `--plugin=<module>` work with stdio and `--httpStream`:
+
+```bash
+appium-mcp --plugin ./checkout-plugin.mjs --plugin=@acme/appium-mcp-plugin
+```
+
+Each module must **default-export** either an `AppiumMcpPlugin` object or a plugin class whose constructor takes no arguments. For example, save this as `checkout-plugin.mjs`:
+
+```javascript
+export default class CheckoutPlugin {
+  name = 'checkout-plugin';
+  version = '1.0.0';
+
+  register(registry) {
+    registry.addTool({
+      name: 'checkout_status',
+      description: 'Return the checkout integration status.',
+      execute: async () => ({content: [{type: 'text', text: 'Checkout plugin ready'}]}),
+    });
+  }
+}
+```
+
+Use an exported object (for example, `export default new CheckoutPlugin(options)`) when a plugin needs constructor options. TypeScript plugins must be compiled to JavaScript before loading.
+
+Relative paths and installed package names resolve from the working directory where `appium-mcp` is launched. Package names use Node's CommonJS resolution (`createRequire(...).resolve()`), including `require` or `default` export conditions and legacy `main` entries. Packages exposing only an `import` export must be loaded through an explicit file path (for example, `--plugin ./node_modules/my-plugin/plugin.mjs`) or a `file:` URL. Loading still uses dynamic `import()`, so ESM plugin files, including those with top-level `await`, remain supported.
+
+Absolute paths and `file:` URLs are also accepted; absolute paths are recommended in MCP client configurations because the client's working directory can vary. The CLI does not install packages: install package plugins in that working directory first.
+
+Plugins execute in the server process, so load only trusted files and packages and keep plugin logs on stderr when using stdio. A missing module or invalid plugin export stops startup with an error instead of silently omitting the plugin. The optional documentation plugin, when enabled, is registered before CLI plugins. The existing duplicate-name and lifecycle rules below apply.
+
+### Compose a server programmatically
+
 Use `appium-mcp/core` to compose the default Appium MCP server with custom business logic without maintaining a fork. Plugins can register MCP tools, prompts, resources, and resource templates, and can wrap tool execution with lifecycle hooks. Call hooks are tool-only: prompts, resources, and resource templates are registered with FastMCP but are not wrapped by `beforeCall` or `afterCall`.
 
 `createAppiumMcpServer({ policy })` can also hide nonmatching tools and resources from MCP discovery. The factory is async, so await it before starting the returned server. Policy rules are regular expressions matched against tool and resource names exactly as registered. The policy is applied at registration time to both single and batch registration methods. Resource policy matches the resource `name` only; resources or resource templates without a string `name` cannot match a non-empty `allowResources` list.
