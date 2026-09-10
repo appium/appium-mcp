@@ -25,6 +25,7 @@ import {safeDeleteAllSessions, listSessions} from './session-store.js';
 import {initializeOpenTelemetry} from './telemetry/init.js';
 import {installTelemetryWrappers} from './telemetry/wrapOperations.js';
 import registerTools from './tools/index.js';
+import {TRANSPORT_TYPES} from './transport.js';
 
 const SERVER_VERSION = pkg.version as `${number}.${number}.${number}`;
 
@@ -267,7 +268,7 @@ export async function createAppiumMcpServer(options: CreateAppiumMcpServerOption
 function wrapStartForStdioLogging(server: FastMCP): void {
   const originalStart = server.start.bind(server);
   server.start = (async (startOptions) => {
-    if ((startOptions?.transportType ?? 'stdio') === 'stdio') {
+    if ((startOptions?.transportType ?? TRANSPORT_TYPES.stdio) === TRANSPORT_TYPES.stdio) {
       configureStdioTransportLogging();
     }
     return originalStart(startOptions);

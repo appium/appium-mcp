@@ -38,11 +38,18 @@ describe('CLI server startup', () => {
     expect(configureStdioTransportLogging).not.toHaveBeenCalled();
   });
 
-  test('help does not import plugins or start a server', async () => {
-    await runCli(['--help', '--plugin', './missing.mjs']);
+  test.each(['--help', '-h', 'help'])('%s does not import plugins or start a server', async (help) => {
+    await runCli([help, '--plugin', './missing.mjs']);
     expect(loadCliPlugins).not.toHaveBeenCalled();
     expect(createDefaultServer).not.toHaveBeenCalled();
     expect(log.info).toHaveBeenCalledWith(expect.stringContaining('--plugin=<module>'));
+  });
+
+  test('uses the default HTTP port and starts the server once', async () => {
+    await runCli(Object.freeze(['--httpStream']));
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(start).toHaveBeenCalledWith({transportType: 'httpStream', httpStream: {endpoint: '/sse', port: 8080}});
+    expect(log.info).toHaveBeenCalledWith('Server started with httpStream transport on http://localhost:8080/sse');
   });
 
   test('a plugin load error stops startup with a failing exit status', async () => {
