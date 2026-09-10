@@ -1,3 +1,7 @@
+export const CLI_COMMANDS = {
+  help: 'help',
+} as const;
+
 export const CLI_OPTIONS = {
   help: '--help',
   shortHelp: '-h',
