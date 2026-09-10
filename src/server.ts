@@ -1,9 +1,13 @@
+import type {FastMCP} from 'fastmcp';
+
 import type {AppiumMcpPlugin} from './core.js';
 import {createAppiumMcpServer} from './create-server.js';
 import {isDocumentationEnabled, loadDocumentationPlugin} from './documentation.js';
 
-export default async function createDefaultServer(additionalPlugins: AppiumMcpPlugin[] = []) {
-  const plugins: AppiumMcpPlugin[] = [];
+export default async function createDefaultServer(
+  additionalPlugins: readonly AppiumMcpPlugin[] = [],
+): Promise<FastMCP> {
+  const plugins = [...additionalPlugins];
 
   // Documentation tools (RAG docs query + skills) are opt-in. They live in a
   // separate package only installed when the user sets
@@ -11,9 +15,9 @@ export default async function createDefaultServer(additionalPlugins: AppiumMcpPl
   if (isDocumentationEnabled()) {
     const documentationPlugin = await loadDocumentationPlugin();
     if (documentationPlugin) {
-      plugins.push(documentationPlugin);
+      plugins.unshift(documentationPlugin);
     }
   }
 
-  return await createAppiumMcpServer({plugins: [...plugins, ...additionalPlugins]});
+  return createAppiumMcpServer({plugins});
 }

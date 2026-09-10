@@ -1,4 +1,4 @@
-import {mkdtemp, mkdir, rm, writeFile} from 'node:fs/promises';
+import {mkdtemp, mkdir, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -116,6 +116,58 @@ describe('CLI plugin loading', () => {
       'Failed to load plugin "./missing.mjs"',
     );
   });
+
+  test('validates every plugin flag before importing any module', async () => {
+    await writeFile(join(directory, 'must-not-load.mjs'), "throw new Error('module evaluated');");
+    await expect(loadCliPlugins(['--plugin=./must-not-load.mjs', '--plugin'], directory)).rejects.toThrow(
+      '--plugin requires a module path',
+    );
+  });
+
+  test('evaluates and constructs plugins sequentially, stopping at the first failure', async () => {
+    const tracePath = join(directory, 'load-order.txt');
+    await writeFile(tracePath, '');
+    for (const name of ['first', 'second', 'third']) {
+      await writeFile(
+        join(directory, `ordered-${name}.mjs`),
+        `import {appendFile} from 'node:fs/promises';
+         import {appendFileSync} from 'node:fs';
+         const tracePath = ${JSON.stringify(tracePath)};
+         await appendFile(tracePath, '${name}:evaluated\\n');
+         export default class Plugin {
+           name = '${name}';
+           version = '1.0.0';
+           constructor() {
+             appendFileSync(tracePath, '${name}:constructed\\n');
+             ${name === 'second' ? "throw new Error('constructor failed');" : ''}
+           }
+         }`,
+      );
+    }
+    const args = Object.freeze([
+      '--plugin=./ordered-first.mjs',
+      '--plugin=./ordered-second.mjs',
+      '--plugin=./ordered-third.mjs',
+    ]);
+    await expect(loadCliPlugins(args, directory)).rejects.toMatchObject({
+      message: 'Failed to load plugin "./ordered-second.mjs": constructor failed',
+      cause: {message: 'constructor failed'},
+    });
+    expect(await readFile(tracePath, 'utf8')).toBe(
+      'first:evaluated\nfirst:constructed\nsecond:evaluated\nsecond:constructed\n',
+    );
+  });
+
+  test.each(['initialize', 'register', 'beforeCall', 'afterCall', 'destroy'])(
+    'rejects an invalid %s hook',
+    async (hook) => {
+      const filename = `invalid-${hook}.mjs`;
+      await writeFile(join(directory, filename), `export default {name: 'invalid', version: '1.0.0', ${hook}: null};`);
+      await expect(loadCliPlugins([`--plugin=./${filename}`], directory)).rejects.toThrow(
+        `Plugin "invalid" has an invalid "${hook}" hook; expected a function.`,
+      );
+    },
+  );
 
   test.each([
     ['missing-default', 'export const plugin = {};', 'The default export must be'],

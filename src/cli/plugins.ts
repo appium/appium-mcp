@@ -5,27 +5,35 @@ import {pathToFileURL} from 'node:url';
 import type {AppiumMcpPlugin} from '../core.js';
 import {CLI_OPTIONS, CLI_VALUE_PREFIXES} from './options.js';
 
-const PLUGIN_FIELDS = ['name', 'version'] as const satisfies readonly (keyof AppiumMcpPlugin)[];
-const PLUGIN_HOOKS = [
-  'initialize',
-  'register',
-  'beforeCall',
-  'afterCall',
-  'destroy',
-] as const satisfies readonly (keyof AppiumMcpPlugin)[];
+// Require a runtime check for every field in the plugin contract.
+const PLUGIN_FIELD_TYPES = {
+  name: 'string',
+  version: 'string',
+  initialize: 'function',
+  register: 'function',
+  beforeCall: 'function',
+  afterCall: 'function',
+  destroy: 'function',
+} as const satisfies {
+  [Key in keyof AppiumMcpPlugin]-?: NonNullable<AppiumMcpPlugin[Key]> extends string ? 'string' : 'function';
+};
+
+type ResolvePackage = (specifier: string) => string;
+type PluginConstructor = new () => unknown;
 
 /** Load explicitly requested plugins in command-line order, relative to the caller. */
-export async function loadCliPlugins(args: string[], cwd = process.cwd()): Promise<AppiumMcpPlugin[]> {
+export async function loadCliPlugins(args: readonly string[], cwd = process.cwd()): Promise<AppiumMcpPlugin[]> {
   const specifiers = parsePluginSpecifiers(args);
   const requireFromCwd = createRequire(resolvePath(cwd, 'package.json'));
   const plugins: AppiumMcpPlugin[] = [];
   for (const specifier of specifiers) {
-    plugins.push(await loadPlugin(specifier, cwd, requireFromCwd));
+    // Imports and constructors can have side effects, so preserve flag order.
+    plugins.push(await loadPlugin(specifier, cwd, requireFromCwd.resolve));
   }
   return plugins;
 }
 
-function parsePluginSpecifiers(args: string[]): string[] {
+function parsePluginSpecifiers(args: readonly string[]): string[] {
   const specifiers: string[] = [];
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
@@ -42,14 +50,14 @@ function parsePluginSpecifiers(args: string[]): string[] {
   return specifiers;
 }
 
-function resolvePluginUrl(specifier: string, cwd: string, requireFromCwd: NodeJS.Require): string {
+function resolvePluginUrl(specifier: string, cwd: string, resolvePackage: ResolvePackage): string {
   let moduleSpecifier: string;
   if (isAbsolute(specifier) || specifier.startsWith('.')) {
     moduleSpecifier = resolvePath(cwd, specifier);
   } else if (URL.canParse(specifier)) {
     moduleSpecifier = new URL(specifier).href;
   } else {
-    moduleSpecifier = requireFromCwd.resolve(specifier);
+    moduleSpecifier = resolvePackage(specifier);
   }
 
   const moduleURL = isAbsolute(moduleSpecifier) ? pathToFileURL(moduleSpecifier).href : moduleSpecifier;
@@ -59,12 +67,12 @@ function resolvePluginUrl(specifier: string, cwd: string, requireFromCwd: NodeJS
   return moduleURL;
 }
 
-async function loadPlugin(specifier: string, cwd: string, requireFromCwd: NodeJS.Require): Promise<AppiumMcpPlugin> {
+async function loadPlugin(specifier: string, cwd: string, resolvePackage: ResolvePackage): Promise<AppiumMcpPlugin> {
   try {
-    const moduleURL = resolvePluginUrl(specifier, cwd, requireFromCwd);
+    const moduleURL = resolvePluginUrl(specifier, cwd, resolvePackage);
     const module = (await import(moduleURL)) as {default?: unknown};
     const exported = module.default;
-    const plugin = typeof exported === 'function' ? new (exported as new () => unknown)() : exported;
+    const plugin = typeof exported === 'function' ? new (exported as PluginConstructor)() : exported;
     assertPlugin(plugin);
     return plugin;
   } catch (error: unknown) {
@@ -78,14 +86,14 @@ function assertPlugin(plugin: unknown): asserts plugin is AppiumMcpPlugin {
     throw new Error('The default export must be an AppiumMcpPlugin object or a class with a no-argument constructor.');
   }
   const candidate = plugin as Record<string, unknown>;
-  for (const field of PLUGIN_FIELDS) {
-    if (typeof candidate[field] !== 'string' || !candidate[field].trim()) {
-      throw new Error(`The plugin must have a non-empty string "${field}".`);
-    }
-  }
-  for (const hook of PLUGIN_HOOKS) {
-    if (candidate[hook] !== undefined && typeof candidate[hook] !== 'function') {
-      throw new Error(`Plugin "${candidate.name}" has an invalid "${hook}" hook; expected a function.`);
+  for (const [field, expectedType] of Object.entries(PLUGIN_FIELD_TYPES)) {
+    const value = candidate[field];
+    if (expectedType === 'string') {
+      if (typeof value !== 'string' || !value.trim()) {
+        throw new Error(`The plugin must have a non-empty string "${field}".`);
+      }
+    } else if (value !== undefined && typeof value !== 'function') {
+      throw new Error(`Plugin "${candidate.name}" has an invalid "${field}" hook; expected a function.`);
     }
   }
 }

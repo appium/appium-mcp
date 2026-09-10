@@ -1,20 +1,22 @@
 import log, {configureStdioTransportLogging} from '../logger.js';
 import {DEFAULT_HTTP_STREAM_OPTIONS, TRANSPORT_TYPES} from '../transport.js';
+import type {ServerStartOptions} from '../transport.js';
 import {CLI_COMMANDS, CLI_OPTIONS, CLI_VALUE_PREFIXES} from './options.js';
 import {loadCliPlugins} from './plugins.js';
 
-export async function runCli(args: string[] = process.argv.slice(2)): Promise<void> {
+export async function runCli(args: readonly string[] = process.argv.slice(2)): Promise<void> {
   const command = args[0];
   if (command === CLI_OPTIONS.help || command === CLI_OPTIONS.shortHelp || command === CLI_COMMANDS.help) {
     printHelp();
     return;
   }
 
-  if (!args.includes(CLI_OPTIONS.httpStream)) {
+  const useHttpStream = args.includes(CLI_OPTIONS.httpStream);
+  if (!useHttpStream) {
     configureStdioTransportLogging();
   }
 
-  await startServer(args);
+  await startServer(args, useHttpStream);
 }
 
 function printHelp(): void {
@@ -27,8 +29,7 @@ Options:
   ${CLI_OPTIONS.help}        Show this help message`);
 }
 
-async function startServer(args: string[]): Promise<void> {
-  const useHttpStream = args.includes(CLI_OPTIONS.httpStream);
+async function startServer(args: readonly string[], useHttpStream: boolean): Promise<void> {
   const port =
     args.find((arg) => arg.startsWith(CLI_VALUE_PREFIXES.port))?.split('=')[1] ||
     String(DEFAULT_HTTP_STREAM_OPTIONS.port);
@@ -40,23 +41,19 @@ async function startServer(args: string[]): Promise<void> {
     const {default: createDefaultServer} = await import('../server.js');
     const server = await createDefaultServer(plugins);
 
-    if (useHttpStream) {
-      await server.start({
-        transportType: TRANSPORT_TYPES.httpStream,
-        httpStream: {
-          endpoint: DEFAULT_HTTP_STREAM_OPTIONS.endpoint,
-          port: parseInt(port, 10),
-        },
-      });
+    const startOptions: ServerStartOptions = useHttpStream
+      ? {
+          transportType: TRANSPORT_TYPES.httpStream,
+          httpStream: {...DEFAULT_HTTP_STREAM_OPTIONS, port: parseInt(port, 10)},
+        }
+      : {transportType: TRANSPORT_TYPES.stdio};
+    await server.start(startOptions);
 
+    if (useHttpStream) {
       log.info(
         `Server started with httpStream transport on http://localhost:${port}${DEFAULT_HTTP_STREAM_OPTIONS.endpoint}`,
       );
     } else {
-      await server.start({
-        transportType: TRANSPORT_TYPES.stdio,
-      });
-
       log.info('Server started with stdio transport');
     }
     log.info('Waiting for client connections...');

@@ -27,10 +27,10 @@ describe('default server plugins', () => {
 
   test('keeps documentation opt-in and registers additional plugins in order', async () => {
     isDocumentationEnabled.mockReturnValue(true);
-    const plugins = [
+    const plugins = Object.freeze([
       {name: 'first', version: '1.0.0'},
       {name: 'second', version: '1.0.0'},
-    ];
+    ]);
     await createDefaultServer(plugins);
     expect(createAppiumMcpServer).toHaveBeenCalledWith({plugins: [documentationPlugin, ...plugins]});
     expect(plugins).toHaveLength(2);

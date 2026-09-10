@@ -1,6 +1,6 @@
 import type {FastMCP} from 'fastmcp';
 
-type ServerStartOptions = NonNullable<Parameters<FastMCP['start']>[0]>;
+export type ServerStartOptions = NonNullable<Parameters<FastMCP['start']>[0]>;
 
 export const TRANSPORT_TYPES = {
   stdio: 'stdio',
