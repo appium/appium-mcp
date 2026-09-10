@@ -1,3 +1,9 @@
+## [1.94.0](https://github.com/appium/appium-mcp/compare/v1.93.0...v1.94.0) (2026-09-10)
+
+### Features
+
+* load plugins from the command line ([#525](https://github.com/appium/appium-mcp/issues/525)) ([5eb1b99](https://github.com/appium/appium-mcp/commit/5eb1b9930836a85ba9ea2fd786e234d35a28e6e0))
+
 ## [1.93.0](https://github.com/appium/appium-mcp/compare/v1.92.14...v1.93.0) (2026-09-07)
 
 ### Features
