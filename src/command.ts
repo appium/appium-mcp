@@ -457,7 +457,7 @@ export async function startRecordingScreen(
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.startRecordingScreen(options as IOSRecordingOptions);
   }
-  throw new Error('startRecordingScreen is not supported for this driver');
+  return (await execute(driver, 'mobile: startRecordingScreen', options)) ?? '';
 }
 
 /**
@@ -472,7 +472,7 @@ export async function stopRecordingScreen(driver: DriverInstance): Promise<strin
   } else if (isXCUITestDriverSession(driver)) {
     return (await driver.stopRecordingScreen({})) ?? '';
   }
-  throw new Error('stopRecordingScreen is not supported for this driver');
+  return (await execute(driver, 'mobile: stopRecordingScreen', {})) ?? '';
 }
 
 /**

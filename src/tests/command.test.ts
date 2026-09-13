@@ -28,6 +28,8 @@ const {
   getOrientation,
   setOrientation,
   back,
+  startRecordingScreen,
+  stopRecordingScreen,
 } = await import('../command.js');
 
 // What the remote client resolves with when it swallows a WebDriver error.
@@ -260,5 +262,34 @@ describe('remote command wrappers: re-throw swallowed WebDriver errors', () => {
       /could not be located/i,
     );
     await expect(back({back: jest.fn(async () => undefined)} as never)).resolves.toBeUndefined();
+  });
+});
+
+describe('screen recording: uses execute() on remote clients', () => {
+  test('startRecordingScreen sends mobile: startRecordingScreen', async () => {
+    const driver = {
+      executeScript: jest.fn(async () => ''),
+    };
+
+    await expect(startRecordingScreen(driver as never, {timeLimit: 30})).resolves.toBe('');
+    expect(driver.executeScript).toHaveBeenCalledWith('mobile: startRecordingScreen', [{timeLimit: 30}]);
+  });
+
+  test('stopRecordingScreen sends mobile: stopRecordingScreen', async () => {
+    const driver = {
+      executeScript: jest.fn(async () => 'base64video'),
+    };
+
+    await expect(stopRecordingScreen(driver as never)).resolves.toBe('base64video');
+    expect(driver.executeScript).toHaveBeenCalledWith('mobile: stopRecordingScreen', [{}]);
+  });
+
+  test('re-throws swallowed remote errors instead of treating them as a recording', async () => {
+    const driver = {
+      executeScript: jest.fn(async () => REMOTE_COMMAND_ERROR),
+    };
+
+    await expect(startRecordingScreen(driver as never, {})).rejects.toThrow(/Unsupported execute method/i);
+    await expect(stopRecordingScreen(driver as never)).rejects.toThrow(/Unsupported execute method/i);
   });
 });
