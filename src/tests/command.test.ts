@@ -267,21 +267,19 @@ describe('remote command wrappers: re-throw swallowed WebDriver errors', () => {
 
 describe('screen recording: uses execute() on remote clients', () => {
   test('startRecordingScreen sends mobile: startRecordingScreen', async () => {
-    const driver = {
-      executeScript: jest.fn(async () => ''),
-    };
+    const executeScript = jest.fn(async (_cmd: string, _args: unknown[]) => '');
+    const driver = {executeScript};
 
     await expect(startRecordingScreen(driver as never, {timeLimit: 30})).resolves.toBe('');
-    expect(driver.executeScript).toHaveBeenCalledWith('mobile: startRecordingScreen', [{timeLimit: 30}]);
+    expect(executeScript).toHaveBeenCalledWith('mobile: startRecordingScreen', [{timeLimit: 30}]);
   });
 
   test('stopRecordingScreen sends mobile: stopRecordingScreen', async () => {
-    const driver = {
-      executeScript: jest.fn(async () => 'base64video'),
-    };
+    const executeScript = jest.fn(async (_cmd: string, _args: unknown[]) => 'base64video');
+    const driver = {executeScript};
 
     await expect(stopRecordingScreen(driver as never)).resolves.toBe('base64video');
-    expect(driver.executeScript).toHaveBeenCalledWith('mobile: stopRecordingScreen', [{}]);
+    expect(executeScript).toHaveBeenCalledWith('mobile: stopRecordingScreen', [{}]);
   });
 
   test('re-throws swallowed remote errors instead of treating them as a recording', async () => {
