@@ -81,5 +81,70 @@ describe('handleScrollToElement', () => {
     expect(result.isError).toBeFalsy();
     expect(resultText(result)).toContain('already visible');
     expect(mockPerformVerticalScroll).not.toHaveBeenCalled();
+    expect(remoteDriver.getPageSource).not.toHaveBeenCalled();
+  });
+
+  test.each([1, 3])('uses %i page-source calls when the target is found after that many scrolls', async (scrolls) => {
+    let attempts = 0;
+    const remoteDriver = {
+      findElement: jest.fn(async () =>
+        attempts++ < scrolls ? NO_SUCH_ELEMENT : {'element-6066-11e4-a52e-4f735466cecf': 'el-1'},
+      ),
+      getPageSource: jest.fn(async () => `<page index="${mockPerformVerticalScroll.mock.calls.length}"/>`),
+    };
+    mockPerformVerticalScroll.mockClear();
+
+    const result = await handleScrollToElement(remoteDriver as never, {
+      action: 'scroll_to_element',
+      strategy: 'accessibility id',
+      selector: 'target',
+      maxScrollAttempts: 5,
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(resultText(result)).toContain(`after ${scrolls} scroll(s)`);
+    expect(mockPerformVerticalScroll).toHaveBeenCalledTimes(scrolls);
+    expect(remoteDriver.getPageSource).toHaveBeenCalledTimes(scrolls);
+  });
+
+  test('compares consecutive XML sources to stop at the end of content', async () => {
+    const remoteDriver = {
+      findElement: jest.fn(async () => NO_SUCH_ELEMENT),
+      getPageSource: jest.fn<() => Promise<string>>().mockResolvedValueOnce('<first/>').mockResolvedValue('<last/>'),
+    };
+    mockPerformVerticalScroll.mockClear();
+
+    const result = await handleScrollToElement(remoteDriver as never, {
+      action: 'scroll_to_element',
+      strategy: 'accessibility id',
+      selector: 'missing',
+      maxScrollAttempts: 5,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(resultText(result)).toContain('likely end of scrollable content');
+    expect(mockPerformVerticalScroll).toHaveBeenCalledTimes(2);
+    expect(remoteDriver.getPageSource).toHaveBeenCalledTimes(3);
+  });
+
+  test('respects the attempt limit while fetching each intermediate XML source once', async () => {
+    let snapshot = 0;
+    const remoteDriver = {
+      findElement: jest.fn(async () => NO_SUCH_ELEMENT),
+      getPageSource: jest.fn(async () => `<page index="${snapshot++}"/>`),
+    };
+    mockPerformVerticalScroll.mockClear();
+
+    const result = await handleScrollToElement(remoteDriver as never, {
+      action: 'scroll_to_element',
+      strategy: 'accessibility id',
+      selector: 'missing',
+      maxScrollAttempts: 5,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(resultText(result)).toContain('not found after 5 scroll(s)');
+    expect(mockPerformVerticalScroll).toHaveBeenCalledTimes(5);
+    expect(remoteDriver.getPageSource).toHaveBeenCalledTimes(6);
   });
 });
