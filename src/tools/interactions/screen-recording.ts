@@ -21,9 +21,7 @@ export interface IOSRecordingOptions {
   videoQuality?: 'low' | 'medium' | 'high' | 'photo' | number;
   /** Frames per second. Default: 10. */
   videoFps?: number;
-  /** FFMPEG video filters. Takes precedence over videoScale. @see https://ffmpeg.org/ffmpeg-filters.html */
-  videoFilters?: string;
-  /** Scaling value (e.g. 1280:720). Ignored if videoFilters is set. @see https://trac.ffmpeg.org/wiki/Scaling */
+  /** Width:height, each 1–16384; one dimension may be -1 or -2 to preserve the aspect ratio. */
   videoScale?: string;
   /** Output pixel format. Run `ffmpeg -pix_fmts` for options. Use yuv420p with videoType=libx264 for QuickTime compatibility. */
   pixelFormat?: string;
@@ -78,8 +76,19 @@ const screenRecordingSchema = z.object({
     .describe('iOS only. Video quality preset. Default: medium.'),
   videoFps: z.number().int().min(1).max(60).optional().describe('iOS only. Frames per second. Default: 10.'),
   videoType: z.string().optional().describe('iOS only. Video codec to use (e.g. libx264).'),
-  videoFilters: z.string().optional().describe('iOS only. FFMPEG video filters. Takes precedence over videoScale.'),
-  videoScale: z.string().optional().describe('iOS only. Scaling value (e.g. 1280:720).'),
+  // XCUITest embeds this value in an FFmpeg filtergraph. Accept dimensions only.
+  videoScale: z
+    .string()
+    .regex(
+      /^(?:[1-9]\d{0,4}|-[12]):(?:[1-9]\d{0,4}|-[12])(?![\s\S])/,
+      'Use width:height (e.g. 1280:720 or -2:720), without filter expressions.',
+    )
+    .refine((value) => {
+      const dimensions = value.split(':').map(Number);
+      return dimensions.every((dimension) => dimension <= 16384) && dimensions.some((dimension) => dimension > 0);
+    }, 'Dimensions must be 1–16384; only one dimension may be -1 or -2.')
+    .optional()
+    .describe('iOS only. Width:height, each 1–16384 (e.g. 1280:720); one may be -1 or -2 to preserve aspect ratio.'),
   pixelFormat: z.string().optional().describe('iOS only. Output pixel format (e.g. yuv420p).'),
   hardwareAcceleration: z
     .enum(['videoToolbox', 'cuda', 'amf_dx11', 'qsv', 'vaapi'])
@@ -144,9 +153,6 @@ export default function screenRecording(server: FastMCP): void {
           }
           iosOptions.videoType = args.videoType ?? 'libx264';
           iosOptions.pixelFormat = args.pixelFormat ?? 'yuv420p';
-          if (args.videoFilters !== undefined) {
-            iosOptions.videoFilters = args.videoFilters;
-          }
           if (args.videoScale !== undefined) {
             iosOptions.videoScale = args.videoScale;
           }
