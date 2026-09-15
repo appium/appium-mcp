@@ -133,7 +133,7 @@ describe('element commands: re-throw swallowed remote "no such element"', () => 
       getAppiumContext: jest.fn(async () => 'WEBVIEW_com.example'),
       getSettings: jest.fn(async () => ({})),
       executeScript: jest.fn(async (_cmd: string, _args: unknown[]) => undefined),
-      elementClick: jest.fn(async () => undefined),
+      elementClick: jest.fn(async (_id: string) => undefined),
     };
 
     await elementClick(driver as never, 'el-1');
@@ -152,7 +152,7 @@ describe('element commands: re-throw swallowed remote "no such element"', () => 
       getAppiumContext: jest.fn(async () => 'NATIVE_APP'),
       getSettings: jest.fn(async () => ({})),
       executeScript: jest.fn(async (_cmd: string, _args: unknown[]) => undefined),
-      elementClick: jest.fn(async () => undefined),
+      elementClick: jest.fn(async (_id: string) => undefined),
     };
 
     await elementClick(driver as never, 'el-1');
