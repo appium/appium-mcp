@@ -125,9 +125,15 @@ async function resolveGlobalEntryUrl(): Promise<string | null> {
     const execDir = path.dirname(process.execPath);
     // npm global roots by platform (each entry is a resolution starting point,
     // so `<entry>/node_modules` is checked):
-    //   - POSIX (nvm, system, Homebrew): <prefix>/lib/node_modules
+    //   - POSIX (nvm, system): <prefix>/lib/node_modules
     //   - Windows (node.exe in <prefix>): <prefix>/node_modules
     const paths = [path.join(execDir, '..', 'lib'), execDir];
+    // Homebrew runs node from <prefix>/Cellar/node/<version>/bin but installs global
+    // packages into <prefix>/lib/node_modules.
+    const cellarIndex = execDir.lastIndexOf(`${path.sep}Cellar${path.sep}`);
+    if (cellarIndex !== -1) {
+      paths.push(path.join(execDir.slice(0, cellarIndex), 'lib'));
+    }
     const pkgJsonPath = require.resolve(`${PACKAGE_NAME}/package.json`, {
       paths,
     });
