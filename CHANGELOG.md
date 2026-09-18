@@ -1,3 +1,13 @@
+## [1.94.1](https://github.com/appium/appium-mcp/compare/v1.94.0...v1.94.1) (2026-09-18)
+
+### Bug Fixes
+
+* **docs:** find globally installed doc package with Homebrew node ([#537](https://github.com/appium/appium-mcp/issues/537)) ([c01d3d9](https://github.com/appium/appium-mcp/commit/c01d3d97f512025cb8203fd34841374165266983))
+
+### Code Refactoring
+
+* refactoring cli arguments ([#526](https://github.com/appium/appium-mcp/issues/526)) ([f3fcc0c](https://github.com/appium/appium-mcp/commit/f3fcc0ce3de2a34813c53149fa9e20d7214a60fc))
+
 ## [1.94.0](https://github.com/appium/appium-mcp/compare/v1.93.0...v1.94.0) (2026-09-10)
 
 ### Features
