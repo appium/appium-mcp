@@ -115,8 +115,12 @@ export default function pressKey(server: FastMCP): void {
             return errorResult('Unsupported Android driver for press_key');
           }
         } else if (platform === PLATFORM.ios) {
-          const logicalKey = key ?? 'HOME';
-          const buttonName = IOS_BUTTON_MAP[logicalKey];
+          if (!key) {
+            return errorResult(
+              `keyCode is Android-only. Current session platform is '${platform}'. For iOS/tvOS, pass key as one of ${IOS_BUTTONS_DESCRIPTION}.`,
+            );
+          }
+          const buttonName = IOS_BUTTON_MAP[key];
 
           if (!buttonName) {
             return errorResult(`For iOS/tvOS, key must be one of ${IOS_BUTTONS_DESCRIPTION}.`);
