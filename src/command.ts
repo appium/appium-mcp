@@ -9,7 +9,6 @@ import {
   isRemoteDriverSession,
   isXCUITestDriverSession,
   PLATFORM,
-  getCurrentContext as getStorecCurrentContext,
   getSessionInfo,
 } from './session-store.js';
 import type {DriverInstance} from './session-store.js';
@@ -214,18 +213,18 @@ export async function setValue(driver: DriverInstance, elementUUID: string, text
  * @param elementUUID - Identifier of the element to click.
  */
 export async function elementClick(driver: DriverInstance, elementUUID: string): Promise<void> {
-  if (
-    getPlatformName(driver) === PLATFORM.ios &&
-    getStorecCurrentContext(driver.sessionId as string | undefined)?.startsWith('WEBVIEW_')
-  ) {
-    const caps = getSessionInfo(driver.sessionId || undefined);
-    const settings = await getSessionDriverSettings(driver);
-    // nativeWebTap === true means we should use the native tap (elementClick) even in webview context
-    if (caps?.metadata?.capabilities?.['appium:nativeWebTap'] !== true || settings.nativeWebTap !== true) {
-      log.debug(
-        `Using arguments[0].click() to click element ${elementUUID} in webview context (nativeWebTap not enabled)`,
-      );
-      return await execute(driver, 'arguments[0].click();', util.wrapElement(elementUUID));
+  if (getPlatformName(driver) === PLATFORM.ios) {
+    const currentContext = await getCurrentContext(driver);
+    if (currentContext.startsWith('WEBVIEW_')) {
+      const caps = getSessionInfo(driver.sessionId || undefined);
+      const settings = await getSessionDriverSettings(driver);
+      // nativeWebTap === true means we should use the native tap (elementClick) even in webview context
+      if (caps?.metadata?.capabilities?.['appium:nativeWebTap'] !== true || settings.nativeWebTap !== true) {
+        log.debug(
+          `Using arguments[0].click() to click element ${elementUUID} in webview context (nativeWebTap not enabled)`,
+        );
+        return await execute(driver, 'arguments[0].click();', util.wrapElement(elementUUID));
+      }
     }
   }
 

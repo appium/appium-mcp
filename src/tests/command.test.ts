@@ -6,9 +6,11 @@ jest.unstable_mockModule('../session-store', () => ({
   isRemoteDriverSession: jest.fn(() => true),
   isXCUITestDriverSession: jest.fn(() => false),
   PLATFORM: {ios: 'iOS', android: 'Android'},
-  getCurrentContext: jest.fn(),
   getSessionInfo: jest.fn(),
 }));
+
+const {getPlatformName, PLATFORM} = await import('../session-store.js');
+const mockGetPlatformName = getPlatformName as jest.MockedFunction<typeof getPlatformName>;
 
 const {
   execute,
@@ -122,6 +124,42 @@ describe('element commands: re-throw swallowed remote "no such element"', () => 
       elementClick({elementClick: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)} as never, 'bad'),
     ).rejects.toThrow(/could not be located/i);
     await expect(elementClick({elementClick: jest.fn(async () => undefined)} as never, 'el')).resolves.toBeUndefined();
+  });
+
+  test('elementClick uses JS click in a WEBVIEW context', async () => {
+    mockGetPlatformName.mockReturnValue(PLATFORM.ios);
+    const driver = {
+      sessionId: 's1',
+      getAppiumContext: jest.fn(async () => 'WEBVIEW_com.example'),
+      getSettings: jest.fn(async () => ({})),
+      executeScript: jest.fn(async (_cmd: string, _args: unknown[]) => undefined),
+      elementClick: jest.fn(async (_id: string) => undefined),
+    };
+
+    await elementClick(driver as never, 'el-1');
+
+    expect(driver.executeScript).toHaveBeenCalledWith('arguments[0].click();', [
+      {ELEMENT: 'el-1', 'element-6066-11e4-a52e-4f735466cecf': 'el-1'},
+    ]);
+    expect(driver.elementClick).not.toHaveBeenCalled();
+    mockGetPlatformName.mockReset();
+  });
+
+  test('elementClick uses native click in NATIVE_APP context', async () => {
+    mockGetPlatformName.mockReturnValue(PLATFORM.ios);
+    const driver = {
+      sessionId: 's1',
+      getAppiumContext: jest.fn(async () => 'NATIVE_APP'),
+      getSettings: jest.fn(async () => ({})),
+      executeScript: jest.fn(async (_cmd: string, _args: unknown[]) => undefined),
+      elementClick: jest.fn(async (_id: string) => undefined),
+    };
+
+    await elementClick(driver as never, 'el-1');
+
+    expect(driver.elementClick).toHaveBeenCalledWith('el-1');
+    expect(driver.executeScript).not.toHaveBeenCalled();
+    mockGetPlatformName.mockReset();
   });
 
   test('getElementRect re-throws swallowed error, returns rect otherwise', async () => {
