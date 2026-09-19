@@ -1,3 +1,9 @@
+## [1.94.2](https://github.com/appium/appium-mcp/compare/v1.94.1...v1.94.2) (2026-09-19)
+
+### Bug Fixes
+
+* restrict screen recording scaling options ([#535](https://github.com/appium/appium-mcp/issues/535)) ([5302858](https://github.com/appium/appium-mcp/commit/53028586f5ea31d8d4b26c98b3fb5634e2199c37))
+
 ## [1.94.1](https://github.com/appium/appium-mcp/compare/v1.94.0...v1.94.1) (2026-09-18)
 
 ### Bug Fixes
