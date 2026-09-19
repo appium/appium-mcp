@@ -277,6 +277,8 @@ Screen recordings are saved as MP4 files to the same directory as screenshots (`
 
 To start recording, call `appium_screen_recording` with `action="start"`. You may provide `timeLimit` in seconds to limit the maximum recording duration, but the start call still returns immediately. To finalize the recording, save the video, and receive the file path, call `appium_screen_recording` again with `action="stop"`.
 
+For iOS, `videoScale` accepts `width:height` with dimensions from 1 to 16384 (for example, `1280:720`). One dimension may be `-1` or `-2` to preserve the aspect ratio; `-2` also makes that dimension divisible by two. Scaling expressions and custom `videoFilters` are no longer supported by this MCP tool.
+
 ### AI Vision Element Finding
 
 Configure AI-powered element finding using vision models. When enabled, a separate tool — **`appium_ai`** — is registered alongside `appium_find_element`. It exposes `action=find_element`, which locates UI elements from natural-language descriptions and returns a coordinate UUID (`ai-element:x,y:bbox`) that can be passed to `appium_gesture` (`tap` / `double_tap` / `long_press`).
