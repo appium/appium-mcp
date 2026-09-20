@@ -57,6 +57,8 @@
     "audit:tools": "node scripts/audit-tool-footprint.mjs",
     "verify:names": "node scripts/verify-names.mjs",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "eval:mcp": "python -m pytest -c evals/pytest.ini evals/appium_mcp_eval",
+    "eval:codex": "python3 evals/codex_eval.py",
     "test:locators": "NODE_OPTIONS=--experimental-vm-modules jest src/tests/generate-all-locators.test.ts",
     "lint": "oxlint -c oxlint.config.mjs .",
     "lint:fix": "oxlint -c oxlint.config.mjs --fix .",
