@@ -117,7 +117,7 @@ export default function pressKey(server: FastMCP): void {
         } else if (platform === PLATFORM.ios) {
           if (!key) {
             return errorResult(
-              `keyCode is Android-only. Current session platform is '${platform}'. For iOS/tvOS, pass key as one of ${IOS_BUTTONS_DESCRIPTION}.`,
+              `For iOS/tvOS, key is required and must be one of ${IOS_BUTTONS_DESCRIPTION}.`,
             );
           }
           const buttonName = IOS_BUTTON_MAP[key];
