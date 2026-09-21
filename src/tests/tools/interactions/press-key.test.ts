@@ -50,7 +50,7 @@ describe('appium_mobile_press_key tool', () => {
     const result = await tool.execute({keyCode: 4}, undefined);
 
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('keyCode is Android-only');
+    expect(result.content[0].text).toContain('For iOS/tvOS, key is required');
     expect(result.content[0].text).toContain("Current session platform is 'iOS'");
     expect(result.content[0].text).toContain('HOME');
     expect(mockExecute).not.toHaveBeenCalled();
