@@ -1,3 +1,9 @@
+## [1.94.3](https://github.com/appium/appium-mcp/compare/v1.94.2...v1.94.3) (2026-09-21)
+
+### Bug Fixes
+
+* **press-key:** reject keyCode on iOS instead of pressing HOME ([#539](https://github.com/appium/appium-mcp/issues/539)) ([eff7688](https://github.com/appium/appium-mcp/commit/eff76888b0dd7ab159448f03718d6aa04070d018))
+
 ## [1.94.2](https://github.com/appium/appium-mcp/compare/v1.94.1...v1.94.2) (2026-09-19)
 
 ### Bug Fixes
