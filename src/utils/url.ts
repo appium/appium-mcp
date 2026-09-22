@@ -1,5 +1,6 @@
 import WebDriver, {type Client} from 'webdriver';
 
+import {readBooleanEnv} from './env.js';
 import {redactUrlCredentials} from './sensitive.js';
 import {withQuietWebDriverLogging} from './webdriver-client-options.js';
 
@@ -60,6 +61,7 @@ export async function attachToRemoteSession(options: RemoteAttachOptions): Promi
   return WebDriver.attachToSession(
     withQuietWebDriverLogging({
       sessionId: options.sessionId,
+      enableDirectConnect: readBooleanEnv('REMOTE_SERVER_ENABLE_DIRECT_CONNECT', true),
       protocol,
       hostname: url.hostname,
       port,

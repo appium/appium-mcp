@@ -10,7 +10,9 @@ import {IOSManager} from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
 import {setSession, listSessions} from '../../session-store.js';
 import {createUIResource, createSessionDashboardUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
+import {readBooleanEnv} from '../../utils/env.js';
 import {findFreePort, releaseReservedPorts} from '../../utils/ports.js';
+import {validateEmbeddedAppCapabilities} from '../../utils/remote-app-policy.js';
 import {redactForLogging, redactUrlCredentials} from '../../utils/sensitive.js';
 import {getPortFromUrl, validateRemoteServerUrl} from '../../utils/url.js';
 import {withQuietWebDriverLogging} from '../../utils/webdriver-client-options.js';
@@ -350,6 +352,7 @@ export async function createSessionAction(args: {
           path: remoteUrl.pathname,
           ...(user && key ? {user, key} : {}),
           capabilities: finalCapabilities,
+          enableDirectConnect: readBooleanEnv('REMOTE_SERVER_ENABLE_DIRECT_CONNECT', true),
         }),
       );
       sessionId = client.sessionId;
@@ -358,6 +361,7 @@ export async function createSessionAction(args: {
       if (platform === 'general') {
         return errorResult('platform=general requires remoteServerUrl.');
       }
+      validateEmbeddedAppCapabilities(finalCapabilities);
       const allocation = await assignEmbeddedDriverPorts(platform, finalCapabilities);
       finalCapabilities = allocation.capabilities;
       const driver = createDriverForPlatform(platform);

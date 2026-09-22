@@ -26,6 +26,7 @@ import {initializeOpenTelemetry} from './telemetry/init.js';
 import {installTelemetryWrappers} from './telemetry/wrapOperations.js';
 import registerTools from './tools/index.js';
 import {TRANSPORT_TYPES} from './transport.js';
+import {validateConnectionPolicyEnv} from './utils/env.js';
 
 const SERVER_VERSION = pkg.version as `${number}.${number}.${number}`;
 
@@ -97,6 +98,7 @@ type DisconnectSessionPolicy = 'delete_all' | 'skip';
  * @returns A promise resolving to a configured `FastMCP` instance ready to be `start()`-ed.
  */
 export async function createAppiumMcpServer(options: CreateAppiumMcpServerOptions = {}): Promise<FastMCP> {
+  validateConnectionPolicyEnv();
   const {
     plugins = [],
     serverName = 'MCP Appium',
