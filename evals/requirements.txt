@@ -1,0 +1,6 @@
+mcpevals==0.1.10
+# mcp-agent 0.2.6 imports mcp.server.fastmcp, removed in MCP 2.x.
+mcp-agent==0.2.6
+mcp>=1.30,<2
+pytest>=8,<10
+pytest-asyncio>=1,<2

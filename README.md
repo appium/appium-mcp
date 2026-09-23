@@ -852,3 +852,9 @@ Contributions are welcome! Please feel free to submit a pull request or open an 
 ## 📄 License
 
 This project is licensed under the Apache-2.0. See the [LICENSE](LICENSE) file for details.
+
+### Behavioral evals
+
+Model-dependent MCP tool-selection and argument evals are available separately from
+`npm test`. See [evals/README.md](evals/README.md) for setup and `npm run eval:mcp`.
+For local evaluation using Codex with ChatGPT login, use `npm run eval:codex`.

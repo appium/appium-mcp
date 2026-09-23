@@ -14,3 +14,7 @@ src/tools/documentation/uploads/embeddings-*.json
 .idea
 .vscode
 tsconfig.tsbuildinfo
+evals/.venv/
+evals/**/__pycache__/
+evals/.pytest_cache/
+/test-reports/
