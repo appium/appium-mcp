@@ -449,7 +449,7 @@ Semantic graders may become useful for answer correctness and groundedness, whil
 
 Several general-purpose evaluation frameworks were considered.
 
-### mcp-eval
+### [mcp-eval](https://github.com/lastmile-ai/mcp-eval)
 
 Selected for the initial behavioral suite.
 
@@ -475,7 +475,7 @@ undesired:
 context → page_source → find_element → context → interaction
 ```
 
-### DeepEval
+### [DeepEval](https://deepeval.com/)
 
 Considered and potentially useful for future evaluation.
 
@@ -491,7 +491,7 @@ It may be particularly useful once documentation-plugin evaluation is introduced
 
 It was not required for the initial behavioral cases because those cases can be evaluated with deterministic trace assertions.
 
-### Promptfoo
+### [Promptfoo](https://www.promptfoo.dev/)
 
 Considered as a general LLM evaluation and CI framework.
 
@@ -504,7 +504,7 @@ Strengths:
 
 It is less directly centered around MCP execution trajectories than mcp-eval, so it was not selected as the initial Appium MCP behavioral harness.
 
-### Braintrust / LangSmith
+### [Braintrust](https://www.braintrust.dev/) / [LangSmith](https://docs.langchain.com/langsmith/observability)
 
 Considered for broader experiment tracking and observability.
 
@@ -520,7 +520,7 @@ They introduce more infrastructure than required for the initial proof of concep
 
 They may become useful if Appium MCP develops a large long-running model qualification suite.
 
-### MCP Inspector
+### [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector)
 
 Useful for interactive MCP protocol and tool validation.
 
@@ -538,7 +538,7 @@ Therefore it complements, but does not replace, behavioral evaluation.
 
 ### Real MCP clients
 
-Clients such as Codex CLI are not replacements for the controlled evaluation harness.
+Clients such as [Codex CLI](https://github.com/openai/codex) are not replacements for the controlled evaluation harness.
 
 They provide a separate compatibility layer.
 
