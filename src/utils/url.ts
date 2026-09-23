@@ -24,6 +24,12 @@ export function getPortFromUrl(url: URL): number {
  *
  * The allowlist can only narrow the built-in HTTP(S)-only policy. Queries and
  * fragments are rejected because WebDriver requests use the URL as a base path.
+ * This validates the supplied URL only. Destinations selected by HTTP redirects,
+ * direct-connect metadata, or BiDi webSocketUrl are handled by the WebDriver
+ * client. Intercepting or modifying that library's internal transport is outside
+ * appium-mcp's scope; operators must trust the allowed server and its responses.
+ * REMOTE_SERVER_ENABLE_DIRECT_CONNECT exposes the client's public opt-out for
+ * direct connect, but does not control redirects or BiDi connections.
  */
 export function validateRemoteServerUrl(remoteServerUrl: string, regexRule?: string): void {
   const invalidUrl = (): Error => new Error(`Invalid remoteServerUrl: ${redactUrlCredentials(remoteServerUrl)}.`);
