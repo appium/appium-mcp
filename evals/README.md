@@ -144,6 +144,19 @@ tools. A runtime error, unsuccessful target call, or missing completed turn fail
 the run. Raw JSONL events, stderr, and results are saved in a timestamped directory
 under `test-reports/codex-eval/`. This runner does not produce mcp-eval OTEL traces.
 
+Example output (excerpt from an actual run on 2026-09-23 UTC with Codex CLI
+0.151.0 and `gpt-5.6-luna`, using the device-free fixture):
+
+```text
+$ npm run eval:codex
+Running local_ios_session with gpt-5.6-luna…
+PASS: local_ios_session
+Running explicit_accessibility_id with gpt-5.6-luna…
+PASS: explicit_accessibility_id
+Running no_redundant_context_discovery with gpt-5.6-luna…
+PASS: no_redundant_context_discovery
+```
+
 This is a local opt-in command, not a CI workflow. See the official
 [Codex non-interactive documentation](https://developers.openai.com/ja-JP/docs/non-interactive-mode).
 
