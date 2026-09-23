@@ -1,6 +1,8 @@
-import {beforeEach, describe, test, expect, jest} from '@jest/globals';
+import {afterEach, beforeEach, describe, test, expect, jest} from '@jest/globals';
 
 // ── module mocks ──────────────────────────────────────────────────────────────
+
+const mockNewSession = jest.fn<(...args: any[]) => Promise<any>>(async () => ({sessionId: 'remote-session-id'}));
 
 const mockAttachToSession = jest.fn<(options: Record<string, unknown>) => Promise<any>>(
   async (_options: Record<string, unknown>) => ({
@@ -53,7 +55,7 @@ jest.unstable_mockModule('appium-xcuitest-driver', () => ({
 }));
 jest.unstable_mockModule('webdriver', () => ({
   default: {
-    newSession: async () => ({sessionId: 'remote-session-id'}),
+    newSession: mockNewSession,
     attachToSession: mockAttachToSession,
   },
 }));
@@ -108,6 +110,7 @@ const mockSafeDeleteSession = safeDeleteSession as jest.MockedFunction<typeof sa
 const mockSetSession = setSession as jest.MockedFunction<typeof setSession>;
 
 const {
+  createSessionAction,
   buildAndroidCapabilities,
   buildIOSCapabilities,
   assignEmbeddedDriverPorts,
@@ -148,6 +151,48 @@ async function getToolExecute() {
 }
 
 // ── appium_session_management tool tests ─────────────────────────────────────────────────
+
+describe('operator connection policy integration', () => {
+  const originalEnv = {...process.env};
+  afterEach(() => {
+    process.env = {...originalEnv};
+  });
+
+  test.each([undefined, 'true', 'false'])('passes direct-connect setting %s to create and attach', async (value) => {
+    if (value === undefined) {
+      delete process.env.REMOTE_SERVER_ENABLE_DIRECT_CONNECT;
+    } else {
+      process.env.REMOTE_SERVER_ENABLE_DIRECT_CONNECT = value;
+    }
+    delete process.env.REMOTE_SERVER_URL_ALLOW_REGEX;
+    process.env.ALLOW_REMOTE_APP_URLS = 'false';
+    mockListSessions.mockReturnValue([]);
+    const result = await createSessionAction({
+      platform: 'general',
+      remoteServerUrl: 'http://localhost:4723',
+      capabilities: {'appium:app': 'https://example.test/app.apk'},
+    });
+    expect(result.isError).not.toBe(true);
+    expect(mockNewSession).toHaveBeenCalledWith(expect.objectContaining({enableDirectConnect: value !== 'false'}));
+    const {attachToRemoteSession} = await import('../../../utils/url.js');
+    await attachToRemoteSession({remoteServerUrl: 'http://localhost:4723', sessionId: 'existing', capabilities: {}});
+    expect(mockAttachToSession).toHaveBeenCalledWith(expect.objectContaining({enableDirectConnect: value !== 'false'}));
+  });
+
+  test.each([
+    {'appium:app': 'https://example.test/app.ipa'},
+    {'appium:otherApps': '["/tmp/local.app","https://example.test/app.ipa"]'},
+    {'appium:options': {app: 'https://example.test/app.ipa'}},
+  ])('rejects embedded app URLs before creating a driver session', async (capabilities) => {
+    process.env.ALLOW_REMOTE_APP_URLS = 'false';
+    const result = await createSessionAction({platform: 'ios', capabilities});
+    expect(result.isError).toBe(true);
+    expect(result.content[0]).toEqual(
+      expect.objectContaining({text: expect.stringContaining('ALLOW_REMOTE_APP_URLS=false')}),
+    );
+    expect(mockNewSession).not.toHaveBeenCalled();
+  });
+});
 
 describe('appium_session_management tool', () => {
   describe('action: list', () => {

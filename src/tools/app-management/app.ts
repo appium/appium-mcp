@@ -43,7 +43,12 @@ const schema = z.object({
     ),
   id: z.string().optional().describe('Android package or iOS bundle ID; takes precedence over name.'),
   name: z.string().optional().describe('Human-readable app name resolved to an ID; alternative to id.'),
-  path: z.string().optional().describe('App file path; required for install.'),
+  path: z
+    .string()
+    .optional()
+    .describe(
+      'App file path or HTTP(S) URL; required for install. Embedded URL downloads require ALLOW_REMOTE_APP_URLS=true (default). Remote sessions resolve app inputs on the remote Appium server.',
+    ),
   keepData: z.boolean().optional().describe('Android uninstall: preserve app data and cache.'),
   applicationType: z.enum(['User', 'System']).optional().describe('iOS list filter: User (default) or System.'),
   seconds: z
@@ -64,7 +69,7 @@ export default function app(server: FastMCP): void {
     parameters: schema,
     annotations: {
       readOnlyHint: false,
-      openWorldHint: false,
+      openWorldHint: true,
     },
     execute: async (
       args: z.infer<typeof schema>,
