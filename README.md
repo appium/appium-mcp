@@ -153,7 +153,9 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `APPIUM_MCP_APPS_ENABLED`                 | Optional                               | MCP Apps static UI mode. Enabled by default. Set to `false` or `0` to force the embedded UI compatibility fallback. See [MCP Apps Mode](#mcp-apps-mode)                                                                                                                                                                                            |
 | `APPIUM_MCP_ON_CLIENT_DISCONNECT`         | Optional                               | Session cleanup when the MCP client disconnects: `delete_all` (default) deletes **MCP-owned** Appium sessions (`safeDeleteAllSessions`); `skip` keeps those sessions across disconnects (e.g. HTTP/stream clients that reconnect). Attached/remote sessions are not removed by this path. See [MCP disconnect behavior](#mcp-disconnect-behavior). |
 | `APPIUM_MCP_WDA_APP_PATH`                 | Optional                               | Absolute path to a pre-extracted `WebDriverAgentRunner-Runner.app` bundle. When set, `prepare_ios_simulator` skips all GitHub downloads and uses this bundle directly — useful in environments where external downloads are blocked                                                                                                                |
-| REMOTE_SERVER_URL_ALLOW_REGEX | Optional | Regular expression applied to the complete remoteServerUrl value before MCP Appium connects to a remote Appium/WebDriver server. When unset, any HTTP(S) destination is accepted. Set this in shared infrastructure or CI environments that require an explicit destination policy. See Remote server security and trust model. |
+| REMOTE_SERVER_URL_ALLOW_REGEX | Optional | Regular expression applied to the complete remoteServerUrl value before MCP Appium connects to a remote Appium/WebDriver server. When unset, any valid HTTP(S) server URL is accepted. This checks the supplied URL only, not destinations selected by the WebDriver client from server responses. See [Remote server security and trust model](#remote-server-security-and-trust-model). |
+| REMOTE_SERVER_ENABLE_DIRECT_CONNECT | Optional | `true` (default) or `false`. Controls the WebDriver client's `enableDirectConnect` option for remote session creation, attachment, and persisted-session reconnection. Set `false` to disable switching to Appium-advertised direct-connect endpoints. Does not disable HTTP redirects or WebDriver BiDi connections. |
+| ALLOW_REMOTE_APP_URLS | Optional | `true` (default) or `false`. Set `false` to reject HTTP(S) app URLs for embedded-driver installation and session creation (`appium:app` and `appium:otherApps`, including legacy unprefixed and `appium:options` forms). Local app paths remain supported. Remote Appium sessions are unaffected: their server resolves app inputs. |
 | `AI_VISION_ENABLED`                       | Optional                               | Set to `true` to register the `appium_ai` tool (vision-based element finding). When unset or `false`, the AI tool is **not registered** and the LLM has no way to invoke vision-based finding. Requires `AI_VISION_API_BASE_URL` and `AI_VISION_API_KEY` to also be set, otherwise the server fails to start.                                      |
 | `AI_VISION_API_BASE_URL`                  | Required when `AI_VISION_ENABLED=true` | Base URL of the OpenAI-compatible vision model API                                                                                                                                                                                                                                                                                                 |
 | `AI_VISION_API_KEY`                       | Required when `AI_VISION_ENABLED=true` | API key for the vision model provider                                                                                                                                                                                                                                                                                                              |
@@ -171,6 +173,19 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Optional | OTLP/HTTP traces endpoint (example: `http://127.0.0.1:4318/v1/traces`). |
 | `OTEL_TRACES_SAMPLER` | Optional | Trace sampling strategy; `parentbased_always_on` samples new root traces and follows parent decisions. |
 | `OTEL_RESOURCE_ATTRIBUTES` | Optional | Comma-separated `key=value` pairs attached as resource attributes to every span (example: `testcase.id=my-test-123,team=platform`). |
+
+`REMOTE_SERVER_ENABLE_DIRECT_CONNECT` and `ALLOW_REMOTE_APP_URLS` preserve existing behavior
+when unset. Values are case-insensitive and may contain surrounding whitespace; other values
+(including an empty string) fail server startup. They are operator-controlled environment
+settings, not MCP tool arguments.
+
+URL-based app installation is an intentional Appium feature. For embedded sessions it downloads
+on the MCP host; for remote sessions it downloads on the remote Appium server. Disabling
+`ALLOW_REMOTE_APP_URLS` limits these app inputs, not all host network access or all driver
+capabilities that may use the network. When URL installation is enabled, redirect handling,
+download size limits, and cache management remain the responsibility of the Appium downloader
+and deployment controls. The app lifecycle tool uses `openWorldHint: true` because its operations
+can interact with external services.
 
 ### OpenTelemetry tracing
 
@@ -465,11 +480,22 @@ Only allow trusted users and trusted workflow configuration to control `remoteSe
 * Do not expose the MCP tool surface directly to untrusted users.
 * In CI, do not construct `remoteServerUrl` from untrusted pull request content, repository data, prompts, or other externally controlled input.
 * Keep remote server URLs in trusted MCP or CI configuration where possible.
-* Use `REMOTE_SERVER_URL_ALLOW_REGEX` to restrict the permitted Appium server URLs when the execution environment requires an explicit destination policy.
+* Use `REMOTE_SERVER_URL_ALLOW_REGEX` to restrict the supplied Appium server URLs. Trust the permitted servers and their responses as described below.
 
 When `REMOTE_SERVER_URL_ALLOW_REGEX` is not set, MCP Appium accepts any syntactically valid HTTP or HTTPS destination. Remote server URLs must not contain a query string or fragment. The variable is a regular-expression check against the complete `remoteServerUrl` value and can only narrow the HTTP(S) destinations accepted by the built-in validation.
 
 Capability discovery for attached sessions does not follow HTTP redirects. This keeps a permitted endpoint from redirecting the initial metadata request to a destination outside the configured URL policy.
+
+`REMOTE_SERVER_URL_ALLOW_REGEX` validates the supplied server URL only. Subsequent
+destinations selected by HTTP redirects, Appium direct-connect metadata, or a
+WebDriver BiDi `webSocketUrl` are handled by the WebDriver client library and are
+not checked against this regex. Intercepting or modifying the client library's
+internal transport is outside appium-mcp's scope. Operators must therefore trust
+the permitted Appium servers and their responses. Set
+`REMOTE_SERVER_ENABLE_DIRECT_CONNECT=false` to disable direct connect through the
+client's public option; this does not disable HTTP redirects or BiDi connections.
+Deployments that need to restrict all outbound destinations should enforce that
+policy through network egress controls.
 
 If a remote URL contains credentials, MCP Appium redacts its userinfo from logs and error responses. Opt-in persisted-session files may still contain credentials and sensitive capabilities because they are needed for reattachment; those files are created with owner-only (`0600`) permissions, and permissions on existing regular session files are repaired when read. Use a dedicated persistence directory owned by the MCP process.
 
