@@ -1,3 +1,9 @@
+## [1.95.0](https://github.com/appium/appium-mcp/compare/v1.94.3...v1.95.0) (2026-09-25)
+
+### Features
+
+* add operator controls for direct connect and remote app URLs ([#546](https://github.com/appium/appium-mcp/issues/546)) ([5eba012](https://github.com/appium/appium-mcp/commit/5eba0129a0c8a308aad711650590cf4d3e338e08))
+
 ## [1.94.3](https://github.com/appium/appium-mcp/compare/v1.94.2...v1.94.3) (2026-09-21)
 
 ### Bug Fixes
