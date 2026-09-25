@@ -59,41 +59,26 @@ export default function fileTransfer(server: FastMCP): void {
 
       try {
         const platform = getPlatformName(driver);
+        if (platform !== PLATFORM.android && platform !== PLATFORM.ios) {
+          return errorResult(`Unsupported platform: ${platform}. Only Android and iOS are supported.`);
+        }
 
         if (args.action === 'push') {
           if (!args.payloadBase64) {
             return errorResult('payloadBase64 is required when action is push');
           }
 
-          if (platform === PLATFORM.android) {
-            await execute(driver, 'mobile: pushFile', {
-              path: args.remotePath,
-              data: args.payloadBase64,
-            });
-          } else if (platform === PLATFORM.ios) {
-            await execute(driver, 'mobile: pushFile', {
-              remotePath: args.remotePath,
-              payload: args.payloadBase64,
-            });
-          } else {
-            return errorResult(`Unsupported platform: ${platform}. Only Android and iOS are supported.`);
-          }
+          await execute(driver, 'mobile: pushFile', {
+            remotePath: args.remotePath,
+            payload: args.payloadBase64,
+          });
 
           return textResult(`Successfully pushed file to device path: ${args.remotePath}`);
         }
 
-        let raw: unknown;
-        if (platform === PLATFORM.android) {
-          raw = await execute(driver, 'mobile: pullFile', {
-            path: args.remotePath,
-          });
-        } else if (platform === PLATFORM.ios) {
-          raw = await execute(driver, 'mobile: pullFile', {
-            remotePath: args.remotePath,
-          });
-        } else {
-          return errorResult(`Unsupported platform: ${platform}. Only Android and iOS are supported.`);
-        }
+        const raw = await execute(driver, 'mobile: pullFile', {
+          remotePath: args.remotePath,
+        });
 
         const base64 = normalizePullResult(raw);
         return textResult(

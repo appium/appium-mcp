@@ -74,7 +74,7 @@ describe('appium_mobile_file', () => {
     );
   });
 
-  test('push: Android uses path and data', async () => {
+  test('push: Android uses remotePath and payload', async () => {
     const tool = await registerTool();
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.android);
@@ -89,14 +89,10 @@ describe('appium_mobile_file', () => {
       undefined,
     );
 
-    expect(mockExecute).toHaveBeenCalledWith(
-      expect.anything(),
-      'mobile: pushFile',
-      expect.objectContaining({
-        path: '/data/local/tmp/a.txt',
-        data: 'SGVsbG8=',
-      }),
-    );
+    expect(mockExecute).toHaveBeenCalledWith(expect.anything(), 'mobile: pushFile', {
+      remotePath: '/data/local/tmp/a.txt',
+      payload: 'SGVsbG8=',
+    });
   });
 
   test('push: iOS uses remotePath and payload', async () => {
@@ -114,17 +110,13 @@ describe('appium_mobile_file', () => {
       undefined,
     );
 
-    expect(mockExecute).toHaveBeenCalledWith(
-      expect.anything(),
-      'mobile: pushFile',
-      expect.objectContaining({
-        remotePath: '@com.example.app:documents/x.txt',
-        payload: 'QQ==',
-      }),
-    );
+    expect(mockExecute).toHaveBeenCalledWith(expect.anything(), 'mobile: pushFile', {
+      remotePath: '@com.example.app:documents/x.txt',
+      payload: 'QQ==',
+    });
   });
 
-  test('pull: Android uses path', async () => {
+  test('pull: Android uses remotePath', async () => {
     const tool = await registerTool();
     mockGetDriver.mockReturnValue({} as any);
     mockGetPlatformName.mockReturnValue(PLATFORM.android);
@@ -132,11 +124,9 @@ describe('appium_mobile_file', () => {
 
     const result = await tool.execute({action: 'pull', remotePath: '/sdcard/Download/out.bin'}, undefined);
 
-    expect(mockExecute).toHaveBeenCalledWith(
-      expect.anything(),
-      'mobile: pullFile',
-      expect.objectContaining({path: '/sdcard/Download/out.bin'}),
-    );
+    expect(mockExecute).toHaveBeenCalledWith(expect.anything(), 'mobile: pullFile', {
+      remotePath: '/sdcard/Download/out.bin',
+    });
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.contentBase64).toBe('YmJiYg==');
     expect(parsed.platform).toBe('Android');
@@ -150,11 +140,9 @@ describe('appium_mobile_file', () => {
 
     const result = await tool.execute({action: 'pull', remotePath: '@com.app:documents/f.txt'}, undefined);
 
-    expect(mockExecute).toHaveBeenCalledWith(
-      expect.anything(),
-      'mobile: pullFile',
-      expect.objectContaining({remotePath: '@com.app:documents/f.txt'}),
-    );
+    expect(mockExecute).toHaveBeenCalledWith(expect.anything(), 'mobile: pullFile', {
+      remotePath: '@com.app:documents/f.txt',
+    });
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.contentBase64).toBe('eHh4');
     expect(parsed.platform).toBe('iOS');
