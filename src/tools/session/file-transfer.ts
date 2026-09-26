@@ -2,7 +2,7 @@ import type {ContentResult, FastMCP} from 'fastmcp';
 import {z} from 'zod';
 
 import {execute} from '../../command.js';
-import {getPlatformName, PLATFORM} from '../../session-store.js';
+import {getPlatformName} from '../../session-store.js';
 import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 
 /**
@@ -58,11 +58,6 @@ export default function fileTransfer(server: FastMCP): void {
       const {driver} = resolved;
 
       try {
-        const platform = getPlatformName(driver);
-        if (platform !== PLATFORM.android && platform !== PLATFORM.ios) {
-          return errorResult(`Unsupported platform: ${platform}. Only Android and iOS are supported.`);
-        }
-
         if (args.action === 'push') {
           if (!args.payloadBase64) {
             return errorResult('payloadBase64 is required when action is push');
@@ -84,7 +79,7 @@ export default function fileTransfer(server: FastMCP): void {
         return textResult(
           JSON.stringify({
             remotePath: args.remotePath,
-            platform,
+            platform: getPlatformName(driver),
             contentBase64: base64,
           }),
         );

@@ -132,6 +132,28 @@ describe('appium_mobile_file', () => {
     expect(parsed.platform).toBe('Android');
   });
 
+  test('push: a non-Android/iOS session still calls the driver', async () => {
+    const tool = await registerTool();
+    mockGetDriver.mockReturnValue({} as any);
+    mockGetPlatformName.mockReturnValue('Windows');
+    mockExecute.mockResolvedValue(undefined);
+
+    const result = await tool.execute(
+      {
+        action: 'push',
+        remotePath: 'C:\\temp\\a.txt',
+        payloadBase64: 'QQ==',
+      },
+      undefined,
+    );
+
+    expect(result.isError).toBeUndefined();
+    expect(mockExecute).toHaveBeenCalledWith(expect.anything(), 'mobile: pushFile', {
+      remotePath: 'C:\\temp\\a.txt',
+      payload: 'QQ==',
+    });
+  });
+
   test('pull: iOS uses remotePath', async () => {
     const tool = await registerTool();
     mockGetDriver.mockReturnValue({} as any);
