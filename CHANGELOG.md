@@ -1,3 +1,9 @@
+## [1.95.1](https://github.com/appium/appium-mcp/compare/v1.95.0...v1.95.1) (2026-09-26)
+
+### Bug Fixes
+
+* **session:** use remotePath and payload for mobile file commands ([#547](https://github.com/appium/appium-mcp/issues/547)) ([eef6fea](https://github.com/appium/appium-mcp/commit/eef6fea767df0909f462afd1ed0e8fb64b11b5ac))
+
 ## [1.95.0](https://github.com/appium/appium-mcp/compare/v1.94.3...v1.95.0) (2026-09-25)
 
 ### Features
