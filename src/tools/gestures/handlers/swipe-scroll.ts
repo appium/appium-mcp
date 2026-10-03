@@ -33,12 +33,10 @@ export type VerticalScrollOptions = {
  * Used by `appium_gesture` `scroll_to_element`; matches legacy scroll distances.
  */
 export async function performVerticalScroll(driver: DriverInstance, options: VerticalScrollOptions): Promise<void> {
-  const rect = await getWindowRect(driver);
-  const {width, height} = rect;
-  const startX = Math.floor(width / 2);
-  const {startY, endY} = verticalScrollYs(height, options.direction, options.distance);
-
   if (getPlatformName(driver) === PLATFORM.android) {
+    const {width, height} = await getWindowRect(driver);
+    const startX = Math.floor(width / 2);
+    const {startY, endY} = verticalScrollYs(height, options.direction, options.distance);
     await performActions(driver, [
       {
         type: 'pointer',
@@ -61,10 +59,7 @@ export async function performVerticalScroll(driver: DriverInstance, options: Ver
   } else if (getPlatformName(driver) === PLATFORM.ios) {
     await execute(driver, 'mobile: scroll', {
       direction: options.direction,
-      startX,
-      startY,
-      endX: startX,
-      endY,
+      distance: options.distance,
     });
   } else {
     throw new Error(`Unsupported platform: ${getPlatformName(driver)}. Only Android and iOS are supported.`);
