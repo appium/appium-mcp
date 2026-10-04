@@ -1,4 +1,4 @@
-import {describe, test, expect, jest} from '@jest/globals';
+import {beforeEach, describe, test, expect, jest} from '@jest/globals';
 
 jest.unstable_mockModule('../../../persistence', () => ({
   isSessionPersistenceEnabled: jest.fn(() => false),
@@ -25,8 +25,10 @@ jest.unstable_mockModule('../../../tools/ai/config', () => ({
   isAIEnabled: jest.fn(() => false),
 }));
 
+const {execute, getWindowRect, performActions} = await import('../../../command.js');
+const {getPlatformName} = await import('../../../session-store.js');
 const {parseAiElement} = await import('../../../tools/gestures/handlers/ai-element.js');
-const {clampDirectionCoordsToWindow, rectVisibleWithinWindow} =
+const {clampDirectionCoordsToWindow, performVerticalScroll, rectVisibleWithinWindow} =
   await import('../../../tools/gestures/handlers/swipe-scroll.js');
 
 const PHONE_WINDOW = {x: 0, y: 0, width: 400, height: 800};
@@ -69,5 +71,29 @@ describe('clampDirectionCoordsToWindow', () => {
   test('preserves in-bounds directional coords', () => {
     const coords = {startX: 200, startY: 600, endX: 200, endY: 200};
     expect(clampDirectionCoordsToWindow(coords, PHONE_WINDOW)).toEqual(coords);
+  });
+});
+
+describe('performVerticalScroll', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(getWindowRect).mockResolvedValue(PHONE_WINDOW);
+  });
+
+  test('iOS passes direction and distance through to mobile: scroll', async () => {
+    jest.mocked(getPlatformName).mockReturnValue('iOS');
+    await performVerticalScroll({} as never, {direction: 'down', distance: 0.5});
+    expect(execute).toHaveBeenCalledWith(expect.anything(), 'mobile: scroll', {direction: 'down', distance: 0.5});
+    expect(getWindowRect).not.toHaveBeenCalled();
+    expect(performActions).not.toHaveBeenCalled();
+  });
+
+  test('Android keeps the pointer drag', async () => {
+    jest.mocked(getPlatformName).mockReturnValue('Android');
+    await performVerticalScroll({} as never, {direction: 'down', distance: 0.5});
+    expect(execute).not.toHaveBeenCalled();
+    const [sequence] = jest.mocked(performActions).mock.calls[0][1] as Array<{actions: Array<{y?: number}>}>;
+    const ys = sequence.actions.filter((a) => a.y !== undefined).map((a) => a.y);
+    expect(ys).toEqual([520, 280]);
   });
 });
