@@ -1,3 +1,9 @@
+## [1.95.3](https://github.com/appium/appium-mcp/compare/v1.95.2...v1.95.3) (2026-10-04)
+
+### Bug Fixes
+
+* remove workaround to click safari ([#557](https://github.com/appium/appium-mcp/issues/557)) ([0dc389b](https://github.com/appium/appium-mcp/commit/0dc389b53cc8176290e76298e5840e18c52c5564))
+
 ## [1.95.2](https://github.com/appium/appium-mcp/compare/v1.95.1...v1.95.2) (2026-10-04)
 
 ### Bug Fixes
