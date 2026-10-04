@@ -1,3 +1,9 @@
+## [1.95.2](https://github.com/appium/appium-mcp/compare/v1.95.1...v1.95.2) (2026-10-04)
+
+### Bug Fixes
+
+* **gestures:** pass scroll distance to mobile: scroll ([#556](https://github.com/appium/appium-mcp/issues/556)) ([b9c0667](https://github.com/appium/appium-mcp/commit/b9c0667b0102a6b1744f5367c561072d3e736260))
+
 ## [1.95.1](https://github.com/appium/appium-mcp/compare/v1.95.0...v1.95.1) (2026-09-26)
 
 ### Bug Fixes
