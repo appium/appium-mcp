@@ -16,6 +16,7 @@ jest.unstable_mockModule('../../../command.js', () => ({
   getElementRect: jest.fn(),
   setValue: jest.fn(),
   clearElement: jest.fn(),
+  elementClick: jest.fn(),
   getElementText: jest.fn(),
   getElementAttribute: jest.fn(),
 }));

@@ -1,7 +1,7 @@
 import type {ContentResult, FastMCP} from 'fastmcp';
 import {z} from 'zod';
 
-import {clearElement, setValue as _setValue} from '../../command.js';
+import {clearElement, elementClick, setValue as _setValue} from '../../command.js';
 import {elementUUIDScheme} from '../../schema.js';
 import {aiElementWebDriverRejectionIfNeeded} from '../gestures/handlers/ai-element.js';
 import {
@@ -74,6 +74,11 @@ export default function setValue(server: FastMCP): void {
               args.elementUUID,
               `Successfully cleared element ${args.elementUUID}.`,
             );
+          }
+          if (args.w3cActions) {
+            // W3C Element Clear unfocuses the element and key actions type into the current
+            // focus, so focus the cleared element again before typing.
+            await elementClick(driver, args.elementUUID);
           }
         }
         await _setValue(driver, args.elementUUID ?? '', args.text, args.w3cActions);

@@ -13,14 +13,24 @@ jest.unstable_mockModule('../../../session-store.js', () => ({
 }));
 
 // Simulate a field that keeps its value between calls: setValue appends, clearElement empties.
+// W3C Element Clear unfocuses the element, Element Click focuses it, and W3C key actions type
+// into whatever element has focus, ignoring elementUUID.
 const fieldValues = new Map<string, string>();
+let focused: string | null = null;
 jest.unstable_mockModule('../../../command.js', () => ({
   getElementRect: jest.fn(),
-  setValue: jest.fn(async (_driver: unknown, elementUUID: string, text: string) => {
-    fieldValues.set(elementUUID, (fieldValues.get(elementUUID) ?? '') + text);
+  setValue: jest.fn(async (_driver: unknown, elementUUID: string, text: string, w3cActions = false) => {
+    const target = w3cActions ? focused : elementUUID;
+    if (target) {
+      fieldValues.set(target, (fieldValues.get(target) ?? '') + text);
+    }
   }),
   clearElement: jest.fn(async (_driver: unknown, elementUUID: string) => {
     fieldValues.set(elementUUID, '');
+    focused = null;
+  }),
+  elementClick: jest.fn(async (_driver: unknown, elementUUID: string) => {
+    focused = elementUUID;
   }),
 }));
 
@@ -47,6 +57,7 @@ function textOf(result: {content: Array<{type: string; text?: string}>}): string
 describe('appium_set_value clear option', () => {
   beforeEach(() => {
     fieldValues.clear();
+    focused = null;
     (getDriver as jest.Mock).mockReturnValue({});
   });
 
@@ -70,6 +81,30 @@ describe('appium_set_value clear option', () => {
     await tool.execute({elementUUID: ELEMENT, text: 'ZZZ99999', clear: true}, undefined);
 
     expect(fieldValues.get(ELEMENT)).toBe('ZZZ99999');
+  });
+
+  test('clear=true with w3cActions refocuses the element before typing', async () => {
+    const tool = loadTool();
+    fieldValues.set(ELEMENT, 'old');
+    focused = ELEMENT;
+
+    const result = await tool.execute({elementUUID: ELEMENT, text: 'new', clear: true, w3cActions: true}, undefined);
+
+    expect(result.isError).toBeUndefined();
+    expect(fieldValues.get(ELEMENT)).toBe('new');
+    expect(focused).toBe(ELEMENT);
+  });
+
+  test('w3cActions without clear types into the current focus without clicking', async () => {
+    const {elementClick} = await import('../../../command.js');
+    (elementClick as jest.Mock).mockClear();
+    const tool = loadTool();
+    focused = ELEMENT;
+
+    await tool.execute({elementUUID: ELEMENT, text: 'abc', w3cActions: true}, undefined);
+
+    expect(fieldValues.get(ELEMENT)).toBe('abc');
+    expect(elementClick).not.toHaveBeenCalled();
   });
 
   test('clear=true requires elementUUID', () => {
