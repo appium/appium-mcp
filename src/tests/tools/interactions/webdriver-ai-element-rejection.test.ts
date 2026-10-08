@@ -15,6 +15,7 @@ jest.unstable_mockModule('../../../session-store.js', () => ({
 jest.unstable_mockModule('../../../command.js', () => ({
   getElementRect: jest.fn(),
   setValue: jest.fn(),
+  clearElement: jest.fn(),
   getElementText: jest.fn(),
   getElementAttribute: jest.fn(),
 }));

@@ -204,6 +204,22 @@ export async function setValue(driver: DriverInstance, elementUUID: string, text
 }
 
 /**
+ * Clear the value of an editable element (W3C Element Clear).
+ *
+ * @param driver - The driver instance to use.
+ * @param elementUUID - Element identifier.
+ */
+export async function clearElement(driver: DriverInstance, elementUUID: string): Promise<void> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.clear(elementUUID);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.clear(elementUUID);
+  }
+  const result = await (driver as Client).elementClear(elementUUID);
+  throwIfSwallowedRemoteError(result);
+}
+
+/**
  * Click an element identified by UUID.
  *
  * @param driver - The driver instance to use.

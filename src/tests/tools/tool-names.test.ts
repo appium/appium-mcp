@@ -96,3 +96,55 @@ describe('registered MCP tool names', () => {
     expect(names.sort()).toEqual([...EXPECTED_TOOL_NAMES].sort());
   });
 });
+
+describe('unknown tool arguments', () => {
+  function registeredTools(): Array<{name: string; parameters?: any}> {
+    const tools: Array<{name: string; parameters?: any}> = [];
+    registerTools({addTool: (def: {name: string; parameters?: any}) => tools.push(def)} as any);
+    return tools;
+  }
+
+  function registeredTool(name: string): {name: string; parameters?: any} {
+    const tool = registeredTools().find((t) => t.name === name);
+    if (!tool) {
+      throw new Error(`${name} is not registered`);
+    }
+    return tool;
+  }
+
+  test('every tool rejects an argument its schema does not declare', async () => {
+    const permissive: string[] = [];
+    for (const tool of registeredTools()) {
+      const parsed = await tool.parameters['~standard'].validate({notARealArgument: true});
+      const messages = (parsed.issues ?? []).map((issue: {message: string}) => issue.message).join(' ');
+      if (!messages.includes('notARealArgument')) {
+        permissive.push(tool.name);
+      }
+    }
+    expect(permissive).toEqual([]);
+  });
+
+  test('appium_set_value names the unknown key and the accepted arguments', async () => {
+    const parsed = await registeredTool('appium_set_value').parameters['~standard'].validate({
+      elementUUID: 'el',
+      text: 'ZZZ99999',
+      replace: true,
+    });
+
+    expect(parsed.issues).toBeDefined();
+    const message = parsed.issues.map((issue: {message: string}) => issue.message).join(' ');
+    expect(message).toContain('Unknown argument "replace"');
+    expect(message).toContain('elementUUID, text, w3cActions, clear, sessionId');
+  });
+
+  test('declared arguments still validate', async () => {
+    const parsed = await registeredTool('appium_session_management').parameters['~standard'].validate({
+      action: 'create',
+      platform: 'general',
+      capabilities: '{"platformName":"Windows","appium:app":"Root"}',
+      remoteServerUrl: 'http://localhost:4723',
+    });
+
+    expect(parsed.issues).toBeUndefined();
+  });
+});

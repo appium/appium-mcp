@@ -14,6 +14,7 @@ const {
   execute,
   findElement,
   setValue,
+  clearElement,
   getElementText,
   getElementAttribute,
   getActiveElement,
@@ -260,5 +261,18 @@ describe('remote command wrappers: re-throw swallowed WebDriver errors', () => {
       /could not be located/i,
     );
     await expect(back({back: jest.fn(async () => undefined)} as never)).resolves.toBeUndefined();
+  });
+});
+
+describe('clearElement', () => {
+  test('calls the W3C element clear endpoint on remote sessions', async () => {
+    const driver = {elementClear: jest.fn(async (_id: string) => undefined)};
+    await expect(clearElement(driver as never, 'el')).resolves.toBeUndefined();
+    expect(driver.elementClear).toHaveBeenCalledWith('el');
+  });
+
+  test('re-throws when elementClear returns a swallowed error value', async () => {
+    const driver = {elementClear: jest.fn(async () => NO_SUCH_ELEMENT_VALUE)};
+    await expect(clearElement(driver as never, 'bad')).rejects.toThrow(/could not be located/i);
   });
 });

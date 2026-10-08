@@ -1,7 +1,7 @@
 import type {ContentResult, FastMCP} from 'fastmcp';
 import {z} from 'zod';
 
-import {setValue as _setValue} from '../../command.js';
+import {clearElement, setValue as _setValue} from '../../command.js';
 import {elementUUIDScheme} from '../../schema.js';
 import {aiElementWebDriverRejectionIfNeeded} from '../gestures/handlers/ai-element.js';
 import {
@@ -25,15 +25,25 @@ export default function setValue(server: FastMCP): void {
             'the driver-specific setValue. No elementUUID needed — key events are sent ' +
             'to whatever element currently has focus. Works on both Android and iOS.',
         ),
+      clear: z
+        .boolean()
+        .optional()
+        .describe(
+          'When true, clear the element before typing so text replaces the current value ' +
+            'instead of being appended. Pass text="" to only clear the field. Requires elementUUID.',
+        ),
       sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
     })
     .refine((v) => v.w3cActions === true || v.elementUUID !== undefined, {
       message: 'elementUUID is required when w3cActions is not true',
+    })
+    .refine((v) => v.clear !== true || v.elementUUID !== undefined, {
+      message: 'elementUUID is required when clear is true; find the element first with appium_find_element',
     });
 
   server.addTool({
     name: 'appium_set_value',
-    description: 'Enter text into an element',
+    description: 'Enter text into an element. Text is appended to the current value; pass clear=true to replace it.',
     parameters: setValueSchema,
     annotations: {
       readOnlyHint: false,
@@ -49,7 +59,7 @@ export default function setValue(server: FastMCP): void {
       }
       const {driver} = resolved;
 
-      if (!args.w3cActions) {
+      if (!args.w3cActions || args.clear) {
         const aiRejection = aiElementWebDriverRejectionIfNeeded(args.elementUUID);
         if (aiRejection) {
           return aiRejection;
@@ -57,8 +67,17 @@ export default function setValue(server: FastMCP): void {
       }
 
       try {
+        if (args.clear && args.elementUUID) {
+          await clearElement(driver, args.elementUUID);
+          if (args.text === '') {
+            return textResultWithPrimaryElementId(
+              args.elementUUID,
+              `Successfully cleared element ${args.elementUUID}.`,
+            );
+          }
+        }
         await _setValue(driver, args.elementUUID ?? '', args.text, args.w3cActions);
-        const detail = `Successfully set value ${args.text} into element ${args.elementUUID ?? '(focus)'}${args.w3cActions ? ' via W3C Actions' : ''}.`;
+        const detail = `Successfully ${args.clear ? 'cleared element and set' : 'set'} value ${args.text} into element ${args.elementUUID ?? '(focus)'}${args.w3cActions ? ' via W3C Actions' : ''}.`;
         if (args.elementUUID) {
           return textResultWithPrimaryElementId(args.elementUUID, detail);
         }

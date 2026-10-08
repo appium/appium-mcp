@@ -13,6 +13,7 @@
  * See src/tools/metadata/README.md for YAML metadata approach.
  */
 import type {ContentResult, FastMCP} from 'fastmcp';
+import {z} from 'zod';
 
 import log from '../logger.js';
 import {redactForLogging, redactUrlCredentials} from '../utils/sensitive.js';
@@ -55,7 +56,8 @@ type RegisteredTool = Parameters<FastMCP['addTool']>[0];
 export default function registerTools(server: FastMCP): void {
   // Wrap addTool to inject logging around tool execution
   const originalAddTool = server.addTool.bind(server);
-  server.addTool = ((toolDef: RegisteredTool): void => {
+  server.addTool = ((rawToolDef: RegisteredTool): void => {
+    const toolDef = withUnknownArgumentsRejected(rawToolDef);
     const toolName = toolDef?.name ?? 'unknown_tool';
     const originalExecute = toolDef?.execute;
     if (typeof originalExecute !== 'function') {
@@ -179,4 +181,36 @@ function isErrorFromToolResult(result: unknown): boolean {
     return (result as ContentResult).isError === true;
   }
   return false;
+}
+
+/**
+ * FastMCP advertises every tool's inputSchema with `additionalProperties: false`,
+ * but a plain `z.object()` strips unknown keys during validation, so a call with
+ * an undeclared argument silently succeeds as if the argument were honored.
+ * Make validation match the advertised schema: reject unknown top-level keys and
+ * name them together with the accepted arguments. Schemas that set their own
+ * catchall (`.passthrough()`, `.loose()`, `.catchall()`) stay as they are.
+ */
+function withUnknownArgumentsRejected(toolDef: RegisteredTool): RegisteredTool {
+  const parameters = toolDef?.parameters;
+  if (!(parameters instanceof z.ZodObject) || parameters._zod.def.catchall !== undefined) {
+    return toolDef;
+  }
+  const accepted = Object.keys(parameters.shape).join(', ');
+  const unknownArgumentError: z.core.$ZodErrorMap = (issue) => {
+    if (issue.code !== 'unrecognized_keys') {
+      return undefined;
+    }
+    const keys = issue.keys.map((key) => `"${key}"`).join(', ');
+    return (
+      `Unknown argument${issue.keys.length > 1 ? 's' : ''} ${keys}. ` +
+      `${toolDef.name} accepts only: ${accepted}. Remove the unknown argument and retry`
+    );
+  };
+  const strictParameters = parameters.clone({
+    ...parameters._zod.def,
+    catchall: z.never(),
+    error: unknownArgumentError,
+  });
+  return {...toolDef, parameters: strictParameters} as RegisteredTool;
 }
