@@ -538,3 +538,57 @@ describe('PluginManager.registerPluginCapabilities', () => {
     expect(log.warn).toHaveBeenCalledWith('[PluginManager] Duplicate plugin name "repeat-registrar" – skipping.');
   });
 });
+
+describe('PluginManager normalizes FastMCP tool results', () => {
+  test.each([
+    {label: 'string', raw: 'hello', content: [{type: 'text', text: 'hello'}]},
+    {label: 'empty string', raw: '', content: [{type: 'text', text: ''}]},
+    {label: 'void', raw: undefined, content: []},
+    {label: 'null', raw: null, content: []},
+    {label: 'text block', raw: {type: 'text', text: 'hello'}, content: [{type: 'text', text: 'hello'}]},
+    {
+      label: 'image block',
+      raw: {type: 'image', data: 'png', mimeType: 'image/png'},
+      content: [{type: 'image', data: 'png', mimeType: 'image/png'}],
+    },
+  ])('normalizes $label before invoking afterCall', async ({raw, content}) => {
+    const server = makeMockServer();
+    const afterCall = jest.fn(async (_ctx: ToolCallContext, _result: ToolCallResult) => {});
+    new PluginManager(server).register([{name: 'observer', version: '1.0.0', afterCall}]);
+    server.addTool({name: 'test', execute: async () => raw});
+
+    const result = await server._tools[0].execute({}, {});
+    expect(result).toEqual({content, isError: false});
+    expect(afterCall).toHaveBeenCalledWith(expect.anything(), result);
+  });
+
+  test('allows afterCall to edit normalized string content', async () => {
+    const server = makeMockServer();
+    new PluginManager(server).register([
+      {
+        name: 'editor',
+        version: '1.0.0',
+        afterCall: async (_ctx, result) => ({...result, content: [...result.content, {type: 'text', text: 'extra'}]}),
+      },
+    ]);
+    server.addTool({name: 'test', execute: async () => 'hello'});
+    expect(await server._tools[0].execute({}, {})).toEqual({
+      content: [
+        {type: 'text', text: 'hello'},
+        {type: 'text', text: 'extra'},
+      ],
+      isError: false,
+    });
+  });
+
+  test('wraps raw output-schema data as structuredContent', async () => {
+    const server = makeMockServer();
+    new PluginManager(server).register([{name: 'observer', version: '1.0.0'}]);
+    server.addTool({name: 'test', outputSchema: {}, execute: async () => ({count: 2})});
+    expect(await server._tools[0].execute({}, {})).toEqual({
+      content: [{type: 'text', text: '{"count":2}'}],
+      structuredContent: {count: 2},
+      isError: false,
+    });
+  });
+});
