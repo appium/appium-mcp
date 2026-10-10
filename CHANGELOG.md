@@ -1,3 +1,9 @@
+## [1.95.8](https://github.com/appium/appium-mcp/compare/v1.95.7...v1.95.8) (2026-10-10)
+
+### Bug Fixes
+
+* map AI vision coordinates to iOS touch space ([#564](https://github.com/appium/appium-mcp/issues/564)) ([2ed139e](https://github.com/appium/appium-mcp/commit/2ed139ee6c11a74f2a67fcdb03ec9951752fa92f))
+
 ## [1.95.7](https://github.com/appium/appium-mcp/compare/v1.95.6...v1.95.7) (2026-10-10)
 
 ### Bug Fixes
