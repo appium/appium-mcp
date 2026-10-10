@@ -43,4 +43,5 @@ jobs:
 
       - name: Publish server to MCP Registry
         if: steps.semantic-release.outputs.released == 'true'
-        run: ./mcp-publisher publish
+        timeout-minutes: 15
+        run: bash scripts/publish-mcp-registry.sh
