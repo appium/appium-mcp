@@ -61,6 +61,11 @@ export function getSimpleSuggestedLocators(
 ): Record<string, string> {
   const res: Record<string, string> = {};
   for (const [strategyAlias, strategy] of SIMPLE_STRATEGY_MAPPINGS) {
+    // Native attributes such as type="XCUIElementTypeButton" must not turn
+    // HTML input types (e.g. type="email") into class-name locators.
+    if (!isNative && !['id', 'rntestid', 'class'].includes(strategyAlias)) {
+      continue;
+    }
     // accessibility id is only supported in native context
     if (!(strategy === 'accessibility id' && !isNative)) {
       const value = attributes[strategyAlias];
