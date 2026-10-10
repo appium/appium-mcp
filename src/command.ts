@@ -167,7 +167,7 @@ export async function setContext(driver: DriverInstance, name?: string): Promise
  * @returns A W3C `key` action sequence object.
  */
 export function buildW3cKeyActions(text: string): StringRecord<any> {
-  const actions = text.split('').flatMap((char) => [
+  const actions = Array.from(text).flatMap((char) => [
     {type: 'keyDown', value: char},
     {type: 'keyUp', value: char},
   ]);
