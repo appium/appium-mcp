@@ -1,3 +1,9 @@
+## [1.95.6](https://github.com/appium/appium-mcp/compare/v1.95.5...v1.95.6) (2026-10-10)
+
+### Bug Fixes
+
+* preserve Unicode code points in W3C key actions ([#569](https://github.com/appium/appium-mcp/issues/569)) ([2d57676](https://github.com/appium/appium-mcp/commit/2d57676808011f7697743ce502d399e4eeb091e1))
+
 ## [1.95.5](https://github.com/appium/appium-mcp/compare/v1.95.4...v1.95.5) (2026-10-10)
 
 ### Bug Fixes
