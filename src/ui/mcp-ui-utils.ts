@@ -942,20 +942,24 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       padding: 0;
       overflow: hidden;
     }
+    summary {
+      padding: 12px 16px;
+      background: #2d2d2d;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    summary .info { margin-left: 8px; }
     .toolbar {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
       padding: 12px 16px;
       background: #2d2d2d;
       border-bottom: 1px solid #3e3e3e;
     }
-    .toolbar-left {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
     .toolbar-right {
+      flex-wrap: wrap;
       display: flex;
       gap: 8px;
     }
@@ -983,7 +987,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       color: #999;
     }
     .viewer {
-      height: calc(100vh - 50px);
+      max-height: 320px;
       overflow: auto;
       padding: 16px;
     }
@@ -1019,21 +1023,23 @@ export function createPageSourceInspectorUI(pageSource: string): string {
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <span style="font-size: 14px; font-weight: 500;">📄 Page Source Inspector</span>
+  <details>
+    <summary>
+      <span>📄 Page Source Inspector</span>
       <span class="info">${pageSource.length} characters</span>
+    </summary>
+    <div class="toolbar">
+      <div class="toolbar-right">
+        <input type="text" class="search-box" id="searchBox" placeholder="Search...">
+        <button class="btn btn-secondary" onclick="copyToClipboard()">Copy</button>
+        <button class="btn btn-secondary" onclick="formatXML()">Format</button>
+        <button class="btn" onclick="generateLocators()">Generate Locators</button>
+      </div>
     </div>
-    <div class="toolbar-right">
-      <input type="text" class="search-box" id="searchBox" placeholder="Search...">
-      <button class="btn btn-secondary" onclick="copyToClipboard()">Copy</button>
-      <button class="btn btn-secondary" onclick="formatXML()">Format</button>
-      <button class="btn" onclick="generateLocators()">Generate Locators</button>
+    <div class="viewer">
+      <pre class="xml-content" id="xmlContent">${escapedSource}</pre>
     </div>
-  </div>
-  <div class="viewer">
-    <pre class="xml-content" id="xmlContent">${escapedSource}</pre>
-  </div>
+  </details>
   <script>
     function copyToClipboard() {
       const text = document.getElementById('xmlContent').textContent;

@@ -21,8 +21,16 @@ export function createPageSourceInspectorAppUI(): string {
       color: #d4d4d4;
       font-family: Monaco, Menlo, "Courier New", monospace;
     }
+    summary {
+      padding: 12px 16px;
+      background: #2d2d2d;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    summary .info { margin-left: 8px; }
     .toolbar {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
@@ -30,7 +38,8 @@ export function createPageSourceInspectorAppUI(): string {
       border-bottom: 1px solid #3e3e3e;
       background: #2d2d2d;
     }
-    .toolbar-left, .toolbar-right {
+    .toolbar-right {
+      flex-wrap: wrap;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -61,7 +70,7 @@ export function createPageSourceInspectorAppUI(): string {
     }
     .search-box:focus { border-color: #007aff; }
     .viewer {
-      height: calc(100vh - 50px);
+      max-height: 320px;
       overflow: auto;
       padding: 16px;
     }
@@ -84,21 +93,23 @@ export function createPageSourceInspectorAppUI(): string {
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <div class="toolbar-left">
+  <details>
+    <summary>
       <span class="title">📄 Page Source Inspector</span>
       <span class="info" id="sourceInfo">Waiting for page source…</span>
+    </summary>
+    <div class="toolbar">
+      <div class="toolbar-right">
+        <input type="text" class="search-box" id="searchBox" placeholder="Search…">
+        <button class="btn btn-secondary" id="copyButton">Copy</button>
+        <button class="btn btn-secondary" id="formatButton">Format</button>
+        <button class="btn" id="generateButton">Generate Locators</button>
+      </div>
     </div>
-    <div class="toolbar-right">
-      <input type="text" class="search-box" id="searchBox" placeholder="Search…">
-      <button class="btn btn-secondary" id="copyButton">Copy</button>
-      <button class="btn btn-secondary" id="formatButton">Format</button>
-      <button class="btn" id="generateButton">Generate Locators</button>
+    <div class="viewer">
+      <pre class="xml-content empty" id="xmlContent">Waiting for page source…</pre>
     </div>
-  </div>
-  <div class="viewer">
-    <pre class="xml-content empty" id="xmlContent">Waiting for page source…</pre>
-  </div>
+  </details>
   <script>
     (() => {
       const PAGE_SOURCE_PREFIX = 'Page source retrieved successfully: \\n\\\`\\\`\\\`xml ';
