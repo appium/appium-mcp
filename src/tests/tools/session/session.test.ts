@@ -474,7 +474,7 @@ describe('appium_session_management tool', () => {
       expect(result.content[0].text).not.toContain('secret');
     });
 
-    test('detaches an existing attached session before re-attaching the same id', async () => {
+    test('replaces an existing attached session without detaching it first', async () => {
       const tool = await getToolExecute();
       mockGetSessionOwnership.mockReturnValue('attached');
       mockFetch.mockResolvedValue({
@@ -492,8 +492,9 @@ describe('appium_session_management tool', () => {
       );
 
       expect(result.isError).toBeFalsy();
-      expect(mockDetachSession).toHaveBeenCalledWith('borrowed');
+      expect(mockDetachSession).not.toHaveBeenCalled();
       expect(mockAttachToSession).toHaveBeenCalled();
+      expect(mockSetSession).toHaveBeenCalled();
     });
 
     test('rejects attaching over an existing owned session', async () => {

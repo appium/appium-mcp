@@ -2,7 +2,6 @@ import {type Client} from 'webdriver';
 
 import {readAllPersistedSessions} from '../../persistence.js';
 import {
-  detachSession,
   getSessionOwnership,
   listSessions,
   setSession,
@@ -66,9 +65,6 @@ export async function attachSessionAction(args: {
         `Session ${args.sessionId} is already managed by MCP Appium as an owned session. Use action=select to activate it.`,
       );
     }
-    if (existingOwnership === 'attached') {
-      detachSession(args.sessionId);
-    }
 
     validateRemoteServerUrl(args.remoteServerUrl, process.env.REMOTE_SERVER_URL_ALLOW_REGEX);
 
@@ -131,6 +127,8 @@ export async function attachSessionAction(args: {
     } catch {
       // ignore — falling back to 'attached' is safe
     }
+    // Replace an existing attachment only after the new client is ready. Detaching
+    // first would lose a working session on failure and race the persisted write.
     await setSession(client, args.sessionId, capabilities, desiredOwnership, args.remoteServerUrl);
 
     return textResult(`Attached to existing session ${args.sessionId}. Active sessions: ${listSessions().length}`);
