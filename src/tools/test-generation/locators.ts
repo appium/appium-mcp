@@ -12,7 +12,7 @@
 import type {FastMCP} from 'fastmcp';
 import {z} from 'zod';
 
-import {getPageSource} from '../../command.js';
+import {getCurrentContext, getPageSource} from '../../command.js';
 import {generateAllElementLocators} from '../../locators/generate-all-locators.js';
 import {LOCATOR_GENERATOR_URI} from '../../resources/locator-generator.js';
 import {isAndroidUiautomator2DriverSession, isXCUITestDriverSession} from '../../session-store.js';
@@ -48,16 +48,22 @@ export default function generateLocators(server: FastMCP): void {
           return errorResult('Page source is empty or null.');
         }
 
-        let driverName: string;
-        if (isAndroidUiautomator2DriverSession(driver)) {
-          driverName = driver.caps.automationName?.toLowerCase() ?? '';
-        } else if (isXCUITestDriverSession(driver)) {
-          driverName = driver.caps.automationName?.toLowerCase() ?? '';
-        } else {
-          driverName = driver.capabilities['appium:automationName']?.toLowerCase() ?? '';
-        }
+        const capabilities: {automationName?: string; 'appium:automationName'?: string; browserName?: string} =
+          isAndroidUiautomator2DriverSession(driver) || isXCUITestDriverSession(driver)
+            ? driver.caps
+            : driver.capabilities;
+        const driverName = String(
+          capabilities['appium:automationName'] ?? capabilities.automationName ?? '',
+        ).toLowerCase();
+        // Read the driver's current context: a cached NATIVE_APP value can be stale
+        // after attaching to a session that already has an active WebView.
+        const isNative = ['uiautomator2', 'xcuitest'].includes(driverName)
+          ? (await getCurrentContext(driver)) === 'NATIVE_APP'
+          : !capabilities.browserName;
 
-        const interactableElements = generateAllElementLocators(pageSource, true, driverName, {fetchableOnly: true});
+        const interactableElements = generateAllElementLocators(pageSource, isNative, driverName, {
+          fetchableOnly: true,
+        });
 
         const textResponse = textResult(
           JSON.stringify({
