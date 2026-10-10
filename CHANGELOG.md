@@ -1,3 +1,9 @@
+## [1.95.4](https://github.com/appium/appium-mcp/compare/v1.95.3...v1.95.4) (2026-10-10)
+
+### Bug Fixes
+
+* adjust the size of view ([#563](https://github.com/appium/appium-mcp/issues/563)) ([6cd49ed](https://github.com/appium/appium-mcp/commit/6cd49edcedcbb7ce2e3be0157b6b9f6503f987b0))
+
 ## [1.95.3](https://github.com/appium/appium-mcp/compare/v1.95.2...v1.95.3) (2026-10-04)
 
 ### Bug Fixes
