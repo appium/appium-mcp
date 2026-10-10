@@ -1,3 +1,9 @@
+## [1.95.7](https://github.com/appium/appium-mcp/compare/v1.95.6...v1.95.7) (2026-10-10)
+
+### Bug Fixes
+
+* normalize plugin tool responses before call hooks ([#565](https://github.com/appium/appium-mcp/issues/565)) ([02de89f](https://github.com/appium/appium-mcp/commit/02de89f443a448ab8559f51a65f749fe793a709e))
+
 ## [1.95.6](https://github.com/appium/appium-mcp/compare/v1.95.5...v1.95.6) (2026-10-10)
 
 ### Bug Fixes
