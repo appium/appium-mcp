@@ -438,7 +438,11 @@ export async function startRecordingScreen(
   } else if (isXCUITestDriverSession(driver)) {
     return await driver.startRecordingScreen(options as IOSRecordingOptions);
   }
-  throw new Error('startRecordingScreen is not supported for this driver');
+  // The WebDriver typings declare void, though Appium may return the previous
+  // recording as base64 when restarting. Preserve it when the server supplies it.
+  const result: unknown = await driver.startRecordingScreen(options);
+  throwIfSwallowedRemoteError(result);
+  return typeof result === 'string' ? result : '';
 }
 
 /**
@@ -453,7 +457,9 @@ export async function stopRecordingScreen(driver: DriverInstance): Promise<strin
   } else if (isXCUITestDriverSession(driver)) {
     return (await driver.stopRecordingScreen({})) ?? '';
   }
-  throw new Error('stopRecordingScreen is not supported for this driver');
+  const result = await driver.stopRecordingScreen();
+  throwIfSwallowedRemoteError(result);
+  return result;
 }
 
 /**
