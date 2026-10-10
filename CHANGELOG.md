@@ -1,3 +1,9 @@
+## [1.95.5](https://github.com/appium/appium-mcp/compare/v1.95.4...v1.95.5) (2026-10-10)
+
+### Bug Fixes
+
+* preserve existing sessions when reattachment fails ([#566](https://github.com/appium/appium-mcp/issues/566)) ([f979f15](https://github.com/appium/appium-mcp/commit/f979f15eb2c98aca387842098eb944fc02b969b2))
+
 ## [1.95.4](https://github.com/appium/appium-mcp/compare/v1.95.3...v1.95.4) (2026-10-10)
 
 ### Bug Fixes
