@@ -16,7 +16,7 @@ import {summarizePageSource} from './page-source-summary.js';
 export default function getPageSource(server: FastMCP): void {
   const mcpAppsEnabled = isMcpAppsEnabled();
   const pageSourceSchema = z.object({
-    inline: z.boolean().default(false).describe('Return XML without saving.'),
+    inline: z.boolean().default(true).describe('Set false to save XML and return path/bytes instead.'),
     selector: z.string().optional().describe('XPath selecting elements.'),
     pattern: z.string().min(1).optional().describe('Literal tag/attribute substring.'),
     sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
@@ -24,7 +24,7 @@ export default function getPageSource(server: FastMCP): void {
   server.addTool({
     name: 'appium_get_page_source',
     description:
-      'Save XML on MCP server; return path/bytes and optional node summaries. Full XML requires inline=true.',
+      'Get page source XML inline by default. Set inline=false for server-local saving and optional node summaries.',
     _meta: mcpAppsEnabled ? {ui: {resourceUri: PAGE_SOURCE_INSPECTOR_URI}} : undefined,
     parameters: pageSourceSchema,
     annotations: {
@@ -47,7 +47,7 @@ export default function getPageSource(server: FastMCP): void {
           return errorResult('Page source is empty or null');
         }
 
-        if (!args.inline) {
+        if (args.inline === false) {
           const summary =
             args.selector !== undefined || args.pattern !== undefined
               ? summarizePageSource(pageSource, args.selector, args.pattern)

@@ -1,4 +1,4 @@
-import {mkdtemp, readFile, rm} from 'node:fs/promises';
+import {mkdtemp, readFile, readdir, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 
@@ -76,7 +76,7 @@ describe('appium_get_page_source MCP Apps response', () => {
     mockClientSupportsMcpApps.mockReturnValue(true);
     const tool = registerTool();
 
-    const result = await tool.execute({inline: true}, {});
+    const result = await tool.execute({}, {});
 
     expect(tool._meta).toEqual({
       ui: {resourceUri: 'ui://appium-mcp/page-source-inspector'},
@@ -90,7 +90,7 @@ describe('appium_get_page_source MCP Apps response', () => {
   test('keeps the embedded inspector fallback for other clients', async () => {
     const tool = registerTool();
 
-    const result = await tool.execute({inline: true}, {});
+    const result = await tool.execute({}, {});
 
     expect(result.content).toHaveLength(2);
     expect(result.content[1]).toMatchObject({type: 'resource'});
@@ -103,7 +103,7 @@ describe('appium_get_page_source MCP Apps response', () => {
     mockClientSupportsMcpApps.mockReturnValue(true);
     const tool = registerTool();
 
-    const result = await tool.execute({inline: true}, {});
+    const result = await tool.execute({}, {});
 
     expect(tool._meta).toBeUndefined();
     expect(result.content).toHaveLength(2);
@@ -136,10 +136,22 @@ describe('page source file responses', () => {
     }
     await rm(directory, {recursive: true, force: true});
   });
+  test('omitted inline preserves the XML response without writing a file', async () => {
+    const result = await registerTool().execute({});
+    expect(result.content[0].text).toBe(
+      'Page source retrieved successfully: \n```xml <root><node name="日本語" visible="true"/></root>```',
+    );
+    expect(await readdir(directory)).toEqual([]);
+  });
+  test('explicit inline=true matches the omitted default', async () => {
+    const tool = registerTool();
+    expect(await tool.execute({inline: true})).toEqual(await tool.execute({}));
+    expect(await readdir(directory)).toEqual([]);
+  });
   test.each(['true', 'false'])('writes full XML without embedding XML or HTML when NO_UI=%s', async (noUi) => {
     process.env.NO_UI = noUi;
     const tool = registerTool();
-    const result = await tool.execute({});
+    const result = await tool.execute({inline: false});
     const metadata = JSON.parse(result.content[0].text);
     const xml = await readFile(metadata.filepath, 'utf8');
     expect(xml).toContain('日本語');
@@ -147,11 +159,11 @@ describe('page source file responses', () => {
     expect(result.content).toHaveLength(1);
     expect(result.content[0].text).not.toContain('<root>');
     expect(mockAddUIResourceToResponse).not.toHaveBeenCalled();
-    const next = JSON.parse((await tool.execute({})).content[0].text);
+    const next = JSON.parse((await tool.execute({inline: false})).content[0].text);
     expect(next.filepath).not.toBe(metadata.filepath);
   });
   test('returns matching summaries alongside the complete saved file', async () => {
-    const result = await registerTool().execute({pattern: '日本語'});
+    const result = await registerTool().execute({inline: false, pattern: '日本語'});
     const metadata = JSON.parse(result.content[0].text);
     expect(metadata.matches[0].node.name).toBe('日本語');
     expect(metadata.truncated).toBe(false);
@@ -164,6 +176,6 @@ describe('page source file responses', () => {
     process.env.PAGE_SOURCES_DIR = join(directory, 'not-a-directory');
     const {writeFile} = await import('node:fs/promises');
     await writeFile(process.env.PAGE_SOURCES_DIR, 'file');
-    expect((await registerTool().execute({})).isError).toBe(true);
+    expect((await registerTool().execute({inline: false})).isError).toBe(true);
   });
 });
