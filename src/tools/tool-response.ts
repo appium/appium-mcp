@@ -34,6 +34,14 @@ export function readWebElementId(element: unknown): string | undefined {
   return typeof id === 'string' ? id : undefined;
 }
 
+/** Additional driver fields, excluding duplicate protocol element IDs. */
+export function readWebElementAttributes(element: unknown): Record<string, unknown> {
+  if (element === null || typeof element !== 'object') {
+    return {};
+  }
+  return Object.fromEntries(Object.entries(element).filter(([key]) => key !== 'ELEMENT' && key !== W3C_ELEMENT_ID));
+}
+
 /**
  * Standard success ContentResult.
  */

@@ -9,6 +9,7 @@ import {
   errorResult,
   toolErrorMessage,
   readWebElementId,
+  readWebElementAttributes,
 } from '../tool-response.js';
 
 export const findElementSchema = z.object({
@@ -93,15 +94,9 @@ export default function findElement(server: FastMCP): void {
           elementId,
           `Successfully found element ${args.selector} with strategy ${args.strategy}.`,
         );
-        if (typeof element === 'object' && element !== null) {
-          const attributes = Object.fromEntries(
-            Object.entries(element).filter(
-              ([key]) => key !== 'ELEMENT' && key !== 'element-6066-11e4-a52e-4f735466cecf',
-            ),
-          );
-          if (Object.keys(attributes).length > 0) {
-            response.content.push({type: 'text', text: JSON.stringify({elementId, attributes})});
-          }
+        const attributes = readWebElementAttributes(element);
+        if (Object.keys(attributes).length > 0) {
+          response.content.push({type: 'text', text: JSON.stringify({elementId, attributes})});
         }
         return withEvidence(response, {
           name: 'appium_find_element',

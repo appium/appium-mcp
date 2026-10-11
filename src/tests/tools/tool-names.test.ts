@@ -58,6 +58,7 @@ const EXPECTED_TOOL_NAMES = [
   'appium_perform_actions',
   // Element Interactions
   'appium_find_element',
+  'appium_find_elements',
   'appium_mobile_press_key',
   'appium_set_value',
   'appium_mobile_keyboard',

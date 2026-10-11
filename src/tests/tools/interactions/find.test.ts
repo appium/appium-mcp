@@ -2,9 +2,11 @@ import {beforeEach, describe, expect, jest, test} from '@jest/globals';
 
 const mockFind = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 const driver = {};
-jest.unstable_mockModule('../../../command.js', () => ({findElement: mockFind}));
+const mockFindAll = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const mockGetDriver = jest.fn<() => unknown>(() => driver);
+jest.unstable_mockModule('../../../command.js', () => ({findElement: mockFind, findElements: mockFindAll}));
 jest.unstable_mockModule('../../../session-store.js', () => ({
-  getDriver: jest.fn(() => driver),
+  getDriver: mockGetDriver,
   setSession: jest.fn(),
 }));
 jest.unstable_mockModule('../../../persistence.js', () => ({
@@ -70,5 +72,56 @@ describe('find response attributes', () => {
     const result = await tool.execute(args);
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('no such element');
+  });
+});
+
+const {default: registerFindElements} = await import('../../../tools/interactions/find-elements.js');
+let pluralTool: any;
+registerFindElements({
+  addTool: (definition: unknown) => {
+    pluralTool = definition;
+  },
+} as any);
+
+describe('find multiple elements', () => {
+  beforeEach(() => {
+    mockFindAll.mockReset();
+    mockGetDriver.mockReturnValue(driver);
+  });
+  test('returns every match with its own ID and unchanged attributes', async () => {
+    mockFindAll.mockResolvedValue([
+      {[w3c]: 'one', label: 'First', enabled: false},
+      {ELEMENT: 'two', 'attribute/visible': true},
+      'three',
+    ]);
+    const result = await pluralTool.execute(args);
+    expect(JSON.parse(result.content[0].text)).toEqual({
+      elements: [
+        {elementId: 'one', attributes: {label: 'First', enabled: false}},
+        {elementId: 'two', attributes: {'attribute/visible': true}},
+        {elementId: 'three'},
+      ],
+    });
+    expect(mockFindAll).toHaveBeenCalledTimes(1);
+    expect(mockFindAll).toHaveBeenCalledWith(driver, args.strategy, args.selector);
+  });
+  test('returns an empty array successfully for no matches', async () => {
+    mockFindAll.mockResolvedValue([]);
+    expect(await pluralTool.execute(args)).toEqual({content: [{type: 'text', text: '{"elements":[]}'}]});
+  });
+  test.each([null, {}, [{label: 'missing ID'}]])('rejects malformed driver result %j', async (value) => {
+    mockFindAll.mockResolvedValue(value);
+    expect((await pluralTool.execute(args)).isError).toBe(true);
+  });
+  test('does not hide driver failures as empty matches', async () => {
+    mockFindAll.mockRejectedValue(new Error('invalid selector'));
+    const result = await pluralTool.execute(args);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('invalid selector');
+  });
+  test('requires a session without querying the driver', async () => {
+    mockGetDriver.mockReturnValue(null);
+    expect((await pluralTool.execute(args)).isError).toBe(true);
+    expect(mockFindAll).not.toHaveBeenCalled();
   });
 });
