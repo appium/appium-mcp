@@ -238,6 +238,18 @@ export async function findElement(driver: DriverInstance, strategy: string, sele
   return result;
 }
 
+/** Read actual visibility instead of inferring it from a successful lookup. */
+export async function isElementDisplayed(driver: DriverInstance, elementId: string): Promise<boolean> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.elementDisplayed(elementId);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.elementDisplayed(elementId);
+  }
+  const result = await (driver as Client).isElementDisplayed(elementId);
+  throwIfSwallowedRemoteError(result);
+  return result;
+}
+
 /**
  * Get the bounding rectangle for an element.
  *
