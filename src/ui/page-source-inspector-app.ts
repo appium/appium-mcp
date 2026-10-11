@@ -117,6 +117,7 @@ export function createPageSourceInspectorAppUI(): string {
       const sourceInfo = document.getElementById('sourceInfo');
       const searchBox = document.getElementById('searchBox');
       let source = '';
+      let savedFile;
       let nextRequestId = 1;
       const pendingRequests = new Map();
 
@@ -131,6 +132,7 @@ export function createPageSourceInspectorAppUI(): string {
       }
 
       function sourceFromToolResult(result) {
+        savedFile = undefined;
         const textBlock = result && Array.isArray(result.content)
           ? result.content.find((item) => item && item.type === 'text' && typeof item.text === 'string')
           : undefined;
@@ -139,6 +141,13 @@ export function createPageSourceInspectorAppUI(): string {
         }
 
         let text = textBlock.text;
+        try {
+          const metadata = JSON.parse(text);
+          if (typeof metadata.filepath === 'string' && typeof metadata.bytes === 'number') {
+            savedFile = metadata;
+            return '';
+          }
+        } catch { /* Inline XML is not JSON. */ }
         if (text.startsWith(PAGE_SOURCE_PREFIX) && text.endsWith('\`\`\`')) {
           text = text.slice(PAGE_SOURCE_PREFIX.length, -3);
         }
@@ -170,6 +179,11 @@ export function createPageSourceInspectorAppUI(): string {
         const query = searchBox.value.trim();
         xmlContent.textContent = '';
         xmlContent.classList.toggle('empty', source.length === 0);
+        if (savedFile) {
+          sourceInfo.textContent = savedFile.bytes + ' bytes saved';
+          xmlContent.textContent = 'Saved on the MCP server: ' + savedFile.filepath + '\\nCall appium_get_page_source with inline=true to inspect the XML here.';
+          return;
+        }
         if (!source) {
           xmlContent.textContent = 'No page source was returned.';
         } else if (!query) {

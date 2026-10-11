@@ -718,7 +718,7 @@ Without an allow regex, any syntactically valid HTTP(S) URL without a query stri
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `appium_screenshot`         | Take a screenshot and save as PNG. Optionally provide `elementUUID` to capture a specific element. Pass `returnRawBase64: true` (default `false`) to return the raw base64 PNG inline instead of saving to disk — useful when the server runs on a remote machine where the saved file is not accessible. Intended for manual use only; an LLM should keep this `false`. |
 | `appium_get_window_size`    | Get the width and height of the device screen in pixels                                                                                                                                                                                                                                                                                     |
-| `appium_get_page_source`    | Get the page source (XML) from the current screen                                                                                                                                                                                                                                                                                           |
+| `appium_get_page_source` | Save XML to a server-local file and return its path and byte size. Use `selector` (XPath) or `pattern` for bounded summaries with visible siblings, or `inline: true` for full XML. |
 | `appium_orientation`        | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set).                                                                                                                                                                                                                                       |
 | `appium_geolocation`        | Get, set, or reset the device GPS coordinates with `action` = `get`, `set`, or `reset`. For `set`, provide `latitude` and `longitude` (and optional `altitude` on Android). Not supported on Android emulators for `reset`.                                                                                                                 |
 | `appium_screen_recording`   | Start or stop screen recording with `action` = `start` or `stop`. On stop, returns the saved MP4 path.                                                                                                                                                                                                                                      |
@@ -884,3 +884,25 @@ This project is licensed under the Apache-2.0. See the [LICENSE](LICENSE) file f
 Model-dependent MCP tool-selection and argument evals are available separately from
 `npm test`. See [evals/README.md](evals/README.md) for setup and `npm run eval:mcp`.
 For local evaluation using Codex with ChatGPT login, use `npm run eval:codex`.
+
+### Page source files and filtered summaries
+
+`appium_get_page_source` saves XML on the **MCP server's filesystem** by default and returns JSON `{filepath, bytes}`. Set `PAGE_SOURCES_DIR` to choose a directory (relative paths resolve from the server working directory); otherwise the OS temporary directory is used. Files have unique names and owner-only permissions. Remove saved files when no longer needed.
+
+This applies with or without `NO_UI=true`. Default responses do not embed XML or an HTML inspector. Existing callers requiring the full XML or the inspector must pass `inline: true`; this mode does not write a file and also works when the client cannot access server files.
+
+To inspect only part of the tree, pass `selector` (an XPath selecting elements), `pattern` (a case-sensitive literal substring of tag names or attribute values), or both. Matching nodes include identifying attributes, visibility and bounds when present, plus explicitly visible siblings. Summaries are capped at 100 nodes including siblings and report `truncated`; the saved XML always contains the full tree. No matches returns `matches: []`. Filters cannot be combined with `inline: true`.
+
+```json
+{
+  "tool": "appium_get_page_source",
+  "arguments": {"selector": "//*[@name='View All']"}
+}
+```
+
+```json
+{
+  "tool": "appium_get_page_source",
+  "arguments": {"inline": true}
+}
+```
