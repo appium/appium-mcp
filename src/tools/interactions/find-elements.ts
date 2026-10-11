@@ -19,8 +19,9 @@ export default function findElements(server: FastMCP): void {
     description:
       'Find all elements matching a strategy and selector. Returns JSON {elements: [{elementId, attributes?}]}; ' +
       'no matches returns {elements: []}. Pass an elementId as elementUUID to interaction tools. ' +
-      'Additional driver attributes are preserved. On iOS, configure shouldUseCompactResponses=false and ' +
-      'elementResponseAttributes via appium_driver_settings. Use appium_find_element when only one match is needed.',
+      'Additional driver attributes are preserved. For drivers supporting elementResponseAttributes, use ' +
+      'appium_driver_settings to configure it with shouldUseCompactResponses=false. ' +
+      'Use appium_find_element when only one match is needed.',
     parameters: findElementSchema,
     annotations: {readOnlyHint: true, openWorldHint: false},
     execute: async (args: z.infer<typeof findElementSchema>): Promise<ContentResult> => {

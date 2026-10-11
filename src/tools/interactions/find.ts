@@ -55,7 +55,7 @@ export default function findElement(server: FastMCP): void {
     description: [
       'Find an element by strategy and selector; the primary tool for locating a specific target. Returns its ID for interactions. ' +
         'Pass that ID as elementUUID to interaction tools. Additional attributes returned by the driver are included as JSON. ' +
-        'On iOS, use appium_driver_settings to set shouldUseCompactResponses=false and elementResponseAttributes.',
+        'For drivers supporting elementResponseAttributes, use appium_driver_settings to configure it with shouldUseCompactResponses=false.',
       'Prefer accessibility id > id > platform-native > xpath (last resort: slow/brittle). See strategy for platform-specific guidance.',
       'To scroll until a target is found, use appium_gesture action=scroll_to_element with the same strategy and selector, rather than repeatedly calling this tool.',
       'For natural-language/vision finding, use appium_ai action=find_element if enabled and stable locators do not work.',

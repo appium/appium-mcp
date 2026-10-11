@@ -784,7 +784,7 @@ Try strategies in priority order: `accessibility id` first, then `id`, then plat
 
 `appium_find_element` preserves its existing element ID and success message. When the driver returns additional fields, a JSON text block includes `{elementId, attributes}` with the original attribute names and values. MCP does not fetch extra attributes or change driver settings automatically.
 
-For native iOS, enable richer responses for **both `appium_find_element` and `appium_find_elements`** with the existing Settings API. First call `appium_driver_settings` with `action=get` to record the current values, then apply:
+For drivers that support `elementResponseAttributes`, enable richer responses for **both `appium_find_element` and `appium_find_elements`** with the existing Settings API. First call `appium_driver_settings` with `action=get` to record the current values, then update the settings. Choose attribute names supported by your driver; the following example uses XCUITest attributes:
 
 ```json
 {
@@ -831,7 +831,7 @@ Example response (actual values depend on the app):
 }
 ```
 
-Pass the chosen `elementId` as `elementUUID` to interaction tools. Each match keeps its own ID and attributes; compact responses omit `attributes`, and no matches returns `{"elements":[]}` successfully. Driver failures remain errors. Neither search tool makes additional attribute requests. Restore the recorded settings with `action=update` when richer responses are no longer needed (`shouldUseCompactResponses: true` disables the additional fields on iOS).
+Pass the chosen `elementId` as `elementUUID` to interaction tools. Each match keeps its own ID and attributes; compact responses omit `attributes`, and no matches returns `{"elements":[]}` successfully. Driver failures remain errors. Neither search tool makes additional attribute requests. Restore the recorded settings with `action=update` when richer responses are no longer needed (`shouldUseCompactResponses: true` disables the additional fields for drivers supporting this setting).
 
 `xpath` fallback (when no accessibility id, resource-id, or platform-native predicate works):
 
