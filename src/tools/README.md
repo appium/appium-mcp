@@ -38,8 +38,8 @@ This directory contains all MCP tools available in MCP Appium.
 - `set-value.ts` - Enter text
 - `keyboard.ts` - Soft keyboard (`appium_mobile_keyboard`; `action=hide` \| `is_shown`)
 - `get-text.ts` - Get element text
-- `get-page-source.ts` - Return current-screen XML by default; opt into server-local file output with `cache: true`
-- `page-source-cache.ts` - Save fresh XML snapshots and return path, UTF-8 byte size, and optional summaries
+- `get-page-source.ts` - Return current-screen XML by default; opt into server-local file output with `saveToFile: true`
+- `page-source-file.ts` - Save fresh XML snapshots and return path, UTF-8 byte size, and optional summaries
 - `page-source-summary.ts` - Build bounded XPath/literal-filter summaries with visible siblings
 - `screenshot.ts` - Capture screenshots
 
@@ -215,8 +215,8 @@ After adding a new tool:
 - Look at examples in `examples/` directory
 - Open an issue for questions
 
-### Page source caching
+### Page source file output
 
-`appium_get_page_source` keeps full XML and the existing inspector behavior when `cache` is omitted or false. `cache: true` delegates file creation and optional summary generation to `cachePageSource`. The helper validates filters before writing, creates unique XML files with owner-only permissions under `PAGE_SOURCES_DIR` (or the OS temporary directory), and returns metadata; the tool serializes it into an MCP text response and handles errors.
+`appium_get_page_source` keeps full XML and the existing inspector behavior when `saveToFile` is omitted or false. `saveToFile: true` delegates file creation and optional summary generation to `savePageSourceToFile`. The helper validates filters before writing, creates unique XML files with owner-only permissions under `PAGE_SOURCES_DIR` (or the OS temporary directory), and returns metadata; the tool serializes it into an MCP text response and handles errors.
 
-`selector` and `pattern` require caching. They limit the returned summary, not the saved XML. Each call obtains fresh XML from the driver; this is file-backed snapshot storage, not response reuse. `NO_UI` controls UI resources independently. See [page source caching and filtered summaries](../../README.md#page-source-caching-and-filtered-summaries) for arguments and usage examples.
+`selector` and `pattern` require `saveToFile: true`. They limit the returned summary, not the saved XML. Each call obtains fresh XML from the driver; this is file-backed snapshot storage, not response reuse. `NO_UI` controls UI resources independently. See [page source file output and filtered summaries](../../README.md#page-source-file-output-and-filtered-summaries) for arguments and usage examples.

@@ -8,7 +8,7 @@ import {summarizePageSource} from './page-source-summary.js';
 /** Save a fresh XML snapshot and optionally summarize matching nodes.
  * Invalid filters are evaluated before writing; filesystem errors propagate to the caller.
  */
-export async function cachePageSource(pageSource: string, filters: {selector?: string; pattern?: string} = {}) {
+export async function savePageSourceToFile(pageSource: string, filters: {selector?: string; pattern?: string} = {}) {
   const {selector, pattern} = filters;
   const summary =
     selector !== undefined || pattern !== undefined ? summarizePageSource(pageSource, selector, pattern) : {};

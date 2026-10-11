@@ -181,7 +181,7 @@ export function createPageSourceInspectorAppUI(): string {
         xmlContent.classList.toggle('empty', source.length === 0);
         if (savedFile) {
           sourceInfo.textContent = savedFile.bytes + ' bytes saved';
-          xmlContent.textContent = 'Saved on the MCP server: ' + savedFile.filepath + '\\nCall appium_get_page_source with cache=false to inspect the XML here.';
+          xmlContent.textContent = 'Saved on the MCP server: ' + savedFile.filepath + '\\nCall appium_get_page_source with saveToFile=false to inspect the XML here.';
           return;
         }
         if (!source) {
