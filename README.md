@@ -781,6 +781,25 @@ Try strategies in priority order: `accessibility id` first, then `id`, then plat
 }
 ```
 
+`appium_find_element` preserves its existing element ID and success message. When the driver returns additional fields, a JSON text block includes `{elementId, attributes}` with the original attribute names and values. MCP does not fetch extra attributes or change driver settings automatically.
+
+For native iOS, enable richer find responses with the existing Settings API:
+
+```json
+{
+  "tool": "appium_driver_settings",
+  "arguments": {
+    "action": "update",
+    "settings": {
+      "shouldUseCompactResponses": false,
+      "elementResponseAttributes": "attribute/name,label,enabled,attribute/visible"
+    }
+  }
+}
+```
+
+These settings apply to the session. `attribute/name` requests the element's name attribute; the `name` response field can represent its element type. Attribute keys such as `attribute/visible` are preserved in the MCP response. Supported fields depend on the driver.
+
 `xpath` fallback (when no accessibility id, resource-id, or platform-native predicate works):
 
 ```json

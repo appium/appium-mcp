@@ -53,7 +53,8 @@ export default function findElement(server: FastMCP): void {
     name: 'appium_find_element',
     description: [
       'Find an element by strategy and selector; the primary tool for locating a specific target. Returns its ID for interactions. ' +
-        'Pass that ID as elementUUID to interaction tools.',
+        'Pass that ID as elementUUID to interaction tools. Additional attributes returned by the driver are included as JSON. ' +
+        'On iOS, use appium_driver_settings to set shouldUseCompactResponses=false and elementResponseAttributes.',
       'Prefer accessibility id > id > platform-native > xpath (last resort: slow/brittle). See strategy for platform-specific guidance.',
       'To scroll until a target is found, use appium_gesture action=scroll_to_element with the same strategy and selector, rather than repeatedly calling this tool.',
       'For natural-language/vision finding, use appium_ai action=find_element if enabled and stable locators do not work.',
@@ -88,20 +89,28 @@ export default function findElement(server: FastMCP): void {
             context,
           });
         }
-        return withEvidence(
-          textResultWithPrimaryElementId(
-            elementId,
-            `Successfully found element ${args.selector} with strategy ${args.strategy}.`,
-          ),
-          {
-            name: 'appium_find_element',
-            stage: 'locate',
-            startedAt,
-            locator,
-            element: {webdriverId: elementId},
-            context,
-          },
+        const response = textResultWithPrimaryElementId(
+          elementId,
+          `Successfully found element ${args.selector} with strategy ${args.strategy}.`,
         );
+        if (typeof element === 'object' && element !== null) {
+          const attributes = Object.fromEntries(
+            Object.entries(element).filter(
+              ([key]) => key !== 'ELEMENT' && key !== 'element-6066-11e4-a52e-4f735466cecf',
+            ),
+          );
+          if (Object.keys(attributes).length > 0) {
+            response.content.push({type: 'text', text: JSON.stringify({elementId, attributes})});
+          }
+        }
+        return withEvidence(response, {
+          name: 'appium_find_element',
+          stage: 'locate',
+          startedAt,
+          locator,
+          element: {webdriverId: elementId},
+          context,
+        });
       } catch (err: unknown) {
         return withEvidence(errorResult(`Failed to find element. Error: ${toolErrorMessage(err)}`), {
           name: 'appium_find_element',
