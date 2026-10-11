@@ -149,6 +149,7 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | ----------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CAPABILITIES_CONFIG`                     | Optional                               | Absolute path to a `capabilities.json` file with per-platform capability presets                                                                                                                                                                                                                                                                   |
 | `SCREENSHOTS_DIR`                         | Optional                               | Directory where screenshots and screen recordings are saved. Defaults to the system temp directory (`os.tmpdir()`)                                                                                                                                                                                                                                             |
+| `PAGE_SOURCES_DIR` | Optional | Directory for fresh XML snapshots when `appium_get_page_source` uses `cache: true`. Defaults to the OS temporary directory; relative paths resolve from the server working directory. Has no effect when caching is disabled. |
 | `NO_UI`                                   | Optional                               | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode)                                                                                                                                                                                                                                 |
 | `APPIUM_MCP_APPS_ENABLED`                 | Optional                               | MCP Apps static UI mode. Enabled by default. Set to `false` or `0` to force the embedded UI compatibility fallback. See [MCP Apps Mode](#mcp-apps-mode)                                                                                                                                                                                            |
 | `APPIUM_MCP_ON_CLIENT_DISCONNECT`         | Optional                               | Session cleanup when the MCP client disconnects: `delete_all` (default) deletes **MCP-owned** Appium sessions (`safeDeleteAllSessions`); `skip` keeps those sessions across disconnects (e.g. HTTP/stream clients that reconnect). Attached/remote sessions are not removed by this path. See [MCP disconnect behavior](#mcp-disconnect-behavior). |
@@ -409,7 +410,7 @@ Set the `NO_UI` environment variable to `true` or `1` to disable UI components a
 The following tools return lightweight text-only responses when NO_UI is enabled:
 
 - `appium_screenshot` - Screenshot files are still saved to disk, but base64 data is not embedded in responses
-- `appium_get_page_source` - Returns XML as text without interactive inspector UI
+- `appium_get_page_source` - Returns XML as text without interactive inspector UI by default. With `cache: true`, returns the saved XML path and byte size instead; `NO_UI` does not enable caching.
 - `generate_locators` - Returns locator data as JSON without interactive UI
 - `select_device` - Returns device list as text without picker UI
 - `appium_session_management` (action=create) - Returns session info as text without dashboard UI
@@ -885,13 +886,36 @@ Model-dependent MCP tool-selection and argument evals are available separately f
 `npm test`. See [evals/README.md](evals/README.md) for setup and `npm run eval:mcp`.
 For local evaluation using Codex with ChatGPT login, use `npm run eval:codex`.
 
-### Page source files and filtered summaries
+### Page source caching and filtered summaries
+
+| Argument | Default | Behavior |
+| --- | --- | --- |
+| `cache` | `false` | `false` returns full XML as before; `true` saves a fresh XML file and returns metadata. |
+| `selector` | Omitted | XPath selecting elements; requires `cache: true`. |
+| `pattern` | Omitted | Case-sensitive literal substring of tag names or attribute values; requires `cache: true`. Combines with `selector`. |
+| `sessionId` | Active session | Selects the Appium session. |
+
 
 `appium_get_page_source` keeps its existing behavior by default: full XML is returned inline, with the existing inspector behavior. Omit `cache` or pass `cache: false` to use this mode; it does not write a file.
 
 To opt into file output, pass `cache: true`. Each call retrieves a fresh page source and saves a new snapshot; it does not reuse previously cached XML. XML is saved on the **MCP server's filesystem** and the response is JSON `{filepath, bytes}`. Set `PAGE_SOURCES_DIR` to choose a directory (relative paths resolve from the server working directory); otherwise the OS temporary directory is used. Files have unique names and owner-only permissions. Remove saved files when no longer needed.
 
 With `NO_UI=true`, the default response still contains full XML and omits the additional HTML UI, as before. File output requires `cache: true` regardless of `NO_UI`; it does not embed XML or HTML. Use the default inline mode when the client cannot access server files.
+
+Cache the full XML without returning its contents:
+
+```json
+{
+  "tool": "appium_get_page_source",
+  "arguments": {"cache": true}
+}
+```
+
+Example response (the path and byte count vary):
+
+```json
+{"filepath": "/tmp/page-source-<uuid>.xml", "bytes": 41312}
+```
 
 To inspect only part of the tree, pass `cache: true` together with `selector` (an XPath selecting elements), `pattern` (a case-sensitive literal substring of tag names or attribute values), or both. Matching nodes include identifying attributes, visibility and bounds when present, plus explicitly visible siblings. Summaries are capped at 100 nodes including siblings and report `truncated`; the saved XML always contains the full tree. No matches returns `matches: []`. Filters cannot be combined with `cache: false`.
 

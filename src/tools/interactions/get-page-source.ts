@@ -1,8 +1,3 @@
-import {randomUUID} from 'node:crypto';
-import {mkdir, writeFile} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
-import {join, resolve} from 'node:path';
-
 import type {ContentResult, FastMCP} from 'fastmcp';
 import {z} from 'zod';
 
@@ -11,7 +6,7 @@ import {PAGE_SOURCE_INSPECTOR_URI} from '../../resources/page-source-inspector.j
 import {clientSupportsMcpApps, isMcpAppsEnabled} from '../../ui/mcp-apps.js';
 import {createUIResource, createPageSourceInspectorUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
 import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
-import {summarizePageSource} from './page-source-summary.js';
+import {cachePageSource} from './page-source-cache.js';
 
 export default function getPageSource(server: FastMCP): void {
   const mcpAppsEnabled = isMcpAppsEnabled();
@@ -48,15 +43,7 @@ export default function getPageSource(server: FastMCP): void {
         }
 
         if (args.cache === true) {
-          const summary =
-            args.selector !== undefined || args.pattern !== undefined
-              ? summarizePageSource(pageSource, args.selector, args.pattern)
-              : {};
-          const directory = process.env.PAGE_SOURCES_DIR ? resolve(process.env.PAGE_SOURCES_DIR) : tmpdir();
-          await mkdir(directory, {recursive: true});
-          const filepath = join(directory, `page-source-${randomUUID()}.xml`);
-          await writeFile(filepath, pageSource, {encoding: 'utf8', mode: 0o600, flag: 'wx'});
-          return textResult(JSON.stringify({filepath, bytes: Buffer.byteLength(pageSource, 'utf8'), ...summary}));
+          return textResult(JSON.stringify(await cachePageSource(pageSource, args)));
         }
         if (args.selector !== undefined || args.pattern !== undefined) {
           return errorResult('Use cache=true when selecting or filtering page source nodes.');
