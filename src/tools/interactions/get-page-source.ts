@@ -16,7 +16,7 @@ import {summarizePageSource} from './page-source-summary.js';
 export default function getPageSource(server: FastMCP): void {
   const mcpAppsEnabled = isMcpAppsEnabled();
   const pageSourceSchema = z.object({
-    inline: z.boolean().default(true).describe('Set false to save XML and return path/bytes instead.'),
+    cache: z.boolean().default(false).describe('Save fresh XML to a file; return path/bytes instead of XML.'),
     selector: z.string().optional().describe('XPath selecting elements.'),
     pattern: z.string().min(1).optional().describe('Literal tag/attribute substring.'),
     sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
@@ -24,7 +24,7 @@ export default function getPageSource(server: FastMCP): void {
   server.addTool({
     name: 'appium_get_page_source',
     description:
-      'Get page source XML inline by default. Set inline=false for server-local saving and optional node summaries.',
+      'Get page source XML inline by default. Set cache=true for server-local saving and optional node summaries.',
     _meta: mcpAppsEnabled ? {ui: {resourceUri: PAGE_SOURCE_INSPECTOR_URI}} : undefined,
     parameters: pageSourceSchema,
     annotations: {
@@ -47,7 +47,7 @@ export default function getPageSource(server: FastMCP): void {
           return errorResult('Page source is empty or null');
         }
 
-        if (args.inline === false) {
+        if (args.cache === true) {
           const summary =
             args.selector !== undefined || args.pattern !== undefined
               ? summarizePageSource(pageSource, args.selector, args.pattern)
@@ -59,7 +59,7 @@ export default function getPageSource(server: FastMCP): void {
           return textResult(JSON.stringify({filepath, bytes: Buffer.byteLength(pageSource, 'utf8'), ...summary}));
         }
         if (args.selector !== undefined || args.pattern !== undefined) {
-          return errorResult('Use inline=false when selecting or filtering page source nodes.');
+          return errorResult('Use cache=true when selecting or filtering page source nodes.');
         }
 
         const textResponse = textResult('Page source retrieved successfully: \n' + '```xml ' + pageSource + '```');
