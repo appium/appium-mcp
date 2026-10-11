@@ -884,3 +884,11 @@ This project is licensed under the Apache-2.0. See the [LICENSE](LICENSE) file f
 Model-dependent MCP tool-selection and argument evals are available separately from
 `npm test`. See [evals/README.md](evals/README.md) for setup and `npm run eval:mcp`.
 For local evaluation using Codex with ChatGPT login, use `npm run eval:codex`.
+
+### Scroll visibility checks
+
+`appium_gesture` with `action=scroll_to_element` checks displayed state after every lookup. A node's presence in the hierarchy is not sufficient for success. Native iOS also requires `hittable` and bounds inside the window, so covered or offscreen targets continue scrolling. This uses driver visibility/hit-testing rather than guessing fixed safe-area insets; it does not guarantee that every pixel of a target is unobscured.
+
+For simple native iOS predicates joined by `AND`, a standalone `visible == 1`, `visible == true`, or `visible == YES` clause is removed during lookup so the hidden target can be located and its current visibility checked. Quoted text is preserved. Complex predicates containing parentheses, OR, or NOT are left unchanged; use a stable locator without a visibility condition when scrolling to those targets.
+
+Missing or stale targets are retried within the scroll limit. Invalid selectors and driver errors are returned immediately. Scrolling still stops when the page source remains unchanged or the maximum attempt count is reached.
