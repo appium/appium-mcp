@@ -73,20 +73,15 @@ export const gestureSchema = z.object({
     .min(0)
     .optional()
     .describe(
-      'X coordinate in pixels. For tap/double_tap/long_press: tap location, paired with y. ' +
-        'For scroll/swipe: starting X in custom-coordinate mode; requires y, endX, endY. ' +
-        'For pinch_zoom: center X, paired with y. Tap/double_tap/long_press/pinch_zoom ignore x/y when elementUUID is set.',
+      'X pixel coordinate, paired with y: tap location, pinch center, or scroll/swipe start (requires endX/endY). ' +
+        'elementUUID overrides x/y for tap/double_tap/long_press/pinch_zoom.',
     ),
   y: z
     .number()
     .int()
     .min(0)
     .optional()
-    .describe(
-      'Y coordinate in pixels, paired with x. For tap/double_tap/long_press: tap location. ' +
-        'For scroll/swipe: starting Y in custom-coordinate mode. For pinch_zoom: center Y. ' +
-        'The same elementUUID precedence as x applies.',
-    ),
+    .describe('Y pixel coordinate, paired with x; same action meanings and elementUUID precedence as x.'),
   endX: z
     .number()
     .int()

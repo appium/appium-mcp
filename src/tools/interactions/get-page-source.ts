@@ -19,7 +19,7 @@ export default function getPageSource(server: FastMCP): void {
   server.addTool({
     name: 'appium_get_page_source',
     description:
-      'Get the page source (XML) from the current screen by default. Set saveToFile=true for server-local saving and optional node summaries.',
+      'Get current-screen XML. saveToFile=true returns server-local path/bytes and enables selector/pattern summaries.',
     _meta: mcpAppsEnabled ? {ui: {resourceUri: PAGE_SOURCE_INSPECTOR_URI}} : undefined,
     parameters: pageSourceSchema,
     annotations: {
