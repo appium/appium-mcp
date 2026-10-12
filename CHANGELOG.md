@@ -1,3 +1,9 @@
+## [1.97.1](https://github.com/appium/appium-mcp/compare/v1.97.0...v1.97.1) (2026-10-12)
+
+### Bug Fixes
+
+* generate locators for active WebView contexts ([#567](https://github.com/appium/appium-mcp/issues/567)) ([c2f31fc](https://github.com/appium/appium-mcp/commit/c2f31fc7dd22bafc24f8e5c14118bc0deb5151d7))
+
 ## [1.97.0](https://github.com/appium/appium-mcp/compare/v1.96.0...v1.97.0) (2026-10-12)
 
 ### Features
