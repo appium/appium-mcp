@@ -29,7 +29,8 @@ This directory contains all MCP tools available in MCP Appium.
 
 ### Element Interactions (`interactions/`)
 
-- `find.ts` - Find elements
+- `find.ts` - Find a single element
+- `find-elements.ts` - Find all matching elements with driver-provided attributes
 - `click.ts` - Click elements
 - `double-tap.ts` - Double tap elements
 - `long-press.ts` - Long press (press and hold) elements

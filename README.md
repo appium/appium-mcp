@@ -703,6 +703,7 @@ Without an allow regex, any syntactically valid HTTP(S) URL without a query stri
 | Tool                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `appium_find_element`     | Find a specific element using traditional locator strategies. **Strategy priority**: `accessibility id` > `id` > platform-native (`-ios predicate string` / `-ios class chain` on iOS, `-android uiautomator` on Android) > `xpath` (last resort — slow & brittle). To scroll until an element appears, use **`appium_gesture`** with **`action=scroll_to_element`** (same `strategy` / `selector` as find).                                                                                                                                                                                                          |
+| `appium_find_elements` | Find all matching elements using the same locator strategies. Returns JSON `{elements: [{elementId, attributes?}]}`; no matches returns `{elements: []}`. Driver-provided attributes are preserved. |
 | `appium_ai`               | **Opt-in (gated by `AI_VISION_ENABLED=true`).** Vision-based element finding — fallback for when traditional locators don't work. `action=find_element` takes a natural-language `instruction` (e.g., "yellow search button at bottom") and returns a coordinate UUID consumable by **`appium_gesture`** (`tap` / `double_tap` / `long_press`). See [AI Vision Element Finding](#ai-vision-element-finding) for setup.                                                                                                                                                                                                |
 | `appium_gesture`          | Perform a touch gesture. `action` = `back`, `tap`, `double_tap`, `long_press`, `scroll`, `swipe`, `pinch_zoom`, or **`scroll_to_element`**. **`scroll_to_element`** scrolls vertically (`direction` = `up` \| `down`) until the locator matches, **page source stops changing** after a scroll (end of list), or **`maxScrollAttempts`** (default 10, max 80). Optional **`scrollDistance`** (0.05–1) or **`scrollDistancePreset`** = `small` \| `medium` \| `large`. Supports element UUIDs and raw coordinates for other actions. For swipe, use `speed` = `slow` \| `normal` \| `fast` (fast for pull-to-refresh). |
 | `appium_drag_and_drop`    | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates)                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -781,6 +782,57 @@ Try strategies in priority order: `accessibility id` first, then `id`, then plat
   }
 }
 ```
+
+`appium_find_element` preserves its existing element ID and success message. When the driver returns additional fields, a JSON text block includes `{elementId, attributes}` with the original attribute names and values. MCP does not fetch extra attributes or change driver settings automatically.
+
+For drivers that support `elementResponseAttributes`, enable richer responses for **both `appium_find_element` and `appium_find_elements`** with the existing Settings API. First call `appium_driver_settings` with `action=get` to record the current values, then update the settings. Choose attribute names supported by your driver; the following example uses XCUITest attributes:
+
+```json
+{
+  "tool": "appium_driver_settings",
+  "arguments": {
+    "action": "update",
+    "settings": {
+      "shouldUseCompactResponses": false,
+      "elementResponseAttributes": "attribute/name,label,enabled,attribute/visible"
+    }
+  }
+}
+```
+
+These settings apply to the session. `attribute/name` requests the element's name attribute; the `name` response field can represent its element type. Attribute keys such as `attribute/visible` are preserved in the MCP response. Supported fields depend on the driver.
+
+Find all matching elements after applying these settings:
+
+```json
+{
+  "tool": "appium_find_elements",
+  "arguments": {
+    "strategy": "-ios predicate string",
+    "selector": "type == 'XCUIElementTypeButton'"
+  }
+}
+```
+
+Example response (actual values depend on the app):
+
+```json
+{
+  "elements": [
+    {
+      "elementId": "<webdriver-element-id>",
+      "attributes": {
+        "attribute/name": "menu",
+        "label": "Menu",
+        "enabled": true,
+        "attribute/visible": true
+      }
+    }
+  ]
+}
+```
+
+Pass the chosen `elementId` as `elementUUID` to interaction tools. Each match keeps its own ID and attributes; compact responses omit `attributes`, and no matches returns `{"elements":[]}` successfully. Driver failures remain errors. Neither search tool makes additional attribute requests. Restore the recorded settings with `action=update` when richer responses are no longer needed (`shouldUseCompactResponses: true` disables the additional fields for drivers supporting this setting).
 
 `xpath` fallback (when no accessibility id, resource-id, or platform-native predicate works):
 

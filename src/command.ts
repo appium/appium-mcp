@@ -238,6 +238,18 @@ export async function findElement(driver: DriverInstance, strategy: string, sele
   return result;
 }
 
+/** Find all matching elements, preserving driver-provided response attributes. */
+export async function findElements(driver: DriverInstance, strategy: string, selector: string): Promise<unknown> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.findElements(strategy, selector);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.findElements(strategy, selector);
+  }
+  const result = await (driver as Client).findElements(strategy, selector);
+  throwIfSwallowedRemoteError(result);
+  return result;
+}
+
 /**
  * Get the bounding rectangle for an element.
  *

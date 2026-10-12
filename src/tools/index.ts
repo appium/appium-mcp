@@ -26,6 +26,7 @@ import gesture from './gestures/gesture.js';
 import performActionsTool from './gestures/perform-actions.js';
 import getActiveElement from './interactions/active-element.js';
 import clipboard from './interactions/clipboard.js';
+import findElements from './interactions/find-elements.js';
 import findElement from './interactions/find.js';
 import getElementAttribute from './interactions/get-element-attribute.js';
 import getPageSource from './interactions/get-page-source.js';
@@ -120,6 +121,7 @@ export default function registerTools(server: FastMCP): void {
   // 2. findElement         - Find specific element by strategy/selector
   // 3. generateLocators    - Generate all locators (heavyweight, for debugging only)
   findElement(server);
+  findElements(server);
   pressKey(server);
   setValue(server);
   keyboard(server);
