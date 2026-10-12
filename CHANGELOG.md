@@ -1,3 +1,9 @@
+## [1.97.0](https://github.com/appium/appium-mcp/compare/v1.96.0...v1.97.0) (2026-10-12)
+
+### Features
+
+* add opt-in page source file output and summaries ([#573](https://github.com/appium/appium-mcp/issues/573)) ([07e7408](https://github.com/appium/appium-mcp/commit/07e74086e9afac5f01abf64d7dd61545b7ca9386))
+
 ## [1.96.0](https://github.com/appium/appium-mcp/compare/v1.95.8...v1.96.0) (2026-10-12)
 
 ### Features
