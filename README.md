@@ -149,6 +149,7 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | ----------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CAPABILITIES_CONFIG`                     | Optional                               | Absolute path to a `capabilities.json` file with per-platform capability presets                                                                                                                                                                                                                                                                   |
 | `SCREENSHOTS_DIR`                         | Optional                               | Directory where screenshots and screen recordings are saved. Defaults to the system temp directory (`os.tmpdir()`)                                                                                                                                                                                                                                             |
+| `PAGE_SOURCES_DIR` | Optional | Directory for fresh XML snapshots when `appium_get_page_source` uses `saveToFile: true`. Defaults to the OS temporary directory; relative paths resolve from the server working directory. Has no effect when file saving is disabled. |
 | `NO_UI`                                   | Optional                               | Set to `true` or `1` to disable HTML UI components — faster responses, fewer tokens. See [NO_UI Mode](#no_ui-mode)                                                                                                                                                                                                                                 |
 | `APPIUM_MCP_APPS_ENABLED`                 | Optional                               | MCP Apps static UI mode. Enabled by default. Set to `false` or `0` to force the embedded UI compatibility fallback. See [MCP Apps Mode](#mcp-apps-mode)                                                                                                                                                                                            |
 | `APPIUM_MCP_ON_CLIENT_DISCONNECT`         | Optional                               | Session cleanup when the MCP client disconnects: `delete_all` (default) deletes **MCP-owned** Appium sessions (`safeDeleteAllSessions`); `skip` keeps those sessions across disconnects (e.g. HTTP/stream clients that reconnect). Attached/remote sessions are not removed by this path. See [MCP disconnect behavior](#mcp-disconnect-behavior). |
@@ -409,7 +410,7 @@ Set the `NO_UI` environment variable to `true` or `1` to disable UI components a
 The following tools return lightweight text-only responses when NO_UI is enabled:
 
 - `appium_screenshot` - Screenshot files are still saved to disk, but base64 data is not embedded in responses
-- `appium_get_page_source` - Returns XML as text without interactive inspector UI
+- `appium_get_page_source` - Returns XML as text without interactive inspector UI by default. With `saveToFile: true`, returns the saved XML path and byte size instead; `NO_UI` does not enable file saving.
 - `generate_locators` - Returns locator data as JSON without interactive UI
 - `select_device` - Returns device list as text without picker UI
 - `appium_session_management` (action=create) - Returns session info as text without dashboard UI
@@ -702,6 +703,7 @@ Without an allow regex, any syntactically valid HTTP(S) URL without a query stri
 | Tool                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `appium_find_element`     | Find a specific element using traditional locator strategies. **Strategy priority**: `accessibility id` > `id` > platform-native (`-ios predicate string` / `-ios class chain` on iOS, `-android uiautomator` on Android) > `xpath` (last resort — slow & brittle). To scroll until an element appears, use **`appium_gesture`** with **`action=scroll_to_element`** (same `strategy` / `selector` as find).                                                                                                                                                                                                          |
+| `appium_find_elements` | Find all matching elements using the same locator strategies. Returns JSON `{elements: [{elementId, attributes?}]}`; no matches returns `{elements: []}`. Driver-provided attributes are preserved. |
 | `appium_ai`               | **Opt-in (gated by `AI_VISION_ENABLED=true`).** Vision-based element finding — fallback for when traditional locators don't work. `action=find_element` takes a natural-language `instruction` (e.g., "yellow search button at bottom") and returns a coordinate UUID consumable by **`appium_gesture`** (`tap` / `double_tap` / `long_press`). See [AI Vision Element Finding](#ai-vision-element-finding) for setup.                                                                                                                                                                                                |
 | `appium_gesture`          | Perform a touch gesture. `action` = `back`, `tap`, `double_tap`, `long_press`, `scroll`, `swipe`, `pinch_zoom`, or **`scroll_to_element`**. **`scroll_to_element`** scrolls vertically (`direction` = `up` \| `down`) until the locator matches, **page source stops changing** after a scroll (end of list), or **`maxScrollAttempts`** (default 10, max 80). Optional **`scrollDistance`** (0.05–1) or **`scrollDistancePreset`** = `small` \| `medium` \| `large`. Supports element UUIDs and raw coordinates for other actions. For swipe, use `speed` = `slow` \| `normal` \| `fast` (fast for pull-to-refresh). |
 | `appium_drag_and_drop`    | Perform a drag and drop gesture from a source location to a target location (supports element-to-element, element-to-coordinates, coordinates-to-element, and coordinates-to-coordinates)                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -718,7 +720,7 @@ Without an allow regex, any syntactically valid HTTP(S) URL without a query stri
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `appium_screenshot`         | Take a screenshot and save as PNG. Optionally provide `elementUUID` to capture a specific element. Pass `returnRawBase64: true` (default `false`) to return the raw base64 PNG inline instead of saving to disk — useful when the server runs on a remote machine where the saved file is not accessible. Intended for manual use only; an LLM should keep this `false`. |
 | `appium_get_window_size`    | Get the width and height of the device screen in pixels                                                                                                                                                                                                                                                                                     |
-| `appium_get_page_source`    | Get the page source (XML) from the current screen                                                                                                                                                                                                                                                                                           |
+| `appium_get_page_source` | Return full XML inline by default. Set `saveToFile: true` to save a server-local file and return its path and byte size; optionally add `selector` (XPath) or `pattern` for bounded summaries with visible siblings. |
 | `appium_orientation`        | Get or set device/screen orientation with `action` = `get` or `set` (requires `orientation` for set).                                                                                                                                                                                                                                       |
 | `appium_geolocation`        | Get, set, or reset the device GPS coordinates with `action` = `get`, `set`, or `reset`. For `set`, provide `latitude` and `longitude` (and optional `altitude` on Android). Not supported on Android emulators for `reset`.                                                                                                                 |
 | `appium_screen_recording`   | Start or stop screen recording with `action` = `start` or `stop`. On stop, returns the saved MP4 path.                                                                                                                                                                                                                                      |
@@ -780,6 +782,57 @@ Try strategies in priority order: `accessibility id` first, then `id`, then plat
   }
 }
 ```
+
+`appium_find_element` preserves its existing element ID and success message. When the driver returns additional fields, a JSON text block includes `{elementId, attributes}` with the original attribute names and values. MCP does not fetch extra attributes or change driver settings automatically.
+
+For drivers that support `elementResponseAttributes`, enable richer responses for **both `appium_find_element` and `appium_find_elements`** with the existing Settings API. First call `appium_driver_settings` with `action=get` to record the current values, then update the settings. Choose attribute names supported by your driver; the following example uses XCUITest attributes:
+
+```json
+{
+  "tool": "appium_driver_settings",
+  "arguments": {
+    "action": "update",
+    "settings": {
+      "shouldUseCompactResponses": false,
+      "elementResponseAttributes": "attribute/name,label,enabled,attribute/visible"
+    }
+  }
+}
+```
+
+These settings apply to the session. `attribute/name` requests the element's name attribute; the `name` response field can represent its element type. Attribute keys such as `attribute/visible` are preserved in the MCP response. Supported fields depend on the driver.
+
+Find all matching elements after applying these settings:
+
+```json
+{
+  "tool": "appium_find_elements",
+  "arguments": {
+    "strategy": "-ios predicate string",
+    "selector": "type == 'XCUIElementTypeButton'"
+  }
+}
+```
+
+Example response (actual values depend on the app):
+
+```json
+{
+  "elements": [
+    {
+      "elementId": "<webdriver-element-id>",
+      "attributes": {
+        "attribute/name": "menu",
+        "label": "Menu",
+        "enabled": true,
+        "attribute/visible": true
+      }
+    }
+  ]
+}
+```
+
+Pass the chosen `elementId` as `elementUUID` to interaction tools. Each match keeps its own ID and attributes; compact responses omit `attributes`, and no matches returns `{"elements":[]}` successfully. Driver failures remain errors. Neither search tool makes additional attribute requests. Restore the recorded settings with `action=update` when richer responses are no longer needed (`shouldUseCompactResponses: true` disables the additional fields for drivers supporting this setting).
 
 `xpath` fallback (when no accessibility id, resource-id, or platform-native predicate works):
 
@@ -884,3 +937,50 @@ This project is licensed under the Apache-2.0. See the [LICENSE](LICENSE) file f
 Model-dependent MCP tool-selection and argument evals are available separately from
 `npm test`. See [evals/README.md](evals/README.md) for setup and `npm run eval:mcp`.
 For local evaluation using Codex with ChatGPT login, use `npm run eval:codex`.
+
+### Page source file output and filtered summaries
+
+| Argument | Default | Behavior |
+| --- | --- | --- |
+| `saveToFile` | `false` | `false` returns full XML as before; `true` saves a fresh XML file and returns metadata. |
+| `selector` | Omitted | XPath selecting elements; requires `saveToFile: true`. |
+| `pattern` | Omitted | Case-sensitive literal substring of tag names or attribute values; requires `saveToFile: true`. Combines with `selector`. |
+| `sessionId` | Active session | Selects the Appium session. |
+
+
+`appium_get_page_source` keeps its existing behavior by default: full XML is returned inline, with the existing inspector behavior. Omit `saveToFile` or pass `saveToFile: false` to use this mode; it does not write a file.
+
+To opt into file output, pass `saveToFile: true`. Each call retrieves a fresh page source and saves a new snapshot; it does not reuse previously saved XML. XML is saved on the **MCP server's filesystem** and the response is JSON `{filepath, bytes}`. Set `PAGE_SOURCES_DIR` to choose a directory (relative paths resolve from the server working directory); otherwise the OS temporary directory is used. Files have unique names and owner-only permissions. Remove saved files when no longer needed.
+
+With `NO_UI=true`, the default response still contains full XML and omits the additional HTML UI, as before. File output requires `saveToFile: true` regardless of `NO_UI`; it does not embed XML or HTML. Use the default inline mode when the client cannot access server files.
+
+Save the full XML without returning its contents:
+
+```json
+{
+  "tool": "appium_get_page_source",
+  "arguments": {"saveToFile": true}
+}
+```
+
+Example response (the path and byte count vary):
+
+```json
+{"filepath": "/tmp/page-source-<uuid>.xml", "bytes": 41312}
+```
+
+To inspect only part of the tree, pass `saveToFile: true` together with `selector` (an XPath selecting elements), `pattern` (a case-sensitive literal substring of tag names or attribute values), or both. Matching nodes include identifying attributes, visibility and bounds when present, plus explicitly visible siblings. Summaries are capped at 100 nodes including siblings and report `truncated`; the saved XML always contains the full tree. No matches returns `matches: []`. Filters cannot be combined with `saveToFile: false`.
+
+```json
+{
+  "tool": "appium_get_page_source",
+  "arguments": {"saveToFile": true, "selector": "//*[@name='View All']"}
+}
+```
+
+```json
+{
+  "tool": "appium_get_page_source",
+  "arguments": {"saveToFile": false}
+}
+```

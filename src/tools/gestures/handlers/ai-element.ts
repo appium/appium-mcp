@@ -9,7 +9,8 @@ import type {Rect} from '@appium/types';
  *
  * where (cx, cy) is the visual centre of the target and (x0,y0,x1,y1) is
  * the bounding box returned by the vision model. Both are pixel
- * coordinates in the screenshot's coordinate space, NOT real WebDriver
+ * coordinates in the driver's touch coordinate space (logical screen
+ * coordinates on iOS), NOT real WebDriver
  * element ids — so they MUST NOT be passed to driver.getElementRect or
  * to platform-native commands like `mobile: doubleTap`, `mobile: pinch`,
  * etc., which require a real element id.
@@ -48,7 +49,7 @@ export type ParsedAiElement = {
  * makes start/end identical after rounding. Keep a minimum inset area so those
  * gestures still move visibly while staying centred on the parsed point.
  *
- * Values are screenshot pixels; callers can clamp against the window if needed.
+ * Values are touch coordinates; callers can clamp against the window if needed.
  */
 const AI_FALLBACK_RECT_WIDTH = 100;
 const AI_FALLBACK_RECT_HEIGHT = 100;

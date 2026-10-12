@@ -29,7 +29,8 @@ This directory contains all MCP tools available in MCP Appium.
 
 ### Element Interactions (`interactions/`)
 
-- `find.ts` - Find elements
+- `find.ts` - Find a single element
+- `find-elements.ts` - Find all matching elements with driver-provided attributes
 - `click.ts` - Click elements
 - `double-tap.ts` - Double tap elements
 - `long-press.ts` - Long press (press and hold) elements
@@ -38,7 +39,9 @@ This directory contains all MCP tools available in MCP Appium.
 - `set-value.ts` - Enter text
 - `keyboard.ts` - Soft keyboard (`appium_mobile_keyboard`; `action=hide` \| `is_shown`)
 - `get-text.ts` - Get element text
-- `get-page-source.ts` - Get page source (XML) from current screen
+- `get-page-source.ts` - Return current-screen XML by default; opt into server-local file output with `saveToFile: true`
+- `page-source-file.ts` - Save fresh XML snapshots and return path, UTF-8 byte size, and optional summaries
+- `page-source-summary.ts` - Build bounded XPath/literal-filter summaries with visible siblings
 - `screenshot.ts` - Capture screenshots
 
 #### Element Search Priority Order
@@ -212,3 +215,9 @@ After adding a new tool:
 - Read [docs/CONTRIBUTING.md](../../docs/CONTRIBUTING.md)
 - Look at examples in `examples/` directory
 - Open an issue for questions
+
+### Page source file output
+
+`appium_get_page_source` keeps full XML and the existing inspector behavior when `saveToFile` is omitted or false. `saveToFile: true` delegates file creation and optional summary generation to `savePageSourceToFile`. The helper validates filters before writing, creates unique XML files with owner-only permissions under `PAGE_SOURCES_DIR` (or the OS temporary directory), and returns metadata; the tool serializes it into an MCP text response and handles errors.
+
+`selector` and `pattern` require `saveToFile: true`. They limit the returned summary, not the saved XML. Each call obtains fresh XML from the driver; this is file-backed snapshot storage, not response reuse. `NO_UI` controls UI resources independently. See [page source file output and filtered summaries](../../README.md#page-source-file-output-and-filtered-summaries) for arguments and usage examples.

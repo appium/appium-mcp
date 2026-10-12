@@ -366,11 +366,8 @@ export class PluginManager {
           }
         }
 
-        const rawResult = (await toolDef.execute(args, mcpCtx)) as ContentResult;
-        let hookResult: ToolCallResult = {
-          ...rawResult,
-          isError: rawResult.isError ?? false,
-        };
+        const rawResult = await toolDef.execute(args, mcpCtx);
+        let hookResult = normalizeToolResult(rawResult, toolDef.outputSchema !== undefined);
 
         for (const plugin of this.pluginMap.values()) {
           if (typeof plugin.afterCall !== 'function') {
@@ -395,6 +392,35 @@ export class PluginManager {
       }
     }) as FastMCP['addTools'];
   }
+}
+
+/** Normalize FastMCP's shorthand return forms before exposing them to hooks. */
+function normalizeToolResult(rawResult: unknown, hasOutputSchema: boolean): ToolCallResult {
+  if (rawResult == null) {
+    return {content: [], isError: false};
+  }
+  if (typeof rawResult === 'string') {
+    return {content: [{type: 'text', text: rawResult}], isError: false};
+  }
+  if (typeof rawResult === 'object' && 'content' in rawResult && Array.isArray(rawResult.content)) {
+    const result = rawResult as ContentResult;
+    return {...result, isError: result.isError ?? false};
+  }
+  // FastMCP interprets raw output-schema data before considering a single block.
+  // Returning structuredContent keeps its normal schema validation in place.
+  if (hasOutputSchema) {
+    return {
+      content: [{type: 'text', text: JSON.stringify(rawResult)}],
+      structuredContent: rawResult as Record<string, unknown>,
+      isError: false,
+    };
+  }
+  if (typeof rawResult === 'object' && 'type' in rawResult) {
+    return {content: [rawResult as ContentResult['content'][number]], isError: false};
+  }
+  // Leave invalid results for FastMCP to reject rather than inventing content.
+  const result = rawResult as ContentResult;
+  return {...result, isError: result.isError ?? false};
 }
 
 /**

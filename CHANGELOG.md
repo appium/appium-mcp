@@ -1,3 +1,39 @@
+## [1.97.0](https://github.com/appium/appium-mcp/compare/v1.96.0...v1.97.0) (2026-10-12)
+
+### Features
+
+* add opt-in page source file output and summaries ([#573](https://github.com/appium/appium-mcp/issues/573)) ([07e7408](https://github.com/appium/appium-mcp/commit/07e74086e9afac5f01abf64d7dd61545b7ca9386))
+
+## [1.96.0](https://github.com/appium/appium-mcp/compare/v1.95.8...v1.96.0) (2026-10-12)
+
+### Features
+
+* expose driver attributes and add find elements ([#572](https://github.com/appium/appium-mcp/issues/572)) ([74d72dc](https://github.com/appium/appium-mcp/commit/74d72dcbcc8ca885ee35ac3b4e35d9518ef62c34))
+
+## [1.95.8](https://github.com/appium/appium-mcp/compare/v1.95.7...v1.95.8) (2026-10-10)
+
+### Bug Fixes
+
+* map AI vision coordinates to iOS touch space ([#564](https://github.com/appium/appium-mcp/issues/564)) ([2ed139e](https://github.com/appium/appium-mcp/commit/2ed139ee6c11a74f2a67fcdb03ec9951752fa92f))
+
+## [1.95.7](https://github.com/appium/appium-mcp/compare/v1.95.6...v1.95.7) (2026-10-10)
+
+### Bug Fixes
+
+* normalize plugin tool responses before call hooks ([#565](https://github.com/appium/appium-mcp/issues/565)) ([02de89f](https://github.com/appium/appium-mcp/commit/02de89f443a448ab8559f51a65f749fe793a709e))
+
+## [1.95.6](https://github.com/appium/appium-mcp/compare/v1.95.5...v1.95.6) (2026-10-10)
+
+### Bug Fixes
+
+* preserve Unicode code points in W3C key actions ([#569](https://github.com/appium/appium-mcp/issues/569)) ([2d57676](https://github.com/appium/appium-mcp/commit/2d57676808011f7697743ce502d399e4eeb091e1))
+
+## [1.95.5](https://github.com/appium/appium-mcp/compare/v1.95.4...v1.95.5) (2026-10-10)
+
+### Bug Fixes
+
+* preserve existing sessions when reattachment fails ([#566](https://github.com/appium/appium-mcp/issues/566)) ([f979f15](https://github.com/appium/appium-mcp/commit/f979f15eb2c98aca387842098eb944fc02b969b2))
+
 ## [1.95.4](https://github.com/appium/appium-mcp/compare/v1.95.3...v1.95.4) (2026-10-10)
 
 ### Bug Fixes

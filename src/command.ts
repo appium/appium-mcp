@@ -167,7 +167,7 @@ export async function setContext(driver: DriverInstance, name?: string): Promise
  * @returns A W3C `key` action sequence object.
  */
 export function buildW3cKeyActions(text: string): StringRecord<any> {
-  const actions = text.split('').flatMap((char) => [
+  const actions = Array.from(text).flatMap((char) => [
     {type: 'keyDown', value: char},
     {type: 'keyUp', value: char},
   ]);
@@ -234,6 +234,18 @@ export async function findElement(driver: DriverInstance, strategy: string, sele
     return await driver.findElement(strategy, selector);
   }
   const result = await (driver as Client).findElement(strategy, selector);
+  throwIfSwallowedRemoteError(result);
+  return result;
+}
+
+/** Find all matching elements, preserving driver-provided response attributes. */
+export async function findElements(driver: DriverInstance, strategy: string, selector: string): Promise<unknown> {
+  if (isAndroidUiautomator2DriverSession(driver)) {
+    return await driver.findElements(strategy, selector);
+  } else if (isXCUITestDriverSession(driver)) {
+    return await driver.findElements(strategy, selector);
+  }
+  const result = await (driver as Client).findElements(strategy, selector);
   throwIfSwallowedRemoteError(result);
   return result;
 }

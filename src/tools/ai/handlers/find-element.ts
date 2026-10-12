@@ -2,8 +2,9 @@ import {imageUtil} from '@appium/support';
 import type {ContentResult} from 'fastmcp';
 
 import {AIVisionFinder} from '../../../ai-finder/vision-finder.js';
-import {getScreenshot} from '../../../command.js';
+import {getScreenshot, getWindowSize} from '../../../command.js';
 import log from '../../../logger.js';
+import {getPlatformName, PLATFORM} from '../../../session-store.js';
 import type {DriverInstance} from '../../../session-store.js';
 import {errorResult, textResultWithPrimaryElementId, toolErrorMessage} from '../../tool-response.js';
 import type {AIArgs} from '../schema.js';
@@ -35,10 +36,30 @@ export async function handleFindElement(driver: DriverInstance, args: AIArgs): P
     const finder = getAIVisionFinder();
     const result = await finder.findElement(screenshotBase64, instruction, width, height);
 
-    // Format: "ai-element:{x},{y}:{bbox}" — consumed by appium_gesture handlers.
-    const elementUUID = `ai-element:${result.center.x},${result.center.y}:${result.bbox.join(',')}`;
+    // Vision results and annotations use screenshot pixels, but iOS touch actions
+    // use logical screen coordinates. Do not mutate the finder's cached result.
+    let center = result.center;
+    let bbox = result.bbox;
+    if (getPlatformName(driver) === PLATFORM.ios) {
+      const screen = await getWindowSize(driver);
+      if (!(screen.width > 0 && screen.height > 0)) {
+        throw new Error('Failed to get screen dimensions for AI coordinate mapping');
+      }
+      const scaleX = screen.width / width;
+      const scaleY = screen.height / height;
+      center = {x: Math.floor(center.x * scaleX), y: Math.floor(center.y * scaleY)};
+      bbox = [
+        Math.floor(bbox[0] * scaleX),
+        Math.floor(bbox[1] * scaleY),
+        Math.ceil(bbox[2] * scaleX),
+        Math.ceil(bbox[3] * scaleY),
+      ];
+    }
 
-    let detail = `Successfully found "${result.target}" at coordinates (${result.center.x}, ${result.center.y}) using AI vision.`;
+    // Format: "ai-element:{x},{y}:{bbox}" — consumed by appium_gesture handlers.
+    const elementUUID = `ai-element:${center.x},${center.y}:${bbox.join(',')}`;
+
+    let detail = `Successfully found "${result.target}" at coordinates (${center.x}, ${center.y}) using AI vision.`;
     if (result.annotatedImagePath) {
       detail += ` Vision image: ${result.annotatedImagePath}`;
     }
