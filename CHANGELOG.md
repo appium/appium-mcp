@@ -1,3 +1,9 @@
+## [1.96.0](https://github.com/appium/appium-mcp/compare/v1.95.8...v1.96.0) (2026-10-12)
+
+### Features
+
+* expose driver attributes and add find elements ([#572](https://github.com/appium/appium-mcp/issues/572)) ([74d72dc](https://github.com/appium/appium-mcp/commit/74d72dcbcc8ca885ee35ac3b4e35d9518ef62c34))
+
 ## [1.95.8](https://github.com/appium/appium-mcp/compare/v1.95.7...v1.95.8) (2026-10-10)
 
 ### Bug Fixes
