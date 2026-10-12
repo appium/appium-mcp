@@ -13,6 +13,7 @@ jest.unstable_mockModule('../session-store', () => ({
 const {
   execute,
   findElement,
+  findElements,
   setValue,
   getElementText,
   getElementAttribute,
@@ -260,5 +261,24 @@ describe('remote command wrappers: re-throw swallowed WebDriver errors', () => {
       /could not be located/i,
     );
     await expect(back({back: jest.fn(async () => undefined)} as never)).resolves.toBeUndefined();
+  });
+});
+
+describe('findElements remote responses', () => {
+  test.each([
+    {elements: []},
+    {
+      elements: [
+        {ELEMENT: 'one', label: 'First'},
+        {ELEMENT: 'two', enabled: false},
+      ],
+    },
+  ])('preserves $elements', async ({elements}) => {
+    const driver = {findElements: jest.fn(async () => elements)};
+    await expect(findElements(driver as never, 'id', 'items')).resolves.toBe(elements);
+  });
+  test('rethrows swallowed remote errors', async () => {
+    const driver = {findElements: jest.fn(async () => REMOTE_COMMAND_ERROR)};
+    await expect(findElements(driver as never, 'id', 'items')).rejects.toThrow(/Unsupported execute/);
   });
 });

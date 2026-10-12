@@ -11,6 +11,7 @@ jest.unstable_mockModule('../../tools/tool-response', () => ({
   })),
   noActiveDriverSessionMessage: jest.fn(),
   readWebElementId: jest.fn(),
+  readWebElementAttributes: jest.fn(),
   resolveDriver: jest.fn(),
   textResult: jest.fn(),
   textResultWithPrimaryElementId: jest.fn(),
