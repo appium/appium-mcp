@@ -85,8 +85,22 @@ function matchesAttributeFilters(
  * Determines if an element is interactable/fetchable based on platform
  */
 function isInteractableElement(element: JSONElement, isNative: boolean, automationName: string): boolean {
+  if (!isNative) {
+    const tag = element.tagName.toLowerCase();
+    const attrs = element.attributes;
+    if (tag === 'input' && attrs.type?.toLowerCase() === 'hidden') {
+      return false;
+    }
+    return (
+      ['input', 'button', 'select', 'textarea', 'option', 'summary'].includes(tag) ||
+      (tag === 'a' && attrs.href !== undefined) ||
+      ['button', 'link', 'textbox', 'checkbox', 'radio', 'combobox', 'switch', 'slider', 'tab'].includes(attrs.role) ||
+      (attrs.contenteditable !== undefined && attrs.contenteditable !== 'false') ||
+      (attrs.tabindex !== undefined && Number(attrs.tabindex) >= 0)
+    );
+  }
   const interactableTags =
-    isNative && automationName === 'uiautomator2'
+    automationName === 'uiautomator2'
       ? ['EditText', 'Button', 'ImageButton', 'CheckBox', 'RadioButton', 'Switch', 'ToggleButton', 'TextView']
       : [
           'XCUIElementTypeTextField',

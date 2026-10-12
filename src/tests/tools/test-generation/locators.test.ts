@@ -26,6 +26,7 @@ const mockAddUIResourceToResponse = jest.fn((response: any, factory: () => unkno
 
 jest.unstable_mockModule('../../../command.js', () => ({
   getPageSource: mockGetPageSource,
+  getCurrentContext: jest.fn(async () => 'NATIVE_APP'),
 }));
 
 jest.unstable_mockModule('../../../locators/generate-all-locators.js', () => ({
