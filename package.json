@@ -72,7 +72,7 @@
   "dependencies": {
     "@appium/support": "^7.2.6",
     "@modelcontextprotocol/sdk": "^1.22.0",
-    "@wdio/logger": "^9.29.1",
+    "@wdio/logger": "^10.0.0",
     "@xmldom/xmldom": "^0.9.8",
     "appium-adb": "^16.0.0",
     "appium-ios-device": "^3.1.0",
