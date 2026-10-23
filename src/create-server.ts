@@ -16,6 +16,7 @@
 import {FastMCP} from 'fastmcp';
 
 import pkg from '../package.json' with {type: 'json'};
+import {createHttpOriginPolicy} from './http-security.js';
 import log, {configureStdioTransportLogging} from './logger.js';
 import {PluginManager} from './plugin.js';
 import type {AppiumMcpPlugin} from './plugin.js';
@@ -25,7 +26,7 @@ import {safeDeleteAllSessions, listSessions} from './session-store.js';
 import {initializeOpenTelemetry} from './telemetry/init.js';
 import {installTelemetryWrappers} from './telemetry/wrapOperations.js';
 import registerTools from './tools/index.js';
-import {TRANSPORT_TYPES} from './transport.js';
+import {DEFAULT_HTTP_STREAM_OPTIONS, TRANSPORT_TYPES} from './transport.js';
 import {validateConnectionPolicyEnv} from './utils/env.js';
 
 const SERVER_VERSION = pkg.version as `${number}.${number}.${number}`;
@@ -111,17 +112,19 @@ export async function createAppiumMcpServer(options: CreateAppiumMcpServerOption
     ? `${SERVER_INSTRUCTIONS}\n${additionalInstructions}`
     : SERVER_INSTRUCTIONS;
 
+  const httpOriginPolicy = createHttpOriginPolicy();
   const server = new FastMCP({
     name: serverName,
     version: serverVersion,
     instructions,
     logger: FAST_MCP_LOGGER,
+    authenticate: httpOriginPolicy.authenticate,
     // Appium MCP will not allow client to ask the local workspace/project folders.
     roots: {
       enabled: false,
     },
   });
-  wrapStartForStdioLogging(server);
+  wrapTransportStart(server, httpOriginPolicy.cors);
 
   installPolicy(server, policy);
   try {
@@ -267,11 +270,17 @@ export async function createAppiumMcpServer(options: CreateAppiumMcpServerOption
   return server;
 }
 
-function wrapStartForStdioLogging(server: FastMCP): void {
+function wrapTransportStart(server: FastMCP, cors: ReturnType<typeof createHttpOriginPolicy>['cors']): void {
   const originalStart = server.start.bind(server);
   server.start = (async (startOptions) => {
     if ((startOptions?.transportType ?? TRANSPORT_TYPES.stdio) === TRANSPORT_TYPES.stdio) {
       configureStdioTransportLogging();
+    }
+    if (startOptions?.transportType === TRANSPORT_TYPES.httpStream) {
+      return originalStart({
+        ...startOptions,
+        httpStream: {...DEFAULT_HTTP_STREAM_OPTIONS, ...startOptions.httpStream, cors},
+      });
     }
     return originalStart(startOptions);
   }) as FastMCP['start'];

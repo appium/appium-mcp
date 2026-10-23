@@ -219,6 +219,56 @@ describe('createAppiumMcpServer plugin lifecycle', () => {
     expect(configureStdioTransportLogging).not.toHaveBeenCalled();
   });
 
+  test('installs the Origin guard and disables CORS for factory HTTP servers', async () => {
+    const start = jest.spyOn(MockFastMCP.prototype, 'start');
+    try {
+      const server = await createAppiumMcpServer();
+      expect(registeredServers[0]?.options).toEqual(expect.objectContaining({authenticate: expect.any(Function)}));
+      await server.start({transportType: 'httpStream', httpStream: {port: 8080, cors: true}});
+      expect(start).toHaveBeenCalledWith({
+        transportType: 'httpStream',
+        httpStream: {endpoint: '/sse', port: 8080, cors: false},
+      });
+      await server.start({transportType: 'httpStream'});
+      expect(start).toHaveBeenLastCalledWith({
+        transportType: 'httpStream',
+        httpStream: {endpoint: '/sse', port: 8080, cors: false},
+      });
+    } finally {
+      start.mockRestore();
+    }
+  });
+
+  test('captures the configured Origin allowlist and applies it to HTTP startup', async () => {
+    const previous = process.env.APPIUM_MCP_ALLOWED_ORIGINS;
+    const start = jest.spyOn(MockFastMCP.prototype, 'start');
+    try {
+      process.env.APPIUM_MCP_ALLOWED_ORIGINS = 'https://trusted.example, http://localhost:3000';
+      const server = await createAppiumMcpServer();
+      process.env.APPIUM_MCP_ALLOWED_ORIGINS = 'https://changed.example';
+      await server.start({transportType: 'httpStream', httpStream: {port: 8123, cors: true}});
+      expect(start).toHaveBeenCalledWith({
+        transportType: 'httpStream',
+        httpStream: {
+          endpoint: '/sse',
+          port: 8123,
+          cors: {
+            origin: ['https://trusted.example', 'http://localhost:3000'],
+            credentials: false,
+            methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+          },
+        },
+      });
+    } finally {
+      if (previous === undefined) {
+        delete process.env.APPIUM_MCP_ALLOWED_ORIGINS;
+      } else {
+        process.env.APPIUM_MCP_ALLOWED_ORIGINS = previous;
+      }
+      start.mockRestore();
+    }
+  });
+
   test('registers plugin capabilities during construction but initializes lazily', async () => {
     let registerCalled = false;
     let initialized = false;

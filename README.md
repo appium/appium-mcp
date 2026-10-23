@@ -119,6 +119,32 @@ Here is the recommended configuration:
 
 **Note:** Make sure to update the `ANDROID_HOME` path to match your Android SDK installation path.
 
+### HTTP transport security
+
+The `--httpStream` transport rejects MCP requests containing an `Origin` header
+by default and disables CORS. To allow a trusted browser client, set a
+comma-separated list of exact origins before starting the server:
+
+```sh
+APPIUM_MCP_ALLOWED_ORIGINS='https://inspector.example.com,http://localhost:3000' appium-mcp --httpStream
+```
+
+Origins must use `http` or `https` and contain only `scheme://host[:port]`.
+Paths (including a trailing slash), credentials, wildcards and `null` are not
+accepted; invalid configuration fails startup. Matching is exact, including
+scheme and port. Unlisted, empty and opaque (`null`) origins receive HTTP 403
+on MCP requests, even with an existing session. Preflight responses only grant
+CORS access to listed origins. Browser cookies are not enabled by this setting.
+
+The allowlist is captured when the server is constructed. It applies to both
+the CLI and `createAppiumMcpServer`; the raw `httpStream.cors` option cannot
+override it. Unset or empty configuration grants no browser access.
+
+Clients that omit `Origin`, and stdio clients, continue to work. Origin validation
+is not client authentication: non-browser clients can omit or forge this header.
+Keep the HTTP listener on loopback; deployments exposed to other machines need
+authentication and network access controls.
+
 ### With Gemini CLI
 
 Use the Gemini CLI to add the MCP Appium server:
@@ -154,6 +180,7 @@ This will automatically configure the MCP server for use with Claude Code. Make 
 | `APPIUM_MCP_APPS_ENABLED`                 | Optional                               | MCP Apps static UI mode. Enabled by default. Set to `false` or `0` to force the embedded UI compatibility fallback. See [MCP Apps Mode](#mcp-apps-mode)                                                                                                                                                                                            |
 | `APPIUM_MCP_ON_CLIENT_DISCONNECT`         | Optional                               | Session cleanup when the MCP client disconnects: `delete_all` (default) deletes **MCP-owned** Appium sessions (`safeDeleteAllSessions`); `skip` keeps those sessions across disconnects (e.g. HTTP/stream clients that reconnect). Attached/remote sessions are not removed by this path. See [MCP disconnect behavior](#mcp-disconnect-behavior). |
 | `APPIUM_MCP_WDA_APP_PATH`                 | Optional                               | Absolute path to a pre-extracted `WebDriverAgentRunner-Runner.app` bundle. When set, `prepare_ios_simulator` skips all GitHub downloads and uses this bundle directly — useful in environments where external downloads are blocked                                                                                                                |
+| `APPIUM_MCP_ALLOWED_ORIGINS` | Optional | Comma-separated list of exact HTTP(S) origins allowed to access the HTTP transport from browser clients (e.g. `https://inspector.example.com,http://localhost:3000`). Unset or empty denies browser access. Invalid origins fail startup; the allowlist is captured when the server is constructed. See [HTTP transport security](#http-transport-security). |
 | REMOTE_SERVER_URL_ALLOW_REGEX | Optional | Regular expression applied to the complete remoteServerUrl value before MCP Appium connects to a remote Appium/WebDriver server. When unset, any valid HTTP(S) server URL is accepted. This checks the supplied URL only, not destinations selected by the WebDriver client from server responses. See [Remote server security and trust model](#remote-server-security-and-trust-model). |
 | REMOTE_SERVER_ENABLE_DIRECT_CONNECT | Optional | `true` (default) or `false`. Controls the WebDriver client's `enableDirectConnect` option for remote session creation, attachment, and persisted-session reconnection. Set `false` to disable switching to Appium-advertised direct-connect endpoints. Does not disable HTTP redirects or WebDriver BiDi connections. |
 | ALLOW_REMOTE_APP_URLS | Optional | `true` (default) or `false`. Set `false` to reject HTTP(S) app URLs for embedded-driver installation and session creation (`appium:app` and `appium:otherApps`, including legacy unprefixed and `appium:options` forms). Local app paths remain supported. Remote Appium sessions are unaffected: their server resolves app inputs. |
