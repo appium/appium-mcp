@@ -33,6 +33,17 @@ export interface ActionEvidenceRecord {
   };
   timing: {startedAt: string; finishedAt: string; durationMs: number};
   error?: {code: EvidenceErrorCode; message: string};
+  /**
+   * Diagnostic hypothesis explaining why a failure likely occurred, paired with
+   * supporting signals observed in the action inputs/context. Omitted on success.
+   */
+  reason?: FailureReasonHypothesis;
+}
+
+export interface FailureReasonHypothesis {
+  hypothesis: string;
+  confidence: number;
+  signals: string[];
 }
 
 export type EvidenceStage = 'locate' | 'interact' | 'capture';
@@ -144,6 +155,8 @@ export function classifyError(err: unknown): EvidenceErrorCode {
 function buildRecord(result: ContentResult, input: EvidenceInput): ActionEvidenceRecord {
   const finished = Date.now();
   const status: ActionEvidenceRecord['status'] = result.isError || input.error !== undefined ? 'error' : 'success';
+  const error = status === 'error' ? buildError(input.error, result) : undefined;
+  const reason = error ? inferFailureReason(error, input) : undefined;
 
   return {
     schemaVersion: 1,
@@ -162,8 +175,166 @@ function buildRecord(result: ContentResult, input: EvidenceInput): ActionEvidenc
       finishedAt: new Date(finished).toISOString(),
       durationMs: finished - input.startedAt,
     },
-    ...(status === 'error' ? {error: buildError(input.error, result)} : {}),
+    ...(error ? {error} : {}),
+    ...(reason ? {reason} : {}),
   };
+}
+
+const NATIVE_ONLY_STRATEGIES = new Set([
+  'accessibility id',
+  '-android uiautomator',
+  '-ios predicate string',
+  '-ios class chain',
+]);
+
+/**
+ * Generate a diagnostic failure-reason hypothesis and supporting signals from
+ * a classified error and the action context. Clearly marked as a hypothesis
+ * rather than ground-truth root cause.
+ */
+export function inferFailureReason(
+  error: NonNullable<ActionEvidenceRecord['error']>,
+  input: Pick<EvidenceInput, 'name' | 'stage' | 'locator' | 'element' | 'context'>,
+): FailureReasonHypothesis {
+  const {locator, element, context, stage} = input;
+  const contextName = context?.contextName;
+  const platform = context?.platform?.toLowerCase();
+
+  switch (error.code) {
+    case 'ELEMENT_NOT_FOUND': {
+      if (contextName === 'NATIVE_APP' && locator?.strategy === 'css selector') {
+        return {
+          hypothesis:
+            "A CSS selector was used while the active context is 'NATIVE_APP'; switch to a WEBVIEW context or use a native locator strategy.",
+          confidence: 0.85,
+          signals: [
+            'error code is ELEMENT_NOT_FOUND',
+            "active context is 'NATIVE_APP' while using WebView strategy 'css selector'",
+          ],
+        };
+      }
+      if (contextName && contextName !== 'NATIVE_APP' && locator && NATIVE_ONLY_STRATEGIES.has(locator.strategy)) {
+        return {
+          hypothesis: `A native locator strategy ('${locator.strategy}') was used while the active context is '${contextName}'; switch to 'NATIVE_APP' or use a DOM selector.`,
+          confidence: 0.85,
+          signals: [
+            'error code is ELEMENT_NOT_FOUND',
+            `active context is '${contextName}' while using native locator strategy '${locator.strategy}'`,
+          ],
+        };
+      }
+      const signals = ['error code is ELEMENT_NOT_FOUND'];
+      if (locator) {
+        signals.push(`no element matched ${locator.strategy}=${locator.selector}`);
+      }
+      if (contextName) {
+        signals.push(`active context is '${contextName}'`);
+      }
+      if (locator?.strategy === 'xpath') {
+        signals.push('xpath selectors are sensitive to UI hierarchy changes');
+        return {
+          hypothesis:
+            'No element matched the XPath selector; the UI hierarchy may have changed, the screen may still be loading, or the element is off-screen.',
+          confidence: 0.65,
+          signals,
+        };
+      }
+      return {
+        hypothesis:
+          'The target element was not found in the current UI hierarchy; the screen may still be loading, the element may be off-screen or hidden behind a modal, or the locator is stale.',
+        confidence: 0.65,
+        signals,
+      };
+    }
+
+    case 'STALE_ELEMENT': {
+      const signals = ['error code is STALE_ELEMENT'];
+      if (element?.webdriverId) {
+        signals.push(`element '${element.webdriverId}' is no longer attached to the current UI hierarchy`);
+      }
+      return {
+        hypothesis:
+          'The UI hierarchy re-rendered or navigated after the element was located, invalidating the cached element reference; re-locate the element before retrying.',
+        confidence: 0.9,
+        signals,
+      };
+    }
+
+    case 'TIMEOUT': {
+      const signals = ['error code is TIMEOUT'];
+      if (stage) {
+        signals.push(`timed out during '${stage}' stage`);
+      }
+      if (locator) {
+        signals.push(`waiting on ${locator.strategy}=${locator.selector}`);
+      }
+      return {
+        hypothesis:
+          'The operation timed out waiting for the device or UI to respond; the app may be busy, animating, blocked by a dialog, or the target condition was not met in time.',
+        confidence: 0.7,
+        signals,
+      };
+    }
+
+    case 'CONTEXT_NOT_AVAILABLE': {
+      const signals = ['error code is CONTEXT_NOT_AVAILABLE'];
+      if (contextName) {
+        signals.push(`active context is '${contextName}'`);
+      }
+      return {
+        hypothesis:
+          'The requested context is not available; the WebView may not have loaded yet, WebView debugging may be disabled, or the context was closed.',
+        confidence: 0.8,
+        signals,
+      };
+    }
+
+    case 'INVALID_SELECTOR': {
+      if (
+        (platform === 'ios' && locator?.strategy === '-android uiautomator') ||
+        (platform === 'android' &&
+          (locator?.strategy === '-ios predicate string' || locator?.strategy === '-ios class chain'))
+      ) {
+        return {
+          hypothesis: `Locator strategy '${locator.strategy}' is not supported on platform '${context?.platform}'.`,
+          confidence: 0.9,
+          signals: [
+            'error code is INVALID_SELECTOR',
+            `strategy '${locator.strategy}' is not supported on platform '${context?.platform}'`,
+          ],
+        };
+      }
+      const signals = ['error code is INVALID_SELECTOR'];
+      if (locator) {
+        signals.push(`driver rejected ${locator.strategy} selector '${locator.selector}'`);
+      }
+      return {
+        hypothesis: `The selector syntax is malformed or unsupported by the active driver for strategy '${locator?.strategy ?? 'unknown'}'.`,
+        confidence: 0.85,
+        signals,
+      };
+    }
+
+    case 'ACTION_FAILED': {
+      if (/intercepted|obscured|not visible|not interactable|cannot be clicked|not hittable/i.test(error.message)) {
+        return {
+          hypothesis:
+            'The target element could not be interacted with because it is disabled, off-screen, or obscured by another view (such as a modal, keyboard, or overlay).',
+          confidence: 0.75,
+          signals: ['error code is ACTION_FAILED', 'driver reported target element is not interactable or is obscured'],
+        };
+      }
+      const signals = ['error code is ACTION_FAILED'];
+      if (stage) {
+        signals.push(`failed during '${stage}' stage`);
+      }
+      return {
+        hypothesis: `The driver rejected the '${input.name}' action; the current screen or element state may not support this operation.`,
+        confidence: 0.5,
+        signals,
+      };
+    }
+  }
 }
 
 /**

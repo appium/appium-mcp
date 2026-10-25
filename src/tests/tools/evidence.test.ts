@@ -8,7 +8,7 @@ jest.unstable_mockModule('../../session-store', () => ({
   getSessionInfo: jest.fn(() => null),
 }));
 
-const {classifyError, isEvidenceEnabled, withEvidence} = await import('../../tools/evidence.js');
+const {classifyError, inferFailureReason, isEvidenceEnabled, withEvidence} = await import('../../tools/evidence.js');
 
 const ENV_KEY = 'APPIUM_MCP_EVIDENCE';
 
@@ -145,6 +145,7 @@ describe('withEvidence', () => {
     expect(record.action.locator).toEqual({strategy: 'id', selector: 'btn'});
     expect(record.action.element).toEqual({webdriverId: 'el-1'});
     expect(record.error).toBeUndefined();
+    expect(record.reason).toBeUndefined();
     expect(record.timing.durationMs).toBeGreaterThanOrEqual(0);
     expect(record.timing.startedAt).toBe(new Date(startedAt).toISOString());
   });
@@ -156,6 +157,7 @@ describe('withEvidence', () => {
         name: 'appium_find_element',
         stage: 'locate',
         startedAt: Date.now(),
+        element: {webdriverId: 'el-stale-1'},
         error: new Error('stale element reference'),
       }),
     );
@@ -163,6 +165,14 @@ describe('withEvidence', () => {
     expect(record.status).toBe('error');
     expect(record.error?.code).toBe('STALE_ELEMENT');
     expect(record.error?.message).toBe('stale element reference');
+    expect(record.reason).toEqual({
+      hypothesis: expect.stringMatching(/re-rendered|re-locate/i),
+      confidence: 0.9,
+      signals: [
+        'error code is STALE_ELEMENT',
+        "element 'el-stale-1' is no longer attached to the current UI hierarchy",
+      ],
+    });
   });
 
   test('falls back to result text when no error object is supplied', () => {
@@ -178,5 +188,90 @@ describe('withEvidence', () => {
     expect(record.status).toBe('error');
     expect(record.error?.code).toBe('TIMEOUT');
     expect(record.error?.message).toBe('The operation timed out');
+    expect(record.reason?.confidence).toBe(0.7);
+    expect(record.reason?.signals).toContain("timed out during 'interact' stage");
+  });
+});
+
+describe('inferFailureReason', () => {
+  test('flags CSS selector used in NATIVE_APP context', () => {
+    const reason = inferFailureReason(
+      {code: 'ELEMENT_NOT_FOUND', message: 'no such element'},
+      {
+        name: 'appium_find_element',
+        stage: 'locate',
+        locator: {strategy: 'css selector', selector: '.btn'},
+        context: {platform: 'android', contextName: 'NATIVE_APP'},
+      },
+    );
+
+    expect(reason.confidence).toBe(0.85);
+    expect(reason.hypothesis).toMatch(/WEBVIEW/);
+    expect(reason.signals).toContain("active context is 'NATIVE_APP' while using WebView strategy 'css selector'");
+  });
+
+  test('flags native locator strategy used in a WEBVIEW context', () => {
+    const reason = inferFailureReason(
+      {code: 'ELEMENT_NOT_FOUND', message: 'no such element'},
+      {
+        name: 'appium_find_element',
+        stage: 'locate',
+        locator: {strategy: 'accessibility id', selector: 'login_button'},
+        context: {platform: 'ios', contextName: 'WEBVIEW_1234'},
+      },
+    );
+
+    expect(reason.confidence).toBe(0.85);
+    expect(reason.hypothesis).toMatch(/NATIVE_APP/);
+    expect(reason.signals).toContain(
+      "active context is 'WEBVIEW_1234' while using native locator strategy 'accessibility id'",
+    );
+  });
+
+  test('notes XPath hierarchy sensitivity when XPath fails', () => {
+    const reason = inferFailureReason(
+      {code: 'ELEMENT_NOT_FOUND', message: 'no such element'},
+      {
+        name: 'appium_find_element',
+        stage: 'locate',
+        locator: {strategy: 'xpath', selector: '//XCUIElementTypeButton[1]'},
+        context: {platform: 'ios', contextName: 'NATIVE_APP'},
+      },
+    );
+
+    expect(reason.confidence).toBe(0.65);
+    expect(reason.hypothesis).toMatch(/XPath/i);
+    expect(reason.signals).toContain('xpath selectors are sensitive to UI hierarchy changes');
+  });
+
+  test('flags platform mismatch on INVALID_SELECTOR', () => {
+    const reason = inferFailureReason(
+      {code: 'INVALID_SELECTOR', message: 'Locator Strategy is not supported'},
+      {
+        name: 'appium_find_element',
+        stage: 'locate',
+        locator: {strategy: '-android uiautomator', selector: 'new UiSelector()'},
+        context: {platform: 'iOS', contextName: 'NATIVE_APP'},
+      },
+    );
+
+    expect(reason.confidence).toBe(0.9);
+    expect(reason.hypothesis).toMatch(/not supported on platform 'iOS'/);
+  });
+
+  test('distinguishes obscured/non-interactable ACTION_FAILED from generic failure', () => {
+    const obscured = inferFailureReason(
+      {code: 'ACTION_FAILED', message: 'element click intercepted: Element is not clickable'},
+      {name: 'appium_gesture', stage: 'interact'},
+    );
+    expect(obscured.confidence).toBe(0.75);
+    expect(obscured.hypothesis).toMatch(/obscured/i);
+
+    const generic = inferFailureReason(
+      {code: 'ACTION_FAILED', message: 'unknown server-side error'},
+      {name: 'appium_gesture', stage: 'interact'},
+    );
+    expect(generic.confidence).toBe(0.5);
+    expect(generic.signals).toContain("failed during 'interact' stage");
   });
 });
