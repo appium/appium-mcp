@@ -8,7 +8,7 @@ import {createPageSourceInspectorAppUI} from '../ui/page-source-inspector-app.js
 function inspector() {
   const dom = new DOMParser().parseFromString('<ui><pre/></ui>', 'text/xml');
   const output = Object.assign(dom.getElementsByTagName('pre')[0], {classList: {toggle() {}}});
-  const events = new Map<string, () => void>();
+  const events = new Map<string, (event?: unknown) => void>();
   const search = {
     value: '',
     addEventListener: (event: string, handler: () => void) => events.set('searchBox:' + event, handler),
@@ -17,6 +17,7 @@ function inspector() {
   const parent = {postMessage: jest.fn()};
   const controls = new Map<string, {textContent?: string | null; disabled?: boolean; hidden?: boolean}>();
   const alert = jest.fn();
+  const scroll = jest.fn();
   runInNewContext(createPageSourceInspectorAppUI().match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? '', {
     DOMParser,
     XMLSerializer,
@@ -43,7 +44,7 @@ function inspector() {
         });
       },
       createTextNode: (text: string) => dom.createTextNode(text),
-      createElement: (name: string) => dom.createElement(name),
+      createElement: (name: string) => Object.assign(dom.createElement(name), {scrollIntoView: scroll}),
     },
   });
   return {
@@ -52,6 +53,12 @@ function inspector() {
     alert,
     controls,
     sent: parent.postMessage,
+    scroll,
+    enter: (shiftKey = false, isComposing = false) => {
+      const event = {key: 'Enter', shiftKey, isComposing, preventDefault: jest.fn()};
+      events.get('searchBox:keydown')?.(event);
+      return event;
+    },
     generate: () => events.get('generateButton:click')?.(),
     reply: (result: unknown, error?: unknown) => {
       const request = parent.postMessage.mock.calls.at(-1)?.[0] as {id: number};
@@ -157,4 +164,43 @@ test('shows an explicit empty result', async () => {
   ui.reply({content: [{type: 'text', text: '{"interactableElements":[]}'}]});
   await pending;
   expect(ui.controls.get('locatorStatus')?.textContent).toBe('No supported elements found in the fetched XML.');
+});
+
+test('Enter and Shift+Enter navigate matches, wrap, and reset after search or source changes', () => {
+  const ui = inspector();
+  const xml = '<root><node name="Calendar"/><node name="calendar"/></root>';
+  ui.receive(xml);
+  ui.search.value = 'Calendar';
+  ui.searchChanged();
+  const marks = ui.output.getElementsByTagName('mark');
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 matches');
+  expect(ui.enter().preventDefault).toHaveBeenCalled();
+  expect(marks[0].getAttribute('data-active')).toBe('true');
+  ui.enter();
+  expect(marks[0].hasAttribute('data-active')).toBe(false);
+  expect(marks[1].getAttribute('data-active')).toBe('true');
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 / 2');
+  ui.enter();
+  expect(marks[0].getAttribute('data-active')).toBe('true');
+  ui.enter(true);
+  expect(marks[1].getAttribute('data-active')).toBe('true');
+  expect(ui.scroll).toHaveBeenCalledWith({block: 'nearest', inline: 'nearest'});
+  expect(ui.output.textContent).toBe(xml);
+  expect(ui.sent).toHaveBeenCalledTimes(1); // Only initialization, never locator generation.
+  expect(ui.enter(false, true).preventDefault).not.toHaveBeenCalled();
+  ui.search.value = 'missing';
+  ui.searchChanged();
+  ui.enter();
+  expect(ui.controls.get('searchStatus')?.textContent).toBe('No matches');
+  ui.search.value = '';
+  ui.searchChanged();
+  expect(ui.controls.get('searchStatus')?.textContent).toBe('');
+  expect(ui.output.getElementsByTagName('mark')).toHaveLength(0);
+  ui.search.value = 'Calendar';
+  ui.searchChanged();
+  ui.enter(true);
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 / 2');
+  ui.receive('<root name="Calendar"/>');
+  ui.enter();
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 1');
 });

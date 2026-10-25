@@ -29,11 +29,7 @@ export function shouldIncludeElement(
     clickableOnly = false,
   } = filters;
 
-  const search = query?.trim().toLowerCase();
-  if (
-    search &&
-    ![element.tagName, ...Object.values(element.attributes)].some((value) => value.toLowerCase().includes(search))
-  ) {
+  if (!matchesSearchQuery(element, query)) {
     return false;
   }
 
@@ -54,6 +50,15 @@ export function shouldIncludeElement(
   }
 
   return true;
+}
+
+/** Literal substring matching applies only to this element, never its descendants. */
+function matchesSearchQuery(element: JSONElement, query?: string): boolean {
+  const search = query?.trim().toLowerCase();
+  if (!search) {
+    return true;
+  }
+  return [element.tagName, ...Object.values(element.attributes)].some((value) => value.toLowerCase().includes(search));
 }
 
 /**

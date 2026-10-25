@@ -68,7 +68,7 @@ export default function generateLocators(server: FastMCP): void {
           : !capabilities.browserName;
 
         const query = args.query?.trim();
-        const interactableElements = generateAllElementLocators(
+        const elementsWithLocators = generateAllElementLocators(
           pageSource,
           isNative,
           driverName,
@@ -77,7 +77,7 @@ export default function generateLocators(server: FastMCP): void {
 
         const textResponse = textResult(
           JSON.stringify({
-            interactableElements,
+            interactableElements: elementsWithLocators,
             message: 'Page source retrieved successfully',
             instruction: `These are the locators for the current page. Use this to generate code for the current page.
                      Using the template provided by generate://code-with-locators resource.`,
@@ -93,7 +93,7 @@ export default function generateLocators(server: FastMCP): void {
         return addUIResourceToResponse(textResponse, () =>
           createUIResource(
             `ui://appium-mcp/locator-generator/${Date.now()}`,
-            createLocatorGeneratorUI(interactableElements),
+            createLocatorGeneratorUI(elementsWithLocators),
           ),
         );
       } catch (err: unknown) {

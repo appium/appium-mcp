@@ -403,7 +403,11 @@ More models benchmarked can be found [here](src/tests/benchmark_model/TEST_REPOR
 `appium_get_page_source`, `appium_screenshot`, and `generate_locators` use static MCP App viewers by default when
 the client advertises MCP Apps support.
 
-In the Page Source Inspector, enter text in Search and click **Find locators** to generate candidates for
+In the Page Source Inspector, Search highlights matching text in the displayed XML. Press **Enter** to jump
+to the next match or **Shift+Enter** for the previous match; navigation wraps and keeps the full XML visible.
+The match counter shows your current position.
+
+Enter text in Search and click **Find locators** to generate candidates for
 matching elements. Search uses a case-insensitive literal substring of element types and attribute values
 (such as name, label, text, and resource ID), including hidden elements and types such as iOS icons.
 Generation fetches fresh XML from the device; the XML already displayed remains unchanged. An empty search

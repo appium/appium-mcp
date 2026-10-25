@@ -1,3 +1,5 @@
+import {XML_FORMAT_SCRIPT, XML_SEARCH_SCRIPT} from './xml-inspector-scripts.js';
+
 /**
  * Static MCP App used by appium_get_page_source.
  *
@@ -35,6 +37,9 @@ export function createPageSourceInspectorAppUI(): string {
     .viewer { height: 320px; min-height: 160px; resize: vertical; overflow: auto; padding: 20px; }
     .xml-content, .selector { margin: 0; font: 12px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .xml-content { white-space: pre; color: #c5d3e7; }
+    mark[data-active] { outline: 2px solid #91baff; background: #ff963c; }
+    .search-status { padding: 6px 20px; color: var(--muted); font-size: 12px; }
+    .search-status:empty { display: none; }
     mark { border-radius: 3px; background: #eac77a; color: #252019; }
     .empty, .hint { color: var(--muted); }
     .empty { font-family: inherit; }
@@ -65,6 +70,7 @@ export function createPageSourceInspectorAppUI(): string {
         <button class="btn btn-secondary" id="copyButton">Copy XML</button>
       </div>
     </div>
+    <div id="searchStatus" class="search-status" role="status" aria-live="polite"></div>
     <div class="viewer" title="Drag the bottom-right corner to resize vertically">
       <pre class="xml-content empty" id="xmlContent">Waiting for page source…</pre>
     </div>
@@ -82,6 +88,8 @@ export function createPageSourceInspectorAppUI(): string {
   </details>
   <script>
     (() => {
+      ${XML_FORMAT_SCRIPT}
+      ${XML_SEARCH_SCRIPT}
       const PAGE_SOURCE_PREFIX = 'Page source retrieved successfully: \\n\\\`\\\`\\\`xml ';
       const xmlContent = document.getElementById('xmlContent');
       const sourceInfo = document.getElementById('sourceInfo');
@@ -90,6 +98,7 @@ export function createPageSourceInspectorAppUI(): string {
       const locatorResults = document.getElementById('locatorResults');
       const locatorStatus = document.getElementById('locatorStatus');
       const locatorOutput = document.getElementById('locatorOutput');
+      const xmlSearch = createXmlSearch(xmlContent, document.getElementById('searchStatus'));
       let source = '';
       let savedFile;
       let nextRequestId = 1;
@@ -128,30 +137,9 @@ export function createPageSourceInspectorAppUI(): string {
         return text;
       }
 
-      function appendHighlightedText(container, text, query) {
-        const lowerText = text.toLowerCase();
-        const lowerQuery = query.toLowerCase();
-        let position = 0;
-
-        while (position < text.length) {
-          const matchIndex = lowerText.indexOf(lowerQuery, position);
-          if (matchIndex === -1) {
-            container.appendChild(document.createTextNode(text.slice(position)));
-            return;
-          }
-          if (matchIndex > position) {
-            container.appendChild(document.createTextNode(text.slice(position, matchIndex)));
-          }
-          const mark = document.createElement('mark');
-          mark.textContent = text.slice(matchIndex, matchIndex + query.length);
-          container.appendChild(mark);
-          position = matchIndex + query.length;
-        }
-      }
-
       function renderSource() {
         const query = searchBox.value.trim();
-        xmlContent.textContent = '';
+        xmlSearch.render('', '');
         xmlContent.classList.toggle('empty', source.length === 0);
         if (savedFile) {
           sourceInfo.textContent = savedFile.bytes + ' bytes saved';
@@ -160,10 +148,8 @@ export function createPageSourceInspectorAppUI(): string {
         }
         if (!source) {
           xmlContent.textContent = 'No page source was returned.';
-        } else if (!query) {
-          xmlContent.textContent = source;
         } else {
-          appendHighlightedText(xmlContent, source, query);
+          xmlSearch.render(source, query);
         }
         sourceInfo.textContent = source.length + ' characters';
       }
@@ -176,43 +162,7 @@ export function createPageSourceInspectorAppUI(): string {
       function formatXML() {
         if (!source) return;
         try {
-          const parser = new DOMParser();
-          const documentNode = parser.parseFromString(source, 'text/xml');
-          if (!documentNode.documentElement || documentNode.getElementsByTagName('parsererror').length) {
-            throw new Error('Invalid XML');
-          }
-
-          function indentElement(element, depth) {
-            if (element.getAttribute('xml:space') === 'preserve') return;
-            const children = Array.from(element.childNodes);
-            const hasMixedContent = children.some((child) =>
-              child.nodeType === 4 || (child.nodeType === 3 && (child.nodeValue || '').trim()),
-            );
-            if (hasMixedContent || !children.some((child) => child.nodeType === 1)) return;
-
-            for (const child of children) {
-              if (child.nodeType === 3) {
-                element.removeChild(child);
-                continue;
-              }
-              if (child.nodeType === 1) indentElement(child, depth + 1);
-              element.insertBefore(documentNode.createTextNode('\\n' + '  '.repeat(depth + 1)), child);
-            }
-            element.appendChild(documentNode.createTextNode('\\n' + '  '.repeat(depth)));
-          }
-
-          indentElement(documentNode.documentElement, 0);
-          const serializer = new XMLSerializer();
-          let formattedSource = Array.from(documentNode.childNodes)
-            .filter((node) => node.nodeType !== 3)
-            .map((node) => serializer.serializeToString(node))
-            .join('\\n');
-          const declaration = source.match(/^\\s*(<\\?xml\\s[^?]*\\?>)/);
-          if (declaration && !formattedSource.startsWith('<?xml ')) {
-            formattedSource = declaration[1] + '\\n' + formattedSource;
-          }
-
-          source = formattedSource;
+          source = formatXml(source);
           renderSource();
         } catch {
           window.alert('Failed to format XML');
@@ -268,6 +218,26 @@ export function createPageSourceInspectorAppUI(): string {
         });
       }
 
+      function parseLocatorResult(result) {
+        const text = (result?.content || [])
+          .filter(item => item.type === 'text')
+          .map(item => item.text)
+          .join('\\n');
+        if (result?.isError) throw new Error(text || 'Tool returned an error');
+        const data = JSON.parse(text);
+        if (!Array.isArray(data.interactableElements)) throw new Error('No locator data returned');
+        return data.interactableElements;
+      }
+
+      function describeLocatorResults(count, query) {
+        if (query) {
+          const matches = count ? count + ' matching elements' : 'No matching elements';
+          return matches + ' for “' + query + '” in freshly fetched XML.';
+        }
+        if (!count) return 'No supported elements found in the fetched XML.';
+        return 'Candidates generated for ' + count + ' elements from freshly fetched XML.';
+      }
+
       async function generateLocators() {
         if (generateButton.disabled) return;
         const query = searchBox.value.trim();
@@ -277,16 +247,8 @@ export function createPageSourceInspectorAppUI(): string {
         locatorOutput.textContent = '';
         try {
           const result = await sendRequest('tools/call', {name: 'generate_locators', arguments: query ? {query} : {}});
-          const text = (result?.content || []).filter((item) => item.type === 'text').map((item) => item.text).join('\\n');
-          if (result?.isError) throw new Error(text || 'Tool returned an error');
-          const data = JSON.parse(text);
-          if (!Array.isArray(data.interactableElements)) throw new Error('No locator data returned');
-          const elements = data.interactableElements;
-          locatorStatus.textContent = query
-            ? (elements.length ? elements.length + ' matching elements' : 'No matching elements') + ' for “' + query + '” in freshly fetched XML.'
-            : elements.length
-              ? 'Candidates generated for ' + elements.length + ' elements from freshly fetched XML.'
-              : 'No supported elements found in the fetched XML.';
+          const elements = parseLocatorResult(result);
+          locatorStatus.textContent = describeLocatorResults(elements.length, query);
           renderLocators(elements);
         } catch (error) {
           locatorStatus.textContent = 'Failed to generate locators: ' + error.message;
@@ -317,6 +279,7 @@ export function createPageSourceInspectorAppUI(): string {
       });
 
       searchBox.addEventListener('input', renderSource);
+      searchBox.addEventListener('keydown', xmlSearch.handleKeyDown);
       document.getElementById('copyButton').addEventListener('click', copyToClipboard);
       document.getElementById('formatButton').addEventListener('click', formatXML);
       document.getElementById('generateButton').addEventListener('click', generateLocators);
