@@ -76,7 +76,7 @@
     "@wdio/logger": "^10.0.0",
     "@xmldom/xmldom": "^0.9.8",
     "appium-adb": "^16.0.0",
-    "appium-ios-device": "^3.1.0",
+    "appium-ios-device": "^3.1.24",
     "appium-uiautomator2-driver": "^8.0.0",
     "appium-webdriveragent": "^16.0.0",
     "appium-xcuitest-driver": "^12.1.0",
