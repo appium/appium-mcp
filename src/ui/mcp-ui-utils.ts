@@ -1049,13 +1049,46 @@ export function createPageSourceInspectorUI(pageSource: string): string {
     }
 
     function formatXML() {
-      const content = document.getElementById('xmlContent').textContent;
       try {
         const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(content, 'text/xml');
+        const xmlDoc = parser.parseFromString(originalSource, 'text/xml');
+        if (!xmlDoc.documentElement || xmlDoc.getElementsByTagName('parsererror').length) {
+          throw new Error('Invalid XML');
+        }
+
+        function indentElement(element, depth) {
+          // Do not introduce whitespace into mixed content or preserved subtrees.
+          if (element.getAttribute('xml:space') === 'preserve') return;
+          const children = Array.from(element.childNodes);
+          if (children.some(child =>
+            child.nodeType === 4 || (child.nodeType === 3 && child.nodeValue.trim())
+          )) return;
+          if (!children.some(child => child.nodeType === 1)) return;
+
+          for (const child of children) {
+            if (child.nodeType === 3) {
+              element.removeChild(child);
+              continue;
+            }
+            if (child.nodeType === 1) indentElement(child, depth + 1);
+            element.insertBefore(xmlDoc.createTextNode('\\n' + '  '.repeat(depth + 1)), child);
+          }
+          element.appendChild(xmlDoc.createTextNode('\\n' + '  '.repeat(depth)));
+        }
+
+        indentElement(xmlDoc.documentElement, 0);
         const serializer = new XMLSerializer();
-        const formatted = serializer.serializeToString(xmlDoc);
-        document.getElementById('xmlContent').textContent = formatted;
+        let formatted = Array.from(xmlDoc.childNodes)
+          .filter(node => node.nodeType !== 3)
+          .map(node => serializer.serializeToString(node))
+          .join('\\n');
+        // Browser DOMParser does not retain the XML declaration.
+        const declaration = originalSource.match(/^\\s*(<\\?xml\\s[^?]*\\?>)/);
+        if (declaration && !formatted.startsWith('<?xml ')) {
+          formatted = declaration[1] + '\\n' + formatted;
+        }
+        displayedSource = formatted;
+        renderSource(document.getElementById('searchBox').value);
       } catch (e) {
         alert('Failed to format XML');
       }
@@ -1073,6 +1106,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
 
     const xmlContent = document.getElementById('xmlContent');
     const originalSource = xmlContent.textContent;
+    let displayedSource = originalSource;
 
     function appendTextWithHighlights(container, text, searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -1104,11 +1138,11 @@ export function createPageSourceInspectorUI(pageSource: string): string {
     function renderSource(searchTerm = '') {
       xmlContent.textContent = '';
       if (!searchTerm) {
-        xmlContent.textContent = originalSource;
+        xmlContent.textContent = displayedSource;
         return;
       }
 
-      appendTextWithHighlights(xmlContent, originalSource, searchTerm);
+      appendTextWithHighlights(xmlContent, displayedSource, searchTerm);
     }
 
     // Search functionality
