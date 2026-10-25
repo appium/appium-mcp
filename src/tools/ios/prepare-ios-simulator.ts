@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import {NativeSimctl} from '@appium/coresim';
 import {fs, net, plist, zip} from '@appium/support';
 /**
  * Single-call tool to prepare an iOS simulator for Appium testing.
@@ -7,7 +8,6 @@ import {fs, net, plist, zip} from '@appium/support';
  * Each step checks preconditions and skips if already satisfied.
  */
 import type {ContentResult, FastMCP} from 'fastmcp';
-import {Simctl} from 'node-simctl';
 import {exec} from 'teen_process';
 import {z} from 'zod';
 
@@ -115,28 +115,28 @@ async function getLatestWDAVersionFromCache(): Promise<string | null> {
 }
 
 async function getSimulatorArchitecture(simulatorUdid: string): Promise<string[]> {
-  const {stdout} = await exec('xcrun', ['simctl', 'getenv', simulatorUdid, 'SIMULATOR_ARCHS']);
-  const archs = stdout.trim().split(/\s+/);
+  const value = await new NativeSimctl().getEnv(simulatorUdid, 'SIMULATOR_ARCHS');
+  const archs = value.trim().split(/\s+/).filter(Boolean);
+  if (archs.length === 0) {
+    throw new Error(`No architectures reported for simulator ${simulatorUdid}`);
+  }
   return archs;
 }
 
 async function installAppOnSimulator(appPath: string, simulatorUdid: string): Promise<void> {
-  await exec('xcrun', ['simctl', 'install', simulatorUdid, appPath]);
+  const simulator = new NativeSimctl();
+  await simulator.installApp(simulatorUdid, appPath);
 }
 
 async function launchAppOnSimulator(bundleId: string, simulatorUdid: string, wdaPort: number): Promise<void> {
-  // simctl forwards env vars prefixed with SIMCTL_CHILD_ to the launched app.
-  // WDA reads USE_PORT to choose which local port to listen on inside the
-  // simulator, so each simulator's WDA can run on its own port instead of all
-  // colliding on the default 8100.
-  await exec('xcrun', ['simctl', 'launch', simulatorUdid, bundleId], {
-    env: {...process.env, SIMCTL_CHILD_USE_PORT: String(wdaPort)},
-  });
+  const simulator = new NativeSimctl();
+  await simulator.launchApp(simulatorUdid, bundleId, {environment: {USE_PORT: String(wdaPort)}});
 }
 
 async function terminateAppOnSimulator(bundleId: string, simulatorUdid: string): Promise<void> {
   try {
-    await exec('xcrun', ['simctl', 'terminate', simulatorUdid, bundleId]);
+    const simulator = new NativeSimctl();
+    await simulator.terminateApp(simulatorUdid, bundleId);
   } catch {
     // Nothing running to terminate — ignore.
   }
@@ -172,33 +172,16 @@ async function getAppBundleId(appPath: string): Promise<string> {
   return manifest.CFBundleIdentifier;
 }
 
-async function getWDAState(simulatorUdid: string): Promise<WDAState> {
-  let installed = false;
-
-  // Check if installed via simctl listapps
-  try {
-    const {stdout} = await exec('xcrun', ['simctl', 'listapps', simulatorUdid, '--json']);
-    const data = JSON.parse(stdout);
-
-    for (const [bundleId, appInfo] of Object.entries(data)) {
-      if (bundleId.includes('WebDriverAgentRunner') || (appInfo as any)?.CFBundleName?.includes('WebDriverAgent')) {
-        installed = true;
-        break;
-      }
-    }
-  } catch {
-    return {installed: false, running: false};
-  }
-
+async function getWDAState(simulatorUdid: string, bundleId: string): Promise<WDAState> {
+  const simulator = new NativeSimctl();
+  const installed = await simulator.isAppInstalled(simulatorUdid, bundleId);
   if (!installed) {
     return {installed: false, running: false};
   }
 
-  // Check if actually running via launchctl inside the simulator
   try {
-    const {stdout} = await exec('xcrun', ['simctl', 'spawn', simulatorUdid, 'launchctl', 'list']);
-    const running = stdout.includes('WebDriverAgentRunner');
-    return {installed: true, running};
+    const processes = await simulator.listProcesses(simulatorUdid);
+    return {installed: true, running: processes.some(({name}) => name === bundleId)};
   } catch {
     return {installed: true, running: false};
   }
@@ -303,8 +286,8 @@ async function resolveWdaAppPath(
 
 async function installWdaStep(result: PrepareResult, udid: string, wdaAppPath: string): Promise<void> {
   try {
-    const wdaState = await getWDAState(udid);
     const bundleId = await getAppBundleId(wdaAppPath);
+    const wdaState = await getWDAState(udid, bundleId);
 
     // Install if not already installed.
     if (!wdaState.installed) {
@@ -391,10 +374,9 @@ async function prepareSimulator(
       };
     } else {
       log.info(`Booting simulator ${simulator.name} (${udid})...`);
-      const simctl = new Simctl();
-      simctl.udid = udid;
-      await simctl.bootDevice();
-      await simctl.startBootMonitor({timeout: 120000});
+      const device = new NativeSimctl();
+      await device.bootDevice(udid);
+      await device.waitForBoot(udid, {timeoutMs: 120000});
       result.boot = {
         status: 'completed',
         detail: `${simulator.name} booted successfully`,

@@ -20,11 +20,7 @@ jest.unstable_mockModule('appium-webdriveragent', () => ({
   BOOTSTRAP_PATH: '/mock/wda',
 }));
 
-// node-simctl loads asyncbox → p-limit (pure ESM), which fails on older Node.
-// prepare-ios-simulator.ts imports Simctl directly, so mock the package itself.
-jest.unstable_mockModule('node-simctl', () => ({
-  Simctl: class {},
-}));
+jest.unstable_mockModule('@appium/coresim', () => ({NativeSimctl: class {}}));
 
 // adb-manager and ios-manager wrap native CLI tools; mock them to keep the
 // test portable across environments without ADB or simctl installed.

@@ -1,5 +1,5 @@
+import {NativeSimctl, SimDeviceState} from '@appium/coresim';
 import {utilities} from 'appium-ios-device';
-import {Simctl} from 'node-simctl';
 
 import log from '../logger.js';
 
@@ -16,11 +16,7 @@ export interface IOSDevice {
  */
 export class IOSManager {
   private static instance: IOSManager;
-  private simctl: Simctl;
-
-  private constructor() {
-    this.simctl = new Simctl();
-  }
+  private constructor() {}
 
   /**
    * Get the singleton instance of IOSManager
@@ -50,26 +46,15 @@ export class IOSManager {
     }
 
     try {
-      const devices = await this.simctl.getDevices();
-      const simulators: IOSDevice[] = [];
-
-      // devices is an object with runtime as key (e.g., "18.2") and array of devices as value
-      // node-simctl returns simplified runtime keys that are already iOS versions
-      for (const [runtime, deviceList] of Object.entries(devices)) {
-        if (Array.isArray(deviceList)) {
-          for (const device of deviceList) {
-            simulators.push({
-              name: device.name,
-              udid: device.udid,
-              state: device.state,
-              type: 'simulator',
-              platform: runtime, // Runtime is already the iOS version (e.g., "18.2")
-            });
-          }
-        }
-      }
-
-      return simulators;
+      const devices = await new NativeSimctl().getDevices();
+      return devices.map((device) => ({
+        name: device.name,
+        udid: device.udid,
+        state:
+          device.state === SimDeviceState.ShuttingDown ? 'Shutting Down' : (SimDeviceState[device.state] ?? 'unknown'),
+        type: 'simulator' as const,
+        platform: /SimRuntime\.[A-Za-z]+-(.+)$/.exec(device.runtimeIdentifier)?.[1].replace(/-/g, '.') ?? '',
+      }));
     } catch (error) {
       log.error(`Error listing iOS simulators: ${error}`);
       return [];
