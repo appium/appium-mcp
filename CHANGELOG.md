@@ -1,3 +1,13 @@
+## [1.97.2](https://github.com/appium/appium-mcp/compare/v1.97.1...v1.97.2) (2026-10-25)
+
+### Miscellaneous Chores
+
+* lock the ios-device ([3ec9fc2](https://github.com/appium/appium-mcp/commit/3ec9fc200e23bc76caeba3f3cc76f12eb2a016ba))
+
+### Code Refactoring
+
+* use only coresim ([#586](https://github.com/appium/appium-mcp/issues/586)) ([86e62ec](https://github.com/appium/appium-mcp/commit/86e62ec97ccbe2e6cc549099774a434ed7f8d015))
+
 ## [1.97.1](https://github.com/appium/appium-mcp/compare/v1.97.0...v1.97.1) (2026-10-12)
 
 ### Bug Fixes
