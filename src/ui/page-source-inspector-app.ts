@@ -204,10 +204,41 @@ export function createPageSourceInspectorAppUI(): string {
         try {
           const parser = new DOMParser();
           const documentNode = parser.parseFromString(source, 'text/xml');
-          if (documentNode.querySelector('parsererror')) {
+          if (!documentNode.documentElement || documentNode.getElementsByTagName('parsererror').length) {
             throw new Error('Invalid XML');
           }
-          source = new XMLSerializer().serializeToString(documentNode);
+
+          function indentElement(element, depth) {
+            if (element.getAttribute('xml:space') === 'preserve') return;
+            const children = Array.from(element.childNodes);
+            const hasMixedContent = children.some((child) =>
+              child.nodeType === 4 || (child.nodeType === 3 && (child.nodeValue || '').trim()),
+            );
+            if (hasMixedContent || !children.some((child) => child.nodeType === 1)) return;
+
+            for (const child of children) {
+              if (child.nodeType === 3) {
+                element.removeChild(child);
+                continue;
+              }
+              if (child.nodeType === 1) indentElement(child, depth + 1);
+              element.insertBefore(documentNode.createTextNode('\\n' + '  '.repeat(depth + 1)), child);
+            }
+            element.appendChild(documentNode.createTextNode('\\n' + '  '.repeat(depth)));
+          }
+
+          indentElement(documentNode.documentElement, 0);
+          const serializer = new XMLSerializer();
+          let formattedSource = Array.from(documentNode.childNodes)
+            .filter((node) => node.nodeType !== 3)
+            .map((node) => serializer.serializeToString(node))
+            .join('\\n');
+          const declaration = source.match(/^\\s*(<\\?xml\\s[^?]*\\?>)/);
+          if (declaration && !formattedSource.startsWith('<?xml ')) {
+            formattedSource = declaration[1] + '\\n' + formattedSource;
+          }
+
+          source = formattedSource;
           renderSource();
         } catch {
           window.alert('Failed to format XML');

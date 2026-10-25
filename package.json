@@ -114,6 +114,7 @@
   },
   "optionalDependencies": {
     "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.223.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.223.0",
     "@opentelemetry/sdk-node": "^0.223.0",
     "applesign": "^5.0.0"
