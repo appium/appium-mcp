@@ -1,3 +1,9 @@
+## [1.98.0](https://github.com/appium/appium-mcp/compare/v1.97.2...v1.98.0) (2026-10-25)
+
+### Features
+
+* Fix some UI behavior for the page source, adds format ([#589](https://github.com/appium/appium-mcp/issues/589)) ([0ff11a1](https://github.com/appium/appium-mcp/commit/0ff11a1343880e3af9985a3c39e8396814dc34e5))
+
 ## [1.97.2](https://github.com/appium/appium-mcp/compare/v1.97.1...v1.97.2) (2026-10-25)
 
 ### Miscellaneous Chores
