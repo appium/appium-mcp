@@ -1,6 +1,7 @@
 import type {JSONElement} from './source-parsing.js';
 
 export interface FilterOptions {
+  query?: string;
   includeTagNames?: string[];
   excludeTagNames?: string[];
   requireAttributes?: string[];
@@ -19,6 +20,7 @@ export function shouldIncludeElement(
   automationName: string,
 ): boolean {
   const {
+    query,
     includeTagNames = [],
     excludeTagNames = ['hierarchy'],
     requireAttributes = [],
@@ -26,6 +28,14 @@ export function shouldIncludeElement(
     fetchableOnly = false,
     clickableOnly = false,
   } = filters;
+
+  const search = query?.trim().toLowerCase();
+  if (
+    search &&
+    ![element.tagName, ...Object.values(element.attributes)].some((value) => value.toLowerCase().includes(search))
+  ) {
+    return false;
+  }
 
   if (!matchesTagFilters(element, includeTagNames, excludeTagNames)) {
     return false;

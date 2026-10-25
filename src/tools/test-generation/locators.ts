@@ -27,13 +27,19 @@ export default function generateLocators(server: FastMCP): void {
     description: `Generate locators for all interactable elements on the current page. [PRIORITY 3: Use this for debugging/inspection or when you need comprehensive element info with locator suggestions]`,
     _meta: mcpAppsEnabled ? {ui: {resourceUri: LOCATOR_GENERATOR_URI}} : undefined,
     parameters: z.object({
+      query: z
+        .string()
+        .optional()
+        .describe(
+          'Case-insensitive literal substring of an element tag or attribute value (name, label, text, ID, etc.). Searches all element types, including hidden elements. Blank or omitted keeps the default interactable-element filter.',
+        ),
       sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
     }),
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (args: {sessionId?: string}, context: any): Promise<any> => {
+    execute: async (args: {sessionId?: string; query?: string}, context: any): Promise<any> => {
       const {log} = context;
       log.info('Getting page source');
       const resolved = await resolveDriver(args.sessionId);
@@ -61,9 +67,13 @@ export default function generateLocators(server: FastMCP): void {
           ? (await getCurrentContext(driver)) === 'NATIVE_APP'
           : !capabilities.browserName;
 
-        const interactableElements = generateAllElementLocators(pageSource, isNative, driverName, {
-          fetchableOnly: true,
-        });
+        const query = args.query?.trim();
+        const interactableElements = generateAllElementLocators(
+          pageSource,
+          isNative,
+          driverName,
+          query ? {query, fetchableOnly: false} : {fetchableOnly: true},
+        );
 
         const textResponse = textResult(
           JSON.stringify({

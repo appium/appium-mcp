@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, jest, test} from '@jest/globals';
 
 const mockGetPageSource = jest.fn(async () => '<hierarchy/>');
-const mockGenerateAllElementLocators = jest.fn(() => [
+const mockGenerateAllElementLocators = jest.fn((_source?: string, _native?: boolean, _driver?: string, _filters?: unknown) => [
   {
     tagName: 'android.widget.Button',
     locators: {'accessibility id': 'Continue'},
@@ -90,6 +90,19 @@ describe('generate_locators MCP Apps response', () => {
     expect(mockCreateLocatorGeneratorUI).not.toHaveBeenCalled();
   });
 
+  test('passes a trimmed query and searches beyond the default element types', async () => {
+    const tool = registerTool();
+    await tool.execute({query: ' Calendar '}, toolContext());
+    expect(mockGenerateAllElementLocators).toHaveBeenCalledWith('<hierarchy/>', true, 'uiautomator2', {
+      query: 'Calendar',
+      fetchableOnly: false,
+    });
+    await tool.execute({query: '   '}, toolContext());
+    expect(mockGenerateAllElementLocators).toHaveBeenLastCalledWith('<hierarchy/>', true, 'uiautomator2', {
+      fetchableOnly: true,
+    });
+  });
+
   test('keeps the embedded locator viewer fallback for other clients', async () => {
     const tool = registerTool();
 
@@ -123,7 +136,7 @@ function toolContext() {
 }
 
 function registerTool(): {
-  execute: (args: {sessionId?: string}, context: ReturnType<typeof toolContext>) => Promise<any>;
+  execute: (args: {sessionId?: string; query?: string}, context: ReturnType<typeof toolContext>) => Promise<any>;
   _meta?: unknown;
 } {
   let definition: any;

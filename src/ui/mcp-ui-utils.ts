@@ -1101,7 +1101,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
         type: 'tool',
         payload: {
           toolName: 'generate_locators',
-          params: {}
+          params: {query: document.getElementById('searchBox').value.trim()}
         }
       }, '*');
     }

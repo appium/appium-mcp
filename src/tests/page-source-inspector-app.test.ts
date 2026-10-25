@@ -51,6 +51,7 @@ function inspector() {
     search,
     alert,
     controls,
+    sent: parent.postMessage,
     generate: () => events.get('generateButton:click')?.(),
     reply: (result: unknown, error?: unknown) => {
       const request = parent.postMessage.mock.calls.at(-1)?.[0] as {id: number};
@@ -117,6 +118,13 @@ test('shows generated locators without changing the XML or search', async () => 
   ui.receive('<root/>');
   ui.search.value = 'Calendar';
   const pending = ui.generate();
+  expect(ui.sent).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      method: 'tools/call',
+      params: {name: 'generate_locators', arguments: {query: 'Calendar'}},
+    }),
+    '*',
+  );
   expect(ui.controls.get('generateButton')?.disabled).toBe(true);
   expect(ui.controls.get('locatorResults')?.hidden).toBe(false);
   const elements = [{tagName: 'Button', locators: {xpath: '//Button'}}];
@@ -127,6 +135,7 @@ test('shows generated locators without changing the XML or search', async () => 
   expect(ui.controls.get('generateButton')?.disabled).toBe(false);
   expect(ui.output.textContent).toBe('<root/>');
   expect(ui.search.value).toBe('Calendar');
+  expect(ui.controls.get('locatorStatus')?.textContent).toContain('for “Calendar”');
 });
 
 test.each([

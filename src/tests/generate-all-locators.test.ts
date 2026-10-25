@@ -158,3 +158,27 @@ describe('generateAllElementLocators', () => {
     expect(result.every((element) => element.clickable === true)).toBe(true);
   });
 });
+
+test('search finds iOS icons by literal attribute substring without matching their ancestors', () => {
+  const xml =
+    '<AppiumAUT><XCUIElementTypeApplication><XCUIElementTypeIcon name="Calendar" label="Calendar" visible="false"/><XCUIElementTypeButton name="Maps"/></XCUIElementTypeApplication></AppiumAUT>';
+  const results = generateAllElementLocators(xml, true, 'xcuitest', {query: '  cAlEnD  ', fetchableOnly: false});
+  expect(results).toHaveLength(1);
+  expect(results[0].tagName).toBe('XCUIElementTypeIcon');
+  expect(Object.values(results[0].locators).some((value) => value.includes('Calendar'))).toBe(true);
+  expect(generateAllElementLocators(xml, true, 'xcuitest', {query: 'missing'})).toEqual([]);
+  expect(generateAllElementLocators(xml, true, 'xcuitest', {query: '.*'})).toEqual([]);
+  expect(generateAllElementLocators(xml, true, 'xcuitest', {fetchableOnly: true}).map((item) => item.tagName)).toEqual([
+    'XCUIElementTypeButton',
+  ]);
+});
+
+test('search matches Android text, resource IDs and element types', () => {
+  const xml =
+    '<hierarchy><android.widget.Button text="Continue" resource-id="app:id/next"/><android.widget.TextView text="Welcome"/></hierarchy>';
+  for (const query of ['continue', 'APP:ID/NEXT', 'widget.Button']) {
+    const results = generateAllElementLocators(xml, true, 'uiautomator2', {query});
+    expect(results).toHaveLength(1);
+    expect(results[0].text).toBe('Continue');
+  }
+});

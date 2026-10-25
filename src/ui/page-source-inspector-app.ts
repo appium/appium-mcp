@@ -59,7 +59,7 @@ export function createPageSourceInspectorAppUI(): string {
       <span class="info" id="sourceInfo">Waiting for page source…</span>
     </summary>
     <div class="toolbar">
-      <input type="search" class="search-box" id="searchBox" placeholder="Find in XML…" aria-label="Find in XML" title="Highlight matching text in the XML">
+      <input type="search" class="search-box" id="searchBox" placeholder="Search elements…" aria-label="Search elements" title="Highlight XML text and find locator candidates by element tag or attribute value">
       <div class="toolbar-right">
         <button class="btn btn-secondary" id="formatButton">Format XML</button>
         <button class="btn btn-secondary" id="copyButton">Copy XML</button>
@@ -71,9 +71,9 @@ export function createPageSourceInspectorAppUI(): string {
     <section class="locators" aria-labelledby="locatorsHeading">
       <div class="section-header">
         <h2 id="locatorsHeading">Locator candidates</h2>
-        <button class="btn" id="generateButton">Generate from current page</button>
+        <button class="btn" id="generateButton">Find locators</button>
       </div>
-      <p class="hint">Fetches fresh XML from the device and generates candidates for supported element types, including hidden elements. XML search only highlights text above.</p>
+      <p class="hint">Find locators for elements matching the search text in their type or attributes (name, label, text, ID, etc.). Matches ignore case and may include hidden elements. Fetches fresh XML; leave search blank for the default candidate list.</p>
       <div id="locatorResults" hidden>
         <p id="locatorStatus" role="status" aria-live="polite"></p>
         <div class="locator-results" id="locatorOutput"></div>
@@ -270,20 +270,23 @@ export function createPageSourceInspectorAppUI(): string {
 
       async function generateLocators() {
         if (generateButton.disabled) return;
+        const query = searchBox.value.trim();
         generateButton.disabled = true;
         locatorResults.hidden = false;
         locatorStatus.textContent = 'Fetching XML and generating candidates…';
         locatorOutput.textContent = '';
         try {
-          const result = await sendRequest('tools/call', {name: 'generate_locators', arguments: {}});
+          const result = await sendRequest('tools/call', {name: 'generate_locators', arguments: query ? {query} : {}});
           const text = (result?.content || []).filter((item) => item.type === 'text').map((item) => item.text).join('\\n');
           if (result?.isError) throw new Error(text || 'Tool returned an error');
           const data = JSON.parse(text);
           if (!Array.isArray(data.interactableElements)) throw new Error('No locator data returned');
           const elements = data.interactableElements;
-          locatorStatus.textContent = elements.length
-            ? 'Candidates generated for ' + elements.length + ' elements from freshly fetched XML.'
-            : 'No supported elements found in the fetched XML.';
+          locatorStatus.textContent = query
+            ? (elements.length ? elements.length + ' matching elements' : 'No matching elements') + ' for “' + query + '” in freshly fetched XML.'
+            : elements.length
+              ? 'Candidates generated for ' + elements.length + ' elements from freshly fetched XML.'
+              : 'No supported elements found in the fetched XML.';
           renderLocators(elements);
         } catch (error) {
           locatorStatus.textContent = 'Failed to generate locators: ' + error.message;
