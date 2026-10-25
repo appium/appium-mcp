@@ -56,4 +56,15 @@ npm run telemetry:jaeger:stop
 | `4317` | OTLP gRPC |
 | `4318` | OTLP HTTP |
 
-appium-mcp currently exports traces over OTLP HTTP to `http://127.0.0.1:4318/v1/traces`.
+appium-mcp exports traces over OTLP HTTP/JSON by default. To test the local gRPC receiver:
+
+```bash
+APPIUM_MCP_OTEL_ENABLED=true \
+OTEL_SERVICE_NAME=appium-mcp-local \
+OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc \
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4317 \
+npm run start:httpStream
+```
+
+For a remote gRPC receiver with TLS, use an `https://host:port` endpoint without `/v1/traces`.
+`OTEL_EXPORTER_OTLP_TRACES_PROTOCOL` overrides `OTEL_EXPORTER_OTLP_PROTOCOL`.

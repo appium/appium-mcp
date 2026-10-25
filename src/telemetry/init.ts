@@ -11,6 +11,20 @@ let sdkStarted = false;
 let shutdownRegistered = false;
 let sdk: {start(): void; shutdown(): Promise<void>} | undefined;
 
+/** Resolve trace-specific configuration before the general OTLP setting. */
+export function getTraceExportProtocol(): 'http/json' | 'grpc' {
+  const protocol =
+    process.env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL?.trim() ||
+    process.env.OTEL_EXPORTER_OTLP_PROTOCOL?.trim() ||
+    'http/json';
+  if (protocol !== 'http/json' && protocol !== 'grpc') {
+    throw new Error(
+      'Unsupported OTLP trace protocol. Use http/json or grpc in OTEL_EXPORTER_OTLP_TRACES_PROTOCOL or OTEL_EXPORTER_OTLP_PROTOCOL.',
+    );
+  }
+  return protocol;
+}
+
 /**
  * Initializes the OpenTelemetry SDK if telemetry is enabled and not already started.
  * This function is idempotent and safe to call multiple times; the SDK will only
@@ -22,9 +36,12 @@ export async function initializeOpenTelemetry(): Promise<void> {
     return;
   }
 
+  const protocol = getTraceExportProtocol();
   const [{NodeSDK}, {OTLPTraceExporter}] = await Promise.all([
     import('@opentelemetry/sdk-node'),
-    import('@opentelemetry/exporter-trace-otlp-http'),
+    protocol === 'grpc'
+      ? import('@opentelemetry/exporter-trace-otlp-grpc')
+      : import('@opentelemetry/exporter-trace-otlp-http'),
   ]);
 
   const nodeSdk = new NodeSDK({
