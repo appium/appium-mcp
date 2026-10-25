@@ -940,7 +940,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       background: #1e1e1e;
       color: #d4d4d4;
       padding: 0;
-      overflow: hidden;
+      overflow: auto;
     }
     summary {
       padding: 12px 16px;
@@ -987,7 +987,9 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       color: #999;
     }
     .viewer {
-      max-height: 320px;
+      height: 320px;
+      min-height: 160px;
+      resize: vertical;
       overflow: auto;
       padding: 16px;
     }
@@ -1036,7 +1038,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
         <button class="btn" onclick="generateLocators()">Generate Locators</button>
       </div>
     </div>
-    <div class="viewer">
+    <div class="viewer" title="Drag the bottom-right corner to resize vertically">
       <pre class="xml-content" id="xmlContent">${escapedSource}</pre>
     </div>
   </details>
