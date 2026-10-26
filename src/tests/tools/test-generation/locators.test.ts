@@ -1,18 +1,20 @@
 import {beforeEach, describe, expect, jest, test} from '@jest/globals';
 
 const mockGetPageSource = jest.fn(async () => '<hierarchy/>');
-const mockGenerateAllElementLocators = jest.fn((_source?: string, _native?: boolean, _driver?: string, _filters?: unknown) => [
-  {
-    tagName: 'android.widget.Button',
-    locators: {'accessibility id': 'Continue'},
-    text: 'Continue',
-    contentDesc: 'Continue',
-    resourceId: 'button',
-    clickable: true,
-    enabled: true,
-    displayed: true,
-  },
-]);
+const mockGenerateAllElementLocators = jest.fn(
+  (_source?: string, _native?: boolean, _driver?: string, _filters?: unknown) => [
+    {
+      tagName: 'android.widget.Button',
+      locators: {'accessibility id': 'Continue'},
+      text: 'Continue',
+      contentDesc: 'Continue',
+      resourceId: 'button',
+      clickable: true,
+      enabled: true,
+      displayed: true,
+    },
+  ],
+);
 const mockClientSupportsMcpApps = jest.fn(() => false);
 const mockIsMcpAppsEnabled = jest.fn(() => true);
 const mockCreateLocatorGeneratorUI = jest.fn((_elements: unknown[]) => '<html>legacy locators</html>');
@@ -103,6 +105,15 @@ describe('generate_locators MCP Apps response', () => {
     });
   });
 
+  test('forwards preferred XPath attributes without changing the element filter', async () => {
+    const tool = registerTool();
+    await tool.execute({xpathAttributes: ['AutomationId', 'data-testid', 'AutomationId']}, toolContext());
+    expect(mockGenerateAllElementLocators).toHaveBeenLastCalledWith('<hierarchy/>', true, 'uiautomator2', {
+      fetchableOnly: true,
+      xpathAttributes: ['AutomationId', 'data-testid'],
+    });
+  });
+
   test('keeps the embedded locator viewer fallback for other clients', async () => {
     const tool = registerTool();
 
@@ -136,7 +147,10 @@ function toolContext() {
 }
 
 function registerTool(): {
-  execute: (args: {sessionId?: string; query?: string}, context: ReturnType<typeof toolContext>) => Promise<any>;
+  execute: (
+    args: {sessionId?: string; query?: string; xpathAttributes?: string[]},
+    context: ReturnType<typeof toolContext>,
+  ) => Promise<any>;
   _meta?: unknown;
 } {
   let definition: any;

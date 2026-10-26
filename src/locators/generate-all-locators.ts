@@ -8,6 +8,11 @@ import {getSuggestedLocators} from './locator-generation.js';
 import {xmlToJSON} from './source-parsing.js';
 import type {JSONElement} from './source-parsing.js';
 
+export interface LocatorGenerationOptions extends FilterOptions {
+  /** Additional XPath attributes, tried before the built-in attributes. */
+  xpathAttributes?: string[];
+}
+
 export interface ElementWithLocators {
   tagName: string;
   locators: Record<string, string>;
@@ -32,7 +37,7 @@ export function generateAllElementLocators(
   sourceXML: string,
   isNative: boolean = true,
   automationName: string,
-  filters: FilterOptions = {},
+  filters: LocatorGenerationOptions = {},
 ): ElementWithLocators[] {
   const sourceJSON = xmlToJSON(sourceXML);
   const results: ElementWithLocators[] = [];
@@ -77,7 +82,7 @@ function processElement(
   sourceXML: string,
   isNative: boolean,
   automationName: string,
-  filters: FilterOptions,
+  filters: LocatorGenerationOptions,
   results: ElementWithLocators[],
 ): void {
   if (!shouldIncludeElement(element, filters, isNative, automationName)) {
@@ -85,7 +90,7 @@ function processElement(
   }
 
   try {
-    const strategyMap = getSuggestedLocators(element, sourceXML, isNative, automationName);
+    const strategyMap = getSuggestedLocators(element, sourceXML, isNative, automationName, filters.xpathAttributes);
     results.push(transformElementWithLocators(element, strategyMap));
   } catch (error) {
     log.error(`Error generating locators for element at path ${element.path}:`, error);
@@ -100,7 +105,7 @@ function traverseAndProcessElements(
   sourceXML: string,
   isNative: boolean,
   automationName: string,
-  filters: FilterOptions,
+  filters: LocatorGenerationOptions,
   results: ElementWithLocators[],
 ): void {
   if (!element) {

@@ -33,13 +33,28 @@ export default function generateLocators(server: FastMCP): void {
         .describe(
           'Case-insensitive literal substring of an element tag or attribute value (name, label, text, ID, etc.). Searches all element types, including hidden elements. Blank or omitted keeps the default driver-specific filter.',
         ),
+      xpathAttributes: z
+        .array(
+          z
+            .string()
+            .trim()
+            .regex(/^[A-Za-z_][A-Za-z0-9_.-]*$/),
+        )
+        .max(20)
+        .optional()
+        .describe(
+          'Additional XPath attribute names in priority order, e.g. AutomationId or data-testid. Tried before built-in attributes; defaults remain as fallback. No namespace prefixes or XPath expressions.',
+        ),
       sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
     }),
     annotations: {
       readOnlyHint: true,
       openWorldHint: false,
     },
-    execute: async (args: {sessionId?: string; query?: string}, context: any): Promise<any> => {
+    execute: async (
+      args: {sessionId?: string; query?: string; xpathAttributes?: string[]},
+      context: any,
+    ): Promise<any> => {
       const {log} = context;
       log.info('Getting page source');
       const resolved = await resolveDriver(args.sessionId);
@@ -68,12 +83,10 @@ export default function generateLocators(server: FastMCP): void {
           : !capabilities.browserName;
 
         const query = args.query?.trim();
-        const elementsWithLocators = generateAllElementLocators(
-          pageSource,
-          isNative,
-          driverName,
-          query ? {query, fetchableOnly: false} : {fetchableOnly: true},
-        );
+        const elementsWithLocators = generateAllElementLocators(pageSource, isNative, driverName, {
+          ...(query ? {query, fetchableOnly: false} : {fetchableOnly: true}),
+          ...(args.xpathAttributes?.length ? {xpathAttributes: [...new Set(args.xpathAttributes)]} : {}),
+        });
 
         const textResponse = textResult(
           JSON.stringify({

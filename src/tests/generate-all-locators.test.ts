@@ -1,4 +1,6 @@
 import {describe, test, expect} from '@jest/globals';
+import {DOMParser} from '@xmldom/xmldom';
+import {select} from 'xpath';
 
 import {generateAllElementLocators} from '../locators/generate-all-locators.js';
 
@@ -208,3 +210,33 @@ test.each(['uiautomator2', 'xcuitest'])(
     expect(results.map((element) => element.locators.id)).toEqual(['click', 'focus']);
   },
 );
+
+test('preferred XPath attributes take precedence, retain defaults, and uniquely identify quoted values', () => {
+  const xml = `<hierarchy><Control id="first" AutomationId="save" data-testid="save-test"/><Control id="fallback"/><Control id="quoted" AutomationId="He said &quot;it's ready&quot;"/></hierarchy>`;
+  const options = {fetchableOnly: true, xpathAttributes: ['AutomationId', 'data-testid']};
+  const results = generateAllElementLocators(xml, true, 'custom', options);
+  expect(results[0].locators.xpath).toBe('//Control[@AutomationId="save"]');
+  expect(results[1].locators.xpath).toBe('//Control[@id="fallback"]');
+  expect(results[2].locators.xpath).toContain('concat(');
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  for (const result of results) {
+    const nodes = select(result.locators.xpath, doc as any) as any[];
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].getAttribute('id')).toBe(result.locators.id);
+  }
+  const reversed = generateAllElementLocators(xml, true, 'custom', {
+    xpathAttributes: ['data-testid', 'AutomationId'],
+  });
+  expect(reversed[0].locators.xpath).toBe('//Control[@data-testid="save-test"]');
+  const defaults = generateAllElementLocators(xml, true, 'custom');
+  expect(defaults[0].locators.xpath).toBe('//Control[@id="first"]');
+});
+
+test('duplicate custom attribute values still produce distinct XPath candidates', () => {
+  const xml = '<hierarchy><Control AutomationId="same"/><Control AutomationId="same"/></hierarchy>';
+  const results = generateAllElementLocators(xml, true, 'custom', {xpathAttributes: ['AutomationId']});
+  expect(results.map((element) => element.locators.xpath)).toEqual([
+    '(//Control[@AutomationId="same"])[1]',
+    '(//Control[@AutomationId="same"])[2]',
+  ]);
+});

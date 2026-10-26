@@ -15,7 +15,10 @@ function inspector() {
   };
   let onMessage: (event: unknown) => void = () => {};
   const parent = {postMessage: jest.fn()};
-  const controls = new Map<string, {textContent?: string | null; disabled?: boolean; hidden?: boolean}>();
+  const controls = new Map<
+    string,
+    {textContent?: string | null; disabled?: boolean; hidden?: boolean; value?: string}
+  >();
   const alert = jest.fn();
   const scroll = jest.fn();
   runInNewContext(createPageSourceInspectorAppUI().match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? '', {
@@ -37,7 +40,7 @@ function inspector() {
           return search;
         }
         if (!controls.has(id)) {
-          controls.set(id, id === 'locatorOutput' ? dom.createElement('div') : {});
+          controls.set(id, ['locatorOutput', 'screenshotElement'].includes(id) ? dom.createElement('div') : {});
         }
         return Object.assign(controls.get(id) ?? {}, {
           addEventListener: (event: string, handler: () => void) => events.set(id + ':' + event, handler),
@@ -203,4 +206,35 @@ test('Enter and Shift+Enter navigate matches, wrap, and reset after search or so
   ui.receive('<root name="Calendar"/>');
   ui.enter();
   expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 1');
+});
+
+test('passes preferred XPath attributes in order and rejects expressions before calling the tool', async () => {
+  const ui = inspector();
+  ui.search.value = 'Calendar';
+  // The input is read when the action runs.
+  const pending = ui.generate();
+  ui.reply({content: [{type: 'text', text: '{"interactableElements":[]}'}]});
+  await pending;
+  const input = ui.controls.get('xpathAttributes');
+  if (!input) {
+    throw new Error('Missing attribute input');
+  }
+  input.value = ' AutomationId, data-testid, AutomationId ';
+  const next = ui.generate();
+  expect(ui.sent).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      params: {
+        name: 'generate_locators',
+        arguments: {query: 'Calendar', xpathAttributes: ['AutomationId', 'data-testid']},
+      },
+    }),
+    '*',
+  );
+  ui.reply({content: [{type: 'text', text: '{"interactableElements":[]}'}]});
+  await next;
+  const calls = ui.sent.mock.calls.length;
+  input.value = 'id] | //*';
+  await ui.generate();
+  expect(ui.sent).toHaveBeenCalledTimes(calls);
+  expect(ui.controls.get('locatorStatus')?.textContent).toContain('attribute names');
 });
