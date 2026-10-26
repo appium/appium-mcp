@@ -7,6 +7,7 @@ import log from '../logger.js';
 import {isEmpty, omitNilValues} from '../utils/collection.js';
 import {childNodesOf, domToXML, findDOMNodeByPath, xmlToDOM} from './source-parsing.js';
 import type {JSONElement, ElementAttributes} from './source-parsing.js';
+import type {DriverName} from './types.js';
 
 // Attributes on nodes that are likely to be unique to the node so we should consider first when
 // suggesting xpath locators. These are considered IN ORDER.
@@ -84,7 +85,8 @@ export function getComplexSuggestedLocators(
   path: string,
   sourceDoc: XMLDocument,
   isNative: boolean,
-  automationName: string,
+  automationName: DriverName,
+  xpathAttributes: string[] = [],
 ): Record<string, string> {
   const complexLocators: Record<string, string | null> = {};
   const domNode = findDOMNodeByPath(path, sourceDoc);
@@ -103,7 +105,7 @@ export function getComplexSuggestedLocators(
       }
     }
   }
-  complexLocators.xpath = getOptimalXPath(sourceDoc, domNode);
+  complexLocators.xpath = getOptimalXPath(sourceDoc, domNode, xpathAttributes);
 
   // Remove entries for locators where the optimal selector could not be found
   return omitNilValues(complexLocators);
@@ -116,11 +118,18 @@ export function getSuggestedLocators(
   selectedElement: JSONElement,
   sourceXML: string,
   isNative: boolean,
-  automationName: string,
+  automationName: DriverName,
+  xpathAttributes: string[] = [],
 ): [string, string][] {
   const sourceDoc = xmlToDOM(sourceXML);
   const simpleLocators = getSimpleSuggestedLocators(selectedElement.attributes, sourceDoc, isNative);
-  const complexLocators = getComplexSuggestedLocators(selectedElement.path, sourceDoc, isNative, automationName);
+  const complexLocators = getComplexSuggestedLocators(
+    selectedElement.path,
+    sourceDoc,
+    isNative,
+    automationName,
+    xpathAttributes,
+  );
 
   // Combine all locators
   const allLocators = {...simpleLocators, ...complexLocators};
@@ -171,14 +180,20 @@ export function getSuggestedLocators(
 /**
  * Get an optimal XPath for a Node
  */
-export function getOptimalXPath(doc: XMLDocument, domNode: XMLNode): string | null {
+export function getOptimalXPath(doc: XMLDocument, domNode: XMLNode, xpathAttributes: string[] = []): string | null {
   try {
     // BASE CASE #1: If this isn't an element, we're above the root, return empty string
     if (!domNode.nodeName || domNode.nodeType !== 1) {
       return '';
     }
 
-    const attrsForPairs = [...UNIQUE_XPATH_ATTRIBUTES, ...MAYBE_UNIQUE_XPATH_ATTRIBUTES];
+    // Attribute names are data, not XPath expressions. Namespaced attributes need
+    // namespace resolution and are intentionally not accepted here.
+    if (xpathAttributes.some((name) => !/^[A-Za-z_][A-Za-z0-9_.-]*$/.test(name))) {
+      throw new Error('Invalid XPath attribute name');
+    }
+    const preferredAttributes = [...new Set([...xpathAttributes, ...UNIQUE_XPATH_ATTRIBUTES])];
+    const attrsForPairs = [...new Set([...preferredAttributes, ...MAYBE_UNIQUE_XPATH_ATTRIBUTES])];
     const attrPairsPermutations: [string, string][] = attrsForPairs.flatMap((v1, i) =>
       attrsForPairs.slice(i + 1).map((v2) => [v1, v2] as [string, string]),
     );
@@ -186,7 +201,7 @@ export function getOptimalXPath(doc: XMLDocument, domNode: XMLNode): string | nu
     const cases = [
       // BASE CASE #2: If this node has a unique attribute or content attribute, return an absolute
       // XPath with that attribute
-      UNIQUE_XPATH_ATTRIBUTES,
+      preferredAttributes,
 
       // BASE CASE #3: If this node has a unique pair of attributes including 'maybe' attributes,
       // return an xpath based on that pair
@@ -246,7 +261,7 @@ export function getOptimalXPath(doc: XMLDocument, domNode: XMLNode): string | nu
     }
 
     // Make a recursive call to this nodes parents and prepend it to this xpath
-    return (domNode.parentNode ? getOptimalXPath(doc, domNode.parentNode) : '') + xpath;
+    return (domNode.parentNode ? getOptimalXPath(doc, domNode.parentNode, xpathAttributes) : '') + xpath;
   } catch (error) {
     // If there's an unexpected exception, abort
     logLocatorError('XPath', error);
@@ -514,13 +529,13 @@ function getUniqueXPath(
       if (!attr1Value || !attr2Value) {
         continue;
       }
-      xpath = `//${tagForXpath}[@${attr1Name}="${attr1Value}" and @${attr2Name}="${attr2Value}"]`;
+      xpath = `//${tagForXpath}[@${attr1Name}=${xpathLiteral(attr1Value)} and @${attr2Name}=${xpathLiteral(attr2Value)}]`;
     } else {
       const attrValue = (domNode as XMLElement).getAttribute?.(attrName as string);
       if (!attrValue) {
         continue;
       }
-      xpath = `//${tagForXpath}[@${attrName}="${attrValue}"]`;
+      xpath = `//${tagForXpath}[@${attrName}=${xpathLiteral(attrValue)}]`;
     }
     const [isUnique, indexIfNotUnique] = determineXpathUniqueness(xpath, doc, domNode);
     if (isUnique) {
@@ -546,4 +561,22 @@ function getUniqueXPath(
 
 function logLocatorError(strategy: string, error: any): void {
   log.error(`The most optimal ${strategy} could not be determined because an error was thrown: '${error}'`);
+}
+
+/** XPath 1.0 has no backslash escaping; mixed quotes require concat(). */
+function xpathLiteral(value: string): string {
+  if (!value.includes('"')) {
+    return `"${value}"`;
+  }
+  if (!value.includes("'")) {
+    return `'${value}'`;
+  }
+  return (
+    'concat(' +
+    value
+      .split('"')
+      .map((part) => `"${part}"`)
+      .join(`, '"', `) +
+    ')'
+  );
 }

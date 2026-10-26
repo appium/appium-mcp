@@ -8,15 +8,19 @@ import {createPageSourceInspectorAppUI} from '../ui/page-source-inspector-app.js
 function inspector() {
   const dom = new DOMParser().parseFromString('<ui><pre/></ui>', 'text/xml');
   const output = Object.assign(dom.getElementsByTagName('pre')[0], {classList: {toggle() {}}});
-  const events = new Map<string, () => void>();
+  const events = new Map<string, (event?: unknown) => void>();
   const search = {
     value: '',
     addEventListener: (event: string, handler: () => void) => events.set('searchBox:' + event, handler),
   };
   let onMessage: (event: unknown) => void = () => {};
   const parent = {postMessage: jest.fn()};
-  const controls = new Map<string, {textContent?: string | null; disabled?: boolean; hidden?: boolean}>();
+  const controls = new Map<
+    string,
+    {textContent?: string | null; disabled?: boolean; hidden?: boolean; value?: string}
+  >();
   const alert = jest.fn();
+  const scroll = jest.fn();
   runInNewContext(createPageSourceInspectorAppUI().match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? '', {
     DOMParser,
     XMLSerializer,
@@ -36,28 +40,43 @@ function inspector() {
           return search;
         }
         if (!controls.has(id)) {
-          controls.set(id, id === 'locatorOutput' ? dom.createElement('div') : {});
+          controls.set(id, ['locatorOutput', 'screenshotElement'].includes(id) ? dom.createElement('div') : {});
         }
         return Object.assign(controls.get(id) ?? {}, {
           addEventListener: (event: string, handler: () => void) => events.set(id + ':' + event, handler),
         });
       },
       createTextNode: (text: string) => dom.createTextNode(text),
-      createElement: (name: string) => dom.createElement(name),
+      createElement: (name: string) => Object.assign(dom.createElement(name), {scrollIntoView: scroll}),
     },
   });
+  function dispatch(name: string, event?: unknown) {
+    const handler = events.get(name);
+    if (!handler) {
+      throw new Error(`Missing event handler: ${name}`);
+    }
+    return handler(event);
+  }
+
   return {
     output,
     search,
     alert,
     controls,
-    generate: () => events.get('generateButton:click')?.(),
+    sent: parent.postMessage,
+    scroll,
+    enter: (shiftKey = false, isComposing = false) => {
+      const event = {key: 'Enter', shiftKey, isComposing, preventDefault: jest.fn()};
+      dispatch('searchBox:keydown', event);
+      return event;
+    },
+    generate: () => dispatch('generateButton:click'),
     reply: (result: unknown, error?: unknown) => {
       const request = parent.postMessage.mock.calls.at(-1)?.[0] as {id: number};
       onMessage({source: parent, data: {jsonrpc: '2.0', id: request.id, result, error}});
     },
-    format: () => events.get('formatButton:click')?.(),
-    searchChanged: () => events.get('searchBox:input')?.(),
+    format: () => dispatch('formatButton:click'),
+    searchChanged: () => dispatch('searchBox:input'),
     receive: (xml: string) =>
       onMessage({
         source: parent,
@@ -117,6 +136,13 @@ test('shows generated locators without changing the XML or search', async () => 
   ui.receive('<root/>');
   ui.search.value = 'Calendar';
   const pending = ui.generate();
+  expect(ui.sent).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      method: 'tools/call',
+      params: {name: 'generate_locators', arguments: {query: 'Calendar'}},
+    }),
+    '*',
+  );
   expect(ui.controls.get('generateButton')?.disabled).toBe(true);
   expect(ui.controls.get('locatorResults')?.hidden).toBe(false);
   const elements = [{tagName: 'Button', locators: {xpath: '//Button'}}];
@@ -127,6 +153,7 @@ test('shows generated locators without changing the XML or search', async () => 
   expect(ui.controls.get('generateButton')?.disabled).toBe(false);
   expect(ui.output.textContent).toBe('<root/>');
   expect(ui.search.value).toBe('Calendar');
+  expect(ui.controls.get('locatorStatus')?.textContent).toContain('for “Calendar”');
 });
 
 test.each([
@@ -148,4 +175,125 @@ test('shows an explicit empty result', async () => {
   ui.reply({content: [{type: 'text', text: '{"interactableElements":[]}'}]});
   await pending;
   expect(ui.controls.get('locatorStatus')?.textContent).toBe('No supported elements found in the fetched XML.');
+});
+
+function searchingInspector() {
+  const ui = inspector();
+  ui.receive('<root><node name="Calendar"/><node name="calendar"/></root>');
+  ui.search.value = 'Calendar';
+  ui.searchChanged();
+  return ui;
+}
+
+test('Enter moves to the next match and scrolls without changing XML or requesting locators', () => {
+  const ui = searchingInspector();
+  const originalXml = ui.output.textContent;
+  const marks = ui.output.getElementsByTagName('mark');
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 matches');
+  expect(ui.enter().preventDefault).toHaveBeenCalled();
+  expect(marks[0].getAttribute('data-active')).toBe('true');
+  ui.enter();
+  expect(marks[0].hasAttribute('data-active')).toBe(false);
+  expect(marks[1].getAttribute('data-active')).toBe('true');
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 / 2');
+  expect(ui.scroll).toHaveBeenCalledWith({block: 'nearest', inline: 'nearest'});
+  expect(ui.output.textContent).toBe(originalXml);
+  expect(ui.sent).toHaveBeenCalledTimes(1); // Initialization only.
+});
+
+test('Enter wraps from the last match to the first', () => {
+  const ui = searchingInspector();
+  ui.enter();
+  ui.enter();
+  ui.enter();
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 2');
+  expect(ui.output.getElementsByTagName('mark')[0].getAttribute('data-active')).toBe('true');
+});
+
+test('Shift+Enter starts at the last match, moves backward, and wraps', () => {
+  const ui = searchingInspector();
+  ui.enter(true);
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 / 2');
+  ui.enter(true);
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 2');
+  ui.enter(true);
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 / 2');
+});
+
+test('Enter during IME composition leaves the active match unchanged', () => {
+  const ui = searchingInspector();
+  ui.enter();
+  const status = ui.controls.get('searchStatus')?.textContent;
+  ui.scroll.mockClear();
+  expect(ui.enter(false, true).preventDefault).not.toHaveBeenCalled();
+  expect(ui.controls.get('searchStatus')?.textContent).toBe(status);
+  expect(ui.scroll).not.toHaveBeenCalled();
+});
+
+test('changing the search resets the active match', () => {
+  const ui = searchingInspector();
+  ui.enter();
+  ui.search.value = 'node';
+  ui.searchChanged();
+  expect(ui.output.getElementsByTagName('mark')[0].hasAttribute('data-active')).toBe(false);
+  ui.enter();
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 2');
+});
+
+test('Enter with no matches leaves the empty result unchanged', () => {
+  const ui = searchingInspector();
+  ui.search.value = 'missing';
+  ui.searchChanged();
+  ui.enter();
+  expect(ui.controls.get('searchStatus')?.textContent).toBe('No matches');
+  expect(ui.scroll).not.toHaveBeenCalled();
+});
+
+test('clearing the search removes highlights and status', () => {
+  const ui = searchingInspector();
+  ui.enter();
+  ui.search.value = '';
+  ui.searchChanged();
+  expect(ui.controls.get('searchStatus')?.textContent).toBe('');
+  expect(ui.output.getElementsByTagName('mark')).toHaveLength(0);
+});
+
+test('receiving new XML resets search navigation', () => {
+  const ui = searchingInspector();
+  ui.enter(true);
+  ui.receive('<root name="Calendar"/>');
+  expect(ui.output.getElementsByTagName('mark')[0].hasAttribute('data-active')).toBe(false);
+  ui.enter();
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 1');
+});
+
+test('passes preferred XPath attributes in order and rejects expressions before calling the tool', async () => {
+  const ui = inspector();
+  ui.search.value = 'Calendar';
+  // The input is read when the action runs.
+  const pending = ui.generate();
+  ui.reply({content: [{type: 'text', text: '{"interactableElements":[]}'}]});
+  await pending;
+  const input = ui.controls.get('xpathAttributes');
+  if (!input) {
+    throw new Error('Missing attribute input');
+  }
+  input.value = ' AutomationId, data-testid, AutomationId ';
+  const next = ui.generate();
+  expect(ui.sent).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      params: {
+        name: 'generate_locators',
+        arguments: {query: 'Calendar', xpathAttributes: ['AutomationId', 'data-testid']},
+      },
+    }),
+    '*',
+  );
+  ui.reply({content: [{type: 'text', text: '{"interactableElements":[]}'}]});
+  await next;
+  const calls = ui.sent.mock.calls.length;
+  input.value = 'id] | //*';
+  await ui.generate();
+  expect(ui.sent).toHaveBeenCalledTimes(calls);
+  expect(ui.controls.get('locatorStatus')?.textContent).toContain('attribute names');
 });

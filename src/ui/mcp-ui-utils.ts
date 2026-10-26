@@ -1,3 +1,5 @@
+import {XML_FORMAT_SCRIPT, XML_SEARCH_SCRIPT} from './xml-inspector-scripts.js';
+
 /**
  * MCP-UI Utility Functions
  *
@@ -1022,6 +1024,10 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       outline: none;
       border-color: #007AFF;
     }
+    mark { background: #ffd700; color: #000; }
+    mark[data-active] { outline: 2px solid #91baff; background: #ff963c; }
+    .search-status { padding: 6px 16px; font-size: 12px; color: #bbb; }
+    .search-status:empty { display: none; }
   </style>
 </head>
 <body>
@@ -1038,11 +1044,14 @@ export function createPageSourceInspectorUI(pageSource: string): string {
         <button class="btn" onclick="generateLocators()">Generate Locators</button>
       </div>
     </div>
+    <div id="searchStatus" class="search-status" role="status" aria-live="polite"></div>
     <div class="viewer" title="Drag the bottom-right corner to resize vertically">
       <pre class="xml-content" id="xmlContent">${escapedSource}</pre>
     </div>
   </details>
   <script>
+    ${XML_FORMAT_SCRIPT}
+    ${XML_SEARCH_SCRIPT}
     function copyToClipboard() {
       const text = document.getElementById('xmlContent').textContent;
       navigator.clipboard.writeText(text).then(() => {
@@ -1052,44 +1061,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
 
     function formatXML() {
       try {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(originalSource, 'text/xml');
-        if (!xmlDoc.documentElement || xmlDoc.getElementsByTagName('parsererror').length) {
-          throw new Error('Invalid XML');
-        }
-
-        function indentElement(element, depth) {
-          // Do not introduce whitespace into mixed content or preserved subtrees.
-          if (element.getAttribute('xml:space') === 'preserve') return;
-          const children = Array.from(element.childNodes);
-          if (children.some(child =>
-            child.nodeType === 4 || (child.nodeType === 3 && child.nodeValue.trim())
-          )) return;
-          if (!children.some(child => child.nodeType === 1)) return;
-
-          for (const child of children) {
-            if (child.nodeType === 3) {
-              element.removeChild(child);
-              continue;
-            }
-            if (child.nodeType === 1) indentElement(child, depth + 1);
-            element.insertBefore(xmlDoc.createTextNode('\\n' + '  '.repeat(depth + 1)), child);
-          }
-          element.appendChild(xmlDoc.createTextNode('\\n' + '  '.repeat(depth)));
-        }
-
-        indentElement(xmlDoc.documentElement, 0);
-        const serializer = new XMLSerializer();
-        let formatted = Array.from(xmlDoc.childNodes)
-          .filter(node => node.nodeType !== 3)
-          .map(node => serializer.serializeToString(node))
-          .join('\\n');
-        // Browser DOMParser does not retain the XML declaration.
-        const declaration = originalSource.match(/^\\s*(<\\?xml\\s[^?]*\\?>)/);
-        if (declaration && !formatted.startsWith('<?xml ')) {
-          formatted = declaration[1] + '\\n' + formatted;
-        }
-        displayedSource = formatted;
+        displayedSource = formatXml(originalSource);
         renderSource(document.getElementById('searchBox').value);
       } catch (e) {
         alert('Failed to format XML');
@@ -1101,7 +1073,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
         type: 'tool',
         payload: {
           toolName: 'generate_locators',
-          params: {}
+          params: {query: document.getElementById('searchBox').value.trim()}
         }
       }, '*');
     }
@@ -1110,42 +1082,12 @@ export function createPageSourceInspectorUI(pageSource: string): string {
     const originalSource = xmlContent.textContent;
     let displayedSource = originalSource;
 
-    function appendTextWithHighlights(container, text, searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      const textLower = text.toLowerCase();
-      let position = 0;
-
-      while (position < text.length) {
-        const matchIndex = textLower.indexOf(searchLower, position);
-        if (matchIndex === -1) {
-          container.appendChild(document.createTextNode(text.slice(position)));
-          return;
-        }
-
-        if (matchIndex > position) {
-          container.appendChild(
-            document.createTextNode(text.slice(position, matchIndex))
-          );
-        }
-
-        const mark = document.createElement('mark');
-        mark.style.background = '#ffd700';
-        mark.style.color = '#000';
-        mark.textContent = text.slice(matchIndex, matchIndex + searchTerm.length);
-        container.appendChild(mark);
-        position = matchIndex + searchTerm.length;
-      }
-    }
-
+    const searchBox = document.getElementById('searchBox');
+    const xmlSearch = createXmlSearch(xmlContent, document.getElementById('searchStatus'));
     function renderSource(searchTerm = '') {
-      xmlContent.textContent = '';
-      if (!searchTerm) {
-        xmlContent.textContent = displayedSource;
-        return;
-      }
-
-      appendTextWithHighlights(xmlContent, displayedSource, searchTerm);
+      xmlSearch.render(displayedSource, searchTerm);
     }
+    searchBox.addEventListener('keydown', xmlSearch.handleKeyDown);
 
     // Search functionality
     document.getElementById('searchBox').addEventListener('input', (e) => {

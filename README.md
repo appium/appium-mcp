@@ -403,6 +403,36 @@ More models benchmarked can be found [here](src/tests/benchmark_model/TEST_REPOR
 `appium_get_page_source`, `appium_screenshot`, and `generate_locators` use static MCP App viewers by default when
 the client advertises MCP Apps support.
 
+In the Page Source Inspector, Search highlights matching text in the displayed XML. Press **Enter** to jump
+to the next match or **Shift+Enter** for the previous match; navigation wraps and keeps the full XML visible.
+The match counter shows your current position.
+
+Enter text in Search and click **Find locators** to generate candidates for
+matching elements. Search uses a case-insensitive literal substring of element types and attribute values
+(such as name, label, text, and resource ID), including hidden elements and types such as iOS icons.
+Generation fetches fresh XML from the device; the XML already displayed remains unchanged. An empty search
+keeps the default driver-specific filter. UiAutomator2 and XCUITest native sessions use their mobile
+control filters; Web contexts use HTML control filters. Other native drivers include XML elements
+without requiring mobile tag names or clickable/focusable attributes (the `hierarchy` wrapper remains
+excluded). The same search is available directly with
+`generate_locators({query: "Calendar"})`.
+
+Use **Preferred XPath attributes** in Locator Candidates to enter additional attribute names, separated
+by commas (for example `AutomationId, data-testid`). XPath generation tries them in the specified order
+before the built-in attributes, retaining the existing uniqueness checks and fallbacks. This changes
+XPath candidate generation, not which elements are included. Leave it empty to keep the defaults.
+The same option is available as `generate_locators({xpathAttributes: ["AutomationId", "data-testid"]})`.
+Up to 20 names are accepted; XPath expressions and namespace prefixes are not supported.
+
+The MCP Apps Page Source Inspector also offers **Take screenshot**. It refreshes XML, reads screen
+size, and captures an image. Select an XML element in the preview to overlay its screen bounds;
+Search narrows that element list. Bounds use `x`, `y`, `width`, `height` or Android's
+`bounds="[left,top][right,bottom]"`. Hidden elements, missing or empty bounds, and offscreen elements
+are reported without an overlay. Captures are sequential, not atomic: keep the device still and
+recapture after navigation or rotation. Other coordinate formats and Web DOM layout are not inferred.
+
+
+
 - Page source XML and generated locator JSON remain in their normal text results for the LLM. Their viewers read
   those existing results instead of receiving duplicated copies inside generated HTML.
 - Saved screenshot base64 is delivered to the viewer through `structuredContent`, which MCP Apps keeps out of model
