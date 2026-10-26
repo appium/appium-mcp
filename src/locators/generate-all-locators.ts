@@ -7,7 +7,7 @@ import type {FilterOptions} from './element-filter.js';
 import {getSuggestedLocators} from './locator-generation.js';
 import {xmlToJSON} from './source-parsing.js';
 import type {JSONElement} from './source-parsing.js';
-import type { DriverName } from './types.js';
+import type {DriverName} from './types.js';
 
 export interface LocatorGenerationOptions extends FilterOptions {
   /** Additional XPath attributes, tried before the built-in attributes. */
