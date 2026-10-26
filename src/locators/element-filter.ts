@@ -114,20 +114,38 @@ function isInteractableElement(element: JSONElement, isNative: boolean, automati
       (attrs.tabindex !== undefined && Number(attrs.tabindex) >= 0)
     );
   }
-  const interactableTags =
-    automationName === 'uiautomator2'
-      ? ['EditText', 'Button', 'ImageButton', 'CheckBox', 'RadioButton', 'Switch', 'ToggleButton', 'TextView']
-      : [
-          'XCUIElementTypeTextField',
-          'XCUIElementTypeSecureTextField',
-          'XCUIElementTypeButton',
-          'XCUIElementTypeImage',
-          'XCUIElementTypeSwitch',
-          'XCUIElementTypeStaticText',
-          'XCUIElementTypeTextView',
-          'XCUIElementTypeCell',
-          'XCUIElementTypeLink',
-        ];
+  let interactableTags: string[];
+  switch (automationName) {
+    case 'uiautomator2':
+      interactableTags = [
+        'EditText',
+        'Button',
+        'ImageButton',
+        'CheckBox',
+        'RadioButton',
+        'Switch',
+        'ToggleButton',
+        'TextView',
+      ];
+      break;
+    case 'xcuitest':
+      interactableTags = [
+        'XCUIElementTypeTextField',
+        'XCUIElementTypeSecureTextField',
+        'XCUIElementTypeButton',
+        'XCUIElementTypeImage',
+        'XCUIElementTypeSwitch',
+        'XCUIElementTypeStaticText',
+        'XCUIElementTypeTextView',
+        'XCUIElementTypeCell',
+        'XCUIElementTypeLink',
+      ];
+      break;
+    default:
+      // Other native drivers use their own XML schemas. Do not require mobile
+      // element types or clickable/focusable attributes before generating XPath.
+      return true;
+  }
 
   return (
     interactableTags.some((tag) => element.tagName.includes(tag)) ||

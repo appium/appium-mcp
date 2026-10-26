@@ -24,14 +24,14 @@ export default function generateLocators(server: FastMCP): void {
   const mcpAppsEnabled = isMcpAppsEnabled();
   server.addTool({
     name: 'generate_locators',
-    description: `Generate locators for all interactable elements on the current page. [PRIORITY 3: Use this for debugging/inspection or when you need comprehensive element info with locator suggestions]`,
+    description: `Generate locator candidates from the current page. Uses control filters for UiAutomator2, XCUITest and Web contexts; other native drivers include all XML elements except the hierarchy wrapper. [PRIORITY 3: Use this for debugging/inspection or when you need comprehensive element info with locator suggestions]`,
     _meta: mcpAppsEnabled ? {ui: {resourceUri: LOCATOR_GENERATOR_URI}} : undefined,
     parameters: z.object({
       query: z
         .string()
         .optional()
         .describe(
-          'Case-insensitive literal substring of an element tag or attribute value (name, label, text, ID, etc.). Searches all element types, including hidden elements. Blank or omitted keeps the default interactable-element filter.',
+          'Case-insensitive literal substring of an element tag or attribute value (name, label, text, ID, etc.). Searches all element types, including hidden elements. Blank or omitted keeps the default driver-specific filter.',
         ),
       sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
     }),

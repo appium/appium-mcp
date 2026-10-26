@@ -182,3 +182,29 @@ test('search matches Android text, resource IDs and element types', () => {
     expect(results[0].text).toBe('Continue');
   }
 });
+
+test.each(['windows', 'mac2', 'custom', ''])(
+  'generic native driver %s generates XPath without mobile interaction attributes',
+  (driverName) => {
+    const xml =
+      '<hierarchy><Panel><Control id="plain"/><Control id="inactive" clickable="false" focusable="false" enabled="false" visible="false"/></Panel></hierarchy>';
+    const results = generateAllElementLocators(xml, true, driverName, {fetchableOnly: true});
+    expect(results.map((element) => element.tagName)).toEqual(['Panel', 'Control', 'Control']);
+    expect(results.every((element) => Boolean(element.locators.xpath))).toBe(true);
+    expect(results.map((element) => element.locators.id)).toContain('inactive');
+    const filtered = generateAllElementLocators(xml, true, driverName, {fetchableOnly: true, query: 'inactive'});
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].locators.id).toBe('inactive');
+    expect(generateAllElementLocators(xml, true, driverName, {fetchableOnly: true, clickableOnly: true})).toEqual([]);
+  },
+);
+
+test.each(['uiautomator2', 'xcuitest'])(
+  'known mobile driver %s still excludes arbitrary non-interactive elements',
+  (driverName) => {
+    const xml =
+      '<hierarchy><Panel><Control id="plain"/><Control id="click" clickable="true"/><Control id="focus" focusable="true"/></Panel></hierarchy>';
+    const results = generateAllElementLocators(xml, true, driverName, {fetchableOnly: true});
+    expect(results.map((element) => element.locators.id)).toEqual(['click', 'focus']);
+  },
+);

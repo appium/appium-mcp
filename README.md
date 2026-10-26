@@ -411,7 +411,10 @@ Enter text in Search and click **Find locators** to generate candidates for
 matching elements. Search uses a case-insensitive literal substring of element types and attribute values
 (such as name, label, text, and resource ID), including hidden elements and types such as iOS icons.
 Generation fetches fresh XML from the device; the XML already displayed remains unchanged. An empty search
-keeps the original interactable-element filter. The same search is available directly with
+keeps the default driver-specific filter. UiAutomator2 and XCUITest native sessions use their mobile
+control filters; Web contexts use HTML control filters. Other native drivers include XML elements
+without requiring mobile tag names or clickable/focusable attributes (the `hierarchy` wrapper remains
+excluded). The same search is available directly with
 `generate_locators({query: "Calendar"})`.
 
 - Page source XML and generated locator JSON remain in their normal text results for the LLM. Their viewers read
