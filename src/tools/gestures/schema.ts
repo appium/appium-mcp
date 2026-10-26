@@ -43,19 +43,12 @@ export const gestureSchema = z.object({
     .enum(GESTURE_ACTIONS)
     .describe(
       [
-        'Gesture to perform:',
-        '- tap: tap an element or a coordinate.',
-        '- double_tap: double-tap, for example to zoom an image or favorite a post.',
-        '- long_press: press and hold to open a context menu or initiate a drag.',
-        'For tap/double_tap/long_press, provide elementUUID or both x and y.',
-        '- scroll: browse a list, feed, or page to reveal content.',
-        '- swipe: dismiss a card, switch screens or tabs, navigate a carousel, or pull-to-refresh (use speed=fast).',
-        'For scroll/swipe, provide direction or all four custom coordinates: x, y, endX, endY.',
-        '- pinch_zoom: zoom in (scale > 1) or out (scale < 1) on maps, images, or other zoomable views. Requires scale.',
-        '- scroll_to_element: scroll to find a target using strategy and selector. Direction is up/down, default down.',
-        'Stops when the element is found, page source is unchanged after a scroll (likely end of content), or maxScrollAttempts is reached.',
-        'Adjust distance with scrollDistance (0.05–1) or scrollDistancePreset (small/medium/large).',
-        '- back: trigger system back navigation.',
+        'tap/double_tap/long_press: requires elementUUID or both x/y.',
+        'scroll/swipe: requires direction or x/y/endX/endY.',
+        'pinch_zoom: requires scale (<1 out, >1 in).',
+        'scroll_to_element: requires strategy/selector; direction up/down (default down).',
+        'Stops on a match, unchanged page source, or maxScrollAttempts. Adjust distance with scrollDistance or scrollDistancePreset.',
+        'back: system back navigation.',
       ].join('\n'),
     ),
 
@@ -130,10 +123,7 @@ export const gestureSchema = z.object({
     .min(0.01)
     .max(10)
     .optional()
-    .describe(
-      'Required for pinch_zoom. Scale < 1 zooms out (fingers close); scale > 1 zooms in (fingers spread). ' +
-        'Examples: 0.5 zooms out; 2.0 zooms in 2x.',
-    ),
+    .describe('Required for pinch_zoom: <1 zooms out, >1 zooms in (e.g. 0.5 or 2 for 2x).'),
   velocity: z
     .number()
     .min(0.1)

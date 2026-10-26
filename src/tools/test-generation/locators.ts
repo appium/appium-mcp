@@ -24,7 +24,7 @@ export default function generateLocators(server: FastMCP): void {
   const mcpAppsEnabled = isMcpAppsEnabled();
   server.addTool({
     name: 'generate_locators',
-    description: `Generate locator candidates from the current page. Uses control filters for UiAutomator2, XCUITest and Web contexts; other native drivers include all XML elements except the hierarchy wrapper. [PRIORITY 3: Use this for debugging/inspection or when you need comprehensive element info with locator suggestions]`,
+    description: `Generate current-page locator candidates for inspection. Defaults: controls for UiAutomator2/XCUITest/Web; all elements except hierarchy for other native drivers.`,
     _meta: mcpAppsEnabled ? {ui: {resourceUri: LOCATOR_GENERATOR_URI}} : undefined,
     parameters: z.object({
       query: z
