@@ -1,3 +1,9 @@
+## [1.99.0](https://github.com/appium/appium-mcp/compare/v1.98.0...v1.99.0) (2026-10-26)
+
+### Features
+
+* add find locators via embedded ui ([#590](https://github.com/appium/appium-mcp/issues/590)) ([83962f7](https://github.com/appium/appium-mcp/commit/83962f709a2b7891557119fe4bfedfecefce296b))
+
 ## [1.98.0](https://github.com/appium/appium-mcp/compare/v1.97.2...v1.98.0) (2026-10-25)
 
 ### Features
