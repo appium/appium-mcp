@@ -50,21 +50,44 @@ function preview(source = xml) {
   `,
     context,
   );
-  return {controls, events, callTool, controller: context.controller};
+  function dispatch(event: string) {
+    const handler = events.get(event);
+    if (!handler) {
+      throw new Error(`Missing event handler: ${event}`);
+    }
+    return handler();
+  }
+
+  return {
+    controls,
+    callTool,
+    controller: context.controller,
+    capture: () => dispatch('takeScreenshotButton:click'),
+    imageLoaded: () => dispatch('inspectorScreenshot:load'),
+    selectElement: (name: string) => {
+      const select = controls.get('screenshotElement');
+      const options = Array.from(select.getElementsByTagName('option')) as {textContent: string; value: string}[];
+      const matches = options.filter((option) => option.textContent.endsWith(' — ' + name));
+      if (matches.length !== 1) {
+        throw new Error(`Expected one element named "${name}", found ${matches.length}`);
+      }
+      select.value = matches[0].value;
+      return dispatch('screenshotElement:change');
+    },
+  };
 }
 
 test('captures fresh XML, dimensions and image and maps iOS/Android bounds to percentages', async () => {
   const ui = preview();
-  await ui.events.get('takeScreenshotButton:click')?.();
+  await ui.capture();
   expect(ui.callTool.mock.calls.map((call) => call[0])).toEqual([
     'appium_get_page_source',
     'appium_get_window_size',
     'appium_screenshot',
   ]);
   expect(ui.controls.get('inspectorScreenshot').src).toBe('data:image/png;base64,image-data');
-  for (const value of ['2', '3']) {
-    ui.controls.get('screenshotElement').value = value;
-    await ui.events.get('screenshotElement:change')?.();
+  for (const name of ['iOS', 'Android']) {
+    await ui.selectElement(name);
     const overlay = ui.controls.get('elementOverlay');
     expect(overlay.hidden).toBe(false);
     expect(overlay.style).toEqual({left: '10%', top: '10%', width: '30%', height: '20%'});
@@ -84,10 +107,9 @@ test.each([
   'BOUNDS="[10,20][40,60]"',
   'x="10" X="99" y="20" width="30" height="40"',
 ])('reads coordinate attributes regardless of casing: %s', async (attributes) => {
-  const ui = preview('<node ' + attributes + '/>');
-  await ui.events.get('takeScreenshotButton:click')?.();
-  ui.controls.get('screenshotElement').value = '1';
-  await ui.events.get('screenshotElement:change')?.();
+  const ui = preview('<node name="target" ' + attributes + '/>');
+  await ui.capture();
+  await ui.selectElement('target');
   expect(ui.controls.get('elementOverlay').hidden).toBe(false);
   expect(ui.controls.get('elementOverlay').style).toEqual({left: '10%', top: '10%', width: '30%', height: '20%'});
   expect(ui.controls.get('selectedXmlElement').textContent).toContain(attributes);
@@ -95,14 +117,13 @@ test.each([
 
 test('does not highlight hidden, missing-bounds or offscreen elements', async () => {
   const ui = preview();
-  await ui.events.get('takeScreenshotButton:click')?.();
-  for (const [value, message] of [
-    ['4', 'hidden'],
-    ['5', 'no usable'],
-    ['6', 'outside'],
+  await ui.capture();
+  for (const [name, message] of [
+    ['hidden', 'hidden'],
+    ['missing', 'no usable'],
+    ['outside', 'outside'],
   ]) {
-    ui.controls.get('screenshotElement').value = value;
-    await ui.events.get('screenshotElement:change')?.();
+    await ui.selectElement(name);
     expect(ui.controls.get('elementOverlay').hidden).toBe(true);
     expect(ui.controls.get('screenshotStatus').textContent).toContain(message);
   }
@@ -110,14 +131,14 @@ test('does not highlight hidden, missing-bounds or offscreen elements', async ()
 
 test('rejects stale orientation and handles tool failures with retry enabled', async () => {
   const ui = preview();
-  await ui.events.get('takeScreenshotButton:click')?.();
+  await ui.capture();
   const image = ui.controls.get('inspectorScreenshot');
   image.naturalWidth = 600;
   image.naturalHeight = 300;
-  await ui.events.get('inspectorScreenshot:load')?.();
+  await ui.imageLoaded();
   expect(ui.controls.get('screenshotStatus').textContent).toContain('dimensions differ');
   ui.callTool.mockRejectedValueOnce(new Error('Disconnected'));
-  await ui.events.get('takeScreenshotButton:click')?.();
+  await ui.capture();
   expect(ui.controls.get('screenshotStatus').textContent).toContain('Disconnected');
   expect(ui.controls.get('takeScreenshotButton').disabled).toBe(false);
   expect(ui.controls.get('elementOverlay').hidden).toBe(true);

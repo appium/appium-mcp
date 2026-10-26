@@ -50,6 +50,14 @@ function inspector() {
       createElement: (name: string) => Object.assign(dom.createElement(name), {scrollIntoView: scroll}),
     },
   });
+  function dispatch(name: string, event?: unknown) {
+    const handler = events.get(name);
+    if (!handler) {
+      throw new Error(`Missing event handler: ${name}`);
+    }
+    return handler(event);
+  }
+
   return {
     output,
     search,
@@ -59,16 +67,16 @@ function inspector() {
     scroll,
     enter: (shiftKey = false, isComposing = false) => {
       const event = {key: 'Enter', shiftKey, isComposing, preventDefault: jest.fn()};
-      events.get('searchBox:keydown')?.(event);
+      dispatch('searchBox:keydown', event);
       return event;
     },
-    generate: () => events.get('generateButton:click')?.(),
+    generate: () => dispatch('generateButton:click'),
     reply: (result: unknown, error?: unknown) => {
       const request = parent.postMessage.mock.calls.at(-1)?.[0] as {id: number};
       onMessage({source: parent, data: {jsonrpc: '2.0', id: request.id, result, error}});
     },
-    format: () => events.get('formatButton:click')?.(),
-    searchChanged: () => events.get('searchBox:input')?.(),
+    format: () => dispatch('formatButton:click'),
+    searchChanged: () => dispatch('searchBox:input'),
     receive: (xml: string) =>
       onMessage({
         source: parent,
@@ -169,12 +177,17 @@ test('shows an explicit empty result', async () => {
   expect(ui.controls.get('locatorStatus')?.textContent).toBe('No supported elements found in the fetched XML.');
 });
 
-test('Enter and Shift+Enter navigate matches, wrap, and reset after search or source changes', () => {
+function searchingInspector() {
   const ui = inspector();
-  const xml = '<root><node name="Calendar"/><node name="calendar"/></root>';
-  ui.receive(xml);
+  ui.receive('<root><node name="Calendar"/><node name="calendar"/></root>');
   ui.search.value = 'Calendar';
   ui.searchChanged();
+  return ui;
+}
+
+test('Enter moves to the next match and scrolls without changing XML or requesting locators', () => {
+  const ui = searchingInspector();
+  const originalXml = ui.output.textContent;
   const marks = ui.output.getElementsByTagName('mark');
   expect(ui.controls.get('searchStatus')?.textContent).toContain('2 matches');
   expect(ui.enter().preventDefault).toHaveBeenCalled();
@@ -183,27 +196,73 @@ test('Enter and Shift+Enter navigate matches, wrap, and reset after search or so
   expect(marks[0].hasAttribute('data-active')).toBe(false);
   expect(marks[1].getAttribute('data-active')).toBe('true');
   expect(ui.controls.get('searchStatus')?.textContent).toContain('2 / 2');
-  ui.enter();
-  expect(marks[0].getAttribute('data-active')).toBe('true');
-  ui.enter(true);
-  expect(marks[1].getAttribute('data-active')).toBe('true');
   expect(ui.scroll).toHaveBeenCalledWith({block: 'nearest', inline: 'nearest'});
-  expect(ui.output.textContent).toBe(xml);
-  expect(ui.sent).toHaveBeenCalledTimes(1); // Only initialization, never locator generation.
+  expect(ui.output.textContent).toBe(originalXml);
+  expect(ui.sent).toHaveBeenCalledTimes(1); // Initialization only.
+});
+
+test('Enter wraps from the last match to the first', () => {
+  const ui = searchingInspector();
+  ui.enter();
+  ui.enter();
+  ui.enter();
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 2');
+  expect(ui.output.getElementsByTagName('mark')[0].getAttribute('data-active')).toBe('true');
+});
+
+test('Shift+Enter starts at the last match, moves backward, and wraps', () => {
+  const ui = searchingInspector();
+  ui.enter(true);
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 / 2');
+  ui.enter(true);
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 2');
+  ui.enter(true);
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 / 2');
+});
+
+test('Enter during IME composition leaves the active match unchanged', () => {
+  const ui = searchingInspector();
+  ui.enter();
+  const status = ui.controls.get('searchStatus')?.textContent;
+  ui.scroll.mockClear();
   expect(ui.enter(false, true).preventDefault).not.toHaveBeenCalled();
+  expect(ui.controls.get('searchStatus')?.textContent).toBe(status);
+  expect(ui.scroll).not.toHaveBeenCalled();
+});
+
+test('changing the search resets the active match', () => {
+  const ui = searchingInspector();
+  ui.enter();
+  ui.search.value = 'node';
+  ui.searchChanged();
+  expect(ui.output.getElementsByTagName('mark')[0].hasAttribute('data-active')).toBe(false);
+  ui.enter();
+  expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 2');
+});
+
+test('Enter with no matches leaves the empty result unchanged', () => {
+  const ui = searchingInspector();
   ui.search.value = 'missing';
   ui.searchChanged();
   ui.enter();
   expect(ui.controls.get('searchStatus')?.textContent).toBe('No matches');
+  expect(ui.scroll).not.toHaveBeenCalled();
+});
+
+test('clearing the search removes highlights and status', () => {
+  const ui = searchingInspector();
+  ui.enter();
   ui.search.value = '';
   ui.searchChanged();
   expect(ui.controls.get('searchStatus')?.textContent).toBe('');
   expect(ui.output.getElementsByTagName('mark')).toHaveLength(0);
-  ui.search.value = 'Calendar';
-  ui.searchChanged();
+});
+
+test('receiving new XML resets search navigation', () => {
+  const ui = searchingInspector();
   ui.enter(true);
-  expect(ui.controls.get('searchStatus')?.textContent).toContain('2 / 2');
   ui.receive('<root name="Calendar"/>');
+  expect(ui.output.getElementsByTagName('mark')[0].hasAttribute('data-active')).toBe(false);
   ui.enter();
   expect(ui.controls.get('searchStatus')?.textContent).toContain('1 / 1');
 });
