@@ -13,14 +13,19 @@ function createScreenshotInspector(callTool, setSource, readSourceResult) {
   let query = '';
 
   function readBounds(element) {
-    const android = (element.getAttribute('bounds') || '').match(/^\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]$/);
+    // Drivers differ in attribute casing. Prefer the exact lowercase spelling if both exist.
+    function attribute(name) {
+      if (element.hasAttribute(name)) return element.getAttribute(name);
+      return Array.from(element.attributes).find(attr => attr.name.toLowerCase() === name)?.value;
+    }
+    const android = (attribute('bounds') || '').match(/^\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]$/);
     if (android) {
       const [, x, y, right, bottom] = android.map(Number);
       return {x, y, width: right - x, height: bottom - y};
     }
-    const names = ['x', 'y', 'width', 'height'];
-    if (!names.every(name => element.hasAttribute(name) && element.getAttribute(name).trim() !== '')) return;
-    const values = names.map(name => Number(element.getAttribute(name)));
+    const coordinates = ['x', 'y', 'width', 'height'].map(attribute);
+    if (!coordinates.every(value => value !== undefined && value.trim() !== '')) return;
+    const values = coordinates.map(Number);
     if (!values.every(Number.isFinite)) return;
     const [x, y, width, height] = values;
     return {x, y, width, height};

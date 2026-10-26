@@ -7,13 +7,13 @@ import {INSPECTOR_SCREENSHOT_SCRIPT} from '../ui/inspector-screenshot-script.js'
 
 const xml =
   '<root><node name="iOS" x="10" y="20" width="30" height="40"/><node name="Android" bounds="[10,20][40,60]"/><node name="hidden" x="10" y="20" width="30" height="40" visible="false"/><node name="missing"/><node name="outside" x="200" y="0" width="10" height="10"/></root>';
-function preview() {
+function preview(source = xml) {
   const doc = new DOMParser().parseFromString('<root/>', 'text/xml');
   const controls = new Map<string, any>();
   const events = new Map<string, () => Promise<void> | void>();
   const callTool = jest.fn(async (name: string) => {
     if (name === 'appium_get_page_source') {
-      return {content: [{type: 'text', text: xml}]};
+      return {content: [{type: 'text', text: source}]};
     }
     if (name === 'appium_get_window_size') {
       return {content: [{type: 'text', text: 'Width: 100, Height: 200'}]};
@@ -75,6 +75,22 @@ test('captures fresh XML, dimensions and image and maps iOS/Android bounds to pe
   ui.controller.updateSource(xml);
   expect(ui.controls.get('elementOverlay').hidden).toBe(true);
   expect(ui.controls.get('inspectorScreenshot').hidden).toBe(true);
+});
+
+test.each([
+  'X="10" Y="20" Width="30" Height="40"',
+  'X="10" y="20" WIDTH="30" hEiGhT="40"',
+  'Bounds="[10,20][40,60]"',
+  'BOUNDS="[10,20][40,60]"',
+  'x="10" X="99" y="20" width="30" height="40"',
+])('reads coordinate attributes regardless of casing: %s', async (attributes) => {
+  const ui = preview('<node ' + attributes + '/>');
+  await ui.events.get('takeScreenshotButton:click')?.();
+  ui.controls.get('screenshotElement').value = '1';
+  await ui.events.get('screenshotElement:change')?.();
+  expect(ui.controls.get('elementOverlay').hidden).toBe(false);
+  expect(ui.controls.get('elementOverlay').style).toEqual({left: '10%', top: '10%', width: '30%', height: '20%'});
+  expect(ui.controls.get('selectedXmlElement').textContent).toContain(attributes);
 });
 
 test('does not highlight hidden, missing-bounds or offscreen elements', async () => {
