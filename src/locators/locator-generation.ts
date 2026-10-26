@@ -7,6 +7,7 @@ import log from '../logger.js';
 import {isEmpty, omitNilValues} from '../utils/collection.js';
 import {childNodesOf, domToXML, findDOMNodeByPath, xmlToDOM} from './source-parsing.js';
 import type {JSONElement, ElementAttributes} from './source-parsing.js';
+import type {DriverName} from './types.js';
 
 // Attributes on nodes that are likely to be unique to the node so we should consider first when
 // suggesting xpath locators. These are considered IN ORDER.
@@ -84,7 +85,7 @@ export function getComplexSuggestedLocators(
   path: string,
   sourceDoc: XMLDocument,
   isNative: boolean,
-  automationName: string,
+  automationName: DriverName,
   xpathAttributes: string[] = [],
 ): Record<string, string> {
   const complexLocators: Record<string, string | null> = {};
@@ -117,7 +118,7 @@ export function getSuggestedLocators(
   selectedElement: JSONElement,
   sourceXML: string,
   isNative: boolean,
-  automationName: string,
+  automationName: DriverName,
   xpathAttributes: string[] = [],
 ): [string, string][] {
   const sourceDoc = xmlToDOM(sourceXML);

@@ -1,4 +1,5 @@
 import type {JSONElement} from './source-parsing.js';
+import type {DriverName} from './types.js';
 
 export interface FilterOptions {
   query?: string;
@@ -17,7 +18,7 @@ export function shouldIncludeElement(
   element: JSONElement,
   filters: FilterOptions,
   isNative: boolean,
-  automationName: string,
+  automationName: DriverName,
 ): boolean {
   const {
     query,
@@ -99,7 +100,7 @@ function matchesAttributeFilters(
 /**
  * Determines if an element is interactable/fetchable based on platform
  */
-function isInteractableElement(element: JSONElement, isNative: boolean, automationName: string): boolean {
+function isInteractableElement(element: JSONElement, isNative: boolean, automationName: DriverName): boolean {
   if (!isNative) {
     const tag = element.tagName.toLowerCase();
     const attrs = element.attributes;

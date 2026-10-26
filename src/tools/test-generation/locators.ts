@@ -14,6 +14,7 @@ import {z} from 'zod';
 
 import {getCurrentContext, getPageSource} from '../../command.js';
 import {generateAllElementLocators} from '../../locators/generate-all-locators.js';
+import type {DriverName} from '../../locators/types.js';
 import {LOCATOR_GENERATOR_URI} from '../../resources/locator-generator.js';
 import {isAndroidUiautomator2DriverSession, isXCUITestDriverSession} from '../../session-store.js';
 import {clientSupportsMcpApps, isMcpAppsEnabled} from '../../ui/mcp-apps.js';
@@ -75,7 +76,7 @@ export default function generateLocators(server: FastMCP): void {
             : driver.capabilities;
         const driverName = String(
           capabilities['appium:automationName'] ?? capabilities.automationName ?? '',
-        ).toLowerCase();
+        ).toLowerCase() as DriverName;
         // Read the driver's current context: a cached NATIVE_APP value can be stale
         // after attaching to a session that already has an active WebView.
         const isNative = ['uiautomator2', 'xcuitest'].includes(driverName)

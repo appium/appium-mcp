@@ -185,7 +185,7 @@ test('search matches Android text, resource IDs and element types', () => {
   }
 });
 
-test.each(['windows', 'mac2', 'custom', ''])(
+test.each(['windows', 'mac2', 'custom', ''] as const)(
   'generic native driver %s generates XPath without mobile interaction attributes',
   (driverName) => {
     const xml =
@@ -201,7 +201,7 @@ test.each(['windows', 'mac2', 'custom', ''])(
   },
 );
 
-test.each(['uiautomator2', 'xcuitest'])(
+test.each(['uiautomator2', 'xcuitest'] as const)(
   'known mobile driver %s still excludes arbitrary non-interactive elements',
   (driverName) => {
     const xml =
