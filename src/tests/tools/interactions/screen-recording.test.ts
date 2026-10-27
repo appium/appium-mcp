@@ -1,4 +1,5 @@
 import {beforeEach, describe, expect, jest, test} from '@jest/globals';
+import {z} from 'zod';
 
 jest.unstable_mockModule('../../../command.js', () => ({
   startRecordingScreen: jest.fn(async () => ''),
@@ -35,6 +36,17 @@ describe('appium_screen_recording', () => {
     return await tool.execute(await tool.parameters.parseAsync(input), undefined);
   }
 
+  test('exports a videoScale JSON Schema pattern without lookaround', () => {
+    const schema = z.toJSONSchema(tool.parameters);
+    const videoScale = schema.properties?.videoScale as {type: string; pattern: string};
+    expect(videoScale.type).toBe('string');
+    expect(videoScale.pattern).toEqual(expect.any(String));
+    for (const lookaround of ['(?=', '(?!', '(?<=', '(?<!']) {
+      expect(videoScale.pattern).not.toContain(lookaround);
+    }
+    expect(new RegExp(videoScale.pattern).test('1280:720')).toBe(true);
+  });
+
   test.each(['1280:720', '1:1', '16384:16384', '-1:720', '-2:720', '1280:-1', '1280:-2'])(
     'forwards supported dimensions %s',
     async (videoScale) => {
@@ -66,6 +78,9 @@ describe('appium_screen_recording', () => {
     '1280:720 ',
     '1280:720\n',
     '1280:720\r\n',
+    '1280:720\r',
+    '1280:720\u2028',
+    '1280:720\u2029',
     '1280:720\0',
     '32:32,hflip',
     '32:32;null',
