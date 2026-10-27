@@ -11,7 +11,7 @@ import {
   textResult,
   toolErrorMessage,
 } from '../tool-response.js';
-import {findElementSchema} from './find.js';
+import {findElementSchema, resolveLocatorSelector} from './find.js';
 
 export default function findElements(server: FastMCP): void {
   server.addTool({
@@ -37,7 +37,8 @@ export default function findElements(server: FastMCP): void {
         context: await evidenceContext(args.sessionId),
       };
       try {
-        const result = await findMatchingElements(resolved.driver, args.strategy, args.selector);
+        const resolvedSelector = await resolveLocatorSelector(args.strategy, args.selector);
+        const result = await findMatchingElements(resolved.driver, args.strategy, resolvedSelector);
         if (!Array.isArray(result)) {
           throw new Error('Driver returned a non-array findElements response');
         }

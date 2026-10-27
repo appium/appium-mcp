@@ -1,3 +1,7 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
 import {beforeEach, describe, expect, jest, test} from '@jest/globals';
 
 const mockFind = jest.fn<(...args: unknown[]) => Promise<unknown>>();
@@ -123,5 +127,64 @@ describe('find multiple elements', () => {
     mockGetDriver.mockReturnValue(null);
     expect((await pluralTool.execute(args)).isError).toBe(true);
     expect(mockFindAll).not.toHaveBeenCalled();
+  });
+});
+
+describe('-image locator strategy (@appium/images-plugin)', () => {
+  beforeEach(() => {
+    mockFind.mockReset();
+    mockFindAll.mockReset();
+    mockGetDriver.mockReturnValue(driver);
+  });
+
+  test('passes raw base64 template image to findElement with -image strategy', async () => {
+    const base64Png = Buffer.from('fake-png-bytes').toString('base64');
+    mockFind.mockResolvedValue({[w3c]: id});
+
+    const result = await tool.execute({strategy: '-image', selector: base64Png});
+    expect(result.isError).toBeFalsy();
+    expect(mockFind).toHaveBeenCalledWith(driver, '-image', base64Png);
+  });
+
+  test('strips data URI prefix when finding by -image', async () => {
+    const base64Png = Buffer.from('fake-png-bytes').toString('base64');
+    mockFind.mockResolvedValue({[w3c]: id});
+
+    const result = await tool.execute({
+      strategy: '-image',
+      selector: `data:image/png;base64,${base64Png}`,
+    });
+    expect(result.isError).toBeFalsy();
+    expect(mockFind).toHaveBeenCalledWith(driver, '-image', base64Png);
+  });
+
+  test('reads and base64-encodes a local image file for -image strategy', async () => {
+    const tmpFile = path.join(os.tmpdir(), `appium-mcp-image-${Date.now()}.png`);
+    const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    await fs.promises.writeFile(tmpFile, bytes);
+    mockFind.mockResolvedValue({[w3c]: id});
+    mockFindAll.mockResolvedValue([{[w3c]: id}]);
+
+    try {
+      const single = await tool.execute({strategy: '-image', selector: tmpFile});
+      expect(single.isError).toBeFalsy();
+      expect(mockFind).toHaveBeenCalledWith(driver, '-image', bytes.toString('base64'));
+
+      const multiple = await pluralTool.execute({strategy: '-image', selector: tmpFile});
+      expect(multiple.isError).toBeFalsy();
+      expect(mockFindAll).toHaveBeenCalledWith(driver, '-image', bytes.toString('base64'));
+    } finally {
+      await fs.promises.unlink(tmpFile).catch(() => {});
+    }
+  });
+
+  test('returns error when a local image file path does not exist', async () => {
+    const result = await tool.execute({
+      strategy: '-image',
+      selector: '/nonexistent/path/template.png',
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Image file not found');
+    expect(mockFind).not.toHaveBeenCalled();
   });
 });

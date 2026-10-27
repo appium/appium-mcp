@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+
 import type {ContentResult, FastMCP} from 'fastmcp';
 import {z} from 'zod';
 
@@ -24,21 +26,41 @@ export const findElementSchema = z.object({
       'name',
       'class name',
       'css selector',
+      '-image',
     ])
     .describe(
       [
         'accessibility id: cross-platform, fast and stable. id: Android resource-id; iOS accessibility-id alias.',
         'iOS prefer accessibility id > -ios predicate string > -ios class chain; Android prefer accessibility id > id > -android uiautomator. Use xpath last (slow/brittle).',
-        'name: legacy; class name: broad matches; css selector: webview only.',
+        'name: legacy; class name: broad matches; css selector: webview only; -image: template image match via @appium/images-plugin (base64 or local image file path).',
       ].join('\n'),
     ),
   selector: z
     .string()
     .describe(
-      'Selector for the strategy. Do not pass natural-language descriptions; use appium_ai action=find_element for vision.',
+      'Selector for the strategy. For -image, pass a base64-encoded template image or a local image file path. Do not pass natural-language descriptions; use appium_ai action=find_element for vision.',
     ),
   sessionId: z.string().optional().describe('Session ID; defaults to the active session.'),
 });
+
+export async function resolveLocatorSelector(strategy: string, selector: string): Promise<string> {
+  if (strategy !== '-image') {
+    return selector;
+  }
+  const trimmed = selector.trim();
+  const dataUriMatch = /^data:image\/[a-zA-Z0-9.+-]+;base64,([\s\S]+)$/.exec(trimmed);
+  if (dataUriMatch) {
+    return dataUriMatch[1].replace(/\s+/g, '');
+  }
+  if (fs.existsSync(trimmed) && fs.statSync(trimmed).isFile()) {
+    const buf = await fs.promises.readFile(trimmed);
+    return buf.toString('base64');
+  }
+  if (/\.(png|jpe?g|webp|bmp|gif)$/i.test(trimmed)) {
+    throw new Error(`Image file not found: ${trimmed}`);
+  }
+  return trimmed;
+}
 
 export default function findElement(server: FastMCP): void {
   server.addTool({
@@ -69,7 +91,8 @@ export default function findElement(server: FastMCP): void {
       const locator = {strategy: args.strategy, selector: args.selector};
       const context = await evidenceContext(args.sessionId);
       try {
-        const element = await findSingleElement(driver, args.strategy, args.selector);
+        const resolvedSelector = await resolveLocatorSelector(args.strategy, args.selector);
+        const element = await findSingleElement(driver, args.strategy, resolvedSelector);
         const elementId = readWebElementId(element);
         if (!elementId) {
           return withEvidence(errorResult('Element was returned without a valid element ID'), {
