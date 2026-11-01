@@ -1,3 +1,9 @@
+## [1.99.1](https://github.com/appium/appium-mcp/compare/v1.99.0...v1.99.1) (2026-10-27)
+
+### Bug Fixes
+
+* the videoScale ([#598](https://github.com/appium/appium-mcp/issues/598)) ([eed6182](https://github.com/appium/appium-mcp/commit/eed61826e79a6e43d2069ac1baee84183c20dcaa))
+
 ## [1.99.0](https://github.com/appium/appium-mcp/compare/v1.98.0...v1.99.0) (2026-10-26)
 
 ### Features

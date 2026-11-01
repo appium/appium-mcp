@@ -37,12 +37,13 @@ export async function initializeOpenTelemetry(): Promise<void> {
   }
 
   const protocol = getTraceExportProtocol();
-  const [{NodeSDK}, {OTLPTraceExporter}] = await Promise.all([
-    import('@opentelemetry/sdk-node'),
+  // Load the SDK first: concurrent imports of its shared exporter dependencies
+  // can race during ESM linking in Jest on Node.js 22.
+  const {NodeSDK} = await import('@opentelemetry/sdk-node');
+  const {OTLPTraceExporter} =
     protocol === 'grpc'
-      ? import('@opentelemetry/exporter-trace-otlp-grpc')
-      : import('@opentelemetry/exporter-trace-otlp-http'),
-  ]);
+      ? await import('@opentelemetry/exporter-trace-otlp-grpc')
+      : await import('@opentelemetry/exporter-trace-otlp-http');
 
   const nodeSdk = new NodeSDK({
     traceExporter: new OTLPTraceExporter(),

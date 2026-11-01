@@ -80,9 +80,12 @@ const screenRecordingSchema = z.object({
   videoScale: z
     .string()
     .regex(
-      /^(?:[1-9]\d{0,4}|-[12]):(?:[1-9]\d{0,4}|-[12])(?![\s\S])/,
+      /^(?:[1-9]\d{0,4}|-[12]):(?:[1-9]\d{0,4}|-[12])$/,
       'Use width:height (e.g. 1280:720 or -2:720), without filter expressions.',
     )
+    // JavaScript's $ also matches before a final line terminator. Reject it at
+    // runtime so the advertised JSON Schema pattern stays free of lookaround.
+    .refine((value) => value === value.trim(), 'Dimensions must not contain surrounding whitespace.')
     .refine((value) => {
       const dimensions = value.split(':').map(Number);
       return dimensions.every((dimension) => dimension <= 16384) && dimensions.some((dimension) => dimension > 0);
