@@ -1,3 +1,27 @@
+## [1.99.2](https://github.com/appium/appium-mcp/compare/v1.99.1...v1.99.2) (2026-11-01)
+
+### Bug Fixes
+
+* format for node 22 ([b995075](https://github.com/appium/appium-mcp/commit/b9950757b95f931f8310d6b9696c33f1cf43d4c4))
+
+## [1.99.1](https://github.com/appium/appium-mcp/compare/v1.99.0...v1.99.1) (2026-10-27)
+
+### Bug Fixes
+
+* the videoScale ([#598](https://github.com/appium/appium-mcp/issues/598)) ([eed6182](https://github.com/appium/appium-mcp/commit/eed61826e79a6e43d2069ac1baee84183c20dcaa))
+
+## [1.99.0](https://github.com/appium/appium-mcp/compare/v1.98.0...v1.99.0) (2026-10-26)
+
+### Features
+
+* add find locators via embedded ui ([#590](https://github.com/appium/appium-mcp/issues/590)) ([83962f7](https://github.com/appium/appium-mcp/commit/83962f709a2b7891557119fe4bfedfecefce296b))
+
+## [1.98.0](https://github.com/appium/appium-mcp/compare/v1.97.2...v1.98.0) (2026-10-25)
+
+### Features
+
+* Fix some UI behavior for the page source, adds format ([#589](https://github.com/appium/appium-mcp/issues/589)) ([0ff11a1](https://github.com/appium/appium-mcp/commit/0ff11a1343880e3af9985a3c39e8396814dc34e5))
+
 ## [1.97.2](https://github.com/appium/appium-mcp/compare/v1.97.1...v1.97.2) (2026-10-25)
 
 ### Miscellaneous Chores

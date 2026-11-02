@@ -1,6 +1,8 @@
 import type {JSONElement} from './source-parsing.js';
+import type {DriverName} from './types.js';
 
 export interface FilterOptions {
+  query?: string;
   includeTagNames?: string[];
   excludeTagNames?: string[];
   requireAttributes?: string[];
@@ -16,9 +18,10 @@ export function shouldIncludeElement(
   element: JSONElement,
   filters: FilterOptions,
   isNative: boolean,
-  automationName: string,
+  automationName: DriverName,
 ): boolean {
   const {
+    query,
     includeTagNames = [],
     excludeTagNames = ['hierarchy'],
     requireAttributes = [],
@@ -26,6 +29,10 @@ export function shouldIncludeElement(
     fetchableOnly = false,
     clickableOnly = false,
   } = filters;
+
+  if (!matchesSearchQuery(element, query)) {
+    return false;
+  }
 
   if (!matchesTagFilters(element, includeTagNames, excludeTagNames)) {
     return false;
@@ -44,6 +51,15 @@ export function shouldIncludeElement(
   }
 
   return true;
+}
+
+/** Literal substring matching applies only to this element, never its descendants. */
+function matchesSearchQuery(element: JSONElement, query?: string): boolean {
+  const search = query?.trim().toLowerCase();
+  if (!search) {
+    return true;
+  }
+  return [element.tagName, ...Object.values(element.attributes)].some((value) => value.toLowerCase().includes(search));
 }
 
 /**
@@ -84,7 +100,7 @@ function matchesAttributeFilters(
 /**
  * Determines if an element is interactable/fetchable based on platform
  */
-function isInteractableElement(element: JSONElement, isNative: boolean, automationName: string): boolean {
+function isInteractableElement(element: JSONElement, isNative: boolean, automationName: DriverName): boolean {
   if (!isNative) {
     const tag = element.tagName.toLowerCase();
     const attrs = element.attributes;
@@ -99,20 +115,38 @@ function isInteractableElement(element: JSONElement, isNative: boolean, automati
       (attrs.tabindex !== undefined && Number(attrs.tabindex) >= 0)
     );
   }
-  const interactableTags =
-    automationName === 'uiautomator2'
-      ? ['EditText', 'Button', 'ImageButton', 'CheckBox', 'RadioButton', 'Switch', 'ToggleButton', 'TextView']
-      : [
-          'XCUIElementTypeTextField',
-          'XCUIElementTypeSecureTextField',
-          'XCUIElementTypeButton',
-          'XCUIElementTypeImage',
-          'XCUIElementTypeSwitch',
-          'XCUIElementTypeStaticText',
-          'XCUIElementTypeTextView',
-          'XCUIElementTypeCell',
-          'XCUIElementTypeLink',
-        ];
+  let interactableTags: string[];
+  switch (automationName) {
+    case 'uiautomator2':
+      interactableTags = [
+        'EditText',
+        'Button',
+        'ImageButton',
+        'CheckBox',
+        'RadioButton',
+        'Switch',
+        'ToggleButton',
+        'TextView',
+      ];
+      break;
+    case 'xcuitest':
+      interactableTags = [
+        'XCUIElementTypeTextField',
+        'XCUIElementTypeSecureTextField',
+        'XCUIElementTypeButton',
+        'XCUIElementTypeImage',
+        'XCUIElementTypeSwitch',
+        'XCUIElementTypeStaticText',
+        'XCUIElementTypeTextView',
+        'XCUIElementTypeCell',
+        'XCUIElementTypeLink',
+      ];
+      break;
+    default:
+      // Other native drivers use their own XML schemas. Do not require mobile
+      // element types or clickable/focusable attributes before generating XPath.
+      return true;
+  }
 
   return (
     interactableTags.some((tag) => element.tagName.includes(tag)) ||

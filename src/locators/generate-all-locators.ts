@@ -7,6 +7,12 @@ import type {FilterOptions} from './element-filter.js';
 import {getSuggestedLocators} from './locator-generation.js';
 import {xmlToJSON} from './source-parsing.js';
 import type {JSONElement} from './source-parsing.js';
+import type {DriverName} from './types.js';
+
+export interface LocatorGenerationOptions extends FilterOptions {
+  /** Additional XPath attributes, tried before the built-in attributes. */
+  xpathAttributes?: string[];
+}
 
 export interface ElementWithLocators {
   tagName: string;
@@ -31,8 +37,8 @@ export interface ElementWithLocators {
 export function generateAllElementLocators(
   sourceXML: string,
   isNative: boolean = true,
-  automationName: string,
-  filters: FilterOptions = {},
+  automationName: DriverName,
+  filters: LocatorGenerationOptions = {},
 ): ElementWithLocators[] {
   const sourceJSON = xmlToJSON(sourceXML);
   const results: ElementWithLocators[] = [];
@@ -76,8 +82,8 @@ function processElement(
   element: JSONElement,
   sourceXML: string,
   isNative: boolean,
-  automationName: string,
-  filters: FilterOptions,
+  automationName: DriverName,
+  filters: LocatorGenerationOptions,
   results: ElementWithLocators[],
 ): void {
   if (!shouldIncludeElement(element, filters, isNative, automationName)) {
@@ -85,7 +91,7 @@ function processElement(
   }
 
   try {
-    const strategyMap = getSuggestedLocators(element, sourceXML, isNative, automationName);
+    const strategyMap = getSuggestedLocators(element, sourceXML, isNative, automationName, filters.xpathAttributes);
     results.push(transformElementWithLocators(element, strategyMap));
   } catch (error) {
     log.error(`Error generating locators for element at path ${element.path}:`, error);
@@ -99,8 +105,8 @@ function traverseAndProcessElements(
   element: JSONElement | null,
   sourceXML: string,
   isNative: boolean,
-  automationName: string,
-  filters: FilterOptions,
+  automationName: DriverName,
+  filters: LocatorGenerationOptions,
   results: ElementWithLocators[],
 ): void {
   if (!element) {

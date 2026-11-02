@@ -7,7 +7,7 @@ import {
   safeInputKeys,
   safeSessionId,
 } from '../telemetry/attributes.js';
-import {initializeOpenTelemetry, shutdownOpenTelemetry} from '../telemetry/init.js';
+import {getTraceExportProtocol, initializeOpenTelemetry, shutdownOpenTelemetry} from '../telemetry/init.js';
 import {
   installTelemetryWrappers,
   safeInputValueAttributes,
@@ -19,6 +19,36 @@ const originalEnv = {...process.env};
 
 afterEach(() => {
   process.env = {...originalEnv};
+});
+
+describe('telemetry trace protocol', () => {
+  test.each([
+    [undefined, undefined, 'http/json'],
+    ['grpc', undefined, 'grpc'],
+    ['http/json', 'grpc', 'grpc'],
+    ['grpc', 'http/json', 'http/json'],
+    ['grpc', '  ', 'grpc'],
+    ['', '', 'http/json'],
+    [undefined, ' grpc ', 'grpc'],
+  ])('resolves general=%s and traces=%s to %s', (general, traces, expected) => {
+    delete process.env.OTEL_EXPORTER_OTLP_PROTOCOL;
+    delete process.env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL;
+    if (general !== undefined) {
+      process.env.OTEL_EXPORTER_OTLP_PROTOCOL = general;
+    }
+    if (traces !== undefined) {
+      process.env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL = traces;
+    }
+    expect(getTraceExportProtocol()).toBe(expected);
+  });
+
+  test('rejects unsupported protocols only when telemetry is enabled', async () => {
+    process.env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL = 'http/protobuf';
+    process.env.APPIUM_MCP_OTEL_ENABLED = 'false';
+    await expect(initializeOpenTelemetry()).resolves.toBeUndefined();
+    process.env.APPIUM_MCP_OTEL_ENABLED = 'true';
+    await expect(initializeOpenTelemetry()).rejects.toThrow('Unsupported OTLP trace protocol');
+  });
 });
 
 describe('telemetry attributes', () => {
@@ -296,6 +326,8 @@ describe('telemetry attributes', () => {
     process.env.APPIUM_MCP_OTEL_INCLUDE_ARGUMENT_VALUES = 'true';
     process.env.OTEL_SERVICE_NAME = 'appium-mcp-test';
     process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = receiver.endpoint;
+    delete process.env.OTEL_EXPORTER_OTLP_PROTOCOL;
+    delete process.env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL;
     process.env.OTEL_RESOURCE_ATTRIBUTES = 'testcase.id=my-test-123,team=platform';
 
     const server = {

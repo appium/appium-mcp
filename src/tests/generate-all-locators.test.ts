@@ -1,4 +1,6 @@
 import {describe, test, expect} from '@jest/globals';
+import {DOMParser} from '@xmldom/xmldom';
+import {select} from 'xpath';
 
 import {generateAllElementLocators} from '../locators/generate-all-locators.js';
 
@@ -157,4 +159,84 @@ describe('generateAllElementLocators', () => {
     // Verify all elements are clickable
     expect(result.every((element) => element.clickable === true)).toBe(true);
   });
+});
+
+test('search finds iOS icons by literal attribute substring without matching their ancestors', () => {
+  const xml =
+    '<AppiumAUT><XCUIElementTypeApplication><XCUIElementTypeIcon name="Calendar" label="Calendar" visible="false"/><XCUIElementTypeButton name="Maps"/></XCUIElementTypeApplication></AppiumAUT>';
+  const results = generateAllElementLocators(xml, true, 'xcuitest', {query: '  cAlEnD  ', fetchableOnly: false});
+  expect(results).toHaveLength(1);
+  expect(results[0].tagName).toBe('XCUIElementTypeIcon');
+  expect(Object.values(results[0].locators).some((value) => value.includes('Calendar'))).toBe(true);
+  expect(generateAllElementLocators(xml, true, 'xcuitest', {query: 'missing'})).toEqual([]);
+  expect(generateAllElementLocators(xml, true, 'xcuitest', {query: '.*'})).toEqual([]);
+  expect(generateAllElementLocators(xml, true, 'xcuitest', {fetchableOnly: true}).map((item) => item.tagName)).toEqual([
+    'XCUIElementTypeButton',
+  ]);
+});
+
+test('search matches Android text, resource IDs and element types', () => {
+  const xml =
+    '<hierarchy><android.widget.Button text="Continue" resource-id="app:id/next"/><android.widget.TextView text="Welcome"/></hierarchy>';
+  for (const query of ['continue', 'APP:ID/NEXT', 'widget.Button']) {
+    const results = generateAllElementLocators(xml, true, 'uiautomator2', {query});
+    expect(results).toHaveLength(1);
+    expect(results[0].text).toBe('Continue');
+  }
+});
+
+test.each(['windows', 'mac2', 'custom', ''] as const)(
+  'generic native driver %s generates XPath without mobile interaction attributes',
+  (driverName) => {
+    const xml =
+      '<hierarchy><Panel><Control id="plain"/><Control id="inactive" clickable="false" focusable="false" enabled="false" visible="false"/></Panel></hierarchy>';
+    const results = generateAllElementLocators(xml, true, driverName, {fetchableOnly: true});
+    expect(results.map((element) => element.tagName)).toEqual(['Panel', 'Control', 'Control']);
+    expect(results.every((element) => Boolean(element.locators.xpath))).toBe(true);
+    expect(results.map((element) => element.locators.id)).toContain('inactive');
+    const filtered = generateAllElementLocators(xml, true, driverName, {fetchableOnly: true, query: 'inactive'});
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].locators.id).toBe('inactive');
+    expect(generateAllElementLocators(xml, true, driverName, {fetchableOnly: true, clickableOnly: true})).toEqual([]);
+  },
+);
+
+test.each(['uiautomator2', 'xcuitest'] as const)(
+  'known mobile driver %s still excludes arbitrary non-interactive elements',
+  (driverName) => {
+    const xml =
+      '<hierarchy><Panel><Control id="plain"/><Control id="click" clickable="true"/><Control id="focus" focusable="true"/></Panel></hierarchy>';
+    const results = generateAllElementLocators(xml, true, driverName, {fetchableOnly: true});
+    expect(results.map((element) => element.locators.id)).toEqual(['click', 'focus']);
+  },
+);
+
+test('preferred XPath attributes take precedence, retain defaults, and uniquely identify quoted values', () => {
+  const xml = `<hierarchy><Control id="first" AutomationId="save" data-testid="save-test"/><Control id="fallback"/><Control id="quoted" AutomationId="He said &quot;it's ready&quot;"/></hierarchy>`;
+  const options = {fetchableOnly: true, xpathAttributes: ['AutomationId', 'data-testid']};
+  const results = generateAllElementLocators(xml, true, 'custom', options);
+  expect(results[0].locators.xpath).toBe('//Control[@AutomationId="save"]');
+  expect(results[1].locators.xpath).toBe('//Control[@id="fallback"]');
+  expect(results[2].locators.xpath).toContain('concat(');
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  for (const result of results) {
+    const nodes = select(result.locators.xpath, doc as any) as any[];
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].getAttribute('id')).toBe(result.locators.id);
+  }
+  const reversed = generateAllElementLocators(xml, true, 'custom', {
+    xpathAttributes: ['data-testid', 'AutomationId'],
+  });
+  expect(reversed[0].locators.xpath).toBe('//Control[@data-testid="save-test"]');
+  const defaults = generateAllElementLocators(xml, true, 'custom');
+  expect(defaults[0].locators.xpath).toBe('//Control[@id="first"]');
+});
+
+test('duplicate custom attribute values still produce distinct XPath candidates', () => {
+  const xml = '<hierarchy><Control AutomationId="same"/><Control AutomationId="same"/></hierarchy>';
+  const results = generateAllElementLocators(xml, true, 'custom', {xpathAttributes: ['AutomationId']});
+  expect(results.map((element) => element.locators.xpath)).toEqual([
+    '(//Control[@AutomationId="same"])[1]',
+    '(//Control[@AutomationId="same"])[2]',
+  ]);
 });

@@ -1,3 +1,6 @@
+import {INSPECTOR_SCREENSHOT_SCRIPT} from './inspector-screenshot-script.js';
+import {XML_FORMAT_SCRIPT, XML_SEARCH_SCRIPT} from './xml-inspector-scripts.js';
+
 /**
  * Static MCP App used by appium_get_page_source.
  *
@@ -13,113 +16,121 @@ export function createPageSourceInspectorAppUI(): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Page Source Inspector</title>
   <style>
+    :root { color-scheme: dark; --bg: #17191d; --panel: #202329; --line: #343941; --text: #e5e8ee; --muted: #a3acba; --accent: #91baff; }
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #1e1e1e;
-      color: #d4d4d4;
-      font-family: Monaco, Menlo, "Courier New", monospace;
-    }
-    summary {
-      padding: 12px 16px;
-      background: #2d2d2d;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    summary .info { margin-left: 8px; }
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 16px;
-      border-bottom: 1px solid #3e3e3e;
-      background: #2d2d2d;
-    }
-    .toolbar-right {
-      flex-wrap: wrap;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .title { font-size: 14px; font-weight: 500; }
-    .info { color: #999; font-size: 12px; }
-    .btn {
-      padding: 6px 12px;
-      border: 0;
-      border-radius: 4px;
-      background: #007aff;
-      color: #fff;
-      cursor: pointer;
-      font: 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    .btn:hover { background: #0056b3; }
-    .btn-secondary { background: #444; }
-    .btn-secondary:hover { background: #555; }
-    .search-box {
-      width: 200px;
-      padding: 6px 12px;
-      border: 1px solid #555;
-      border-radius: 4px;
-      outline: none;
-      background: #3e3e3e;
-      color: #d4d4d4;
-      font-size: 13px;
-    }
-    .search-box:focus { border-color: #007aff; }
-    .viewer {
-      max-height: 320px;
-      overflow: auto;
-      padding: 16px;
-    }
-    .xml-content {
-      margin: 0;
-      white-space: pre;
-      color: #d4d4d4;
-      font-size: 13px;
-      line-height: 1.6;
-    }
-    mark {
-      border-radius: 2px;
-      background: #ffd54f;
-      color: #1e1e1e;
-    }
-    .empty {
-      color: #999;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
+    [hidden] { display: none !important; }
+    body { margin: 0; overflow: auto; background: var(--bg); color: var(--text); font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    summary { cursor: pointer; padding: 16px 20px; }
+    summary::marker { color: var(--muted); }
+    .title { font-size: 15px; font-weight: 600; letter-spacing: -.2px; }
+    .info { color: var(--muted); font-size: 12px; margin-left: 10px; }
+    .toolbar, .section-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .toolbar { padding: 12px 20px; border-block: 1px solid var(--line); background: var(--panel); }
+    .toolbar-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn { padding: 8px 12px; border: 1px solid transparent; border-radius: 7px; background: #a7c7ff; color: #14243d; cursor: pointer; font: inherit; font-weight: 600; }
+    .btn:hover { background: #c2d8ff; }
+    .btn:disabled { opacity: .55; cursor: wait; }
+    .btn-secondary { background: transparent; border-color: #48505d; color: var(--text); }
+    .btn-secondary:hover { background: #303641; }
+    .btn:focus-visible, summary:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .search-box { width: min(240px, 100%); min-width: 0; padding: 8px 12px; border: 1px solid #48505d; border-radius: 7px; background: var(--bg); color: var(--text); font: inherit; }
+    .search-box::placeholder { color: var(--muted); }
+    .viewer { height: 320px; min-height: 160px; resize: vertical; overflow: auto; padding: 20px; }
+    .xml-content, .selector { margin: 0; font: 12px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .xml-content { white-space: pre; color: #c5d3e7; }
+    mark[data-active] { outline: 2px solid #91baff; background: #ff963c; }
+    .search-status { padding: 6px 20px; color: var(--muted); font-size: 12px; }
+    .search-status:empty { display: none; }
+    mark { border-radius: 3px; background: #eac77a; color: #252019; }
+    .empty, .hint { color: var(--muted); }
+    .empty { font-family: inherit; }
+    .hint { margin: 6px 0 0; font-size: 12px; }
+    .screenshot-panel { border-top: 1px solid var(--line); padding: 20px; }
+    .screenshot-frame { position: relative; width: fit-content; max-width: 100%; margin: 12px auto; }
+    .screenshot-frame img { display: block; max-width: 100%; max-height: 480px; }
+    .element-overlay { position: absolute; border: 2px solid #ff963c; background: #ff963c33; pointer-events: none; }
+    #screenshotElement { width: 100%; margin: 10px 0; padding: 8px; background: var(--panel); color: var(--text); border: 1px solid var(--line); }
+    #selectedXmlElement { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+    .locators { border-top: 1px solid var(--line); padding: 20px; }
+    h2 { margin: 0; font-size: 14px; font-weight: 600; }
+    #locatorStatus { margin: 16px 0 10px; color: var(--accent); font-size: 12px; }
+    .locator-results { max-height: 480px; overflow: auto; }
+    .locator-card { margin: 8px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); overflow: hidden; }
+    .locator-card summary { padding: 12px 14px; overflow-wrap: anywhere; }
+    .element-type { margin-left: 8px; color: var(--muted); font-size: 11px; }
+    .locator-row { margin: 0 14px 14px; }
+    .strategy { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; font-weight: 600; }
+    .selector { padding: 10px 12px; background: var(--bg); border-radius: 5px; white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; }
+    @media (max-width: 420px) { .toolbar, .locators { padding: 12px; } .toolbar-right { width: 100%; } .search-box { width: 100%; } .info { display: block; margin: 4px 0 0 18px; } }
   </style>
 </head>
 <body>
-  <details>
+  <details open>
     <summary>
-      <span class="title">📄 Page Source Inspector</span>
+      <span class="title">Page Source Inspector</span>
       <span class="info" id="sourceInfo">Waiting for page source…</span>
     </summary>
     <div class="toolbar">
+      <input type="search" class="search-box" id="searchBox" placeholder="Search elements…" aria-label="Search elements" title="Highlight XML text and find locator candidates by element tag or attribute value">
       <div class="toolbar-right">
-        <input type="text" class="search-box" id="searchBox" placeholder="Search…">
-        <button class="btn btn-secondary" id="copyButton">Copy</button>
-        <button class="btn btn-secondary" id="formatButton">Format</button>
-        <button class="btn" id="generateButton">Generate Locators</button>
+        <button class="btn btn-secondary" id="takeScreenshotButton">Take screenshot</button>
+        <button class="btn btn-secondary" id="formatButton">Format XML</button>
+        <button class="btn btn-secondary" id="copyButton">Copy XML</button>
       </div>
     </div>
-    <div class="viewer">
+    <div id="searchStatus" class="search-status" role="status" aria-live="polite"></div>
+    <div class="viewer" title="Drag the bottom-right corner to resize vertically">
       <pre class="xml-content empty" id="xmlContent">Waiting for page source…</pre>
     </div>
+    <section id="screenshotPanel" class="screenshot-panel" hidden aria-label="Screenshot preview">
+      <h2>Screenshot &amp; XML elements</h2>
+      <p class="hint">Capture refreshes XML too. Select an element to overlay its bounds. Images and XML are captured sequentially; keep the screen still. Supports x/y/width/height and Android bounds.</p>
+      <p id="screenshotStatus" role="status" aria-live="polite"></p>
+      <div class="screenshot-frame">
+        <img id="inspectorScreenshot" alt="Device screenshot" hidden>
+        <div id="elementOverlay" class="element-overlay" hidden></div>
+      </div>
+      <label for="screenshotElement">XML element (filtered by Search)</label>
+      <select id="screenshotElement"><option value="">Select an XML element to highlight</option></select>
+      <pre id="selectedXmlElement"></pre>
+    </section>
+    <section class="locators" aria-labelledby="locatorsHeading">
+      <div class="section-header">
+        <h2 id="locatorsHeading">Locator candidates</h2>
+        <button class="btn" id="generateButton">Find locators</button>
+      </div>
+      <p class="hint">Find locators for elements matching the search text in their type or attributes (name, label, text, ID, etc.). Matches ignore case and may include hidden elements. Fetches fresh XML; leave search blank for the default candidate list.</p>
+      <label class="hint" for="xpathAttributes">Preferred XPath attributes (optional)</label>
+      <input type="text" class="search-box" id="xpathAttributes" placeholder="AutomationId, data-testid" aria-describedby="xpathAttributesHelp" style="display:block;width:100%;margin-top:6px">
+      <p class="hint" id="xpathAttributesHelp">Comma-separated attribute names, in priority order. Existing attributes remain as fallback.</p>
+      <div id="locatorResults" hidden>
+        <p id="locatorStatus" role="status" aria-live="polite"></p>
+        <div class="locator-results" id="locatorOutput"></div>
+      </div>
+    </section>
   </details>
   <script>
     (() => {
+      ${XML_FORMAT_SCRIPT}
+      ${XML_SEARCH_SCRIPT}
+      ${INSPECTOR_SCREENSHOT_SCRIPT}
       const PAGE_SOURCE_PREFIX = 'Page source retrieved successfully: \\n\\\`\\\`\\\`xml ';
       const xmlContent = document.getElementById('xmlContent');
       const sourceInfo = document.getElementById('sourceInfo');
       const searchBox = document.getElementById('searchBox');
+      const generateButton = document.getElementById('generateButton');
+      const locatorResults = document.getElementById('locatorResults');
+      const locatorStatus = document.getElementById('locatorStatus');
+      const locatorOutput = document.getElementById('locatorOutput');
+      const xmlSearch = createXmlSearch(xmlContent, document.getElementById('searchStatus'));
       let source = '';
       let savedFile;
       let nextRequestId = 1;
       const pendingRequests = new Map();
+
+      const screenshotInspector = createScreenshotInspector(
+        (name, args) => sendRequest('tools/call', {name, arguments: args}), setSource, sourceFromToolResult,
+      );
 
       function sendRequest(method, params) {
         const id = nextRequestId++;
@@ -154,30 +165,9 @@ export function createPageSourceInspectorAppUI(): string {
         return text;
       }
 
-      function appendHighlightedText(container, text, query) {
-        const lowerText = text.toLowerCase();
-        const lowerQuery = query.toLowerCase();
-        let position = 0;
-
-        while (position < text.length) {
-          const matchIndex = lowerText.indexOf(lowerQuery, position);
-          if (matchIndex === -1) {
-            container.appendChild(document.createTextNode(text.slice(position)));
-            return;
-          }
-          if (matchIndex > position) {
-            container.appendChild(document.createTextNode(text.slice(position, matchIndex)));
-          }
-          const mark = document.createElement('mark');
-          mark.textContent = text.slice(matchIndex, matchIndex + query.length);
-          container.appendChild(mark);
-          position = matchIndex + query.length;
-        }
-      }
-
       function renderSource() {
         const query = searchBox.value.trim();
-        xmlContent.textContent = '';
+        xmlSearch.render('', '');
         xmlContent.classList.toggle('empty', source.length === 0);
         if (savedFile) {
           sourceInfo.textContent = savedFile.bytes + ' bytes saved';
@@ -186,28 +176,22 @@ export function createPageSourceInspectorAppUI(): string {
         }
         if (!source) {
           xmlContent.textContent = 'No page source was returned.';
-        } else if (!query) {
-          xmlContent.textContent = source;
         } else {
-          appendHighlightedText(xmlContent, source, query);
+          xmlSearch.render(source, query);
         }
         sourceInfo.textContent = source.length + ' characters';
       }
 
       function setSource(nextSource) {
         source = nextSource;
+        screenshotInspector.updateSource(source);
         renderSource();
       }
 
       function formatXML() {
         if (!source) return;
         try {
-          const parser = new DOMParser();
-          const documentNode = parser.parseFromString(source, 'text/xml');
-          if (documentNode.querySelector('parsererror')) {
-            throw new Error('Invalid XML');
-          }
-          source = new XMLSerializer().serializeToString(documentNode);
+          source = formatXml(source);
           renderSource();
         } catch {
           window.alert('Failed to format XML');
@@ -223,11 +207,89 @@ export function createPageSourceInspectorAppUI(): string {
         }
       }
 
+      function renderLocators(elements) {
+        locatorOutput.textContent = '';
+        elements.forEach((element, index) => {
+          const card = document.createElement('details');
+          card.className = 'locator-card';
+          card.open = index === 0;
+          const heading = document.createElement('summary');
+          const label = element.text || element.contentDesc || element.resourceId;
+          heading.textContent = (index + 1) + '. ' + (label || element.tagName || 'Element');
+          if (label && element.tagName) {
+            const type = document.createElement('span');
+            type.className = 'element-type';
+            type.textContent = element.tagName;
+            heading.appendChild(type);
+          }
+          card.appendChild(heading);
+          const entries = Object.entries(element.locators || {}).filter(([, value]) => typeof value === 'string');
+          entries.forEach(([strategy, selector]) => {
+            const row = document.createElement('div');
+            row.className = 'locator-row';
+            const name = document.createElement('span');
+            name.className = 'strategy';
+            name.textContent = strategy;
+            const code = document.createElement('pre');
+            code.className = 'selector';
+            code.textContent = selector;
+            row.appendChild(name);
+            row.appendChild(code);
+            card.appendChild(row);
+          });
+          if (!entries.length) {
+            const empty = document.createElement('p');
+            empty.className = 'locator-row hint';
+            empty.textContent = 'No candidate selectors for this element.';
+            card.appendChild(empty);
+          }
+          locatorOutput.appendChild(card);
+        });
+      }
+
+      function parseLocatorResult(result) {
+        const text = (result?.content || [])
+          .filter(item => item.type === 'text')
+          .map(item => item.text)
+          .join('\\n');
+        if (result?.isError) throw new Error(text || 'Tool returned an error');
+        const data = JSON.parse(text);
+        if (!Array.isArray(data.interactableElements)) throw new Error('No locator data returned');
+        return data.interactableElements;
+      }
+
+      function describeLocatorResults(count, query) {
+        if (query) {
+          const matches = count ? count + ' matching elements' : 'No matching elements';
+          return matches + ' for “' + query + '” in freshly fetched XML.';
+        }
+        if (!count) return 'No supported elements found in the fetched XML.';
+        return 'Candidates generated for ' + count + ' elements from freshly fetched XML.';
+      }
+
       async function generateLocators() {
+        if (generateButton.disabled) return;
+        const query = searchBox.value.trim();
+        generateButton.disabled = true;
+        locatorResults.hidden = false;
+        locatorStatus.textContent = 'Fetching XML and generating candidates…';
+        locatorOutput.textContent = '';
         try {
-          await sendRequest('tools/call', {name: 'generate_locators', arguments: {}});
-        } catch {
-          window.alert('Failed to generate locators');
+          const xpathAttributes = [...new Set((document.getElementById('xpathAttributes').value || '')
+            .split(',').map(name => name.trim()).filter(Boolean))];
+          if (xpathAttributes.length > 20 || xpathAttributes.some(name => !/^[A-Za-z_][A-Za-z0-9_.-]*$/.test(name))) {
+            throw new Error('Enter up to 20 attribute names, separated by commas (no XPath expressions or namespace prefixes).');
+          }
+          const args = query ? {query} : {};
+          if (xpathAttributes.length) args.xpathAttributes = xpathAttributes;
+          const result = await sendRequest('tools/call', {name: 'generate_locators', arguments: args});
+          const elements = parseLocatorResult(result);
+          locatorStatus.textContent = describeLocatorResults(elements.length, query);
+          renderLocators(elements);
+        } catch (error) {
+          locatorStatus.textContent = 'Failed to generate locators: ' + error.message;
+        } finally {
+          generateButton.disabled = false;
         }
       }
 
@@ -252,7 +314,11 @@ export function createPageSourceInspectorAppUI(): string {
         }
       });
 
-      searchBox.addEventListener('input', renderSource);
+      searchBox.addEventListener('input', () => {
+        renderSource();
+        screenshotInspector.filter(searchBox.value);
+      });
+      searchBox.addEventListener('keydown', xmlSearch.handleKeyDown);
       document.getElementById('copyButton').addEventListener('click', copyToClipboard);
       document.getElementById('formatButton').addEventListener('click', formatXML);
       document.getElementById('generateButton').addEventListener('click', generateLocators);
@@ -262,7 +328,21 @@ export function createPageSourceInspectorAppUI(): string {
         appInfo: {name: 'Appium Page Source Inspector', version: '1.0.0'},
         appCapabilities: {availableDisplayModes: ['inline', 'fullscreen']},
       })
-        .then(() => sendNotification('ui/notifications/initialized', {}))
+        .then(() => {
+          sendNotification('ui/notifications/initialized', {});
+          // Let flexible MCP App hosts follow resizing and details expansion.
+          if (typeof ResizeObserver !== 'undefined') {
+            let previousHeight;
+            const observer = new ResizeObserver(() => {
+              const height = Math.ceil(document.body.getBoundingClientRect().height);
+              if (height !== previousHeight) {
+                previousHeight = height;
+                sendNotification('ui/notifications/size-changed', {height});
+              }
+            });
+            observer.observe(document.body);
+          }
+        })
         .catch(() => {
           sourceInfo.textContent = 'Unable to initialize inspector';
         });

@@ -1,3 +1,5 @@
+import {XML_FORMAT_SCRIPT, XML_SEARCH_SCRIPT} from './xml-inspector-scripts.js';
+
 /**
  * MCP-UI Utility Functions
  *
@@ -940,7 +942,7 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       background: #1e1e1e;
       color: #d4d4d4;
       padding: 0;
-      overflow: hidden;
+      overflow: auto;
     }
     summary {
       padding: 12px 16px;
@@ -987,7 +989,9 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       color: #999;
     }
     .viewer {
-      max-height: 320px;
+      height: 320px;
+      min-height: 160px;
+      resize: vertical;
       overflow: auto;
       padding: 16px;
     }
@@ -1020,6 +1024,10 @@ export function createPageSourceInspectorUI(pageSource: string): string {
       outline: none;
       border-color: #007AFF;
     }
+    mark { background: #ffd700; color: #000; }
+    mark[data-active] { outline: 2px solid #91baff; background: #ff963c; }
+    .search-status { padding: 6px 16px; font-size: 12px; color: #bbb; }
+    .search-status:empty { display: none; }
   </style>
 </head>
 <body>
@@ -1036,11 +1044,14 @@ export function createPageSourceInspectorUI(pageSource: string): string {
         <button class="btn" onclick="generateLocators()">Generate Locators</button>
       </div>
     </div>
-    <div class="viewer">
+    <div id="searchStatus" class="search-status" role="status" aria-live="polite"></div>
+    <div class="viewer" title="Drag the bottom-right corner to resize vertically">
       <pre class="xml-content" id="xmlContent">${escapedSource}</pre>
     </div>
   </details>
   <script>
+    ${XML_FORMAT_SCRIPT}
+    ${XML_SEARCH_SCRIPT}
     function copyToClipboard() {
       const text = document.getElementById('xmlContent').textContent;
       navigator.clipboard.writeText(text).then(() => {
@@ -1049,13 +1060,9 @@ export function createPageSourceInspectorUI(pageSource: string): string {
     }
 
     function formatXML() {
-      const content = document.getElementById('xmlContent').textContent;
       try {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(content, 'text/xml');
-        const serializer = new XMLSerializer();
-        const formatted = serializer.serializeToString(xmlDoc);
-        document.getElementById('xmlContent').textContent = formatted;
+        displayedSource = formatXml(originalSource);
+        renderSource(document.getElementById('searchBox').value);
       } catch (e) {
         alert('Failed to format XML');
       }
@@ -1066,50 +1073,21 @@ export function createPageSourceInspectorUI(pageSource: string): string {
         type: 'tool',
         payload: {
           toolName: 'generate_locators',
-          params: {}
+          params: {query: document.getElementById('searchBox').value.trim()}
         }
       }, '*');
     }
 
     const xmlContent = document.getElementById('xmlContent');
     const originalSource = xmlContent.textContent;
+    let displayedSource = originalSource;
 
-    function appendTextWithHighlights(container, text, searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      const textLower = text.toLowerCase();
-      let position = 0;
-
-      while (position < text.length) {
-        const matchIndex = textLower.indexOf(searchLower, position);
-        if (matchIndex === -1) {
-          container.appendChild(document.createTextNode(text.slice(position)));
-          return;
-        }
-
-        if (matchIndex > position) {
-          container.appendChild(
-            document.createTextNode(text.slice(position, matchIndex))
-          );
-        }
-
-        const mark = document.createElement('mark');
-        mark.style.background = '#ffd700';
-        mark.style.color = '#000';
-        mark.textContent = text.slice(matchIndex, matchIndex + searchTerm.length);
-        container.appendChild(mark);
-        position = matchIndex + searchTerm.length;
-      }
-    }
-
+    const searchBox = document.getElementById('searchBox');
+    const xmlSearch = createXmlSearch(xmlContent, document.getElementById('searchStatus'));
     function renderSource(searchTerm = '') {
-      xmlContent.textContent = '';
-      if (!searchTerm) {
-        xmlContent.textContent = originalSource;
-        return;
-      }
-
-      appendTextWithHighlights(xmlContent, originalSource, searchTerm);
+      xmlSearch.render(displayedSource, searchTerm);
     }
+    searchBox.addEventListener('keydown', xmlSearch.handleKeyDown);
 
     // Search functionality
     document.getElementById('searchBox').addEventListener('input', (e) => {

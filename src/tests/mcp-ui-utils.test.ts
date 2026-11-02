@@ -1,4 +1,7 @@
+import {createContext, runInContext} from 'node:vm';
+
 import {afterEach, describe, expect, jest, test} from '@jest/globals';
+import {DOMParser, XMLSerializer} from '@xmldom/xmldom';
 
 import {
   addUIResourceToResponse,
@@ -101,6 +104,78 @@ describe('createContextSwitcherUI', () => {
 });
 
 describe('createPageSourceInspectorUI', () => {
+  function inspector(source: string) {
+    const html = createPageSourceInspectorUI(source);
+    const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+    expect(script).toBeDefined();
+    const dom = new DOMParser().parseFromString('<ui><pre/></ui>', 'text/xml');
+    const output = dom.getElementsByTagName('pre')[0];
+    output.textContent = source;
+    const search = {value: '', addEventListener: jest.fn()};
+    const alert = jest.fn();
+    const context = createContext({
+      DOMParser,
+      XMLSerializer,
+      alert,
+      document: {
+        getElementById: (id: string) => (id === 'xmlContent' ? output : search),
+        createTextNode: (text: string) => dom.createTextNode(text),
+        createElement: (name: string) => Object.assign(dom.createElement(name), {style: {}}),
+      },
+    });
+    runInContext(script ?? '', context);
+    return {output, search, alert, context, format: () => runInContext('formatXML()', context)};
+  }
+
+  test('formats compact XML only on demand and keeps repeated formatting stable', () => {
+    const source = '<?xml version="1.0"?><root><group><node label="a &amp; b"/></group></root>';
+    const ui = inspector(source);
+    expect(ui.output.textContent).toBe(source);
+    ui.format();
+    const formatted = '<?xml version="1.0"?>\n<root>\n  <group>\n    <node label="a &amp; b"/>\n  </group>\n</root>';
+    expect(ui.output.textContent).toBe(formatted);
+    ui.format();
+    expect(ui.output.textContent).toBe(formatted);
+    expect(ui.alert).not.toHaveBeenCalled();
+  });
+
+  test('preserves mixed text, CDATA, whitespace-only leaf text, and xml:space subtrees', () => {
+    const children = [
+      '<label>Hello <b>world</b>!</label>',
+      '<data><![CDATA[a<b>]]><node/></data>',
+      '<space>  </space>',
+      '<group xml:space="preserve"><nested><node/></nested>  </group>',
+      '<!-- comment -->',
+    ];
+    const ui = inspector('<root>' + children.join('') + '</root>');
+    ui.format();
+    expect(ui.output.textContent).toBe('<root>\n  ' + children.join('\n  ') + '\n</root>');
+  });
+
+  test('search highlights and clearing search keep the formatted display', () => {
+    const ui = inspector('<root><node/></root>');
+    ui.search.value = 'node';
+    ui.format();
+    expect(ui.output.getElementsByTagName('mark')).toHaveLength(1);
+    expect(ui.output.textContent).toBe('<root>\n  <node/>\n</root>');
+    runInContext('renderSource()', ui.context);
+    expect(ui.output.getElementsByTagName('mark')).toHaveLength(0);
+    expect(ui.output.textContent).toBe('<root>\n  <node/>\n</root>');
+  });
+
+  test('leaves the original display intact when the browser reports invalid XML', () => {
+    const ui = inspector('<root><broken></root>');
+    // Browsers return a parsererror document instead of throwing on malformed XML.
+    ui.context.DOMParser = class {
+      parseFromString() {
+        return new DOMParser().parseFromString('<parsererror>Invalid XML</parsererror>', 'text/xml');
+      }
+    };
+    ui.format();
+    expect(ui.output.textContent).toBe('<root><broken></root>');
+    expect(ui.alert).toHaveBeenCalledWith('Failed to format XML');
+  });
+
   test('escapes page source and does not embed it into script context', () => {
     const html = createPageSourceInspectorUI('<node text="</script><img src=x onerror=alert(1)>"/>');
 
