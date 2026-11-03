@@ -48,7 +48,7 @@ export function areAttrAndValueUnique(attrName: string, attrValue: string, sourc
   if (!sourceDoc || isEmpty(sourceDoc)) {
     return true;
   }
-  const result = xpathSelect(`//*[@${attrName}="${attrValue.replace(/"/g, '')}"]`, sourceDoc as any);
+  const result = xpathSelect(`//*[@${attrName}=${xpathLiteral(attrValue)}]`, sourceDoc as any);
   return Array.isArray(result) ? result.length < 2 : false;
 }
 
