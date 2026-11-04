@@ -240,3 +240,19 @@ test('duplicate custom attribute values still produce distinct XPath candidates'
     '(//Control[@AutomationId="same"])[2]',
   ]);
 });
+
+test('duplicate quoted attribute values are not suggested as unique simple locators', () => {
+  const xml =
+    '<hierarchy><XCUIElementTypeButton name="Say &quot;hi&quot;" enabled="true" visible="true"/><XCUIElementTypeButton name="Say &quot;hi&quot;" enabled="true" visible="true"/></hierarchy>';
+  const results = generateAllElementLocators(xml, true, 'xcuitest');
+  expect(results).toHaveLength(2);
+  for (const result of results) {
+    expect(result.locators['accessibility id']).toBeUndefined();
+  }
+  const single = generateAllElementLocators(
+    '<hierarchy><XCUIElementTypeButton name="Say &quot;hi&quot;" enabled="true" visible="true"/></hierarchy>',
+    true,
+    'xcuitest',
+  );
+  expect(single[0].locators['accessibility id']).toBe('Say "hi"');
+});
