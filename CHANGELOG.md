@@ -1,3 +1,9 @@
+## [1.99.3](https://github.com/appium/appium-mcp/compare/v1.99.2...v1.99.3) (2026-11-04)
+
+### Bug Fixes
+
+* escape quoted values when checking simple locator uniqueness ([#606](https://github.com/appium/appium-mcp/issues/606)) ([19eb145](https://github.com/appium/appium-mcp/commit/19eb1455ba44f4e8db7f9daef63635734f844978))
+
 ## [1.99.2](https://github.com/appium/appium-mcp/compare/v1.99.1...v1.99.2) (2026-11-01)
 
 ### Bug Fixes
