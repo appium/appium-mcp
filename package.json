@@ -85,7 +85,7 @@
     "lru-cache": "^11.5.0",
     "teen_process": "^4.2.1",
     "webdriver": "^9.30.0",
-    "xpath": "^0.0.35",
+    "xpath": "^0.0.36",
     "zod": "^4.3.6"
   },
   "devDependencies": {
