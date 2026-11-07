@@ -28,7 +28,7 @@ jest.unstable_mockModule('../../../tools/ai/config', () => ({
 const {execute, getWindowRect, performActions} = await import('../../../command.js');
 const {getPlatformName} = await import('../../../session-store.js');
 const {parseAiElement} = await import('../../../tools/gestures/handlers/ai-element.js');
-const {clampDirectionCoordsToWindow, performVerticalScroll, rectVisibleWithinWindow} =
+const {clampDirectionCoordsToWindow, handleScroll, performVerticalScroll, rectVisibleWithinWindow} =
   await import('../../../tools/gestures/handlers/swipe-scroll.js');
 
 const PHONE_WINDOW = {x: 0, y: 0, width: 400, height: 800};
@@ -95,5 +95,29 @@ describe('performVerticalScroll', () => {
     const [sequence] = jest.mocked(performActions).mock.calls[0][1] as Array<{actions: Array<{y?: number}>}>;
     const ys = sequence.actions.filter((a) => a.y !== undefined).map((a) => a.y);
     expect(ys).toEqual([520, 280]);
+  });
+});
+
+describe('handleScroll', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(getWindowRect).mockResolvedValue(PHONE_WINDOW);
+  });
+
+  test('iOS screen scroll passes distance to mobile: scroll', async () => {
+    jest.mocked(getPlatformName).mockReturnValue('iOS');
+    const result = await handleScroll({} as never, {action: 'scroll', direction: 'down', maxScrollAttempts: 10});
+    expect(execute).toHaveBeenCalledWith(expect.anything(), 'mobile: scroll', {direction: 'down', distance: 0.6});
+    expect(performActions).not.toHaveBeenCalled();
+    expect(result.isError).toBeFalsy();
+  });
+
+  test('Android screen scroll keeps the flipped pointer drag', async () => {
+    jest.mocked(getPlatformName).mockReturnValue('Android');
+    await handleScroll({} as never, {action: 'scroll', direction: 'down', maxScrollAttempts: 10});
+    expect(execute).not.toHaveBeenCalled();
+    const [sequence] = jest.mocked(performActions).mock.calls[0][1] as Array<{actions: Array<{y?: number}>}>;
+    const ys = sequence.actions.filter((a) => a.y !== undefined).map((a) => a.y);
+    expect(ys).toEqual([640, 160]);
   });
 });
