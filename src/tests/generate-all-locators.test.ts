@@ -256,3 +256,52 @@ test('duplicate quoted attribute values are not suggested as unique simple locat
   );
   expect(single[0].locators['accessibility id']).toBe('Say "hi"');
 });
+
+test('a quoted iOS name is kept in the predicate and class chain', () => {
+  const xml =
+    '<hierarchy><XCUIElementTypeApplication><XCUIElementTypeWindow><XCUIElementTypeButton name="Say &quot;hi&quot;" enabled="true" visible="true"/></XCUIElementTypeWindow></XCUIElementTypeApplication></hierarchy>';
+  const button = generateAllElementLocators(xml, true, 'xcuitest').find(
+    (element) => element.tagName === 'XCUIElementTypeButton',
+  );
+  expect(button?.locators['accessibility id']).toBe('Say "hi"');
+  expect(button?.locators['-ios predicate string']).toBe(`name == 'Say "hi"'`);
+  expect(button?.locators['-ios class chain']).toBe(`**/XCUIElementTypeButton[\`name == 'Say "hi"'\`]`);
+  expect(button?.locators.xpath).toBe(`//XCUIElementTypeButton[@name='Say "hi"']`);
+});
+
+test('a quoted Android text is kept in the uiautomator selector', () => {
+  const xml =
+    '<hierarchy><android.widget.FrameLayout><android.widget.Button text="Say &quot;hi&quot;" clickable="true" enabled="true" displayed="true"/></android.widget.FrameLayout></hierarchy>';
+  const button = generateAllElementLocators(xml, true, 'uiautomator2').find(
+    (element) => element.tagName === 'android.widget.Button',
+  );
+  expect(button?.locators.xpath).toBe(`//android.widget.Button[@text='Say "hi"']`);
+  expect(button?.locators['-android uiautomator']).toBe(`new UiSelector().text("Say \\"hi\\"")`);
+});
+
+test('an apostrophe stays inside double quotes', () => {
+  const xml = `<hierarchy><XCUIElementTypeButton name="It's fine" enabled="true" visible="true"/></hierarchy>`;
+  const button = generateAllElementLocators(xml, true, 'xcuitest').find(
+    (element) => element.tagName === 'XCUIElementTypeButton',
+  );
+  expect(button?.locators['-ios predicate string']).toBe(`name == "It's fine"`);
+  expect(button?.locators['-ios class chain']).toBe(`**/XCUIElementTypeButton[\`name == "It's fine"\`]`);
+});
+
+test('a name with both quotes is escaped inside the predicate', () => {
+  const xml = `<hierarchy><XCUIElementTypeButton name="He said &quot;it's ready&quot;" enabled="true" visible="true"/></hierarchy>`;
+  const button = generateAllElementLocators(xml, true, 'xcuitest').find(
+    (element) => element.tagName === 'XCUIElementTypeButton',
+  );
+  expect(button?.locators['-ios predicate string']).toBe(`name == "He said \\"it's ready\\""`);
+  expect(button?.locators['-ios class chain']).toBe(`**/XCUIElementTypeButton[\`name == "He said \\"it's ready\\""\`]`);
+});
+
+test('a backslash in an iOS name is escaped in the predicate and class chain', () => {
+  const xml = `<hierarchy><XCUIElementTypeButton name="\\u0041" enabled="true" visible="true"/></hierarchy>`;
+  const button = generateAllElementLocators(xml, true, 'xcuitest').find(
+    (element) => element.tagName === 'XCUIElementTypeButton',
+  );
+  expect(button?.locators['-ios predicate string']).toBe(`name == "\\\\u0041"`);
+  expect(button?.locators['-ios class chain']).toBe(`**/XCUIElementTypeButton[\`name == "\\\\u0041"\`]`);
+});
