@@ -285,11 +285,11 @@ export function getOptimalClassChain(doc: XMLDocument, domNode: XMLNode): string
 
     for (const attrName of CHECKED_CLASS_CHAIN_ATTRIBUTES) {
       const attrValue = (domNode as XMLElement).getAttribute?.(attrName);
-      if (isEmpty(attrValue)) {
+      if (!attrValue) {
         continue;
       }
-      const xpath = `//${domNode.nodeName || '*'}[@${attrName}="${attrValue}"]`;
-      classChain = `/${domNode.nodeName || '*'}[\`${attrName} == "${attrValue}"\`]`;
+      const xpath = `//${domNode.nodeName || '*'}[@${attrName}=${xpathLiteral(attrValue)}]`;
+      classChain = `/${domNode.nodeName || '*'}[\`${attrName} == ${predicateLiteral(attrValue)}\`]`;
 
       // If the XPath does not parse, move to the next unique attribute
       try {
@@ -352,13 +352,13 @@ export function getOptimalPredicateString(doc: XMLDocument, domNode: XMLNode): s
 
     for (const attrName of CHECKED_PREDICATE_ATTRIBUTES) {
       const attrValue = (domNode as XMLElement).getAttribute?.(attrName);
-      if (isEmpty(attrValue)) {
+      if (!attrValue) {
         continue;
       }
 
-      xpathAttributes.push(`@${attrName}="${attrValue}"`);
+      xpathAttributes.push(`@${attrName}=${xpathLiteral(attrValue)}`);
       const xpath = `//*[${xpathAttributes.join(' and ')}]`;
-      predicateString.push(`${attrName} == "${attrValue}"`);
+      predicateString.push(`${attrName} == ${predicateLiteral(attrValue)}`);
 
       // If the XPath does not parse, move to the next attribute
       try {
@@ -430,12 +430,12 @@ export function getOptimalUiAutomatorSelector(doc: XMLDocument, domNode: XMLNode
 
     for (const [attrName, attrTranslation] of CHECKED_UIAUTOMATOR_ATTRIBUTES) {
       const attrValue = (newDomNode as XMLElement).getAttribute?.(attrName);
-      if (isEmpty(attrValue)) {
+      if (!attrValue) {
         continue;
       }
 
-      const xpath = `//${newDomNode.nodeName}[@${attrName}="${attrValue}"]`;
-      uiSelector = `new UiSelector().${attrTranslation}("${attrValue}")`;
+      const xpath = `//${newDomNode.nodeName}[@${attrName}=${xpathLiteral(attrValue)}]`;
+      uiSelector = `new UiSelector().${attrTranslation}(${uiautomatorLiteral(attrValue)})`;
 
       // If the XPath does not parse, move to the next unique attribute
       try {
@@ -579,4 +579,21 @@ function xpathLiteral(value: string): string {
       .join(`, '"', `) +
     ')'
   );
+}
+
+/** NSPredicate string constants treat \ as an escape, so every backslash is doubled. */
+function predicateLiteral(value: string): string {
+  const escaped = value.replace(/\\/g, '\\\\');
+  if (!value.includes('"')) {
+    return `"${escaped}"`;
+  }
+  if (!value.includes("'")) {
+    return `'${escaped}'`;
+  }
+  return `"${escaped.replace(/"/g, '\\"')}"`;
+}
+
+/** UiSelector arguments are Java strings, so " and \ have to be escaped. */
+function uiautomatorLiteral(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
