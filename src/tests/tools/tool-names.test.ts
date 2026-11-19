@@ -14,12 +14,6 @@ jest.unstable_mockModule('webdriver', () => ({
   default: {newSession: jest.fn(), attachToSession: jest.fn()},
 }));
 
-// appium-webdriveragent transitively loads @appium/base-driver, which calls
-// @appium/support.fs.readPackageJsonFrom at import time — not in our mock.
-jest.unstable_mockModule('appium-webdriveragent', () => ({
-  BOOTSTRAP_PATH: '/mock/wda',
-}));
-
 jest.unstable_mockModule('@appium/coresim', () => ({NativeSimctl: class {}}));
 
 // adb-manager and ios-manager wrap native CLI tools; mock them to keep the

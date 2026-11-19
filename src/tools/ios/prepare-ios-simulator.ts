@@ -16,6 +16,7 @@ import log from '../../logger.js';
 import {resolveAppiumMcpCachePath} from '../../utils/paths.js';
 import {findFreePort, releaseReservedPort} from '../../utils/ports.js';
 import {textResult} from '../tool-response.js';
+import {wdaReleaseDownloadUrl, wdaVersion} from './wda-release.js';
 
 type StepStatus = 'completed' | 'skipped' | 'failed';
 
@@ -59,60 +60,11 @@ async function cleanupFile(filePath: string): Promise<void> {
   }
 }
 
-// Resolves the latest WDA version via GitHub's release permalink instead of the REST API, avoiding the 60/hr
-// unauthenticated API limit. Note: still subject to general GitHub rate limiting and redirect behavior.
-async function getLatestWDAVersionFromGitHub(): Promise<string> {
-  const permalink = 'https://github.com/appium/WebDriverAgent/releases/latest';
-  const response = await fetch(permalink, {
-    method: 'HEAD',
-    redirect: 'manual',
-    headers: {'User-Agent': 'mcp-appium'},
-  });
-
-  const location = response.headers.get('location');
-  if (!location) {
-    throw new Error(
-      `Failed to resolve latest WDA version (${response.status} ${response.statusText}): no redirect from ${permalink}`,
-    );
-  }
-
-  // Expected format: https://github.com/appium/WebDriverAgent/releases/tag/v<version>
-  const match = location.match(/\/releases\/tag\/v?([^/]+)\/?$/);
-  if (!match) {
-    throw new Error(`Failed to parse WDA version from redirect location: ${location}`);
-  }
-
-  return match[1];
-}
-
 async function unzipFile(zipPath: string, destDir: string): Promise<void> {
   await zip.extractAllTo(zipPath, destDir, {useSystemUnzip: true});
 }
 
 // ── WDA install helpers ──
-
-async function getLatestWDAVersionFromCache(): Promise<string | null> {
-  const wdaCacheDir = resolveAppiumMcpCachePath('wda');
-
-  if (!(await fileExists(wdaCacheDir))) {
-    return null;
-  }
-
-  const entries = await fs.readdir(wdaCacheDir);
-  const versions = await Promise.all(
-    entries.map(async (dir) => {
-      const dirPath = path.join(wdaCacheDir, dir);
-      const stats = await fs.stat(dirPath);
-      return stats.isDirectory() ? dir : null;
-    }),
-  );
-
-  const filteredVersions = versions
-    .filter((v): v is string => v !== null)
-    .sort((a, b) => b.localeCompare(a, undefined, {numeric: true}));
-
-  return filteredVersions.length > 0 ? filteredVersions[0] : null;
-}
 
 async function getSimulatorArchitecture(simulatorUdid: string): Promise<string[]> {
   const value = await new NativeSimctl().getEnv(simulatorUdid, 'SIMULATOR_ARCHS');
@@ -225,32 +177,12 @@ async function resolveWdaAppPath(
   }
   const artifactPrefix = platform === 'tvos' ? 'WebDriverAgentRunner_tvOS' : 'WebDriverAgentRunner';
 
-  // Check cache first (unless force refresh)
-  if (!forceRefreshWda) {
-    const cachedVersion = await getLatestWDAVersionFromCache();
-    if (cachedVersion) {
-      const cachedAppPath = path.join(
-        resolveAppiumMcpCachePath('wda', cachedVersion, `extracted-${platform}`),
-        `${artifactPrefix}-Runner.app`,
-      );
-      if (await fileExists(cachedAppPath)) {
-        return {
-          wdaAppPath: cachedAppPath,
-          version: cachedVersion,
-          source: 'cache',
-        };
-      }
-    }
-  }
-
-  // Download from GitHub
-  const wdaVersion = await getLatestWDAVersionFromGitHub();
   const versionCacheDir = resolveAppiumMcpCachePath('wda', wdaVersion);
   const extractDir = path.join(versionCacheDir, `extracted-${platform}`);
   const zipPath = path.join(versionCacheDir, `${artifactPrefix}-Build-Sim-${archStr}.zip`);
   const wdaAppPath = path.join(extractDir, `${artifactPrefix}-Runner.app`);
 
-  // Check if this specific version is already extracted
+  // Reuse only the simulator bundle for the installed WDA version.
   if (!forceRefreshWda && (await fileExists(wdaAppPath))) {
     return {wdaAppPath, version: wdaVersion, source: 'cache'};
   }
@@ -263,7 +195,7 @@ async function resolveWdaAppPath(
   await fs.mkdirp(versionCacheDir);
   await fs.mkdirp(extractDir);
 
-  const downloadUrl = `https://github.com/appium/WebDriverAgent/releases/download/v${wdaVersion}/${artifactPrefix}-Build-Sim-${archStr}.zip`;
+  const downloadUrl = `${wdaReleaseDownloadUrl}/${artifactPrefix}-Build-Sim-${archStr}.zip`;
   log.info(`Downloading prebuilt WDA v${wdaVersion}...`);
   await net.downloadFile(downloadUrl, zipPath, {
     headers: {'User-Agent': 'appium-mcp'},

@@ -3,7 +3,6 @@ import os from 'node:os';
 import path from 'node:path';
 
 import {fs, net, plist, zip} from '@appium/support';
-import {BOOTSTRAP_PATH} from 'appium-webdriveragent';
 /**
  * Single-call tool to prepare an iOS real device for Appium testing.
  *
@@ -27,6 +26,7 @@ import {IOSManager} from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
 import {resolveAppiumMcpCachePath} from '../../utils/paths.js';
 import {textResult} from '../tool-response.js';
+import {wdaReleaseDownloadUrl, wdaVersion} from './wda-release.js';
 
 type StepStatus = 'completed' | 'skipped' | 'failed';
 
@@ -124,25 +124,14 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
   });
 }
 
-async function getWdaPackageVersion(): Promise<string> {
-  try {
-    const pkgPath = path.join(BOOTSTRAP_PATH, 'package.json');
-    const raw = await fs.readFile(pkgPath, 'utf8');
-    const pkg = JSON.parse(raw) as {version?: string};
-    return pkg.version ?? 'unknown';
-  } catch {
-    return 'unknown';
-  }
-}
-
-async function downloadWdaApp(version: string, downloadDir: string): Promise<string> {
-  const url = `https://github.com/appium/WebDriverAgent/releases/download/v${version}/WebDriverAgentRunner-Runner.zip`;
+async function downloadWdaApp(downloadDir: string): Promise<string> {
+  const url = `${wdaReleaseDownloadUrl}/WebDriverAgentRunner-Runner.zip`;
   const zipPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.zip');
 
   await fs.mkdirp(downloadDir);
 
   try {
-    log.info(`Downloading WDA v${version} from ${url}...`);
+    log.info(`Downloading WDA v${wdaVersion} from ${url}...`);
     await net.downloadFile(url, zipPath, {
       headers: {'User-Agent': 'appium-mcp'},
     });
@@ -305,7 +294,6 @@ async function runPipeline(inputs: PipelineInputs): Promise<PrepareRealDeviceRes
   }
 
   // ── Resolve cache paths ──
-  const wdaVersion = await getWdaPackageVersion();
   const versionRoot = resolveAppiumMcpCachePath('wda-real', wdaVersion);
   const downloadDir = path.join(versionRoot, 'downloaded');
   const unsignedIpaPath = path.join(versionRoot, 'Payload.ipa');
@@ -326,7 +314,7 @@ async function runPipeline(inputs: PipelineInputs): Promise<PrepareRealDeviceRes
       if (await fileExists(downloadDir)) {
         await fs.rimraf(downloadDir);
       }
-      appPath = await downloadWdaApp(wdaVersion, downloadDir);
+      appPath = await downloadWdaApp(downloadDir);
       await stripFrameworks(appPath);
       result.wda_download = {
         status: 'completed',

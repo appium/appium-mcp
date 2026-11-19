@@ -24,6 +24,15 @@ jest.unstable_mockModule('@appium/coresim', () => ({
   },
 }));
 const listSimulators = jest.fn<() => Promise<any[]>>();
+const hasAccess = jest.fn<(path: string) => Promise<boolean>>();
+const downloadFile = jest.fn<(...args: any[]) => Promise<void>>();
+jest.unstable_mockModule('appium-webdriveragent/package.json', () => ({
+  default: {
+    name: 'appium-webdriveragent',
+    version: '16.17.7',
+    repository: {url: 'https://github.com/appium/appium-ios.git', directory: 'packages/webdriveragent'},
+  },
+}));
 const releaseReservedPort = jest.fn();
 
 jest.unstable_mockModule('../../../logger.js', () => ({default: {info: jest.fn(), warn: jest.fn(), error: jest.fn()}}));
@@ -37,12 +46,13 @@ jest.unstable_mockModule('../../../utils/ports.js', () => ({
 }));
 jest.unstable_mockModule('@appium/support', () => ({
   fs: {
-    hasAccess: jest.fn(async () => true),
-    readdir: jest.fn(async () => ['1.0.0']),
-    stat: jest.fn(async () => ({isDirectory: () => true})),
+    hasAccess,
+    mkdirp: jest.fn(),
+    rimraf: jest.fn(),
+    unlink: jest.fn(),
   },
-  net: {},
-  zip: {},
+  net: {downloadFile},
+  zip: {extractAllTo: jest.fn()},
   plist: {parsePlistFile: jest.fn(async () => ({CFBundleIdentifier: 'custom.WebDriverAgentRunner'}))},
 }));
 const {default: register} = await import('../../../tools/ios/prepare-ios-simulator.js');
@@ -57,6 +67,7 @@ const originalWdaPath = process.env.APPIUM_MCP_WDA_APP_PATH;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  hasAccess.mockResolvedValue(true);
   getEnv.mockResolvedValue('arm64');
   exec.mockResolvedValue({stdout: '0'});
   Object.defineProperty(process, 'platform', {value: 'darwin'});
@@ -66,7 +77,15 @@ beforeEach(() => {
   waitForBoot.mockResolvedValue();
   isAppInstalled.mockResolvedValue(false);
   listProcesses.mockResolvedValue([]);
-  jest.spyOn(globalThis, 'fetch').mockResolvedValue({ok: true} as Response);
+  jest.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+    if (String(url).endsWith('/releases/latest')) {
+      return new Response(null, {
+        status: 302,
+        headers: {location: 'https://github.com/appium/WebDriverAgent/releases/tag/v16.15.3'},
+      });
+    }
+    return new Response(null, {status: 200});
+  });
 });
 afterEach(() => {
   jest.restoreAllMocks();
@@ -149,4 +168,32 @@ test('reports native environment lookup errors', async () => {
   expect(result.ready).toBe(false);
   expect(result.wda_download).toEqual({status: 'failed', detail: 'Simulator unavailable'});
   expect(installApp).not.toHaveBeenCalled();
+});
+
+test('reuses the installed WDA version from the simulator cache', async () => {
+  delete process.env.APPIUM_MCP_WDA_APP_PATH;
+  const result = await prepare();
+  expect(result.wda_download.detail).toContain('WDA v16.17.7 already cached');
+  expect(downloadFile).not.toHaveBeenCalled();
+});
+
+test('downloads the installed WDA when only an older version is cached', async () => {
+  delete process.env.APPIUM_MCP_WDA_APP_PATH;
+  hasAccess.mockImplementation(async (file) => !file.includes('/16.17.7/') || downloadFile.mock.calls.length > 0);
+  const result = await prepare();
+  expect(result.wda_download.detail).toContain('WDA v16.17.7 downloaded');
+  expect(downloadFile).toHaveBeenCalledTimes(1);
+});
+
+test.each([
+  ['ios', 'arm64', 'WebDriverAgentRunner-Build-Sim-arm64.zip'],
+  ['tvos', 'x86_64', 'WebDriverAgentRunner_tvOS-Build-Sim-x86_64.zip'],
+])('downloads the installed release for %s on %s', async (platform, arch, asset) => {
+  delete process.env.APPIUM_MCP_WDA_APP_PATH;
+  getEnv.mockResolvedValue(arch);
+  const result = await prepare({platform, forceRefreshWda: true});
+  expect(result.wda_download.status).toBe('completed');
+  expect(downloadFile.mock.calls[0][0]).toBe(
+    `https://github.com/appium/appium-ios/releases/download/appium-webdriveragent@16.17.7/${asset}`,
+  );
 });

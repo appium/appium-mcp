@@ -9,6 +9,8 @@ import path from 'node:path';
 
 import {exec} from 'teen_process';
 
+import {wdaReleaseDownloadUrl, wdaVersion} from '../tools/ios/wda-release.js';
+
 async function downloadFile(url: string, destPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(destPath);
@@ -76,57 +78,13 @@ function cachePath(folder: string): string {
   return path.join(os.homedir(), '.cache', 'appium-mcp', folder);
 }
 
-async function getLatestWDAVersion(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.github.com',
-      path: '/repos/appium/WebDriverAgent/releases/latest',
-      method: 'GET',
-      headers: {
-        'User-Agent': 'appium-mcp-test',
-        Accept: 'application/vnd.github.v3+json',
-      },
-    };
-
-    https
-      .get(options, (response) => {
-        let data = '';
-
-        response.on('data', (chunk) => {
-          data += chunk;
-        });
-
-        response.on('end', () => {
-          try {
-            const release = JSON.parse(data);
-            if (release.tag_name) {
-              // Remove 'v' prefix if present
-              const version = release.tag_name.replace(/^v/, '');
-              resolve(version);
-            } else {
-              reject(new Error('No tag_name found in release data'));
-            }
-          } catch (error) {
-            reject(error);
-          }
-        });
-      })
-      .on('error', (err) => {
-        reject(err);
-      });
-  });
-}
-
 async function main() {
   console.log('🧪 Testing WDA Download and Setup\n');
   console.log('='.repeat(60));
 
   try {
-    // Fetch latest WDA version from GitHub releases API
-    console.log('\n🔍 Fetching latest WDA version from GitHub...');
-    const wdaVersion = await getLatestWDAVersion();
-    console.log(`✅ Latest WDA Version: v${wdaVersion}`);
-    console.log('   Source: https://github.com/appium/WebDriverAgent/releases/latest');
+    console.log(`\nInstalled WDA version: ${wdaVersion}`);
+    console.log(`   Source: ${wdaReleaseDownloadUrl}`);
 
     // Create cache directory structure using home directory
     const versionCacheDir = cachePath(`wda/${wdaVersion}`);
@@ -163,7 +121,7 @@ async function main() {
     fs.mkdirSync(extractDir, {recursive: true});
 
     // Download URL
-    const downloadUrl = `https://github.com/appium/WebDriverAgent/releases/download/v${wdaVersion}/WebDriverAgentRunner-Runner.zip`;
+    const downloadUrl = `${wdaReleaseDownloadUrl}/WebDriverAgentRunner-Runner.zip`;
 
     console.log('\n⬇️  Downloading WDA from GitHub releases...');
     console.log(`   URL: ${downloadUrl}`);
