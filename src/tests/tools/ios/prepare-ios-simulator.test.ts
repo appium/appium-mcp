@@ -194,6 +194,6 @@ test.each([
   const result = await prepare({platform, forceRefreshWda: true});
   expect(result.wda_download.status).toBe('completed');
   expect(downloadFile.mock.calls[0][0]).toBe(
-    `https://github.com/appium/appium-ios/releases/download/appium-webdriveragent@16.17.7/${asset}`,
+    `https://github.com/appium/appium-ios/releases/download/appium-webdriveragent%4016.17.7/${asset}`,
   );
 });

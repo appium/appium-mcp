@@ -32,7 +32,7 @@ afterEach(() => {
 
 test.each([
   ['16.15.3', 'git+https://github.com/appium/WebDriverAgent.git', 'WebDriverAgent', 'v16.15.3'],
-  ['16.16.0', 'https://github.com/appium/appium-ios.git', 'appium-ios', 'appium-webdriveragent@16.16.0'],
+  ['16.16.0', 'https://github.com/appium/appium-ios.git', 'appium-ios', 'appium-webdriveragent%4016.16.0'],
 ])('resolves the real-device archive for installed WDA %s', async (version, repositoryUrl, repository, tag) => {
   Object.defineProperty(process, 'platform', {value: 'darwin'});
   wdaPackage.version = version;
