@@ -2,8 +2,7 @@ import {cp as nodeFsCp} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import {fs, net, plist, zip} from '@appium/support';
-import {BOOTSTRAP_PATH} from 'appium-webdriveragent';
+import {fs, plist, zip} from '@appium/support';
 /**
  * Single-call tool to prepare an iOS real device for Appium testing.
  *
@@ -27,6 +26,7 @@ import {IOSManager} from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
 import {resolveAppiumMcpCachePath} from '../../utils/paths.js';
 import {textResult} from '../tool-response.js';
+import {downloadWda, wdaVersion} from './download-wda.js';
 
 type StepStatus = 'completed' | 'skipped' | 'failed';
 
@@ -122,44 +122,6 @@ async function listProvisioningProfiles(): Promise<ProfileChoice[]> {
       isWildcard,
     };
   });
-}
-
-async function getWdaPackageVersion(): Promise<string> {
-  try {
-    const pkgPath = path.join(BOOTSTRAP_PATH, 'package.json');
-    const raw = await fs.readFile(pkgPath, 'utf8');
-    const pkg = JSON.parse(raw) as {version?: string};
-    return pkg.version ?? 'unknown';
-  } catch {
-    return 'unknown';
-  }
-}
-
-async function downloadWdaApp(version: string, downloadDir: string): Promise<string> {
-  const url = `https://github.com/appium/WebDriverAgent/releases/download/v${version}/WebDriverAgentRunner-Runner.zip`;
-  const zipPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.zip');
-
-  await fs.mkdirp(downloadDir);
-
-  try {
-    log.info(`Downloading WDA v${version} from ${url}...`);
-    await net.downloadFile(url, zipPath, {
-      headers: {'User-Agent': 'appium-mcp'},
-    });
-
-    log.info('Extracting WDA zip...');
-    await zip.extractAllTo(zipPath, downloadDir, {useSystemUnzip: true});
-  } finally {
-    await fs.rimraf(zipPath);
-  }
-
-  const appPath = path.join(downloadDir, 'WebDriverAgentRunner-Runner.app');
-  if (!(await fileExists(appPath))) {
-    throw new Error(
-      `WebDriverAgentRunner-Runner.app not found after extracting ${url}. The release asset format may have changed.`,
-    );
-  }
-  return appPath;
 }
 
 // ── IPA packaging ──
@@ -305,7 +267,6 @@ async function runPipeline(inputs: PipelineInputs): Promise<PrepareRealDeviceRes
   }
 
   // ── Resolve cache paths ──
-  const wdaVersion = await getWdaPackageVersion();
   const versionRoot = resolveAppiumMcpCachePath('wda-real', wdaVersion);
   const downloadDir = path.join(versionRoot, 'downloaded');
   const unsignedIpaPath = path.join(versionRoot, 'Payload.ipa');
@@ -323,10 +284,7 @@ async function runPipeline(inputs: PipelineInputs): Promise<PrepareRealDeviceRes
         detail: `Reusing cached WDA release at ${downloadedAppPath}`,
       };
     } else {
-      if (await fileExists(downloadDir)) {
-        await fs.rimraf(downloadDir);
-      }
-      appPath = await downloadWdaApp(wdaVersion, downloadDir);
+      appPath = await downloadWda(downloadDir, 'ios', 'real');
       await stripFrameworks(appPath);
       result.wda_download = {
         status: 'completed',
