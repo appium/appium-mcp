@@ -279,6 +279,35 @@ test('a quoted Android text is kept in the uiautomator selector', () => {
   expect(button?.locators['-android uiautomator']).toBe(`new UiSelector().text("Say \\"hi\\"")`);
 });
 
+test('a backslash inside Android text is kept as is in the uiautomator selector', () => {
+  const xml =
+    '<hierarchy><android.widget.FrameLayout><android.widget.Button text="C:\\Temp" clickable="true" enabled="true" displayed="true"/></android.widget.FrameLayout></hierarchy>';
+  const button = generateAllElementLocators(xml, true, 'uiautomator2').find(
+    (element) => element.tagName === 'android.widget.Button',
+  );
+  expect(button?.locators['-android uiautomator']).toBe(`new UiSelector().text("C:\\Temp")`);
+});
+
+test('Android text ending in a backslash is not used in the uiautomator selector', () => {
+  const xml =
+    '<hierarchy><android.widget.FrameLayout><android.widget.Button text="C:\\Temp\\" clickable="true" enabled="true" displayed="true"/></android.widget.FrameLayout></hierarchy>';
+  const button = generateAllElementLocators(xml, true, 'uiautomator2').find(
+    (element) => element.tagName === 'android.widget.Button',
+  );
+  expect(button?.locators.xpath).toBe(`//android.widget.Button[@text="C:\\Temp\\"]`);
+  expect(button?.locators['-android uiautomator']).toBeUndefined();
+});
+
+test('backticks in an iOS name are doubled only in the class chain', () => {
+  const xml =
+    '<hierarchy><XCUIElementTypeButton name="Say &quot;hi&quot; `again`" enabled="true" visible="true"/></hierarchy>';
+  const button = generateAllElementLocators(xml, true, 'xcuitest').find(
+    (element) => element.tagName === 'XCUIElementTypeButton',
+  );
+  expect(button?.locators['-ios predicate string']).toBe(`name == 'Say "hi" \`again\`'`);
+  expect(button?.locators['-ios class chain']).toBe(`**/XCUIElementTypeButton[\`name == 'Say "hi" \`\`again\`\`'\`]`);
+});
+
 test('an apostrophe stays inside double quotes', () => {
   const xml = `<hierarchy><XCUIElementTypeButton name="It's fine" enabled="true" visible="true"/></hierarchy>`;
   const button = generateAllElementLocators(xml, true, 'xcuitest').find(

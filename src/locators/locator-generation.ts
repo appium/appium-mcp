@@ -289,7 +289,8 @@ export function getOptimalClassChain(doc: XMLDocument, domNode: XMLNode): string
         continue;
       }
       const xpath = `//${domNode.nodeName || '*'}[@${attrName}=${xpathLiteral(attrValue)}]`;
-      classChain = `/${domNode.nodeName || '*'}[\`${attrName} == ${predicateLiteral(attrValue)}\`]`;
+      // WebDriverAgent ends the class chain predicate at a backtick unless it is doubled
+      classChain = `/${domNode.nodeName || '*'}[\`${attrName} == ${predicateLiteral(attrValue).replace(/`/g, '``')}\`]`;
 
       // If the XPath does not parse, move to the next unique attribute
       try {
@@ -430,7 +431,8 @@ export function getOptimalUiAutomatorSelector(doc: XMLDocument, domNode: XMLNode
 
     for (const [attrName, attrTranslation] of CHECKED_UIAUTOMATOR_ATTRIBUTES) {
       const attrValue = (newDomNode as XMLElement).getAttribute?.(attrName);
-      if (!attrValue) {
+      // A trailing backslash escapes the closing quote in the UiAutomator2 parser
+      if (!attrValue || attrValue.endsWith('\\')) {
         continue;
       }
 
@@ -593,7 +595,7 @@ function predicateLiteral(value: string): string {
   return `"${escaped.replace(/"/g, '\\"')}"`;
 }
 
-/** UiSelector arguments are Java strings, so " and \ have to be escaped. */
+/** UiAutomator2 only unescapes \" in selector arguments, so backslashes are left as is. */
 function uiautomatorLiteral(value: string): string {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  return `"${value.replace(/"/g, '\\"')}"`;
 }
