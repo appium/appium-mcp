@@ -31,25 +31,28 @@ export async function handleScrollToElement(driver: DriverInstance, args: Gestur
     }
 
     let scrollsDone = 0;
+    let previousSource: string | undefined;
     while (scrollsDone < maxScroll) {
-      const xmlBefore = await getPageSource(driver);
+      // Reuse only the XML comparison baseline; element lookup still queries the driver.
+      previousSource ??= await getPageSource(driver);
       try {
         await performVerticalScroll(driver, {direction, distance});
       } catch (scrollErr: unknown) {
         return errorResult(`Scroll failed during scroll_to_element: ${toolErrorMessage(scrollErr)}`);
       }
-      const xmlAfter = await getPageSource(driver);
       scrollsDone++;
 
       if (await tryFindElement(driver, args.strategy, args.selector)) {
         return textResult(`Successfully scrolled to element ${args.selector} after ${scrollsDone} scroll(s).`);
       }
 
-      if (xmlBefore === xmlAfter) {
+      const currentSource = await getPageSource(driver);
+      if (previousSource === currentSource) {
         return errorResult(
           `Element not found; page source did not change after scroll (likely end of scrollable content). selector=${args.selector}`,
         );
       }
+      previousSource = currentSource;
     }
 
     return errorResult(`Element ${args.selector} not found after ${maxScroll} scroll(s) in direction '${direction}'.`);
