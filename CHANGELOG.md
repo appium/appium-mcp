@@ -1,3 +1,9 @@
+## [1.99.4](https://github.com/appium/appium-mcp/compare/v1.99.3...v1.99.4) (2026-11-21)
+
+### Bug Fixes
+
+* escape quotes and backslashes in generated native locators ([#615](https://github.com/appium/appium-mcp/issues/615)) ([e64854e](https://github.com/appium/appium-mcp/commit/e64854e5b2d4ce0d888656ca1e4c9f48fcf2f642))
+
 ## [1.99.3](https://github.com/appium/appium-mcp/compare/v1.99.2...v1.99.3) (2026-11-04)
 
 ### Bug Fixes
