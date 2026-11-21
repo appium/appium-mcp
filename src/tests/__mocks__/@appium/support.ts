@@ -41,12 +41,6 @@ export const fs = {
   },
 };
 
-export const imageUtil = {
-  requireSharp: () => {
-    throw new Error('imageUtil.requireSharp must be mocked by the test');
-  },
-};
-
 export const util = {
   wrapElement: (elementId: string) => ({
     ELEMENT: elementId,
@@ -71,7 +65,6 @@ export const zip = {
 export default {
   logger,
   fs,
-  imageUtil,
   util,
   net,
   plist,

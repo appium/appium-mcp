@@ -8,10 +8,11 @@
 import crypto from 'node:crypto';
 import {join} from 'node:path';
 
-import {fs, imageUtil} from '@appium/support';
+import {fs} from '@appium/support';
 import {LRUCache} from 'lru-cache';
 
 import log from '../logger.js';
+import {imageUtil} from '../utils/image.js';
 import {resolveScreenshotDir} from '../utils/paths.js';
 import type {AIVisionConfig, BBox, BBoxCoordinates, AIFindResult} from './types.js';
 
@@ -186,7 +187,7 @@ export class AIVisionFinder {
     try {
       const imageBuffer = Buffer.from(base64Image, 'base64');
 
-      // Use @appium/support imageUtil for compression
+      // Use sharp for compression
       const sharp = imageUtil.requireSharp();
       let sharpInstance = sharp(imageBuffer);
 
