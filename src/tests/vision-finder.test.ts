@@ -3,7 +3,7 @@
  *
  * Mock strategy:
  * - global fetch: mocked to avoid real HTTP requests
- * - @appium/support imageUtil.requireSharp: spied locally to avoid sharp work
+ * - imageUtil.requireSharp (utils/image): spied locally to avoid sharp work
  * - Screenshot input: benchmark image.png read as base64
  */
 
@@ -11,8 +11,9 @@ import {readFileSync} from 'node:fs';
 import {join, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-import {imageUtil} from '@appium/support';
 import {describe, test, expect, beforeEach, afterEach, jest} from '@jest/globals';
+
+import {imageUtil} from '../utils/image.js';
 
 // ─── Resolve paths ────────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);

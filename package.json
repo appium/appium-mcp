@@ -70,15 +70,15 @@
     "version": "npm run sync-version"
   },
   "dependencies": {
-    "@appium/coresim": "^1.14.0",
-    "@appium/support": "^7.2.6",
+    "@appium/coresim": "^2.1.0",
+    "@appium/support": "^8.0.0",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@wdio/logger": "^10.2.0",
     "@xmldom/xmldom": "^0.9.8",
-    "appium-adb": "^16.0.0",
+    "appium-adb": "^17.0.4",
     "appium-ios-device": "^3.1.24",
-    "appium-uiautomator2-driver": "^8.0.0",
-    "appium-xcuitest-driver": "^12.18.2",
+    "appium-uiautomator2-driver": "^9.3.0",
+    "appium-xcuitest-driver": "^13.5.0",
     "fastmcp": "^4.22.4",
     "ios-mobileprovision-finder": "^1.2.1",
     "lru-cache": "^11.5.0",
@@ -91,7 +91,7 @@
     "@appium/oxc-config": "^1.1.0",
     "@appium/semantic-release-config": "^1.1.0",
     "@appium/tsconfig": "^1.2.0",
-    "@appium/types": "^1.2.0",
+    "@appium/types": "^2.0.0",
     "@jest/globals": "^30.2.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.0.0",
@@ -116,7 +116,8 @@
     "@opentelemetry/exporter-trace-otlp-grpc": "^0.300.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.300.0",
     "@opentelemetry/sdk-node": "^0.300.0",
-    "applesign": "^5.0.0"
+    "applesign": "^5.0.0",
+    "sharp": "^0.35.5"
   },
   "overrides": {
     "@puppeteer/browsers": "^3.2.1",
@@ -136,7 +137,8 @@
     ]
   },
   "engines": {
-    "node": ">=22.23.4 <23 || >=24.22.1 <25 || >=26.12.1"
+    "node": ">=22.23.4 <23 || >=24.22.1 <25 || >=26.12.1",
+    "npm": ">=10"
   },
   "mcpName": "io.github.appium/appium-mcp"
 }

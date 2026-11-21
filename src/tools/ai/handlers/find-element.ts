@@ -1,4 +1,3 @@
-import {imageUtil} from '@appium/support';
 import type {ContentResult} from 'fastmcp';
 
 import {AIVisionFinder} from '../../../ai-finder/vision-finder.js';
@@ -6,6 +5,7 @@ import {getScreenshot, getWindowSize} from '../../../command.js';
 import log from '../../../logger.js';
 import {getPlatformName, PLATFORM} from '../../../session-store.js';
 import type {DriverInstance} from '../../../session-store.js';
+import {imageUtil} from '../../../utils/image.js';
 import {errorResult, textResultWithPrimaryElementId, toolErrorMessage} from '../../tool-response.js';
 import type {AIArgs} from '../schema.js';
 
