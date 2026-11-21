@@ -1,14 +1,13 @@
 import path from 'node:path';
 
 import {NativeSimctl} from '@appium/coresim';
-import {fs, net, plist, zip} from '@appium/support';
+import {fs, plist} from '@appium/support';
 /**
  * Single-call tool to prepare an iOS simulator for Appium testing.
  * Chains: boot simulator → download WDA → install & launch WDA.
  * Each step checks preconditions and skips if already satisfied.
  */
 import type {ContentResult, FastMCP} from 'fastmcp';
-import {exec} from 'teen_process';
 import {z} from 'zod';
 
 import {IOSManager} from '../../devicemanager/ios-manager.js';
@@ -16,6 +15,7 @@ import log from '../../logger.js';
 import {resolveAppiumMcpCachePath} from '../../utils/paths.js';
 import {findFreePort, releaseReservedPort} from '../../utils/ports.js';
 import {textResult} from '../tool-response.js';
+import {downloadWda, wdaVersion} from './download-wda.js';
 
 type StepStatus = 'completed' | 'skipped' | 'failed';
 
@@ -45,73 +45,6 @@ interface WDAState {
 
 async function fileExists(filePath: string): Promise<boolean> {
   return await fs.hasAccess(filePath);
-}
-
-// ── WDA download helpers ──
-
-async function cleanupFile(filePath: string): Promise<void> {
-  try {
-    await fs.unlink(filePath);
-  } catch (err: any) {
-    if (err.code !== 'ENOENT') {
-      throw err;
-    }
-  }
-}
-
-// Resolves the latest WDA version via GitHub's release permalink instead of the REST API, avoiding the 60/hr
-// unauthenticated API limit. Note: still subject to general GitHub rate limiting and redirect behavior.
-async function getLatestWDAVersionFromGitHub(): Promise<string> {
-  const permalink = 'https://github.com/appium/WebDriverAgent/releases/latest';
-  const response = await fetch(permalink, {
-    method: 'HEAD',
-    redirect: 'manual',
-    headers: {'User-Agent': 'mcp-appium'},
-  });
-
-  const location = response.headers.get('location');
-  if (!location) {
-    throw new Error(
-      `Failed to resolve latest WDA version (${response.status} ${response.statusText}): no redirect from ${permalink}`,
-    );
-  }
-
-  // Expected format: https://github.com/appium/WebDriverAgent/releases/tag/v<version>
-  const match = location.match(/\/releases\/tag\/v?([^/]+)\/?$/);
-  if (!match) {
-    throw new Error(`Failed to parse WDA version from redirect location: ${location}`);
-  }
-
-  return match[1];
-}
-
-async function unzipFile(zipPath: string, destDir: string): Promise<void> {
-  await zip.extractAllTo(zipPath, destDir, {useSystemUnzip: true});
-}
-
-// ── WDA install helpers ──
-
-async function getLatestWDAVersionFromCache(): Promise<string | null> {
-  const wdaCacheDir = resolveAppiumMcpCachePath('wda');
-
-  if (!(await fileExists(wdaCacheDir))) {
-    return null;
-  }
-
-  const entries = await fs.readdir(wdaCacheDir);
-  const versions = await Promise.all(
-    entries.map(async (dir) => {
-      const dirPath = path.join(wdaCacheDir, dir);
-      const stats = await fs.stat(dirPath);
-      return stats.isDirectory() ? dir : null;
-    }),
-  );
-
-  const filteredVersions = versions
-    .filter((v): v is string => v !== null)
-    .sort((a, b) => b.localeCompare(a, undefined, {numeric: true}));
-
-  return filteredVersions.length > 0 ? filteredVersions[0] : null;
 }
 
 async function getSimulatorArchitecture(simulatorUdid: string): Promise<string[]> {
@@ -218,69 +151,17 @@ async function resolveWdaAppPath(
   }
 
   const archs = await getSimulatorArchitecture(simulatorUdid);
-  const archStr = archs.includes('arm64') ? 'arm64' : archs[0];
-  const isRosetta = await exec('sysctl', ['-in', 'sysctl.proc_translated']).then(({stdout}) => stdout.trim() === '1');
-  if (isRosetta) {
-    log.info(`Running under Rosetta. Simulator architecture: ${archs.join(', ')}. Using ${archStr} WDA build.`);
-  }
+  const nativeArch = process.arch === 'x64' ? 'x86_64' : process.arch;
+  const archStr = archs.includes(nativeArch) ? nativeArch : archs[0];
   const artifactPrefix = platform === 'tvos' ? 'WebDriverAgentRunner_tvOS' : 'WebDriverAgentRunner';
 
-  // Check cache first (unless force refresh)
-  if (!forceRefreshWda) {
-    const cachedVersion = await getLatestWDAVersionFromCache();
-    if (cachedVersion) {
-      const cachedAppPath = path.join(
-        resolveAppiumMcpCachePath('wda', cachedVersion, `extracted-${platform}`),
-        `${artifactPrefix}-Runner.app`,
-      );
-      if (await fileExists(cachedAppPath)) {
-        return {
-          wdaAppPath: cachedAppPath,
-          version: cachedVersion,
-          source: 'cache',
-        };
-      }
-    }
-  }
-
-  // Download from GitHub
-  const wdaVersion = await getLatestWDAVersionFromGitHub();
-  const versionCacheDir = resolveAppiumMcpCachePath('wda', wdaVersion);
-  const extractDir = path.join(versionCacheDir, `extracted-${platform}`);
-  const zipPath = path.join(versionCacheDir, `${artifactPrefix}-Build-Sim-${archStr}.zip`);
+  const extractDir = resolveAppiumMcpCachePath('wda', wdaVersion, `extracted-${platform}-${archStr}`);
   const wdaAppPath = path.join(extractDir, `${artifactPrefix}-Runner.app`);
-
-  // Check if this specific version is already extracted
   if (!forceRefreshWda && (await fileExists(wdaAppPath))) {
     return {wdaAppPath, version: wdaVersion, source: 'cache'};
   }
 
-  // Clean any prior (possibly partial) extraction before downloading
-  if (await fileExists(extractDir)) {
-    await fs.rimraf(extractDir);
-  }
-
-  await fs.mkdirp(versionCacheDir);
-  await fs.mkdirp(extractDir);
-
-  const downloadUrl = `https://github.com/appium/WebDriverAgent/releases/download/v${wdaVersion}/${artifactPrefix}-Build-Sim-${archStr}.zip`;
-  log.info(`Downloading prebuilt WDA v${wdaVersion}...`);
-  await net.downloadFile(downloadUrl, zipPath, {
-    headers: {'User-Agent': 'appium-mcp'},
-  });
-
-  try {
-    log.info('Extracting WebDriverAgent...');
-    await unzipFile(zipPath, extractDir);
-  } finally {
-    // Clean up zip whether extraction succeeds or fails — the .app is what we cache
-    await cleanupFile(zipPath);
-  }
-
-  if (!(await fileExists(wdaAppPath))) {
-    throw new Error('WebDriverAgent extraction failed - app bundle not found');
-  }
-
+  await downloadWda(extractDir, platform, 'sim', archStr);
   return {wdaAppPath, version: wdaVersion, source: 'download'};
 }
 

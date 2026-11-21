@@ -1,8 +1,8 @@
 import {afterEach, beforeEach, expect, jest, test} from '@jest/globals';
 
 const getEnv = jest.fn<(udid: string, name: string) => Promise<string>>();
-const exec = jest.fn<(...args: any[]) => Promise<{stdout: string}>>();
-jest.unstable_mockModule('teen_process', () => ({exec}));
+const downloadWda = jest.fn<(...args: any[]) => Promise<string>>();
+jest.unstable_mockModule('../../../tools/ios/download-wda.js', () => ({downloadWda, wdaVersion: '16.17.7'}));
 
 const boot = jest.fn<(udid: string) => Promise<void>>();
 const waitForBoot = jest.fn<(udid: string, options: {timeoutMs: number}) => Promise<void>>();
@@ -26,7 +26,9 @@ jest.unstable_mockModule('@appium/coresim', () => ({
 const listSimulators = jest.fn<() => Promise<any[]>>();
 const releaseReservedPort = jest.fn();
 
-jest.unstable_mockModule('../../../logger.js', () => ({default: {info: jest.fn(), warn: jest.fn(), error: jest.fn()}}));
+jest.unstable_mockModule('../../../logger.js', () => ({
+  default: {info: jest.fn(), warn: jest.fn(), error: jest.fn()},
+}));
 
 jest.unstable_mockModule('../../../devicemanager/ios-manager.js', () => ({
   IOSManager: {getInstance: () => ({listSimulators})},
@@ -58,7 +60,6 @@ const originalWdaPath = process.env.APPIUM_MCP_WDA_APP_PATH;
 beforeEach(() => {
   jest.clearAllMocks();
   getEnv.mockResolvedValue('arm64');
-  exec.mockResolvedValue({stdout: '0'});
   Object.defineProperty(process, 'platform', {value: 'darwin'});
   process.env.APPIUM_MCP_WDA_APP_PATH = '/mock/WDA.app';
   listSimulators.mockResolvedValue([{name: 'iPhone', udid: 'sim', state: 'Shutdown'}]);
@@ -129,8 +130,9 @@ test('reads simulator architectures through coresim when resolving cached WDA', 
   const result = await prepare();
   expect(result.ready).toBe(true);
   expect(getEnv).toHaveBeenCalledWith('sim', 'SIMULATOR_ARCHS');
-  expect(exec).toHaveBeenCalledTimes(1);
-  expect(exec).toHaveBeenCalledWith('sysctl', ['-in', 'sysctl.proc_translated']);
+  const arch = process.arch === 'x64' ? 'x86_64' : 'arm64';
+  expect(result.wdaAppPath).toContain(`/16.17.7/extracted-ios-${arch}/`);
+  expect(downloadWda).not.toHaveBeenCalled();
 });
 
 test.each(['', '   \n'])('rejects an empty architecture value (%j)', async (value) => {
@@ -149,4 +151,17 @@ test('reports native environment lookup errors', async () => {
   expect(result.ready).toBe(false);
   expect(result.wda_download).toEqual({status: 'failed', detail: 'Simulator unavailable'});
   expect(installApp).not.toHaveBeenCalled();
+});
+
+test('requests a refreshed tvOS bundle for the target architecture', async () => {
+  delete process.env.APPIUM_MCP_WDA_APP_PATH;
+  getEnv.mockResolvedValue('x86_64');
+  const result = await prepare({forceRefreshWda: true, platform: 'tvos'});
+  expect(result.ready).toBe(true);
+  expect(downloadWda).toHaveBeenCalledWith(
+    expect.stringContaining('/16.17.7/extracted-tvos-x86_64'),
+    'tvos',
+    'sim',
+    'x86_64',
+  );
 });
