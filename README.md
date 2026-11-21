@@ -38,7 +38,7 @@ Before you begin, ensure you have the following installed:
 
 ### System Requirements
 
-- **Node.js** (v22 or higher)
+- **Node.js** (22.x from 22.23.4, 24.x from 24.22.1, or 26.12.1 and newer)
 - **npm** or **yarn**
 - **Java Development Kit (JDK)** (8 or higher)
 - **Android SDK** (for Android testing)
