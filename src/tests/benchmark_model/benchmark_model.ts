@@ -4,7 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-import {imageUtil} from '@appium/support';
+import {imageUtil} from '../../utils/image.js';
 
 const sharp = imageUtil.requireSharp();
 

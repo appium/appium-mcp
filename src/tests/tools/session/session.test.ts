@@ -51,7 +51,8 @@ jest.unstable_mockModule('../../../logger', () => ({
   default: {debug: () => {}, info: () => {}, warn: () => {}, error: () => {}},
 }));
 
-const mockEmbeddedSession = jest.fn(async (_legacy: unknown, _caps: unknown) => ['android-id', {}]);
+// Appium 4 drivers take the W3C capabilities as the only argument
+const mockEmbeddedSession = jest.fn(async (_caps: unknown) => ['android-id', {}]);
 
 jest.unstable_mockModule('appium-uiautomator2-driver', () => ({
   AndroidUiautomator2Driver: class {
@@ -209,7 +210,8 @@ describe('operator connection policy integration', () => {
           undefined,
         );
         expect(result.isError).not.toBe(true);
-        const caps = mockEmbeddedSession.mock.lastCall?.[1];
+        expect(mockEmbeddedSession.mock.lastCall).toHaveLength(1);
+        const caps = mockEmbeddedSession.mock.lastCall?.[0];
         expect(caps).toMatchObject({alwaysMatch: {'appium:adbListenAllNetwork': false}});
         expect(caps).not.toHaveProperty(['alwaysMatch', 'appium:remoteAdbHost']);
         if (form === 'grouped') {
