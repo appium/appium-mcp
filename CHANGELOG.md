@@ -1,3 +1,9 @@
+## [1.99.5](https://github.com/appium/appium-mcp/compare/v1.99.4...v1.99.5) (2026-11-21)
+
+### Bug Fixes
+
+* **ios:** delegate WDA downloads to the embedded XCUITest driver ([#620](https://github.com/appium/appium-mcp/issues/620)) ([90e6fa4](https://github.com/appium/appium-mcp/commit/90e6fa4bb9553c5fdc6a80cfb96065887708c5e7))
+
 ## [1.99.4](https://github.com/appium/appium-mcp/compare/v1.99.3...v1.99.4) (2026-11-21)
 
 ### Bug Fixes
