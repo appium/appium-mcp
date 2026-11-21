@@ -20,6 +20,8 @@ interface Rect {
 
 const SCROLL_DURATION_MS = 800;
 const SCROLL_INITIAL_PAUSE_MS = 250;
+/** mobile: scroll takes no coordinates; 0.6 matches the 0.2 to 0.8 drag used on Android. */
+const IOS_SCREEN_SCROLL_DISTANCE = 0.6;
 /** Pointer move duration for programmatic vertical scroll (matches legacy appium_scroll). */
 const VERTICAL_SCROLL_MOVE_MS = 600;
 
@@ -114,10 +116,7 @@ export async function handleScroll(driver: DriverInstance, args: GestureArgs): P
     if (platform === PLATFORM.ios && args.direction && !args.elementUUID) {
       await execute(driver, 'mobile: scroll', {
         direction: args.direction,
-        startX: coords.startX,
-        startY: coords.startY,
-        endX: coords.endX,
-        endY: coords.endY,
+        distance: IOS_SCREEN_SCROLL_DISTANCE,
       });
     } else {
       await performW3CDrag(driver, coords, duration, SCROLL_INITIAL_PAUSE_MS);
