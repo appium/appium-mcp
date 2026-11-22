@@ -73,7 +73,7 @@
     "@appium/coresim": "^1.14.0",
     "@appium/support": "^7.2.6",
     "@modelcontextprotocol/sdk": "^1.22.0",
-    "@wdio/logger": "^10.0.0",
+    "@wdio/logger": "^10.2.0",
     "@xmldom/xmldom": "^0.9.8",
     "appium-adb": "^16.0.0",
     "appium-ios-device": "^3.1.24",
@@ -83,7 +83,7 @@
     "ios-mobileprovision-finder": "^1.2.1",
     "lru-cache": "^11.5.0",
     "teen_process": "^4.2.1",
-    "webdriver": "^9.30.0",
+    "webdriver": "^10.2.0",
     "xpath": "^0.0.35",
     "zod": "^4.3.6"
   },
@@ -136,7 +136,7 @@
     ]
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.23.4 <23 || >=24.22.1 <25 || >=26.12.1"
   },
   "mcpName": "io.github.appium/appium-mcp"
 }

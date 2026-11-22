@@ -6,7 +6,7 @@
 
 ## Install and run
 
-From the repository root (Node 22+ and Python 3.12 recommended):
+From the repository root (use a [supported Node.js version](../README.md#-prerequisites) and preferably Python 3.12):
 
 ```sh
 npm ci
