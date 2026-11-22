@@ -1,3 +1,13 @@
+## [2.0.0](https://github.com/appium/appium-mcp/compare/v1.99.5...v2.0.0) (2026-11-22)
+
+### ⚠ BREAKING CHANGES
+
+* Node.js must satisfy >=22.23.4 <23 || >=24.22.1 <25 || >=26.12.1 to match WebDriver 10.
+
+### Features
+
+* upgrade WebDriver to v10 and raise Node.js requirements ([#621](https://github.com/appium/appium-mcp/issues/621)) ([379c9eb](https://github.com/appium/appium-mcp/commit/379c9eb63107e438e899fdd31d4b7608d3016291))
+
 ## [1.99.5](https://github.com/appium/appium-mcp/compare/v1.99.4...v1.99.5) (2026-11-21)
 
 ### Bug Fixes
