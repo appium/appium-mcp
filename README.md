@@ -297,6 +297,24 @@ Create a `capabilities.json` file to define your device capabilities:
 
 Set the `CAPABILITIES_CONFIG` environment variable to point to your configuration file.
 
+#### Embedded session capability policy
+
+For embedded Android and iOS sessions, each platform section of `CAPABILITIES_CONFIG` can define two optional lists in `$toolInput`. Both default to empty. Unlisted capabilities follow the usual merge rules, so a caller can override an ordinary preset. A key in `reject` fails embedded session creation if the caller supplies it. A key in `ignore` drops the caller’s value and keeps the operator’s preset, or uses the normal default if no preset exists.
+
+```json
+{
+  "android": {
+    "appium:adbListenAllNetwork": false,
+    "$toolInput": {
+      "ignore": ["appium:adbListenAllNetwork", "appium:remoteAdbHost"],
+      "reject": ["appium:systemPort"]
+    }
+  }
+}
+```
+
+Rules cover prefixed, unprefixed, and grouped (`appium:options`) tool input. A name may appear in only one list. Place `$toolInput` under `android` or `ios`; placing it at the root or under `general` fails session creation. When either list contains a rule, the embedded policy requires a supplied `appium:options` to be an object so it can check the grouped names. With empty lists, the driver handles validation. Remote sessions omit the policy and forward tool capabilities normally. Embedded sessions fail if an explicitly configured file cannot be read or parsed.
+
 #### Platform names and "general" mode
 
 - You can pass any platform name to `appium_session_management` (action=create).

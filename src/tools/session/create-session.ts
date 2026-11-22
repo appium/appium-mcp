@@ -10,6 +10,7 @@ import {IOSManager} from '../../devicemanager/ios-manager.js';
 import log from '../../logger.js';
 import {setSession, listSessions} from '../../session-store.js';
 import {createUIResource, createSessionDashboardUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
+import {resolveSessionCapabilities} from '../../utils/embedded-capability-policy.js';
 import {readBooleanEnv} from '../../utils/env.js';
 import {findFreePort, releaseReservedPorts} from '../../utils/ports.js';
 import {validateEmbeddedAppCapabilities} from '../../utils/remote-app-policy.js';
@@ -38,9 +39,9 @@ interface Capabilities {
 
 // Define capabilities config type
 interface CapabilitiesConfig {
-  android: Record<string, any>;
-  ios: Record<string, any>;
-  general: Record<string, any>;
+  android: Record<string, any> | null;
+  ios: Record<string, any> | null;
+  general: Record<string, any> | null;
 }
 
 /**
@@ -305,20 +306,30 @@ export async function createSessionAction(args: {
   try {
     const {platform, capabilities: customCapabilities, remoteServerUrl} = args;
 
+    if (platform === 'general' && !remoteServerUrl) {
+      return errorResult('platform=general requires remoteServerUrl.');
+    }
     const platformMismatch = validateLocalCreatePlatformMatch(platform, remoteServerUrl);
     if (platformMismatch) {
       return platformMismatch;
     }
 
-    const configCapabilities = await loadCapabilitiesConfig();
+    let resolved: ReturnType<typeof resolveSessionCapabilities>;
+    try {
+      const config = await loadCapabilitiesConfig(!remoteServerUrl);
+      resolved = resolveSessionCapabilities(config[platform], customCapabilities, !remoteServerUrl);
+    } catch (error: unknown) {
+      return errorResult(toolErrorMessage(error));
+    }
+    const {defaults: configured, custom} = resolved;
     if (platform === 'android') {
-      finalCapabilities = buildAndroidCapabilities(configCapabilities.android, customCapabilities, !!remoteServerUrl);
+      finalCapabilities = buildAndroidCapabilities(configured, custom, !!remoteServerUrl);
     } else if (platform === 'ios') {
-      finalCapabilities = await buildIOSCapabilities(configCapabilities.ios, customCapabilities, !!remoteServerUrl);
+      finalCapabilities = await buildIOSCapabilities(configured, custom, !!remoteServerUrl);
     } else {
       finalCapabilities = {
-        ...configCapabilities.general,
-        ...customCapabilities,
+        ...configured,
+        ...custom,
       } as Capabilities;
     }
 
@@ -357,10 +368,7 @@ export async function createSessionAction(args: {
       );
       sessionId = client.sessionId;
       await setSession(client, client.sessionId, finalCapabilities, 'owned', args.remoteServerUrl);
-    } else {
-      if (platform === 'general') {
-        return errorResult('platform=general requires remoteServerUrl.');
-      }
+    } else if (platform !== 'general') {
       validateEmbeddedAppCapabilities(finalCapabilities);
       const allocation = await assignEmbeddedDriverPorts(platform, finalCapabilities);
       finalCapabilities = allocation.capabilities;
@@ -446,22 +454,30 @@ function buildCreateSessionFailureMessage(
 /**
  * Load capabilities configuration from file if specified in environment
  */
-async function loadCapabilitiesConfig(): Promise<CapabilitiesConfig> {
+async function loadCapabilitiesConfig(embedded: boolean): Promise<CapabilitiesConfig> {
   const configPath = process.env.CAPABILITIES_CONFIG;
   if (!configPath) {
     return {android: {}, ios: {}, general: {}};
   }
 
+  let config: CapabilitiesConfig;
   try {
     if (!(await fs.hasAccess(configPath))) {
       throw new Error(`Capabilities config does not exist or is not accessible: ${configPath}`);
     }
     const configContent = await fs.readFile(configPath, 'utf8');
-    return JSON.parse(configContent);
+    config = JSON.parse(configContent);
   } catch (error: unknown) {
+    if (embedded) {
+      throw new Error(`Failed to load CAPABILITIES_CONFIG: ${toolErrorMessage(error)}`, {cause: error});
+    }
     log.warn(`Failed to parse capabilities config: ${toolErrorMessage(error)}`);
     return {android: {}, ios: {}, general: {}};
   }
+  if (Object.hasOwn(config, '$toolInput') || Object.hasOwn(config.general ?? {}, '$toolInput')) {
+    throw new Error('Place CAPABILITIES_CONFIG $toolInput under android or ios.');
+  }
+  return config;
 }
 
 /**

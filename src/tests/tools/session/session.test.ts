@@ -1,3 +1,7 @@
+import {mkdtemp, rm, writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+
 import {afterEach, beforeEach, describe, test, expect, jest} from '@jest/globals';
 
 // ── module mocks ──────────────────────────────────────────────────────────────
@@ -47,8 +51,12 @@ jest.unstable_mockModule('../../../logger', () => ({
   default: {debug: () => {}, info: () => {}, warn: () => {}, error: () => {}},
 }));
 
+const mockEmbeddedSession = jest.fn(async (_legacy: unknown, _caps: unknown) => ['android-id', {}]);
+
 jest.unstable_mockModule('appium-uiautomator2-driver', () => ({
-  AndroidUiautomator2Driver: class {},
+  AndroidUiautomator2Driver: class {
+    createSession = mockEmbeddedSession;
+  },
 }));
 jest.unstable_mockModule('appium-xcuitest-driver', () => ({
   XCUITestDriver: class {},
@@ -156,6 +164,86 @@ describe('operator connection policy integration', () => {
   const originalEnv = {...process.env};
   afterEach(() => {
     process.env = {...originalEnv};
+  });
+
+  test.each([
+    {
+      form: 'top-level',
+      rejected: {'appium:systemPort': 8201},
+      supplied: {'appium:adbListenAllNetwork': true, 'appium:remoteAdbHost': 'unused'},
+    },
+    {
+      form: 'grouped',
+      rejected: {'appium:options': {systemPort: 8201}},
+      supplied: {
+        'appium:options': {adbListenAllNetwork: true, 'appium:remoteAdbHost': 'unused', deviceName: 'test-device'},
+      },
+    },
+  ])(
+    'applies operator JSON rules to $form tool input before invoking the embedded driver',
+    async ({form, rejected, supplied}) => {
+      const dir = await mkdtemp(join(tmpdir(), 'appium-mcp-policy-'));
+      try {
+        mockSelectedDevicePlatform = 'android';
+        mockListSessions.mockReturnValue([]);
+        process.env.CAPABILITIES_CONFIG = join(dir, 'caps.json');
+        const config = {
+          android: {
+            'appium:adbListenAllNetwork': false,
+            $toolInput: {ignore: ['appium:adbListenAllNetwork', 'appium:remoteAdbHost'], reject: ['appium:systemPort']},
+          },
+        };
+        await writeFile(process.env.CAPABILITIES_CONFIG, JSON.stringify(config));
+        const tool = await getToolExecute();
+        mockSelectedDevice = null;
+        const rejectedResult = await tool.execute(
+          {action: 'create', platform: 'android', capabilities: JSON.stringify(rejected)},
+          undefined,
+        );
+        expect(rejectedResult.isError).toBe(true);
+        expect(rejectedResult.content[0].text).toContain('systemPort');
+        expect(rejectedResult.content[0].text).not.toContain('select_device');
+        expect(mockEmbeddedSession).not.toHaveBeenCalled();
+        const result = await tool.execute(
+          {action: 'create', platform: 'android', capabilities: JSON.stringify(supplied)},
+          undefined,
+        );
+        expect(result.isError).not.toBe(true);
+        const caps = mockEmbeddedSession.mock.lastCall?.[1];
+        expect(caps).toMatchObject({alwaysMatch: {'appium:adbListenAllNetwork': false}});
+        expect(caps).not.toHaveProperty(['alwaysMatch', 'appium:remoteAdbHost']);
+        if (form === 'grouped') {
+          expect(caps).toHaveProperty(['alwaysMatch', 'appium:options'], {deviceName: 'test-device'});
+        }
+      } finally {
+        await rm(dir, {recursive: true, force: true});
+      }
+    },
+  );
+
+  test('requires a remote URL for general sessions before reading configuration', async () => {
+    process.env.CAPABILITIES_CONFIG = '/missing/configuration.json';
+    const result = await createSessionAction({platform: 'general'});
+    expect(result.content[0]).toMatchObject({text: 'platform=general requires remoteServerUrl.'});
+  });
+
+  test.each([
+    {config: {$toolInput: {}}, platform: 'android' as const, remoteServerUrl: undefined},
+    {config: {general: {$toolInput: {}}}, platform: 'general' as const, remoteServerUrl: 'http://localhost:4723'},
+  ])('reports misplaced $toolInput in $config', async ({config, platform, remoteServerUrl}) => {
+    const dir = await mkdtemp(join(tmpdir(), 'appium-mcp-policy-'));
+    try {
+      mockSelectedDevice = null;
+      process.env.CAPABILITIES_CONFIG = join(dir, 'caps.json');
+      await writeFile(process.env.CAPABILITIES_CONFIG, JSON.stringify(config));
+      const result = await createSessionAction({platform, remoteServerUrl});
+      expect(result.isError).toBe(true);
+      expect(result.content[0]).toMatchObject({text: 'Place CAPABILITIES_CONFIG $toolInput under android or ios.'});
+      expect(mockNewSession).not.toHaveBeenCalled();
+      expect(mockEmbeddedSession).not.toHaveBeenCalled();
+    } finally {
+      await rm(dir, {recursive: true, force: true});
+    }
   });
 
   test.each([undefined, 'true', 'false'])('passes direct-connect setting %s to create and attach', async (value) => {
