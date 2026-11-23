@@ -82,7 +82,7 @@
     "fastmcp": "^4.22.4",
     "ios-mobileprovision-finder": "^1.2.1",
     "lru-cache": "^11.5.0",
-    "teen_process": "^4.2.1",
+    "teen_process": "^5.0.1",
     "webdriver": "^10.2.0",
     "xpath": "^0.0.35",
     "zod": "^4.3.6"
