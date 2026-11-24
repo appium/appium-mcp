@@ -102,6 +102,14 @@ export async function handleScroll(driver: DriverInstance, args: GestureArgs): P
       return aiDisabledResult();
     }
     const platform = getPlatformName(driver);
+    if (platform === PLATFORM.ios && args.direction && !args.elementUUID) {
+      await execute(driver, 'mobile: scroll', {
+        direction: args.direction,
+        distance: IOS_SCREEN_SCROLL_DISTANCE,
+      });
+      return textResult(`Successfully scrolled ${args.direction}.`);
+    }
+
     // Android scroll follows the scrollbar convention (down = reveal content below),
     // so flip the user's direction before computing the W3C drag coords.
     const coordsArgs =
@@ -113,14 +121,7 @@ export async function handleScroll(driver: DriverInstance, args: GestureArgs): P
     const coords = coordsResult;
     const duration = args.duration ?? SCROLL_DURATION_MS;
 
-    if (platform === PLATFORM.ios && args.direction && !args.elementUUID) {
-      await execute(driver, 'mobile: scroll', {
-        direction: args.direction,
-        distance: IOS_SCREEN_SCROLL_DISTANCE,
-      });
-    } else {
-      await performW3CDrag(driver, coords, duration, SCROLL_INITIAL_PAUSE_MS);
-    }
+    await performW3CDrag(driver, coords, duration, SCROLL_INITIAL_PAUSE_MS);
 
     return textResult(
       args.direction

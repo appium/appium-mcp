@@ -109,6 +109,7 @@ describe('handleScroll', () => {
     const result = await handleScroll({} as never, {action: 'scroll', direction: 'down', maxScrollAttempts: 10});
     expect(execute).toHaveBeenCalledWith(expect.anything(), 'mobile: scroll', {direction: 'down', distance: 0.6});
     expect(performActions).not.toHaveBeenCalled();
+    expect(getWindowRect).not.toHaveBeenCalled();
     expect(result.isError).toBeFalsy();
   });
 
