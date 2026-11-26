@@ -38,7 +38,7 @@
 3. **Coordinate Adaptation**: AI mode returns special elementUUID format containing coordinates
 4. **W3C Actions API**: Use `performActions` for cross-platform tap operations (Android/iOS)
 5. **Environment Configuration**: Model settings from env vars for flexibility
-6. **Image Optimization**: Compress screenshots using `@appium/support` sharp
+6. **Image Optimization**: Compress screenshots using the optional `sharp` dependency (loaded via `src/utils/image.ts`)
 
 ---
 
@@ -112,7 +112,7 @@ export const findElementSchema = z.object({
 ### 4.2 AI Vision Finder Module (`src/ai-finder/vision-finder.ts`)
 
 ```typescript
-import { imageUtil } from '@appium/support';
+import { imageUtil } from '../utils/image.js';
 import axios from 'axios';
 
 /**
@@ -142,7 +142,7 @@ class AIVisionFinder {
   }
 
   async findElement(screenshotBase64: string, instruction: string, imageWidth: number, imageHeight: number) {
-    // Step 1: Compress image using @appium/support
+    // Step 1: Compress image using sharp
     const compressedBase64 = await this.compressImage(screenshotBase64, imageWidth, imageHeight);
     
     // Step 2: Build prompt
@@ -168,14 +168,14 @@ class AIVisionFinder {
   }
 
   /**
-   * Compress image using @appium/support sharp utilities
+   * Compress image using sharp (via src/utils/image.ts)
    * Reduces API latency and token consumption
    */
   async compressImage(base64Image: string, width: number, height: number): Promise<string> {
     try {
       const imageBuffer = Buffer.from(base64Image, 'base64');
       
-      // Use @appium/support imageUtil for compression
+      // Load sharp lazily via src/utils/image.ts
       const sharp = imageUtil.requireSharp();
       let sharpInstance = sharp(imageBuffer);
       
@@ -337,7 +337,7 @@ Parameters: {"target": "Search", "bbox_2d": [100, 200, 300, 280]}
 ### 4.3 Enhanced Find Element Tool (`src/tools/interactions/find.ts`)
 
 ```typescript
-import { imageUtil } from '@appium/support';
+import { imageUtil } from '../utils/image.js';
 
 export default function findElement(server: FastMCP): void {
   server.addTool({
@@ -381,9 +381,9 @@ Example AI usage:
       // Step 1: Capture screenshot
       const screenshotBase64 = await getScreenshot(driver);
       
-      // Step 2: Get image dimensions using @appium/support
+      // Step 2: Get image dimensions using sharp
       const imageBuffer = Buffer.from(screenshotBase64, 'base64');
-      const { sharp } = imageUtil;
+      const sharp = imageUtil.requireSharp();
       const metadata = await sharp(imageBuffer).metadata();
       const { width, height } = metadata;
       
@@ -549,7 +549,7 @@ src/
    - Clear error messages when required env vars are missing
 
 4. **Image Compression**:
-   - Uses `@appium/support` sharp utilities (no additional dependency)
+   - Uses `sharp`, declared as an optional dependency and loaded lazily by `src/utils/image.ts` (`@appium/support` 8 no longer provides `imageUtil`)
    - Reduces image size by 50-80% typically
    - Significantly improves API response time (2-5x faster)
    - Reduces token consumption and API costs
