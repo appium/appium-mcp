@@ -1,96 +1,176 @@
-/**
- * Resource for Java template files
- */
-export default function javaTemplatesResource(server: any) {
-  server.addResource({
-    uri: 'generate://code-with-locators',
-    name: 'Generate Code With Locators',
-    description: `Generate code for the current page with locators which was retrieved from generate_locators tool.
-    The code should be generated in the same priorty order as the locators were generated.
-    Always use the actions API code from the template for the gestures.
-    For iOS the priority order is:
-      'id',
-      'accessibility id',
-      '-ios predicate string',
-      '-ios class chain',
-      'xpath',
-      'class name',
-    For Android the priority order is:
-       'id',
-      'accessibility id',
-      'xpath',
-      '-android uiautomator',
-      'class name',
-    which follows the page factory pattern. Dont not strictly create test cases, just generate the code for locators.`,
-    mimeType: 'text/plain',
-    async load() {
-      // Return all content directly without templates object
-      return {
-        message: 'Java templates for mobile automation, use this and generate code for the current page',
-        instruction: 'Use these templates to generate code for the current page',
-        text: `
-package templates;
+import type {FastMCP} from 'fastmcp';
 
+export const JAVA_TEMPLATE_URI = 'generate://code-with-locators';
+
+const JAVA_BY_LOCATORS_TEMPLATE = `package templates;
+
+import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
-import io.appium.java_client.pagefactory.AndroidFindBy;
-import io.appium.java_client.pagefactory.AppiumFieldDecorator;
-import io.appium.java_client.pagefactory.iOSXCUITFindBy;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.Point;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.interactions.PointerInput;
+import org.openqa.selenium.interactions.Sequence;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * This class demonstrates using PageFactory with Appium for cross-platform
- * mobile app locators using @AndroidFindBy and @iOSXCUITFindBy annotations.
- * Example: 
+ * Page Object template using the By locators pattern with Appium.
+ *
+ * Locators are stored as {@link By} fields and resolved dynamically on each interaction
+ * through explicit waits, avoiding cached element proxies and preventing
+ * {@link StaleElementReferenceException} on dynamic mobile UIs.
+ * Rename this class and replace the sample locators with the current screen's elements.
  */
-public class locators {
+public class LoginPage {
 
-    // ========== LOGIN SCREEN ELEMENTS ==========
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
 
-    /**
-     * Username input field
-     * - Android: accessibility id = "username_input"
-     * - iOS: accessibility id = "username_input"
-     */
-    @AndroidFindBy(accessibility = "username_input")
-    @iOSXCUITFindBy(accessibility = "username_input")
-    
+    private final AppiumDriver driver;
+    private final WebDriverWait wait;
 
-    public WebElement usernameField;
+    // ========== ELEMENT LOCATORS ==========
 
-    @iOSXCUITFindBy(iOSNsPredicate = "name = 'IntegerB'")
-    private WebElement textField2;
+    // Cross-platform accessibility id (preferred when available on both Android and iOS)
+    private final By usernameField = AppiumBy.accessibilityId("username_input");
 
-    @iOSXCUITFindBy(iOSClassChain = "XCUIElementTypeWindow/*/XCUIElementTypeTextField[2]")
-    private WebElement secondTextField;
+    // Android-specific locators (id, UiAutomator)
+    private final By androidPasswordField = By.id("com.example.app:id/password_input");
+    private final By androidSignInButton = AppiumBy.androidUIAutomator(
+            "new UiSelector().text(\\"Sign In\\")");
 
-    /**
-     * Constructor that initializes the PageFactory
-     * 
-     * @param driver AppiumDriver instance
-     */
-    public locators(AppiumDriver driver) {
-        PageFactory.initElements(new AppiumFieldDecorator(driver, Duration.ofSeconds(10)), this);
+    // iOS-specific locators (NSPredicate, Class Chain)
+    private final By iosPasswordField = AppiumBy.iOSNsPredicateString("name == 'password_input'");
+    private final By iosSecondaryField = AppiumBy.iOSClassChain("**/XCUIElementTypeTextField[2]");
+
+    // Multi-language / fallback locators (first visible match wins)
+    private final By[] proceedButtonLocators = {
+            AppiumBy.accessibilityId("proceed_button"),
+            By.xpath("//android.widget.TextView[@text='Proceed']"),
+            By.xpath("//android.widget.TextView[@text='تابع']")
+    };
+
+    // Slider element for W3C Actions gesture example
+    private final By sliderElement = AppiumBy.accessibilityId("slider");
+
+    public LoginPage(AppiumDriver driver) {
+        this(driver, DEFAULT_TIMEOUT);
     }
 
-        @Test
-    public void sliderTest() {
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        wait.until(ExpectedConditions.elementToBeClickable(AppiumBy.accessibilityId("login"))).click();
-        wait.until(ExpectedConditions.elementToBeClickable(AppiumBy.accessibilityId("slider1"))).click();
+    public LoginPage(AppiumDriver driver, Duration timeout) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, timeout);
+    }
 
-        try { Thread.sleep(1000); } catch (InterruptedException e) {}
+    // ========== BASE LOOKUP HELPERS ==========
 
-        WebElement slider = wait.until(ExpectedConditions.visibilityOfElementLocated(AppiumBy.accessibilityId("slider")));
+    protected boolean isAndroid() {
+        Object platformName = driver.getCapabilities().getCapability("platformName");
+        return platformName != null && "android".equalsIgnoreCase(platformName.toString());
+    }
 
+    protected WebElement findElement(By locator) {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+    }
+
+    protected WebElement findClickableElement(By locator) {
+        return wait.until(ExpectedConditions.elementToBeClickable(locator));
+    }
+
+    protected List<WebElement> findElements(By locator) {
+        return wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(locator));
+    }
+
+    protected WebElement findElementByLocators(By... locators) {
+        if (locators == null || locators.length == 0) {
+            throw new IllegalArgumentException("At least one locator must be provided");
+        }
+        try {
+            return wait.until(d -> {
+                for (By locator : locators) {
+                    if (locator == null) {
+                        continue;
+                    }
+                    try {
+                        List<WebElement> matches = d.findElements(locator);
+                        if (!matches.isEmpty() && matches.get(0).isDisplayed()) {
+                            return matches.get(0);
+                        }
+                    } catch (StaleElementReferenceException ignored) {
+                        // Retry on next poll if the view hierarchy re-rendered mid-check
+                    }
+                }
+                return null;
+            });
+        } catch (TimeoutException e) {
+            throw new NoSuchElementException(
+                    "Unable to locate element using locators: " + Arrays.toString(locators), e);
+        }
+    }
+
+    // ========== FRESH ELEMENT GETTERS ==========
+
+    public WebElement getUsernameField() {
+        return findElement(usernameField);
+    }
+
+    public WebElement getPasswordField() {
+        return findElement(isAndroid() ? androidPasswordField : iosPasswordField);
+    }
+
+    public WebElement getSecondaryTextField() {
+        return findElement(iosSecondaryField);
+    }
+
+    public WebElement getProceedButton() {
+        return findElementByLocators(proceedButtonLocators);
+    }
+
+    // ========== PAGE ACTIONS ==========
+
+    public LoginPage enterUsername(String username) {
+        WebElement field = findElement(usernameField);
+        field.clear();
+        field.sendKeys(username);
+        return this;
+    }
+
+    public LoginPage enterPassword(String password) {
+        WebElement field = getPasswordField();
+        field.clear();
+        field.sendKeys(password);
+        return this;
+    }
+
+    public void tapProceed() {
+        findElementByLocators(proceedButtonLocators).click();
+    }
+
+    // Navigation actions can return the next Page Object instance (e.g. return new HomePage(driver);)
+    public void tapSignIn() {
+        findClickableElement(isAndroid() ? androidSignInButton : AppiumBy.accessibilityId("sign_in_button"))
+                .click();
+    }
+
+    // ========== W3C ACTIONS GESTURE EXAMPLE ==========
+
+    public void slideToRight() {
+        WebElement slider = findElement(sliderElement);
         Point location = slider.getLocation();
         Dimension size = slider.getSize();
 
         // Swipe right: from left side of the slider to the right side
-        int startX = location.getX() + (int)(size.getWidth() * 0.1);
-        int endX = location.getX() + (int)(size.getWidth() * 0.9);
+        int startX = location.getX() + (int) (size.getWidth() * 0.1);
+        int endX = location.getX() + (int) (size.getWidth() * 0.9);
         int y = location.getY() + size.getHeight() / 2;
 
         PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
@@ -104,7 +184,36 @@ public class locators {
         driver.perform(Collections.singletonList(swipe));
     }
 }
-    `,
+`;
+
+/**
+ * Resource for Java Page Object template using the By locators pattern
+ */
+export default function javaTemplatesResource(server: FastMCP): void {
+  server.addResource({
+    uri: JAVA_TEMPLATE_URI,
+    name: 'Generate Code With Locators',
+    description: `Generate Java Page Object code for the current page with locators retrieved from generate_locators tool.
+    The code should be generated in the same priority order as the locators were generated.
+    Always use the W3C Actions API code from the template for gestures and explicit waits instead of Thread.sleep.
+    For iOS the priority order is:
+      'id',
+      'accessibility id',
+      '-ios predicate string',
+      '-ios class chain',
+      'xpath',
+      'class name',
+    For Android the priority order is:
+      'id',
+      'accessibility id',
+      'xpath',
+      '-android uiautomator',
+      'class name',
+    Follow the By locators Page Object pattern (avoid PageFactory and @AndroidFindBy/@iOSXCUITFindBy annotations to prevent stale element references). Do not strictly create test cases, just generate the page object code for locators.`,
+    mimeType: 'text/plain',
+    async load() {
+      return {
+        text: JAVA_BY_LOCATORS_TEMPLATE,
       };
     },
   });
