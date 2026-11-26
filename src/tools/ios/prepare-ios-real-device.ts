@@ -166,7 +166,6 @@ async function signIpa(ipaPath: string, profile: ProfileChoice): Promise<string>
     withGetTaskAllow: true,
     withoutPlugins: true,
   };
-  // @ts-expect-error applesign has no type definitions and is an optional dependency
   const {default: Applesign} = await import('applesign').catch((err: unknown) => {
     throw new Error(
       `Unable to load optional dependency "applesign" needed for IPA signing. Install it to enable signing. Original error: ${(err as Error).message}`,
