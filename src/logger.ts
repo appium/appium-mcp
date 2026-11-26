@@ -6,11 +6,17 @@ import {quietExistingWdioLoggers} from './utils/wdio-logging.js';
 
 const log: AppiumLogger = logger.getLogger('appium-mcp');
 
-/** npmlog must not write to stdout (stdio JSON-RPC). Skip if the host already set a custom stream. */
+/**
+ * npmlog must not write to stdout (stdio JSON-RPC). Skip if the host already set a custom stream.
+ * @appium/logger 3 routes error-level output to a separate `errorStream`, so guard both.
+ */
 export function ensureLoggerWritesToStderr(): void {
   const root = log.unwrap();
   if (root.stream === process.stdout) {
     root.stream = process.stderr;
+  }
+  if (root.errorStream === process.stdout) {
+    root.errorStream = process.stderr;
   }
 }
 
