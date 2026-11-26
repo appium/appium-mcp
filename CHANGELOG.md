@@ -1,3 +1,9 @@
+## [2.1.1](https://github.com/appium/appium-mcp/compare/v2.1.0...v2.1.1) (2026-11-26)
+
+### Bug Fixes
+
+* **deps:** update optional applesign dependency to ^7.1.0 ([#629](https://github.com/appium/appium-mcp/issues/629)) ([e0cee80](https://github.com/appium/appium-mcp/commit/e0cee8065cdda4e45c0fc099c2e7698f9f7ec132)), closes [#627](https://github.com/appium/appium-mcp/issues/627)
+
 ## [2.1.0](https://github.com/appium/appium-mcp/compare/v2.0.1...v2.1.0) (2026-11-26)
 
 ### Features
