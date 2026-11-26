@@ -3,12 +3,12 @@
   "name": "io.github.appium/appium-mcp",
   "title": "MCP Appium - Mobile Development and Automation Server",
   "description": "MCP server for Appium mobile automation on iOS and Android devices with test creation tools.",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "appium-mcp",
-      "version": "2.0.1",
+      "version": "2.1.0",
       "transport": {
         "type": "stdio"
       }

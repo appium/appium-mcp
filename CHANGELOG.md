@@ -1,3 +1,9 @@
+## [2.1.0](https://github.com/appium/appium-mcp/compare/v2.0.1...v2.1.0) (2026-11-26)
+
+### Features
+
+* **resources:** replace PageFactory with By locators pattern in Java template ([#628](https://github.com/appium/appium-mcp/issues/628)) ([7d95e36](https://github.com/appium/appium-mcp/commit/7d95e3699be739869e6532469e065e96b979b564))
+
 ## [2.0.1](https://github.com/appium/appium-mcp/compare/v2.0.0...v2.0.1) (2026-11-25)
 
 ### Bug Fixes
