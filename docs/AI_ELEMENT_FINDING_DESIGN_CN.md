@@ -38,7 +38,7 @@
 3. **坐标适配**：AI模式返回包含坐标的特殊elementUUID格式
 4. **W3C Actions API**：使用 `performActions` 实现跨平台点击操作（Android/iOS）
 5. **环境配置**：通过环境变量配置模型设置以提供灵活性
-6. **图片优化**：使用 `@appium/support` 的 sharp 压缩截图
+6. **图片优化**：使用可选依赖 `sharp` 压缩截图（通过 `src/utils/image.ts` 加载）
 
 ---
 
@@ -112,7 +112,7 @@ export const findElementSchema = z.object({
 ### 4.2 AI视觉查找器模块 (`src/ai-finder/vision-finder.ts`)
 
 ```typescript
-import { imageUtil } from '@appium/support';
+import { imageUtil } from '../utils/image.js';
 import axios from 'axios';
 
 /**
@@ -142,7 +142,7 @@ class AIVisionFinder {
   }
 
   async findElement(screenshotBase64: string, instruction: string, imageWidth: number, imageHeight: number) {
-    // 步骤1：使用 @appium/support 压缩图片
+    // 步骤1：使用 sharp 压缩图片
     const compressedBase64 = await this.compressImage(screenshotBase64, imageWidth, imageHeight);
     
     // 步骤2：构建提示词
@@ -168,14 +168,14 @@ class AIVisionFinder {
   }
 
   /**
-   * 使用 @appium/support 的 sharp 工具压缩图片
+   * 使用 sharp 压缩图片（通过 src/utils/image.ts）
    * 减少API延迟和token消耗
    */
   async compressImage(base64Image: string, width: number, height: number): Promise<string> {
     try {
       const imageBuffer = Buffer.from(base64Image, 'base64');
       
-      // 使用 @appium/support 的 imageUtil 进行压缩
+      // 通过 src/utils/image.ts 按需加载 sharp
       const sharp = imageUtil.requireSharp();
       let sharpInstance = sharp(imageBuffer);
       
@@ -334,7 +334,7 @@ Parameters: {"target": "搜索", "bbox_2d": [100, 200, 300, 280]}
 ### 4.3 增强的查找元素工具 (`src/tools/interactions/find.ts`)
 
 ```typescript
-import { imageUtil } from '@appium/support';
+import { imageUtil } from '../utils/image.js';
 
 export default function findElement(server: FastMCP): void {
   server.addTool({
@@ -378,9 +378,9 @@ AI使用示例：
       // 步骤1：捕获截图
       const screenshotBase64 = await getScreenshot(driver);
       
-      // 步骤2：使用 @appium/support 获取图片尺寸
+      // 步骤2：使用 sharp 获取图片尺寸
       const imageBuffer = Buffer.from(screenshotBase64, 'base64');
-      const { sharp } = imageUtil;
+      const sharp = imageUtil.requireSharp();
       const metadata = await sharp(imageBuffer).metadata();
       const { width, height } = metadata;
       
@@ -546,7 +546,7 @@ src/
    - 缺少必需环境变量时提供清晰的错误消息
 
 4. **图片压缩**：
-   - 使用 `@appium/support` 的 sharp 工具（无需额外依赖）
+   - 使用 `sharp`（声明为可选依赖，由 `src/utils/image.ts` 按需加载；`@appium/support` 8 已不再提供 `imageUtil`）
    - 通常可减少50-80%的图片大小
    - 显著提高API响应时间（快2-5倍）
    - 减少token消耗和API成本

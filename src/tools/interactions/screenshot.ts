@@ -1,6 +1,6 @@
 import {join} from 'node:path';
 
-import {fs, imageUtil} from '@appium/support';
+import {fs} from '@appium/support';
 import type {ContentResult, FastMCP} from 'fastmcp';
 import z from 'zod';
 
@@ -9,6 +9,7 @@ import {SCREENSHOT_VIEWER_URI} from '../../resources/screenshot-viewer.js';
 import {elementUUIDScheme} from '../../schema.js';
 import {clientSupportsMcpApps, isMcpAppsEnabled} from '../../ui/mcp-apps.js';
 import {createUIResource, createScreenshotViewerUI, addUIResourceToResponse} from '../../ui/mcp-ui-utils.js';
+import {imageUtil} from '../../utils/image.js';
 import {resolveScreenshotDir} from '../../utils/paths.js';
 import {resolveDriver, textResult, errorResult, toolErrorMessage} from '../tool-response.js';
 

@@ -1,5 +1,6 @@
-import {imageUtil} from '@appium/support';
 import {afterEach, beforeEach, describe, expect, jest, test} from '@jest/globals';
+
+import {imageUtil} from '../utils/image.js';
 
 const findElement = jest.fn(async (_screenshot: string, _instruction: string, _width: number, _height: number) => ({
   target: 'button',

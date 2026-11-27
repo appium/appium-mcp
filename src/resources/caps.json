@@ -39,10 +39,6 @@
     "value": false,
     "description": "If true, perform additional reset steps for maximum reproducibility (default: false)"
   },
-  "appium:eventTimings": {
-    "value": false,
-    "description": "If true, collect event timings for performance analysis (default: false)"
-  },
   "appium:printPageSourceOnFindFailure": {
     "value": false,
     "description": "If true, print page source to log when element finding fails (default: false)"
@@ -562,9 +558,6 @@
   "appium:useXctestrunFile": {
     "description": "Use Xctestrun file to launch WDA. It will search for such file in bootstrapPath."
   },
-  "appium:useSimpleBuildTest": {
-    "description": "Build with build and run test with test in xcodebuild for all Xcode version if this is true, or build with build-for-testing and run tests with test-without-building for over Xcode 8 if this is false. Defaults to false."
-  },
   "appium:showXcodeLog": {
     "description": "Whether to display the output of the Xcode command used to run the tests. If this is true, there will be lots of extra logging at startup. Defaults to false."
   },
@@ -625,9 +618,6 @@
   "appium:safariLogAllCommunicationHexDump": {
     "description": "Log all communication sent to and received from the Web Inspector, as raw hex dump and printable characters."
   },
-  "appium:safariSocketChunkSize": {
-    "description": "The size, in bytes, of the data to be sent to the Web Inspector on iOS 11+ real devices."
-  },
   "appium:safariWebInspectorMaxFrameLength": {
     "description": "The maximum size in bytes of a single data frame for the Web Inspector."
   },
@@ -681,9 +671,6 @@
   },
   "appium:skipLogCapture": {
     "description": "Skips to start capturing logs such as crash, system, safari console and safari network."
-  },
-  "appium:launchWithIDB": {
-    "description": "Launch WebDriverAgentRunner with idb instead of xcodebuild."
   },
   "appium:showIOSLog": {
     "description": "Whether to show any logs captured from a device in the appium logs. Default false."

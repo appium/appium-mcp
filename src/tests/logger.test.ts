@@ -33,6 +33,27 @@ describe('stdio transport logging', () => {
     expect(log.unwrap().stream).toBe(custom);
   });
 
+  test('ensureLoggerWritesToStderr also moves errorStream off stdout', () => {
+    const root = log.unwrap();
+    const originalErrorStream = root.errorStream;
+    try {
+      root.errorStream = process.stdout;
+      ensureLoggerWritesToStderr();
+      expect(root.errorStream).toBe(process.stderr);
+
+      const custom = {write: () => {}} as unknown as NodeJS.WriteStream;
+      root.errorStream = custom;
+      ensureLoggerWritesToStderr();
+      expect(root.errorStream).toBe(custom);
+
+      root.errorStream = null;
+      ensureLoggerWritesToStderr();
+      expect(root.errorStream).toBeNull();
+    } finally {
+      root.errorStream = originalErrorStream;
+    }
+  });
+
   test('withQuietWebDriverLogging is a no-op until stdio logging is configured', () => {
     expect(isStdioTransportLoggingConfigured()).toBe(false);
     expect(
