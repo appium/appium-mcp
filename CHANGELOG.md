@@ -1,3 +1,21 @@
+## [2.1.1](https://github.com/appium/appium-mcp/compare/v2.1.0...v2.1.1) (2026-11-26)
+
+### Bug Fixes
+
+* **deps:** update optional applesign dependency to ^7.1.0 ([#629](https://github.com/appium/appium-mcp/issues/629)) ([e0cee80](https://github.com/appium/appium-mcp/commit/e0cee8065cdda4e45c0fc099c2e7698f9f7ec132)), closes [#627](https://github.com/appium/appium-mcp/issues/627)
+
+## [2.1.0](https://github.com/appium/appium-mcp/compare/v2.0.1...v2.1.0) (2026-11-26)
+
+### Features
+
+* **resources:** replace PageFactory with By locators pattern in Java template ([#628](https://github.com/appium/appium-mcp/issues/628)) ([7d95e36](https://github.com/appium/appium-mcp/commit/7d95e3699be739869e6532469e065e96b979b564))
+
+## [2.0.1](https://github.com/appium/appium-mcp/compare/v2.0.0...v2.0.1) (2026-11-25)
+
+### Bug Fixes
+
+* **gestures:** pass distance on iOS screen scroll ([#607](https://github.com/appium/appium-mcp/issues/607)) ([0d0ef5d](https://github.com/appium/appium-mcp/commit/0d0ef5dc2875da25767fbc208d450c2c05952991))
+
 ## [2.0.0](https://github.com/appium/appium-mcp/compare/v1.99.5...v2.0.0) (2026-11-22)
 
 ### ⚠ BREAKING CHANGES

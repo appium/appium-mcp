@@ -1,6 +1,6 @@
 {
   "name": "appium-mcp",
-  "version": "2.0.0",
+  "version": "2.1.1",
   "description": "Intelligent MCP server providing AI assistants with powerful tools and resources for Appium mobile automation",
   "bugs": {
     "url": "https://github.com/appium/appium-mcp/issues"
@@ -113,18 +113,14 @@
   },
   "optionalDependencies": {
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/exporter-trace-otlp-grpc": "^0.300.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.300.0",
-    "@opentelemetry/sdk-node": "^0.300.0",
-    "applesign": "^5.0.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.301.2",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.301.2",
+    "@opentelemetry/sdk-node": "^0.301.2",
+    "applesign": "^7.1.0",
     "sharp": "^0.35.5"
   },
   "overrides": {
     "@puppeteer/browsers": "^3.2.1",
-    "applesign": {
-      "mocha": "^12.0.0",
-      "uuid": "^11.1.1"
-    },
     "deepmerge-ts": "^8.0.2"
   },
   "lint-staged": {
